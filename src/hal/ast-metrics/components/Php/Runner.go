@@ -16,6 +16,7 @@ import (
     "io"
     "io/ioutil"
     "bytes"
+    "github.com/gosuri/uiprogress"
 )
 
 func Ensure() (string, error) {
@@ -73,22 +74,40 @@ func DumpAST(writer *goterminal.Writer, path string) (string, error) {
     log.Printf("Dossier temporaire : %s\n", workDir)
 
 
+    uiprogress.Start()            // start rendering
+	bar := uiprogress.AddBar(len(matches) - 1) // Add a new bar
+	bar.PrependFunc(func(b *uiprogress.Bar) string {
+	    return fmt.Sprintf("Parsing PHP Code")
+    })
+
+	bar.AppendCompleted()
+	bar.PrependElapsed()
+
+
+
     sem := make(chan struct{}, maxParallelCommandsInt)
     for _, file := range matches {
         if !strings.Contains(file, "/vendor/") {
             sem <- struct{}{}
             go func(file string) {
                 executePHPCommandForFile(workDir, file)
+                bar.Incr()
                 <-sem
             }(file)
         }
     }
 
     // Attendez que les commandes se terminent (vous pouvez ajouter une synchronisation ici)
-    fmt.Println("Toutes les commandes ont été lancées en parallèle. En attente...")
+    fmt.Println("Analyzing...")
     for i := 0; i < maxParallelCommandsInt; i++ {
         sem <- struct{}{}
     }
+
+    uiprogress.Stop()
+
+    // cleanup current cli line
+    fmt.Print("\033[2K\r")
+    
 
     return "", nil
 }
@@ -125,8 +144,7 @@ func executePHPCommandForFile(tmpDir string, file string) {
     cmd := exec.Command("php", "runner/php/vendor/nikic/php-parser/bin/php-parse", "--json-dump", file)
 
     var out bytes.Buffer
-    cmd.Stdout = io.MultiWriter(os.Stdout, &out)
-
+    cmd.Stdout = io.MultiWriter(ioutil.Discard, &out)
 
     if err := cmd.Run(); err != nil {
         log.Printf("Erreur lors de l'exécution de la commande pour %s : %v\n", file, err)
