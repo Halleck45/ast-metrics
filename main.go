@@ -1,7 +1,6 @@
 package main
 
 import (
-    "fmt"
     "embed"
     "log"
     "bufio"
@@ -9,6 +8,7 @@ import (
     "github.com/urfave/cli/v2"
     "ast-metrics/src/hal/ast-metrics/components/Php"
     "github.com/pterm/pterm"
+    "ast-metrics/src/hal/ast-metrics/components/Storage"
 )
 
 //go:embed runner/php/vendor/*
@@ -33,6 +33,9 @@ func main() {
                         pterm.Error.Println("Please provide a path to analyze")
                         return nil
                     }
+
+                    // Prepare workdir
+                    Storage.Ensure()
 
                     // Prepare progress bars
                     multi := pterm.DefaultMultiPrinter.WithWriter(outWriter)
@@ -78,11 +81,12 @@ func main() {
                 },
             },
             {
-                Name:    "init",
+                Name:    "clean",
                 Aliases: []string{"i"},
-                Usage:   "Creates a config file",
+                Usage:   "Clean workdir",
                 Action: func(cCtx *cli.Context) error {
-                    fmt.Println("@todo")
+                    Storage.Purge()
+                    pterm.Success.Println("Workdir cleaned")
                     return nil
                 },
             },

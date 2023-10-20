@@ -18,6 +18,7 @@ import (
     "io/ioutil"
     "bytes"
     "github.com/pterm/pterm"
+    "ast-metrics/src/hal/ast-metrics/components/Storage"
 )
 
 func Ensure(progressbar *pterm.SpinnerPrinter, phpSources embed.FS ) (string, error) {
@@ -90,16 +91,7 @@ func DumpAST(progressbar *pterm.SpinnerPrinter, path string) {
         progressbar.Fail("Error while parsing MAX_PARALLEL_COMMANDS env variable")
     }
 
-    // workdir: folder ".ast-metrics" in the current directory
-    workDir, err := os.Getwd()
-    if err != nil {
-        progressbar.Fail("Error while getting current directory")
-    }
-    workDir = filepath.Join(workDir, ".ast-metrics")
-    // create workdir if not exists
-    if _, err := os.Stat(workDir); os.IsNotExist(err) {
-        os.Mkdir(workDir, 0755)
-    }
+    workDir := Storage.Path()
 
     // Wait for end of all goroutines
     var wg sync.WaitGroup
