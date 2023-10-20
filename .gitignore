@@ -1,3 +1,4 @@
 .ast-metrics
 runner/php/vendor
 .idea
+bin

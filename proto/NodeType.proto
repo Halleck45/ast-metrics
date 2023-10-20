@@ -1,0 +1,80 @@
+syntax = "proto3";
+
+package NodeType;
+option go_package = "github.com/halleck45/ast-metrics/NodeType";
+
+// represents an identifier (name)
+message Name {
+  string short = 1;
+  string qualified = 2; // fully qualified name (with namespace)
+  string describer = 3; // internal description of statement (e.g. for function: return type + name + parameters)
+}
+
+// Represents a list of statements.
+message Stmts {
+  repeated Stmt stmts = 1;
+}
+
+// Represents a statement node.
+message Stmt {
+    StmtLocationInFile attributes = 1;
+    oneof stmt {
+        // Append here all the possible statements
+        StmtClass stmtClass = 2;
+        StmtFunction stmtFunction = 3;
+        StmtInterface stmtInterface = 4;
+        StmtTrait stmtTrait = 5;
+        StmtUse stmtUse = 6;
+        StmtNamespace stmtNamespace = 7;
+    }
+}
+
+// Describe the location of statement in file.
+message StmtLocationInFile {
+  int32 startLine = 1;
+  int32 startFilePos = 2;
+  int32 endLine = 3;
+  int32 endFilePos = 4;
+}
+
+// Represents a namespace node.
+message StmtNamespace {
+  Name name = 1;
+  Stmts stmts = 2;
+  StmtLocationInFile location = 3;
+}
+
+// Represents a Use (or Import) node.
+message StmtUse {
+  Name name = 1;
+  Stmts stmts = 2;
+  StmtLocationInFile location = 3;
+}
+
+// Represents a Class node.
+message StmtClass {
+  Name name = 1;
+  Stmts stmts = 2;
+  StmtLocationInFile location = 3;
+}
+
+// Represents a Function node.
+message StmtFunction {
+  Name name = 1;
+  Stmts stmts = 2;
+  StmtLocationInFile location = 3;
+}
+
+// Represents a Interface node.
+message StmtInterface {
+  Name name = 1;
+  Stmts stmts = 2;
+  StmtLocationInFile location = 3;
+}
+
+// Represents a Trait node.
+message StmtTrait {
+  Name name = 1;
+  Stmts stmts = 2;
+  StmtLocationInFile location = 3;
+}

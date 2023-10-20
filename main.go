@@ -6,9 +6,9 @@ import (
     "bufio"
     "os"
     "github.com/urfave/cli/v2"
-    "ast-metrics/src/hal/ast-metrics/components/Php"
+    "github.com/halleck45/ast-metrics/src/Php"
     "github.com/pterm/pterm"
-    "ast-metrics/src/hal/ast-metrics/components/Storage"
+    "github.com/halleck45/ast-metrics/src/Storage"
 )
 
 //go:embed runner/php/vendor/*
