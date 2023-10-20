@@ -1,25 +1,56 @@
 package Php
 
 import (
+    "sync"
     "errors"
+    "embed"
+    "io/fs"
     "os"
     "path/filepath"
     "log"
     "os/exec"
     "strings"
     "strconv"
-    "github.com/apoorvam/goterminal"
     "github.com/yargevad/filepathx"
     "crypto/md5"
     "encoding/hex"
-    "fmt"
     "io"
     "io/ioutil"
     "bytes"
-    "github.com/gosuri/uiprogress"
+    "github.com/pterm/pterm"
 )
 
-func Ensure() (string, error) {
+func Ensure(progressbar *pterm.SpinnerPrinter, phpSources embed.FS ) (string, error) {
+
+    // clean up
+    cleanup(phpSources)
+
+    // Install sources locally (vendors)
+    tempDir := ".temp"
+    if err := os.Mkdir(tempDir, 0755); err != nil {
+        log.Fatal(err)
+    }
+
+    // Extract PHP sources
+    if err := fs.WalkDir(phpSources, "runner/php/vendor", func(path string, d fs.DirEntry, err error) error {
+        if d.Type().IsRegular() {
+            content, err := phpSources.ReadFile(path)
+            if err != nil {
+                return err
+            }
+            outputPath := tempDir + "/" + path
+            if err := os.MkdirAll(filepath.Dir(outputPath), 0755); err != nil {
+                return err
+            }
+            if err := os.WriteFile(outputPath, content, 0644); err != nil {
+                return err
+            }
+        }
+        return nil
+    }); err != nil {
+        log.Fatal(err)
+    }
+
 	// Get PHP binary path. IF env PHP_BINARY_PATH is not set, use default value
     phpBinaryPath := getPHPBinaryPath()
 
@@ -31,21 +62,20 @@ func Ensure() (string, error) {
         return "", errors.New("Cannot get PHP version using the PHP binary path: " + phpBinaryPath + ". Please check if PHP is installed, or set the PHP_BINARY_PATH environment variable to the correct path.")
     }
 
+    progressbar.Info("PHP is ready (v" + phpVersion + ")")
+    progressbar.Stop()
+
     return phpVersion, nil
 }
 
-func DumpAST(writer *goterminal.Writer, path string) (string, error) {
-    //phpBinaryPath := os.Getenv("PHP_BINARY_PATH")
-
+func DumpAST(progressbar *pterm.SpinnerPrinter, path string) {
 
     // list all .php file in path, recursively
     path = strings.TrimRight(path, "/")
-    fmt.Fprintln(writer, "Parsing PHP files in " + path + "... ")
-    writer.Print()
 
     matches, err := filepathx.Glob(path + "/**/*.php")
     if err != nil {
-        return "", err
+        progressbar.Fail("Error while listing PHP files")
     }
 
 
@@ -57,13 +87,13 @@ func DumpAST(writer *goterminal.Writer, path string) (string, error) {
     // to int
     maxParallelCommandsInt, err := strconv.Atoi(maxParallelCommands)
     if err != nil {
-        return "", err
+        progressbar.Fail("Error while parsing MAX_PARALLEL_COMMANDS env variable")
     }
 
     // workdir: folder ".ast-metrics" in the current directory
     workDir, err := os.Getwd()
     if err != nil {
-        return "", err
+        progressbar.Fail("Error while getting current directory")
     }
     workDir = filepath.Join(workDir, ".ast-metrics")
     // create workdir if not exists
@@ -71,43 +101,58 @@ func DumpAST(writer *goterminal.Writer, path string) (string, error) {
         os.Mkdir(workDir, 0755)
     }
 
-    log.Printf("Dossier temporaire : %s\n", workDir)
+    // Wait for end of all goroutines
+    var wg sync.WaitGroup
 
-
-    uiprogress.Start()            // start rendering
-	bar := uiprogress.AddBar(len(matches) - 1) // Add a new bar
-	bar.PrependFunc(func(b *uiprogress.Bar) string {
-	    return fmt.Sprintf("Parsing PHP Code")
-    })
-
-	bar.AppendCompleted()
-	bar.PrependElapsed()
-
-
-
+    nbParsingFiles := 0
     sem := make(chan struct{}, maxParallelCommandsInt)
     for _, file := range matches {
         if !strings.Contains(file, "/vendor/") {
+            wg.Add(1)
+            nbParsingFiles++
             sem <- struct{}{}
             go func(file string) {
+                defer wg.Done()
                 executePHPCommandForFile(workDir, file)
-                bar.Incr()
+
+                // details is the number of files processed / total number of files
+                details := strconv.Itoa(nbParsingFiles) + "/" + strconv.Itoa(len(matches))
+                progressbar.UpdateText("Parsing PHP files (" + details + ")")
                 <-sem
             }(file)
         }
     }
 
-    // Attendez que les commandes se terminent (vous pouvez ajouter une synchronisation ici)
-    fmt.Println("Analyzing...")
+    // Wait for all goroutines to finish
     for i := 0; i < maxParallelCommandsInt; i++ {
         sem <- struct{}{}
     }
 
-    uiprogress.Stop()
+    wg.Wait()
+    progressbar.UpdateText("")
+    progressbar.Info("PHP analysis finished")
+    progressbar.Stop()
+}
 
-    // cleanup current cli line
-    fmt.Print("\033[2K\r")
-    
+func Finish(progressbar *pterm.SpinnerPrinter, phpSources embed.FS ) (string, error) {
+    cleanup(phpSources)
+    progressbar.Info("Cleaned up")
+    progressbar.Stop()
+    return "", nil
+}
+
+func cleanup(phpSources embed.FS ) (string, error) {
+    // Remove temp directory
+    tempDir := ".temp"
+
+    // check if tempDir exists
+    if _, err := os.Stat(tempDir); os.IsNotExist(err) {
+        return "", nil
+    }
+    if err := os.RemoveAll(tempDir); err != nil {
+        log.Fatal(err)
+        return "", err
+    }
 
     return "", nil
 }
@@ -131,7 +176,7 @@ func executePHPCommandForFile(tmpDir string, file string) {
 
     hash, err := getFileHash(file)
     if err != nil {
-        log.Printf("Erreur lors du calcul du hachage du fichier %s : %v\n", file, err)
+        log.Printf("Cannot get hash for file %s : %v\n", file, err)
         return
     }
     outputFilePath := filepath.Join(tmpDir, hash + ".json")
@@ -141,20 +186,22 @@ func executePHPCommandForFile(tmpDir string, file string) {
         return
     }
 
-    cmd := exec.Command("php", "runner/php/vendor/nikic/php-parser/bin/php-parse", "--json-dump", file)
+    phpBinaryPath := getPHPBinaryPath()
+    command := phpBinaryPath + " .temp/runner/php/vendor/nikic/php-parser/bin/php-parse --json-dump " + file
+    cmd := exec.Command(phpBinaryPath, ".temp/runner/php/vendor/nikic/php-parser/bin/php-parse", "--json-dump", file)
 
     var out bytes.Buffer
     cmd.Stdout = io.MultiWriter(ioutil.Discard, &out)
 
     if err := cmd.Run(); err != nil {
-        log.Printf("Erreur lors de l'exécution de la commande pour %s : %v\n", file, err)
+        log.Printf("Cannot execute %s : %v\n", command, err)
         return
     }
 
     jsonBytes := out.Bytes()
 
     if err := ioutil.WriteFile(outputFilePath, jsonBytes, 0644); err != nil {
-        log.Printf("Erreur lors de la sauvegarde du fichier %s : %v\n", outputFilePath, err)
+        log.Printf("Cannot write file %s : %v\n", outputFilePath, err)
     }
 
     // Redirige la sortie de la commande vers /dev/null

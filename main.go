@@ -2,18 +2,19 @@ package main
 
 import (
     "fmt"
+    "embed"
     "log"
+    "bufio"
     "os"
     "github.com/urfave/cli/v2"
-    "go-php/src/hal/ast-metrics/components/Php"
-    "github.com/apoorvam/goterminal"
-    ct "github.com/daviddengcn/go-colortext"
+    "ast-metrics/src/hal/ast-metrics/components/Php"
+    "github.com/pterm/pterm"
 )
 
-func main() {
+//go:embed runner/php/vendor/*
+var enginPhpSources embed.FS
 
-    // get an instance of writer (terminal)
-    writer := goterminal.New(os.Stdout)
+func main() {
 
     app := &cli.App{
         Commands: []*cli.Command{
@@ -23,26 +24,56 @@ func main() {
                 Usage:   "Start analyzing the project",
                 Action: func(cCtx *cli.Context) error {
 
-                    // Ensure PHP is installed
-                    fmt.Fprintln(writer, "Checking PHP version... ")
-                    writer.Print()
+                    // Cli app
+                    outWriter := bufio.NewWriter(os.Stdout)
+                    pterm.DefaultBasicText.Println(pterm.LightMagenta(" AST Metrics ") + "is a language-agnostic static code analyzer.")
 
-                    phpVersion, err := Php.Ensure()
-                    writer.Clear()
-                    writer.Reset()
-
-                    if err != nil {
-                        ct.Foreground(ct.Red, false)
-                        fmt.Fprintln(writer, err.Error())
-                        writer.Print()
-                        ct.ResetColor()
+                    // Valide args
+                    if cCtx.Args().Len() == 0 {
+                        pterm.Error.Println("Please provide a path to analyze")
+                        return nil
                     }
 
-                    log.Println("PHP version: ", phpVersion)
+                    // Prepare progress bars
+                    multi := pterm.DefaultMultiPrinter.WithWriter(outWriter)
+                    spinnerLiveText, _ := pterm.DefaultSpinner.Start("Analyzing project...")
 
-                    path := cCtx.Args().First()
-                    Php.DumpAST(writer, path)
+                    progressBarGlobal := pterm.DefaultMultiPrinter
+                    pb1, _ := pterm.DefaultSpinner.WithWriter(multi.NewWriter()).Start("Checking PHP Engine")
+                    pb2, _ := pterm.DefaultSpinner.WithWriter(multi.NewWriter()).Start("Parsing PHP files")
+                    multi.Start()
 
+                    // Ensure engines are installed
+                    // @todo: make engine dynamic, and loop through all engines
+                    _, err := Php.Ensure(pb1, enginPhpSources)
+                    if err != nil {
+                        pterm.Error.Println(err.Error())
+                        return err
+                    }
+
+
+                    // Dump ASTs (in parallel)
+                    done := make(chan struct{})
+                        go func() {
+                            path := cCtx.Args().First()
+                            Php.DumpAST(pb2, path)
+                            close(done)
+                        }()
+                    <-done
+
+                    // Cleaning up
+                    // @todo: make engine dynamic, and loop through all engines
+                    _, err = Php.Finish(pb1, enginPhpSources)
+                    if err != nil {
+                        pterm.Error.Println(err.Error())
+                        return err
+                    }
+
+                    // Wait for all sub-processes to finish
+                    outWriter.Flush()
+                    progressBarGlobal.Stop()
+
+                    spinnerLiveText.Success("Finished")
                     return nil
                 },
             },
@@ -51,7 +82,7 @@ func main() {
                 Aliases: []string{"i"},
                 Usage:   "Creates a config file",
                 Action: func(cCtx *cli.Context) error {
-                    fmt.Println("completed task: ", cCtx.Args().First())
+                    fmt.Println("@todo")
                     return nil
                 },
             },
