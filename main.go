@@ -9,6 +9,7 @@ import (
     "github.com/halleck45/ast-metrics/src/Php"
     "github.com/pterm/pterm"
     "github.com/halleck45/ast-metrics/src/Storage"
+    "github.com/halleck45/ast-metrics/src/Analyzer"
 )
 
 //go:embed runner/php/vendor/* runner/php/generated/* runner/php/dump.php
@@ -44,6 +45,7 @@ func main() {
                     progressBarGlobal := pterm.DefaultMultiPrinter
                     pb1, _ := pterm.DefaultSpinner.WithWriter(multi.NewWriter()).Start("Checking PHP Engine")
                     pb2, _ := pterm.DefaultSpinner.WithWriter(multi.NewWriter()).Start("Parsing PHP files")
+                    pbAnalaysis1, _ := pterm.DefaultSpinner.WithWriter(multi.NewWriter()).Start("Main analysis")
                     multi.Start()
 
                     // Ensure engines are installed
@@ -53,7 +55,6 @@ func main() {
                         pterm.Error.Println(err.Error())
                         return err
                     }
-
 
                     // Dump ASTs (in parallel)
                     done := make(chan struct{})
@@ -75,6 +76,11 @@ func main() {
                     // Wait for all sub-processes to finish
                     outWriter.Flush()
                     progressBarGlobal.Stop()
+
+                    // Now we start the analysis
+                    spinnerLiveText.UpdateText("Analyzing project...")
+                    Analyzer.Start(pbAnalaysis1)
+
 
                     spinnerLiveText.Success("Finished")
                     return nil
