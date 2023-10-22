@@ -11,7 +11,7 @@ import (
     "github.com/halleck45/ast-metrics/src/Storage"
 )
 
-//go:embed runner/php/vendor/*
+//go:embed runner/php/vendor/* runner/php/generated/* runner/php/dump.php
 var enginPhpSources embed.FS
 
 func main() {

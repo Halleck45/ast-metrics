@@ -15,6 +15,12 @@ message Stmts {
   repeated Stmt stmts = 1;
 }
 
+// Represents a file
+message File {
+  string path = 1;
+  Stmts stmts = 2;
+}
+
 // Represents a statement node.
 message Stmt {
     StmtLocationInFile attributes = 1;
@@ -26,6 +32,10 @@ message Stmt {
         StmtTrait stmtTrait = 5;
         StmtUse stmtUse = 6;
         StmtNamespace stmtNamespace = 7;
+        StmtDecisionIf stmtDecisionIf = 8;
+        StmtDecisionElseIf stmtDecisionElseIf = 9;
+        StmtDecisionElse stmtDecisionElse = 10;
+        StmtDecisionCase stmtDecisionCase = 11;
     }
 }
 
@@ -77,4 +87,30 @@ message StmtTrait {
   Name name = 1;
   Stmts stmts = 2;
   StmtLocationInFile location = 3;
+}
+
+
+// Represents a decision (IF)
+message StmtDecisionIf {
+    Stmts stmts = 1;
+    StmtLocationInFile location = 2;
+}
+
+// Represents a decision (ELSEIF)
+message StmtDecisionElseIf {
+    Stmts stmts = 1;
+    StmtLocationInFile location = 2;
+}
+
+
+// Represents a decision (ELSE)
+message StmtDecisionElse {
+    Stmts stmts = 1;
+    StmtLocationInFile location = 2;
+}
+
+// Represents a decision (CASE)
+message StmtDecisionCase {
+    Stmts stmts = 1;
+    StmtLocationInFile location = 2;
 }

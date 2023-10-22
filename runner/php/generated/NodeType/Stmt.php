@@ -35,6 +35,10 @@ class Stmt extends \Google\Protobuf\Internal\Message
      *     @type \NodeType\StmtTrait $stmtTrait
      *     @type \NodeType\StmtUse $stmtUse
      *     @type \NodeType\StmtNamespace $stmtNamespace
+     *     @type \NodeType\StmtDecisionIf $stmtDecisionIf
+     *     @type \NodeType\StmtDecisionElseIf $stmtDecisionElseIf
+     *     @type \NodeType\StmtDecisionElse $stmtDecisionElse
+     *     @type \NodeType\StmtDecisionCase $stmtDecisionCase
      * }
      */
     public function __construct($data = NULL) {
@@ -236,6 +240,114 @@ class Stmt extends \Google\Protobuf\Internal\Message
     {
         GPBUtil::checkMessage($var, \NodeType\StmtNamespace::class);
         $this->writeOneof(7, $var);
+
+        return $this;
+    }
+
+    /**
+     * Generated from protobuf field <code>.NodeType.StmtDecisionIf stmtDecisionIf = 8;</code>
+     * @return \NodeType\StmtDecisionIf|null
+     */
+    public function getStmtDecisionIf()
+    {
+        return $this->readOneof(8);
+    }
+
+    public function hasStmtDecisionIf()
+    {
+        return $this->hasOneof(8);
+    }
+
+    /**
+     * Generated from protobuf field <code>.NodeType.StmtDecisionIf stmtDecisionIf = 8;</code>
+     * @param \NodeType\StmtDecisionIf $var
+     * @return $this
+     */
+    public function setStmtDecisionIf($var)
+    {
+        GPBUtil::checkMessage($var, \NodeType\StmtDecisionIf::class);
+        $this->writeOneof(8, $var);
+
+        return $this;
+    }
+
+    /**
+     * Generated from protobuf field <code>.NodeType.StmtDecisionElseIf stmtDecisionElseIf = 9;</code>
+     * @return \NodeType\StmtDecisionElseIf|null
+     */
+    public function getStmtDecisionElseIf()
+    {
+        return $this->readOneof(9);
+    }
+
+    public function hasStmtDecisionElseIf()
+    {
+        return $this->hasOneof(9);
+    }
+
+    /**
+     * Generated from protobuf field <code>.NodeType.StmtDecisionElseIf stmtDecisionElseIf = 9;</code>
+     * @param \NodeType\StmtDecisionElseIf $var
+     * @return $this
+     */
+    public function setStmtDecisionElseIf($var)
+    {
+        GPBUtil::checkMessage($var, \NodeType\StmtDecisionElseIf::class);
+        $this->writeOneof(9, $var);
+
+        return $this;
+    }
+
+    /**
+     * Generated from protobuf field <code>.NodeType.StmtDecisionElse stmtDecisionElse = 10;</code>
+     * @return \NodeType\StmtDecisionElse|null
+     */
+    public function getStmtDecisionElse()
+    {
+        return $this->readOneof(10);
+    }
+
+    public function hasStmtDecisionElse()
+    {
+        return $this->hasOneof(10);
+    }
+
+    /**
+     * Generated from protobuf field <code>.NodeType.StmtDecisionElse stmtDecisionElse = 10;</code>
+     * @param \NodeType\StmtDecisionElse $var
+     * @return $this
+     */
+    public function setStmtDecisionElse($var)
+    {
+        GPBUtil::checkMessage($var, \NodeType\StmtDecisionElse::class);
+        $this->writeOneof(10, $var);
+
+        return $this;
+    }
+
+    /**
+     * Generated from protobuf field <code>.NodeType.StmtDecisionCase stmtDecisionCase = 11;</code>
+     * @return \NodeType\StmtDecisionCase|null
+     */
+    public function getStmtDecisionCase()
+    {
+        return $this->readOneof(11);
+    }
+
+    public function hasStmtDecisionCase()
+    {
+        return $this->hasOneof(11);
+    }
+
+    /**
+     * Generated from protobuf field <code>.NodeType.StmtDecisionCase stmtDecisionCase = 11;</code>
+     * @param \NodeType\StmtDecisionCase $var
+     * @return $this
+     */
+    public function setStmtDecisionCase($var)
+    {
+        GPBUtil::checkMessage($var, \NodeType\StmtDecisionCase::class);
+        $this->writeOneof(11, $var);
 
         return $this;
     }

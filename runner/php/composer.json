@@ -1,5 +1,6 @@
 {
   "require": {
-    "nikic/php-parser": "^4.17"
+    "nikic/php-parser": "^4.17",
+    "google/protobuf": "^3.24"
   }
 }

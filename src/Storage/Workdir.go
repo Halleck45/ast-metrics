@@ -11,7 +11,7 @@ func Path() string {
     if err != nil {
         panic(err)
     }
-    workDir = filepath.Join(workDir, ".ast-metrics")
+    workDir = filepath.Join(workDir, ".ast-metrics-cache")
 
     return workDir
 }
