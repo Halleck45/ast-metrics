@@ -32,8 +32,8 @@ func Ensure(progressbar *pterm.SpinnerPrinter, phpSources embed.FS ) (string, er
         log.Fatal(err)
     }
 
-    // Extract PHP sources for directories "runner/php/vendor", "runner/php/generated" and file "runner/php/dump.php"
-    if err := fs.WalkDir(phpSources, "runner/php", func(path string, d fs.DirEntry, err error) error {
+    // Extract PHP sources for directories "engine/php/vendor", etc
+    if err := fs.WalkDir(phpSources, "engine/php", func(path string, d fs.DirEntry, err error) error {
         if d.Type().IsRegular() {
             content, err := phpSources.ReadFile(path)
             if err != nil {
@@ -179,7 +179,7 @@ func executePHPCommandForFile(tmpDir string, file string) {
     }
 
     phpBinaryPath := getPHPBinaryPath()
-    cmd := exec.Command(phpBinaryPath, ".temp/runner/php/dump.php", file)
+    cmd := exec.Command(phpBinaryPath, ".temp/engine/php/dump.php", file)
     cmd.Env = os.Environ()
     cmd.Env = append(cmd.Env, "OUTPUT_FORMAT=binary")
     var out bytes.Buffer

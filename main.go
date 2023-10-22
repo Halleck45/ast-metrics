@@ -12,7 +12,7 @@ import (
     "github.com/halleck45/ast-metrics/src/Analyzer"
 )
 
-//go:embed runner/php/vendor/* runner/php/generated/* runner/php/dump.php
+//go:embed engine/php/vendor/* engine/php/generated/* engine/php/dump.php
 var enginPhpSources embed.FS
 
 func main() {
