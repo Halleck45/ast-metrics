@@ -16,6 +16,10 @@ use Google\Protobuf\Internal\GPBUtil;
 class Stmts extends \Google\Protobuf\Internal\Message
 {
     /**
+     * Generated from protobuf field <code>.NodeType.Analyze analyze = 1;</code>
+     */
+    protected $analyze = null;
+    /**
      * Append here all the possible statements
      *
      * Generated from protobuf field <code>repeated .NodeType.StmtClass stmtClass = 2;</code>
@@ -57,6 +61,10 @@ class Stmts extends \Google\Protobuf\Internal\Message
      * Generated from protobuf field <code>repeated .NodeType.StmtDecisionCase stmtDecisionCase = 11;</code>
      */
     private $stmtDecisionCase;
+    /**
+     * Generated from protobuf field <code>repeated .NodeType.StmtLoop stmtLoop = 12;</code>
+     */
+    private $stmtLoop;
 
     /**
      * Constructor.
@@ -64,6 +72,7 @@ class Stmts extends \Google\Protobuf\Internal\Message
      * @param array $data {
      *     Optional. Data for populating the Message object.
      *
+     *     @type \NodeType\Analyze $analyze
      *     @type array<\NodeType\StmtClass>|\Google\Protobuf\Internal\RepeatedField $stmtClass
      *           Append here all the possible statements
      *     @type array<\NodeType\StmtFunction>|\Google\Protobuf\Internal\RepeatedField $stmtFunction
@@ -75,11 +84,44 @@ class Stmts extends \Google\Protobuf\Internal\Message
      *     @type array<\NodeType\StmtDecisionElseIf>|\Google\Protobuf\Internal\RepeatedField $stmtDecisionElseIf
      *     @type array<\NodeType\StmtDecisionElse>|\Google\Protobuf\Internal\RepeatedField $stmtDecisionElse
      *     @type array<\NodeType\StmtDecisionCase>|\Google\Protobuf\Internal\RepeatedField $stmtDecisionCase
+     *     @type array<\NodeType\StmtLoop>|\Google\Protobuf\Internal\RepeatedField $stmtLoop
      * }
      */
     public function __construct($data = NULL) {
         \GPBMetadata\Proto\NodeType::initOnce();
         parent::__construct($data);
+    }
+
+    /**
+     * Generated from protobuf field <code>.NodeType.Analyze analyze = 1;</code>
+     * @return \NodeType\Analyze|null
+     */
+    public function getAnalyze()
+    {
+        return $this->analyze;
+    }
+
+    public function hasAnalyze()
+    {
+        return isset($this->analyze);
+    }
+
+    public function clearAnalyze()
+    {
+        unset($this->analyze);
+    }
+
+    /**
+     * Generated from protobuf field <code>.NodeType.Analyze analyze = 1;</code>
+     * @param \NodeType\Analyze $var
+     * @return $this
+     */
+    public function setAnalyze($var)
+    {
+        GPBUtil::checkMessage($var, \NodeType\Analyze::class);
+        $this->analyze = $var;
+
+        return $this;
     }
 
     /**
@@ -302,6 +344,28 @@ class Stmts extends \Google\Protobuf\Internal\Message
     {
         $arr = GPBUtil::checkRepeatedField($var, \Google\Protobuf\Internal\GPBType::MESSAGE, \NodeType\StmtDecisionCase::class);
         $this->stmtDecisionCase = $arr;
+
+        return $this;
+    }
+
+    /**
+     * Generated from protobuf field <code>repeated .NodeType.StmtLoop stmtLoop = 12;</code>
+     * @return \Google\Protobuf\Internal\RepeatedField
+     */
+    public function getStmtLoop()
+    {
+        return $this->stmtLoop;
+    }
+
+    /**
+     * Generated from protobuf field <code>repeated .NodeType.StmtLoop stmtLoop = 12;</code>
+     * @param array<\NodeType\StmtLoop>|\Google\Protobuf\Internal\RepeatedField $var
+     * @return $this
+     */
+    public function setStmtLoop($var)
+    {
+        $arr = GPBUtil::checkRepeatedField($var, \Google\Protobuf\Internal\GPBType::MESSAGE, \NodeType\StmtLoop::class);
+        $this->stmtLoop = $arr;
 
         return $this;
     }

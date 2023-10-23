@@ -12,6 +12,7 @@ message Name {
 
 // Represents a list of statements.
 message Stmts {
+  Analyze analyze = 1;
   // Append here all the possible statements
   repeated StmtClass stmtClass = 2;
   repeated StmtFunction stmtFunction = 3;
@@ -23,6 +24,7 @@ message Stmts {
   repeated StmtDecisionElseIf stmtDecisionElseIf = 9;
   repeated StmtDecisionElse stmtDecisionElse = 10;
   repeated StmtDecisionCase stmtDecisionCase = 11;
+  repeated StmtLoop stmtLoop = 12;
 }
 
 // Represents a file
@@ -105,4 +107,18 @@ message StmtDecisionElse {
 message StmtDecisionCase {
     Stmts stmts = 1;
     StmtLocationInFile location = 2;
+}
+
+// Represents a loop (FOR, FOREACH, WHILE)
+message StmtLoop {
+    Stmts stmts = 1;
+    StmtLocationInFile location = 2;
+}
+
+
+message Analyze {
+  Complexity complexity = 1;
+}
+message Complexity {
+  optional int32 cyclomatic = 1;
 }

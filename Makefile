@@ -6,7 +6,7 @@ ARCHITECTURE=linux-x86_64
 install: install-php install-protobuff
 install-php:
 	@echo "\e[34m\033[1m-> Downloading PHP dependencies\033[0m\e[39m\n"
-	cd runner/php && composer install
+	cd engine/php && composer install
 	@echo "\e[34m\033[1mDONE \033[0m\e[39m\n"
 install-protobuff:
 	@echo "\e[34m\033[1m-> Downloading protobuff\033[0m\e[39m\n"
@@ -19,7 +19,7 @@ install-protobuff:
 	go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@latest
 	go install github.com/golang/protobuf/protoc-gen-go
 	@echo "\e[34m\033[1mDONE \033[0m\e[39m\n"
-build-protobuff: install-protobuff
+build-protobuff:
 	@echo "\e[34m\033[1m-> Building protobuff\033[0m\e[39m\n"
 	rm -rf src/NodeType engine/php/generated || true
 	mkdir src/NodeType engine/php/generated
