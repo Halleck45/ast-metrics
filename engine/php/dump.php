@@ -55,39 +55,39 @@ $stmts = $parser->parse($code);
  * @param \NodeType\Stmt $parent
  * @return \NodeType\StmtClass|\NodeType\StmtFunction|\NodeType\StmtNamespace|null
  */
-function stmtToProto(\PhpParser\Node\Stmt $stmt, \NodeType\Stmt $parent) {
+function stmtToProto(\PhpParser\Node\Stmt $stmt, \NodeType\Stmts $parent) {
 
     // Here is the list of supported statements
     // We factory the corresponding proto node for each of them
     switch(get_class($stmt)) {
         case \PhpParser\Node\Stmt\Namespace_::class:
             $protoNode = new \NodeType\StmtNamespace();
-            $parent->setStmtNamespace($protoNode);
+            $parent->getStmtNamespace()[] = $protoNode;
             break;
         case \PhpParser\Node\Stmt\Class_::class:
             $protoNode = new \NodeType\StmtClass();
-            $parent->setStmtClass($protoNode);
+            $parent->getStmtClass()[] = $protoNode;
             break;
         case \PhpParser\Node\Stmt\Function_::class:
         case \PhpParser\Node\Stmt\ClassMethod::class:
             $protoNode = new \NodeType\StmtFunction();
-            $parent->setStmtFunction($protoNode);
+            $parent->getStmtFunction()[] = $protoNode;
             break;
         case \PhpParser\Node\Stmt\If_::class:
             $protoNode = new \NodeType\StmtDecisionIf();
-            $parent->setStmtDecisionIf($protoNode);
+            $parent->getStmtDecisionIf()[] = $protoNode;
             break;
         case \PhpParser\Node\Stmt\ElseIf_::class:
             $protoNode = new \NodeType\StmtDecisionElseIf();
-            $parent->setStmtDecisionElseIf($protoNode);
+            $parent->getStmtDecisionElseIf()[] = $protoNode;
             break;
         case \PhpParser\Node\Stmt\Else_::class:
             $protoNode = new \NodeType\StmtDecisionElse();
-            $parent->setStmtDecisionElse($protoNode);
+            $parent->getStmtDecisionElse()[] = $protoNode;
             break;
         case \PhpParser\Node\Stmt\Case_::class:
             $protoNode = new \NodeType\StmtDecisionCase();
-            $parent->setStmtDecisionCase($protoNode);
+            $parent->getStmtDecisionCase()[] = $protoNode;
             break;
         default:
             // not supported yet
@@ -119,17 +119,9 @@ function stmtToProto(\PhpParser\Node\Stmt $stmt, \NodeType\Stmt $parent) {
         $stmts = (array) $stmt->stmts;
         $protoStmts = new \NodeType\Stmts();
         $protoNode->setStmts($protoStmts);
-        $subs = [];
         foreach($stmts as $stmt) {
-            $protoStmt = new \NodeType\Stmt();
-            $added = stmtToProto($stmt, $protoStmt);
-            if(!$added) {
-                continue;
-            }
-            $subs[] = $protoStmt;
+            stmtToProto($stmt, $protoStmts);
         }
-        $protoStmts->setStmts($subs);
-        $protoNode->setStmts($protoStmts);
     }
 
     return $protoNode;
@@ -143,18 +135,10 @@ $fileNode->setStmts($protoStmts);
 $subs = [];
 foreach($stmts as $stmt) {
 
-    $nodeStmt = new \NodeType\Stmt();
-
     // convert to proto
-    $added = stmtToProto($stmt, $nodeStmt);
-    if(!$added) {
-        continue;
-    }
-
-    $subs[] = $nodeStmt;
+    stmtToProto($stmt, $protoStmts);
 }
 
-$protoStmts->setStmts($subs);
 $format = getenv('OUTPUT_FORMAT') ?: 'binary';
 switch($format) {
 

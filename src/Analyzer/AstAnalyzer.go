@@ -12,7 +12,6 @@ import (
     "github.com/golang/protobuf/proto"
     "github.com/pterm/pterm"
     "github.com/yargevad/filepathx"
-    "reflect"
 )
 
 func Start(progressbar *pterm.SpinnerPrinter) {
@@ -80,10 +79,6 @@ func executeFileAnalysis(file string) {
         log.Fatalln("Failed to parse address pbFile:", err)
     }
 
-    // pbFile is as NodeType.File struct
-    // We can calculate metrics on it
-    // fmt.Println(pbFile.Path)
-
     root := &ASTNode{children: pbFile.Stmts}
     cyclomaticVisitor := &ComplexityVisitor{}
     root.Accept(cyclomaticVisitor)
@@ -92,39 +87,48 @@ func executeFileAnalysis(file string) {
     complexity := cyclomaticVisitor.GetComplexity()
 
     if complexity > 0 {
-    fmt.Println("La complexité cyclomatique de " + pbFile.Path + " est de " + strconv.Itoa(complexity))
+        fmt.Println("Cyclomatic complexity of " + pbFile.Path + " is " + strconv.Itoa(complexity))
     }
 }
 
 type Visitor interface {
-    Visit(node *ASTNode)
+    Visit(stmts *pb.Stmts)
 }
 
 type ComplexityVisitor struct {
     complexity int
 }
-func (v *ComplexityVisitor) Visit(node *ASTNode) {
-    for _, child := range node.children.Stmts {
-        // if node.children has attribute "Stmts", it's a node with children. Iterate over it
-        // check if attribute "Stmts" exists, using reflect
-        fmt.Println(child.String())
-        dynamicStmts := reflect.ValueOf(child).Elem().FieldByName("Stmts")
-        fmt.Println(dynamicStmts)
-        if dynamicStmts != (reflect.Value{}) {
-            childNode := &ASTNode{children: dynamicStmts.Interface().(*pb.Stmts)}
-            childNode.Accept(v)
+func (v *ComplexityVisitor) Visit(stmts *pb.Stmts) {
+    // get Stmts
 
-            fmt.Println(child)
-            v.Visit(childNode)
-        } else {
-
-            // if type is pb.StmtDecisionIf, using dynamicStmts
-            if child.GetStmtDecisionIf() != nil {
-                v.complexity++
-            }
-        }
-
+    // foreach type of statements
+    for _, stmt := range stmts.StmtClass {
+        v.Visit(stmt.Stmts)
     }
+    for _, stmt := range stmts.StmtNamespace {
+        v.Visit(stmt.Stmts)
+    }
+    for _, stmt := range stmts.StmtFunction {
+        v.Visit(stmt.Stmts)
+    }
+    for _, stmt := range stmts.StmtTrait {
+        v.Visit(stmt.Stmts)
+    }
+    for _, stmt := range stmts.StmtDecisionIf {
+        v.Visit(stmt.Stmts)
+    }
+    for _, stmt := range stmts.StmtDecisionElseIf {
+        v.Visit(stmt.Stmts)
+    }
+    for _, stmt := range stmts.StmtDecisionElse {
+        v.Visit(stmt.Stmts)
+    }
+    for _, stmt := range stmts.StmtDecisionCase {
+        v.Visit(stmt.Stmts)
+    }
+
+    // count if
+    v.complexity += len(stmts.StmtDecisionIf) + len(stmts.StmtDecisionElseIf) + len(stmts.StmtDecisionElse) + len(stmts.StmtDecisionCase)
 }
 func (v *ComplexityVisitor) GetComplexity() int {
 	return v.complexity
@@ -142,7 +146,8 @@ func (n *ASTNode) Accept(visitor Visitor) {
 }
 
 func (n *ASTNode) Visit() {
+    // todo: faire le parent aussi
 	for _, v := range n.Visitors {
-        v.Visit(n)
+        v.Visit(n.children)
     }
 }
