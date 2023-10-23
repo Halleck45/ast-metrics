@@ -16,9 +16,55 @@ use Google\Protobuf\Internal\GPBUtil;
 class Stmts extends \Google\Protobuf\Internal\Message
 {
     /**
-     * Generated from protobuf field <code>repeated .NodeType.Stmt stmts = 1;</code>
+     * Generated from protobuf field <code>.NodeType.Analyze analyze = 1;</code>
      */
-    private $stmts;
+    protected $analyze = null;
+    /**
+     * Append here all the possible statements
+     *
+     * Generated from protobuf field <code>repeated .NodeType.StmtClass stmtClass = 2;</code>
+     */
+    private $stmtClass;
+    /**
+     * Generated from protobuf field <code>repeated .NodeType.StmtFunction stmtFunction = 3;</code>
+     */
+    private $stmtFunction;
+    /**
+     * Generated from protobuf field <code>repeated .NodeType.StmtInterface stmtInterface = 4;</code>
+     */
+    private $stmtInterface;
+    /**
+     * Generated from protobuf field <code>repeated .NodeType.StmtTrait stmtTrait = 5;</code>
+     */
+    private $stmtTrait;
+    /**
+     * Generated from protobuf field <code>repeated .NodeType.StmtUse stmtUse = 6;</code>
+     */
+    private $stmtUse;
+    /**
+     * Generated from protobuf field <code>repeated .NodeType.StmtNamespace stmtNamespace = 7;</code>
+     */
+    private $stmtNamespace;
+    /**
+     * Generated from protobuf field <code>repeated .NodeType.StmtDecisionIf stmtDecisionIf = 8;</code>
+     */
+    private $stmtDecisionIf;
+    /**
+     * Generated from protobuf field <code>repeated .NodeType.StmtDecisionElseIf stmtDecisionElseIf = 9;</code>
+     */
+    private $stmtDecisionElseIf;
+    /**
+     * Generated from protobuf field <code>repeated .NodeType.StmtDecisionElse stmtDecisionElse = 10;</code>
+     */
+    private $stmtDecisionElse;
+    /**
+     * Generated from protobuf field <code>repeated .NodeType.StmtDecisionCase stmtDecisionCase = 11;</code>
+     */
+    private $stmtDecisionCase;
+    /**
+     * Generated from protobuf field <code>repeated .NodeType.StmtLoop stmtLoop = 12;</code>
+     */
+    private $stmtLoop;
 
     /**
      * Constructor.
@@ -26,7 +72,19 @@ class Stmts extends \Google\Protobuf\Internal\Message
      * @param array $data {
      *     Optional. Data for populating the Message object.
      *
-     *     @type array<\NodeType\Stmt>|\Google\Protobuf\Internal\RepeatedField $stmts
+     *     @type \NodeType\Analyze $analyze
+     *     @type array<\NodeType\StmtClass>|\Google\Protobuf\Internal\RepeatedField $stmtClass
+     *           Append here all the possible statements
+     *     @type array<\NodeType\StmtFunction>|\Google\Protobuf\Internal\RepeatedField $stmtFunction
+     *     @type array<\NodeType\StmtInterface>|\Google\Protobuf\Internal\RepeatedField $stmtInterface
+     *     @type array<\NodeType\StmtTrait>|\Google\Protobuf\Internal\RepeatedField $stmtTrait
+     *     @type array<\NodeType\StmtUse>|\Google\Protobuf\Internal\RepeatedField $stmtUse
+     *     @type array<\NodeType\StmtNamespace>|\Google\Protobuf\Internal\RepeatedField $stmtNamespace
+     *     @type array<\NodeType\StmtDecisionIf>|\Google\Protobuf\Internal\RepeatedField $stmtDecisionIf
+     *     @type array<\NodeType\StmtDecisionElseIf>|\Google\Protobuf\Internal\RepeatedField $stmtDecisionElseIf
+     *     @type array<\NodeType\StmtDecisionElse>|\Google\Protobuf\Internal\RepeatedField $stmtDecisionElse
+     *     @type array<\NodeType\StmtDecisionCase>|\Google\Protobuf\Internal\RepeatedField $stmtDecisionCase
+     *     @type array<\NodeType\StmtLoop>|\Google\Protobuf\Internal\RepeatedField $stmtLoop
      * }
      */
     public function __construct($data = NULL) {
@@ -35,23 +93,279 @@ class Stmts extends \Google\Protobuf\Internal\Message
     }
 
     /**
-     * Generated from protobuf field <code>repeated .NodeType.Stmt stmts = 1;</code>
-     * @return \Google\Protobuf\Internal\RepeatedField
+     * Generated from protobuf field <code>.NodeType.Analyze analyze = 1;</code>
+     * @return \NodeType\Analyze|null
      */
-    public function getStmts()
+    public function getAnalyze()
     {
-        return $this->stmts;
+        return $this->analyze;
+    }
+
+    public function hasAnalyze()
+    {
+        return isset($this->analyze);
+    }
+
+    public function clearAnalyze()
+    {
+        unset($this->analyze);
     }
 
     /**
-     * Generated from protobuf field <code>repeated .NodeType.Stmt stmts = 1;</code>
-     * @param array<\NodeType\Stmt>|\Google\Protobuf\Internal\RepeatedField $var
+     * Generated from protobuf field <code>.NodeType.Analyze analyze = 1;</code>
+     * @param \NodeType\Analyze $var
      * @return $this
      */
-    public function setStmts($var)
+    public function setAnalyze($var)
     {
-        $arr = GPBUtil::checkRepeatedField($var, \Google\Protobuf\Internal\GPBType::MESSAGE, \NodeType\Stmt::class);
-        $this->stmts = $arr;
+        GPBUtil::checkMessage($var, \NodeType\Analyze::class);
+        $this->analyze = $var;
+
+        return $this;
+    }
+
+    /**
+     * Append here all the possible statements
+     *
+     * Generated from protobuf field <code>repeated .NodeType.StmtClass stmtClass = 2;</code>
+     * @return \Google\Protobuf\Internal\RepeatedField
+     */
+    public function getStmtClass()
+    {
+        return $this->stmtClass;
+    }
+
+    /**
+     * Append here all the possible statements
+     *
+     * Generated from protobuf field <code>repeated .NodeType.StmtClass stmtClass = 2;</code>
+     * @param array<\NodeType\StmtClass>|\Google\Protobuf\Internal\RepeatedField $var
+     * @return $this
+     */
+    public function setStmtClass($var)
+    {
+        $arr = GPBUtil::checkRepeatedField($var, \Google\Protobuf\Internal\GPBType::MESSAGE, \NodeType\StmtClass::class);
+        $this->stmtClass = $arr;
+
+        return $this;
+    }
+
+    /**
+     * Generated from protobuf field <code>repeated .NodeType.StmtFunction stmtFunction = 3;</code>
+     * @return \Google\Protobuf\Internal\RepeatedField
+     */
+    public function getStmtFunction()
+    {
+        return $this->stmtFunction;
+    }
+
+    /**
+     * Generated from protobuf field <code>repeated .NodeType.StmtFunction stmtFunction = 3;</code>
+     * @param array<\NodeType\StmtFunction>|\Google\Protobuf\Internal\RepeatedField $var
+     * @return $this
+     */
+    public function setStmtFunction($var)
+    {
+        $arr = GPBUtil::checkRepeatedField($var, \Google\Protobuf\Internal\GPBType::MESSAGE, \NodeType\StmtFunction::class);
+        $this->stmtFunction = $arr;
+
+        return $this;
+    }
+
+    /**
+     * Generated from protobuf field <code>repeated .NodeType.StmtInterface stmtInterface = 4;</code>
+     * @return \Google\Protobuf\Internal\RepeatedField
+     */
+    public function getStmtInterface()
+    {
+        return $this->stmtInterface;
+    }
+
+    /**
+     * Generated from protobuf field <code>repeated .NodeType.StmtInterface stmtInterface = 4;</code>
+     * @param array<\NodeType\StmtInterface>|\Google\Protobuf\Internal\RepeatedField $var
+     * @return $this
+     */
+    public function setStmtInterface($var)
+    {
+        $arr = GPBUtil::checkRepeatedField($var, \Google\Protobuf\Internal\GPBType::MESSAGE, \NodeType\StmtInterface::class);
+        $this->stmtInterface = $arr;
+
+        return $this;
+    }
+
+    /**
+     * Generated from protobuf field <code>repeated .NodeType.StmtTrait stmtTrait = 5;</code>
+     * @return \Google\Protobuf\Internal\RepeatedField
+     */
+    public function getStmtTrait()
+    {
+        return $this->stmtTrait;
+    }
+
+    /**
+     * Generated from protobuf field <code>repeated .NodeType.StmtTrait stmtTrait = 5;</code>
+     * @param array<\NodeType\StmtTrait>|\Google\Protobuf\Internal\RepeatedField $var
+     * @return $this
+     */
+    public function setStmtTrait($var)
+    {
+        $arr = GPBUtil::checkRepeatedField($var, \Google\Protobuf\Internal\GPBType::MESSAGE, \NodeType\StmtTrait::class);
+        $this->stmtTrait = $arr;
+
+        return $this;
+    }
+
+    /**
+     * Generated from protobuf field <code>repeated .NodeType.StmtUse stmtUse = 6;</code>
+     * @return \Google\Protobuf\Internal\RepeatedField
+     */
+    public function getStmtUse()
+    {
+        return $this->stmtUse;
+    }
+
+    /**
+     * Generated from protobuf field <code>repeated .NodeType.StmtUse stmtUse = 6;</code>
+     * @param array<\NodeType\StmtUse>|\Google\Protobuf\Internal\RepeatedField $var
+     * @return $this
+     */
+    public function setStmtUse($var)
+    {
+        $arr = GPBUtil::checkRepeatedField($var, \Google\Protobuf\Internal\GPBType::MESSAGE, \NodeType\StmtUse::class);
+        $this->stmtUse = $arr;
+
+        return $this;
+    }
+
+    /**
+     * Generated from protobuf field <code>repeated .NodeType.StmtNamespace stmtNamespace = 7;</code>
+     * @return \Google\Protobuf\Internal\RepeatedField
+     */
+    public function getStmtNamespace()
+    {
+        return $this->stmtNamespace;
+    }
+
+    /**
+     * Generated from protobuf field <code>repeated .NodeType.StmtNamespace stmtNamespace = 7;</code>
+     * @param array<\NodeType\StmtNamespace>|\Google\Protobuf\Internal\RepeatedField $var
+     * @return $this
+     */
+    public function setStmtNamespace($var)
+    {
+        $arr = GPBUtil::checkRepeatedField($var, \Google\Protobuf\Internal\GPBType::MESSAGE, \NodeType\StmtNamespace::class);
+        $this->stmtNamespace = $arr;
+
+        return $this;
+    }
+
+    /**
+     * Generated from protobuf field <code>repeated .NodeType.StmtDecisionIf stmtDecisionIf = 8;</code>
+     * @return \Google\Protobuf\Internal\RepeatedField
+     */
+    public function getStmtDecisionIf()
+    {
+        return $this->stmtDecisionIf;
+    }
+
+    /**
+     * Generated from protobuf field <code>repeated .NodeType.StmtDecisionIf stmtDecisionIf = 8;</code>
+     * @param array<\NodeType\StmtDecisionIf>|\Google\Protobuf\Internal\RepeatedField $var
+     * @return $this
+     */
+    public function setStmtDecisionIf($var)
+    {
+        $arr = GPBUtil::checkRepeatedField($var, \Google\Protobuf\Internal\GPBType::MESSAGE, \NodeType\StmtDecisionIf::class);
+        $this->stmtDecisionIf = $arr;
+
+        return $this;
+    }
+
+    /**
+     * Generated from protobuf field <code>repeated .NodeType.StmtDecisionElseIf stmtDecisionElseIf = 9;</code>
+     * @return \Google\Protobuf\Internal\RepeatedField
+     */
+    public function getStmtDecisionElseIf()
+    {
+        return $this->stmtDecisionElseIf;
+    }
+
+    /**
+     * Generated from protobuf field <code>repeated .NodeType.StmtDecisionElseIf stmtDecisionElseIf = 9;</code>
+     * @param array<\NodeType\StmtDecisionElseIf>|\Google\Protobuf\Internal\RepeatedField $var
+     * @return $this
+     */
+    public function setStmtDecisionElseIf($var)
+    {
+        $arr = GPBUtil::checkRepeatedField($var, \Google\Protobuf\Internal\GPBType::MESSAGE, \NodeType\StmtDecisionElseIf::class);
+        $this->stmtDecisionElseIf = $arr;
+
+        return $this;
+    }
+
+    /**
+     * Generated from protobuf field <code>repeated .NodeType.StmtDecisionElse stmtDecisionElse = 10;</code>
+     * @return \Google\Protobuf\Internal\RepeatedField
+     */
+    public function getStmtDecisionElse()
+    {
+        return $this->stmtDecisionElse;
+    }
+
+    /**
+     * Generated from protobuf field <code>repeated .NodeType.StmtDecisionElse stmtDecisionElse = 10;</code>
+     * @param array<\NodeType\StmtDecisionElse>|\Google\Protobuf\Internal\RepeatedField $var
+     * @return $this
+     */
+    public function setStmtDecisionElse($var)
+    {
+        $arr = GPBUtil::checkRepeatedField($var, \Google\Protobuf\Internal\GPBType::MESSAGE, \NodeType\StmtDecisionElse::class);
+        $this->stmtDecisionElse = $arr;
+
+        return $this;
+    }
+
+    /**
+     * Generated from protobuf field <code>repeated .NodeType.StmtDecisionCase stmtDecisionCase = 11;</code>
+     * @return \Google\Protobuf\Internal\RepeatedField
+     */
+    public function getStmtDecisionCase()
+    {
+        return $this->stmtDecisionCase;
+    }
+
+    /**
+     * Generated from protobuf field <code>repeated .NodeType.StmtDecisionCase stmtDecisionCase = 11;</code>
+     * @param array<\NodeType\StmtDecisionCase>|\Google\Protobuf\Internal\RepeatedField $var
+     * @return $this
+     */
+    public function setStmtDecisionCase($var)
+    {
+        $arr = GPBUtil::checkRepeatedField($var, \Google\Protobuf\Internal\GPBType::MESSAGE, \NodeType\StmtDecisionCase::class);
+        $this->stmtDecisionCase = $arr;
+
+        return $this;
+    }
+
+    /**
+     * Generated from protobuf field <code>repeated .NodeType.StmtLoop stmtLoop = 12;</code>
+     * @return \Google\Protobuf\Internal\RepeatedField
+     */
+    public function getStmtLoop()
+    {
+        return $this->stmtLoop;
+    }
+
+    /**
+     * Generated from protobuf field <code>repeated .NodeType.StmtLoop stmtLoop = 12;</code>
+     * @param array<\NodeType\StmtLoop>|\Google\Protobuf\Internal\RepeatedField $var
+     * @return $this
+     */
+    public function setStmtLoop($var)
+    {
+        $arr = GPBUtil::checkRepeatedField($var, \Google\Protobuf\Internal\GPBType::MESSAGE, \NodeType\StmtLoop::class);
+        $this->stmtLoop = $arr;
 
         return $this;
     }

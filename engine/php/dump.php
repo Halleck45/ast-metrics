@@ -46,6 +46,77 @@ if (!file_exists($file)) {
 
 $code = file_get_contents($file);
 $stmts = $parser->parse($code);
+$prettyPrinter = new PhpParser\PrettyPrinter\Standard;
+$json = json_decode(json_encode($stmts), true);
+
+// This main node describe the file itself
+$fileNode = new \NodeType\File([
+    'path' => realpath($file),
+]);
+$protoStmts = new \NodeType\Stmts();
+$fileNode->setStmts($protoStmts);
+
+
+function stmtFactory($stmt) {
+    switch($stmt['nodeType']) {
+        case 'Stmt_Namespace':
+            $node = new \NodeType\StmtNamespace();
+            break;
+        case 'Stmt_Class':
+            $node = new \NodeType\StmtClass();
+            break;
+        case 'Stmt_Function':
+        case 'Stmt_ClassMethod':
+            $node = new \NodeType\StmtFunction();
+            break;
+        case 'Stmt_If':
+            $node = new \NodeType\StmtDecisionIf();
+            break;
+        case 'Stmt_ElseIf':
+            $node = new \NodeType\StmtDecisionElseIf();
+            break;
+        case 'Stmt_Else':
+            $node = new \NodeType\StmtDecisionElse();
+            break;
+        case 'Stmt_Case':
+            $node = new \NodeType\StmtDecisionCase();
+            break;
+        case 'Stmt_For':
+        case 'Stmt_Foreach':
+        case 'Stmt_While':
+            $node = new \NodeType\StmtLoop();
+            break;
+        default:
+            return null;
+    }
+
+    // Determine the name if the statement has one
+    if(isset($stmt['name'])){
+        $name = $stmt['name'];
+        $parts = $stmt['name']['parts'] ?? [];
+        if (!empty($parts)) {
+            $name = implode('', $stmt['name']['parts']);
+        }
+        if (!empty($stmt['name']['name'])) {
+            $name = $stmt['name']['name'];
+        }
+        $node->setName(new \NodeType\Name([
+            'short' => $name,
+            'qualified' => $name,
+        ]));
+    }
+
+    // Location (in code)
+    $location = new \NodeType\StmtLocationInFile([
+        'startLine' => $stmt['attributes']['startLine'],
+        'endLine' => $stmt['attributes']['endLine'],
+        'startFilePos' => $stmt['attributes']['startFilePos'],
+        'endFilePos' => $stmt['attributes']['endFilePos'],
+    ]);
+    $node->setLocation($location);
+
+    return $node;
+}
 
 
 /**
@@ -55,81 +126,33 @@ $stmts = $parser->parse($code);
  * @param \NodeType\Stmt $parent
  * @return \NodeType\StmtClass|\NodeType\StmtFunction|\NodeType\StmtNamespace|null
  */
-function stmtToProto(\PhpParser\Node\Stmt $stmt, \NodeType\Stmt $parent) {
-
-    // Here is the list of supported statements
-    // We factory the corresponding proto node for each of them
-    switch(get_class($stmt)) {
-        case \PhpParser\Node\Stmt\Namespace_::class:
-            $protoNode = new \NodeType\StmtNamespace();
-            $parent->setStmtNamespace($protoNode);
-            break;
-        case \PhpParser\Node\Stmt\Class_::class:
-            $protoNode = new \NodeType\StmtClass();
-            $parent->setStmtClass($protoNode);
-            break;
-        case \PhpParser\Node\Stmt\Function_::class:
-        case \PhpParser\Node\Stmt\ClassMethod::class:
-            $protoNode = new \NodeType\StmtFunction();
-            $parent->setStmtFunction($protoNode);
-            break;
-        case \PhpParser\Node\Stmt\If_::class:
-            $protoNode = new \NodeType\StmtDecisionIf();
-            $parent->setStmtDecisionIf($protoNode);
-            break;
-        case \PhpParser\Node\Stmt\ElseIf_::class:
-            $protoNode = new \NodeType\StmtDecisionElseIf();
-            $parent->setStmtDecisionElseIf($protoNode);
-            break;
-        case \PhpParser\Node\Stmt\Else_::class:
-            $protoNode = new \NodeType\StmtDecisionElse();
-            $parent->setStmtDecisionElse($protoNode);
-            break;
-        case \PhpParser\Node\Stmt\Case_::class:
-            $protoNode = new \NodeType\StmtDecisionCase();
-            $parent->setStmtDecisionCase($protoNode);
-            break;
-        default:
-            // not supported yet
-            if(getenv('DEBUG')) {
-                trigger_error("Not supported yet: " . get_class($stmt), E_USER_WARNING);
-            }
-            return null;
+function stmtToProto(array $stmt, \NodeType\Stmts $parent) {
+    $protoNode = stmtFactory($stmt);
+    if(!$protoNode) {
+        return null;
     }
+    $collection = 'get' . str_replace('NodeType\\', '', get_class($protoNode));
+    $parent->$collection()[] = $protoNode;
 
-    // Determine the name if the statement has one
-    if(isset($stmt->name)) {
-        $protoNode->setName(new \NodeType\Name([
-            'short' => $stmt->name->toString(),
-            'qualified' => $stmt->name->toString(),
-        ]));
-    }
-
-    // Location (in code)
-    $location = new \NodeType\StmtLocationInFile([
-        'startLine' => $stmt->getStartLine(),
-        'endLine' => $stmt->getEndLine(),
-        'startFilePos' => $stmt->getAttribute('startFilePos'),
-        'endFilePos' => $stmt->getAttribute('endFilePos'),
-    ]);
-    $protoNode->setLocation($location);
 
     // if contains sub statements, do the same for each of them
-    if(property_exists($stmt, 'stmts')) {
-        $stmts = (array) $stmt->stmts;
+    $subStatements = array_filter(array_merge(
+        $stmt['stmts'] ?? [],
+        $stmt['cases'] ?? [],
+        $stmt['else'] ?? [],
+            $stmt['elseifs'] ?? [],
+            [$stmt['stmt']?? []]
+    ));
+    if(!empty($subStatements) && is_array($subStatements)) {
         $protoStmts = new \NodeType\Stmts();
         $protoNode->setStmts($protoStmts);
-        $subs = [];
-        foreach($stmts as $stmt) {
-            $protoStmt = new \NodeType\Stmt();
-            $added = stmtToProto($stmt, $protoStmt);
-            if(!$added) {
+        foreach($subStatements as $stmt) {
+            if (!is_array($stmt)) {
                 continue;
             }
-            $subs[] = $protoStmt;
+
+            stmtToProto($stmt, $protoStmts);
         }
-        $protoStmts->setStmts($subs);
-        $protoNode->setStmts($protoStmts);
     }
 
     return $protoNode;
@@ -141,20 +164,11 @@ $fileNode = new \NodeType\File([
 $protoStmts = new \NodeType\Stmts();
 $fileNode->setStmts($protoStmts);
 $subs = [];
-foreach($stmts as $stmt) {
-
-    $nodeStmt = new \NodeType\Stmt();
-
-    // convert to proto
-    $added = stmtToProto($stmt, $nodeStmt);
-    if(!$added) {
-        continue;
-    }
-
-    $subs[] = $nodeStmt;
+file_put_contents('test.json', json_encode($json, JSON_PRETTY_PRINT));
+foreach($json as $stmt) {
+    stmtToProto($stmt, $protoStmts);
 }
 
-$protoStmts->setStmts($subs);
 $format = getenv('OUTPUT_FORMAT') ?: 'binary';
 switch($format) {
 

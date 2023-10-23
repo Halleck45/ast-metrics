@@ -77,9 +77,11 @@ func main() {
                     outWriter.Flush()
                     progressBarGlobal.Stop()
 
-                    // Now we start the analysis
+                    // Now we start the analysis of each AST file
                     spinnerLiveText.UpdateText("Analyzing project...")
                     Analyzer.Start(pbAnalaysis1)
+
+                    // Start aggregating results
 
 
                     spinnerLiveText.Success("Finished")

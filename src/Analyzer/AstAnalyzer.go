@@ -3,6 +3,7 @@ package Analyzer
 import (
     "github.com/halleck45/ast-metrics/src/Storage"
     pb "github.com/halleck45/ast-metrics/src/NodeType"
+    Complexity "github.com/halleck45/ast-metrics/src/Analyzer/Complexity"
     "os"
     "io/ioutil"
     "log"
@@ -63,7 +64,6 @@ func Start(progressbar *pterm.SpinnerPrinter) {
     progressbar.UpdateText("")
     progressbar.Info("Analysis finished")
     progressbar.Stop()
-
 }
 
 func executeFileAnalysis(file string) {
@@ -78,7 +78,22 @@ func executeFileAnalysis(file string) {
         log.Fatalln("Failed to parse address pbFile:", err)
     }
 
-    // pbFile is as NodeType.File struct
-    // We can calculate metrics on it
-    // fmt.Println(pbFile.Path)
+    root := &ASTNode{children: pbFile.Stmts}
+
+    // register visitors
+    cyclomaticVisitor := &Complexity.ComplexityVisitor{}
+    root.Accept(cyclomaticVisitor)
+
+    // visit AST
+    root.Visit()
+
+    // Now pbFile contains the AST and analyze results
+    // We dump it to a file with ProtoBuf
+    out, err := proto.Marshal(pbFile)
+    if err != nil {
+        log.Fatalln("Failed to encode pbFile:", err)
+    }
+
+    // Write the new file back to disk into "file"
+    ioutil.WriteFile(file, out, 0644)
 }
