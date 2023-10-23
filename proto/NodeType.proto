@@ -24,7 +24,7 @@ message File {
 // Represents a statement node.
 message Stmt {
     StmtLocationInFile attributes = 1;
-    oneof stmt {
+    repeated oneof stmt {
         // Append here all the possible statements
         StmtClass stmtClass = 2;
         StmtFunction stmtFunction = 3;
