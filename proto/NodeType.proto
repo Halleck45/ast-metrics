@@ -65,6 +65,11 @@ message StmtClass {
   Stmts stmts = 2;
   StmtLocationInFile location = 3;
   repeated StmtComment comments = 4;
+  repeated StmtOperator operators = 5;
+  repeated StmtOperand operands = 6;
+  repeated Name extends = 7;
+  repeated Name implements = 8;
+  repeated Name uses = 9;
 }
 
 // Represents a Function node.
@@ -73,6 +78,14 @@ message StmtFunction {
   Stmts stmts = 2;
   StmtLocationInFile location = 3;
   repeated StmtComment comments = 4;
+  repeated StmtOperator operators = 5;
+  repeated StmtOperand operands = 6;
+  repeated StmtParameter parameters = 7;
+}
+
+message StmtParameter {
+  string name = 1;
+  Name type = 2;
 }
 
 // Represents a Interface node.
@@ -80,6 +93,7 @@ message StmtInterface {
   Name name = 1;
   Stmts stmts = 2;
   StmtLocationInFile location = 3;
+  repeated Name extends = 4;
 }
 
 // Represents a Trait node.
@@ -125,6 +139,16 @@ message StmtLoop {
 message StmtComment {
   string text = 1;
   StmtLocationInFile location = 2;
+}
+
+// ------------------------------------
+// -- Volume: Operators and Operands
+// ------------------------------------
+message StmtOperator {
+  string name = 1;
+}
+message StmtOperand {
+  string name = 1;
 }
 
 // ------------------------------------

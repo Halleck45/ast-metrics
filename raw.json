@@ -1,0 +1,1010 @@
+[
+    {
+        "nodeType": "Stmt_Namespace",
+        "attributes": {
+            "startLine": 3,
+            "startFilePos": 7,
+            "endLine": 58,
+            "endFilePos": 936,
+            "kind": 1
+        },
+        "name": {
+            "nodeType": "Name",
+            "attributes": {
+                "startLine": 3,
+                "startFilePos": 17,
+                "endLine": 3,
+                "endFilePos": 19
+            },
+            "parts": [
+                "Foo"
+            ]
+        },
+        "stmts": [
+            {
+                "nodeType": "Stmt_Use",
+                "attributes": {
+                    "startLine": 5,
+                    "startFilePos": 23,
+                    "endLine": 5,
+                    "endFilePos": 54
+                },
+                "type": 1,
+                "uses": [
+                    {
+                        "nodeType": "Stmt_UseUse",
+                        "attributes": {
+                            "startLine": 5,
+                            "startFilePos": 27,
+                            "endLine": 5,
+                            "endFilePos": 53
+                        },
+                        "type": 0,
+                        "name": {
+                            "nodeType": "Name",
+                            "attributes": {
+                                "startLine": 5,
+                                "startFilePos": 27,
+                                "endLine": 5,
+                                "endFilePos": 42
+                            },
+                            "parts": [
+                                "SplObjectStorage"
+                            ]
+                        },
+                        "alias": {
+                            "nodeType": "Identifier",
+                            "attributes": {
+                                "startLine": 5,
+                                "startFilePos": 47,
+                                "endLine": 5,
+                                "endFilePos": 53
+                            },
+                            "name": "MyAlias"
+                        }
+                    }
+                ]
+            },
+            {
+                "nodeType": "Stmt_Class",
+                "attributes": {
+                    "startLine": 7,
+                    "startFilePos": 57,
+                    "endLine": 49,
+                    "endFilePos": 860
+                },
+                "name": {
+                    "nodeType": "Identifier",
+                    "attributes": {
+                        "startLine": 7,
+                        "startFilePos": 63,
+                        "endLine": 7,
+                        "endFilePos": 70
+                    },
+                    "name": "MyClass1"
+                },
+                "stmts": [
+                    {
+                        "nodeType": "Stmt_ClassMethod",
+                        "attributes": {
+                            "startLine": 14,
+                            "startFilePos": 207,
+                            "comments": [
+                                {
+                                    "nodeType": "Comment_Doc",
+                                    "text": "\/**\n     * This is a multiline comment\n     *\n     * @return void\n     *\/",
+                                    "line": 9,
+                                    "filePos": 129,
+                                    "tokenPos": 30,
+                                    "endLine": 13,
+                                    "endFilePos": 201,
+                                    "endTokenPos": 30
+                                }
+                            ],
+                            "endLine": 43,
+                            "endFilePos": 790
+                        },
+                        "flags": 1,
+                        "byRef": false,
+                        "name": {
+                            "nodeType": "Identifier",
+                            "attributes": {
+                                "startLine": 14,
+                                "startFilePos": 223,
+                                "endLine": 14,
+                                "endFilePos": 226
+                            },
+                            "name": "baz1"
+                        },
+                        "params": [
+                            {
+                                "nodeType": "Param",
+                                "attributes": {
+                                    "startLine": 14,
+                                    "startFilePos": 228,
+                                    "endLine": 14,
+                                    "endFilePos": 232
+                                },
+                                "type": null,
+                                "byRef": false,
+                                "variadic": false,
+                                "var": {
+                                    "nodeType": "Expr_Variable",
+                                    "attributes": {
+                                        "startLine": 14,
+                                        "startFilePos": 228,
+                                        "endLine": 14,
+                                        "endFilePos": 232
+                                    },
+                                    "name": "eVar"
+                                },
+                                "default": null,
+                                "flags": 0,
+                                "attrGroups": []
+                            },
+                            {
+                                "nodeType": "Param",
+                                "attributes": {
+                                    "startLine": 14,
+                                    "startFilePos": 235,
+                                    "endLine": 14,
+                                    "endFilePos": 243
+                                },
+                                "type": {
+                                    "nodeType": "Identifier",
+                                    "attributes": {
+                                        "startLine": 14,
+                                        "startFilePos": 235,
+                                        "endLine": 14,
+                                        "endFilePos": 237
+                                    },
+                                    "name": "int"
+                                },
+                                "byRef": false,
+                                "variadic": false,
+                                "var": {
+                                    "nodeType": "Expr_Variable",
+                                    "attributes": {
+                                        "startLine": 14,
+                                        "startFilePos": 239,
+                                        "endLine": 14,
+                                        "endFilePos": 243
+                                    },
+                                    "name": "dVar"
+                                },
+                                "default": null,
+                                "flags": 0,
+                                "attrGroups": []
+                            },
+                            {
+                                "nodeType": "Param",
+                                "attributes": {
+                                    "startLine": 14,
+                                    "startFilePos": 246,
+                                    "endLine": 14,
+                                    "endFilePos": 272
+                                },
+                                "type": {
+                                    "nodeType": "Name_FullyQualified",
+                                    "attributes": {
+                                        "startLine": 14,
+                                        "startFilePos": 246,
+                                        "endLine": 14,
+                                        "endFilePos": 253
+                                    },
+                                    "parts": [
+                                        "MyAlias"
+                                    ]
+                                },
+                                "byRef": false,
+                                "variadic": false,
+                                "var": {
+                                    "nodeType": "Expr_Variable",
+                                    "attributes": {
+                                        "startLine": 14,
+                                        "startFilePos": 255,
+                                        "endLine": 14,
+                                        "endFilePos": 265
+                                    },
+                                    "name": "storageVar"
+                                },
+                                "default": {
+                                    "nodeType": "Expr_ConstFetch",
+                                    "attributes": {
+                                        "startLine": 14,
+                                        "startFilePos": 269,
+                                        "endLine": 14,
+                                        "endFilePos": 272
+                                    },
+                                    "name": {
+                                        "nodeType": "Name",
+                                        "attributes": {
+                                            "startLine": 14,
+                                            "startFilePos": 269,
+                                            "endLine": 14,
+                                            "endFilePos": 272
+                                        },
+                                        "parts": [
+                                            "null"
+                                        ]
+                                    }
+                                },
+                                "flags": 0,
+                                "attrGroups": []
+                            }
+                        ],
+                        "returnType": null,
+                        "stmts": [
+                            {
+                                "nodeType": "Stmt_Expression",
+                                "attributes": {
+                                    "startLine": 16,
+                                    "startFilePos": 289,
+                                    "endLine": 16,
+                                    "endFilePos": 298
+                                },
+                                "expr": {
+                                    "nodeType": "Expr_Assign",
+                                    "attributes": {
+                                        "startLine": 16,
+                                        "startFilePos": 289,
+                                        "endLine": 16,
+                                        "endFilePos": 297
+                                    },
+                                    "var": {
+                                        "nodeType": "Expr_Variable",
+                                        "attributes": {
+                                            "startLine": 16,
+                                            "startFilePos": 289,
+                                            "endLine": 16,
+                                            "endFilePos": 293
+                                        },
+                                        "name": "aVar"
+                                    },
+                                    "expr": {
+                                        "nodeType": "Scalar_LNumber",
+                                        "attributes": {
+                                            "startLine": 16,
+                                            "startFilePos": 297,
+                                            "endLine": 16,
+                                            "endFilePos": 297,
+                                            "rawValue": "1",
+                                            "kind": 10
+                                        },
+                                        "value": 1
+                                    }
+                                }
+                            },
+                            {
+                                "nodeType": "Stmt_Expression",
+                                "attributes": {
+                                    "startLine": 17,
+                                    "startFilePos": 308,
+                                    "endLine": 17,
+                                    "endFilePos": 317
+                                },
+                                "expr": {
+                                    "nodeType": "Expr_Assign",
+                                    "attributes": {
+                                        "startLine": 17,
+                                        "startFilePos": 308,
+                                        "endLine": 17,
+                                        "endFilePos": 316
+                                    },
+                                    "var": {
+                                        "nodeType": "Expr_Variable",
+                                        "attributes": {
+                                            "startLine": 17,
+                                            "startFilePos": 308,
+                                            "endLine": 17,
+                                            "endFilePos": 312
+                                        },
+                                        "name": "bVar"
+                                    },
+                                    "expr": {
+                                        "nodeType": "Scalar_LNumber",
+                                        "attributes": {
+                                            "startLine": 17,
+                                            "startFilePos": 316,
+                                            "endLine": 17,
+                                            "endFilePos": 316,
+                                            "rawValue": "2",
+                                            "kind": 10
+                                        },
+                                        "value": 2
+                                    }
+                                }
+                            },
+                            {
+                                "nodeType": "Stmt_Expression",
+                                "attributes": {
+                                    "startLine": 18,
+                                    "startFilePos": 327,
+                                    "endLine": 18,
+                                    "endFilePos": 336
+                                },
+                                "expr": {
+                                    "nodeType": "Expr_Assign",
+                                    "attributes": {
+                                        "startLine": 18,
+                                        "startFilePos": 327,
+                                        "endLine": 18,
+                                        "endFilePos": 335
+                                    },
+                                    "var": {
+                                        "nodeType": "Expr_Variable",
+                                        "attributes": {
+                                            "startLine": 18,
+                                            "startFilePos": 327,
+                                            "endLine": 18,
+                                            "endFilePos": 331
+                                        },
+                                        "name": "cVar"
+                                    },
+                                    "expr": {
+                                        "nodeType": "Scalar_LNumber",
+                                        "attributes": {
+                                            "startLine": 18,
+                                            "startFilePos": 335,
+                                            "endLine": 18,
+                                            "endFilePos": 335,
+                                            "rawValue": "3",
+                                            "kind": 10
+                                        },
+                                        "value": 3
+                                    }
+                                }
+                            },
+                            {
+                                "nodeType": "Stmt_Expression",
+                                "attributes": {
+                                    "startLine": 20,
+                                    "startFilePos": 347,
+                                    "endLine": 20,
+                                    "endFilePos": 389
+                                },
+                                "expr": {
+                                    "nodeType": "Expr_Assign",
+                                    "attributes": {
+                                        "startLine": 20,
+                                        "startFilePos": 347,
+                                        "endLine": 20,
+                                        "endFilePos": 388
+                                    },
+                                    "var": {
+                                        "nodeType": "Expr_Variable",
+                                        "attributes": {
+                                            "startLine": 20,
+                                            "startFilePos": 347,
+                                            "endLine": 20,
+                                            "endFilePos": 351
+                                        },
+                                        "name": "dVar"
+                                    },
+                                    "expr": {
+                                        "nodeType": "Expr_New",
+                                        "attributes": {
+                                            "startLine": 20,
+                                            "startFilePos": 355,
+                                            "endLine": 20,
+                                            "endFilePos": 388
+                                        },
+                                        "class": {
+                                            "nodeType": "Name_FullyQualified",
+                                            "attributes": {
+                                                "startLine": 20,
+                                                "startFilePos": 359,
+                                                "endLine": 20,
+                                                "endFilePos": 373
+                                            },
+                                            "parts": [
+                                                "LogicException"
+                                            ]
+                                        },
+                                        "args": [
+                                            {
+                                                "nodeType": "Arg",
+                                                "attributes": {
+                                                    "startLine": 20,
+                                                    "startFilePos": 375,
+                                                    "endLine": 20,
+                                                    "endFilePos": 387
+                                                },
+                                                "name": null,
+                                                "value": {
+                                                    "nodeType": "Scalar_String",
+                                                    "attributes": {
+                                                        "startLine": 20,
+                                                        "startFilePos": 375,
+                                                        "endLine": 20,
+                                                        "endFilePos": 387,
+                                                        "kind": 1,
+                                                        "rawValue": "'Hello World'"
+                                                    },
+                                                    "value": "Hello World"
+                                                },
+                                                "byRef": false,
+                                                "unpack": false
+                                            }
+                                        ]
+                                    }
+                                }
+                            },
+                            {
+                                "nodeType": "Stmt_If",
+                                "attributes": {
+                                    "startLine": 24,
+                                    "startFilePos": 435,
+                                    "comments": [
+                                        {
+                                            "nodeType": "Comment",
+                                            "text": "\/\/ This is a line comment",
+                                            "line": 23,
+                                            "filePos": 401,
+                                            "tokenPos": 90,
+                                            "endLine": 23,
+                                            "endFilePos": 425,
+                                            "endTokenPos": 90
+                                        }
+                                    ],
+                                    "endLine": 40,
+                                    "endFilePos": 766
+                                },
+                                "cond": {
+                                    "nodeType": "Expr_ConstFetch",
+                                    "attributes": {
+                                        "startLine": 24,
+                                        "startFilePos": 439,
+                                        "endLine": 24,
+                                        "endFilePos": 442
+                                    },
+                                    "name": {
+                                        "nodeType": "Name",
+                                        "attributes": {
+                                            "startLine": 24,
+                                            "startFilePos": 439,
+                                            "endLine": 24,
+                                            "endFilePos": 442
+                                        },
+                                        "parts": [
+                                            "true"
+                                        ]
+                                    }
+                                },
+                                "stmts": [
+                                    {
+                                        "nodeType": "Stmt_Echo",
+                                        "attributes": {
+                                            "startLine": 25,
+                                            "startFilePos": 459,
+                                            "endLine": 25,
+                                            "endFilePos": 471
+                                        },
+                                        "exprs": [
+                                            {
+                                                "nodeType": "Scalar_String",
+                                                "attributes": {
+                                                    "startLine": 25,
+                                                    "startFilePos": 464,
+                                                    "endLine": 25,
+                                                    "endFilePos": 470,
+                                                    "kind": 2,
+                                                    "rawValue": "\"Hello\""
+                                                },
+                                                "value": "Hello"
+                                            }
+                                        ]
+                                    },
+                                    {
+                                        "nodeType": "Stmt_If",
+                                        "attributes": {
+                                            "startLine": 26,
+                                            "startFilePos": 485,
+                                            "endLine": 28,
+                                            "endFilePos": 540
+                                        },
+                                        "cond": {
+                                            "nodeType": "Expr_ConstFetch",
+                                            "attributes": {
+                                                "startLine": 26,
+                                                "startFilePos": 489,
+                                                "endLine": 26,
+                                                "endFilePos": 493
+                                            },
+                                            "name": {
+                                                "nodeType": "Name",
+                                                "attributes": {
+                                                    "startLine": 26,
+                                                    "startFilePos": 489,
+                                                    "endLine": 26,
+                                                    "endFilePos": 493
+                                                },
+                                                "parts": [
+                                                    "false"
+                                                ]
+                                            }
+                                        },
+                                        "stmts": [
+                                            {
+                                                "nodeType": "Stmt_Echo",
+                                                "attributes": {
+                                                    "startLine": 27,
+                                                    "startFilePos": 514,
+                                                    "endLine": 27,
+                                                    "endFilePos": 526
+                                                },
+                                                "exprs": [
+                                                    {
+                                                        "nodeType": "Scalar_String",
+                                                        "attributes": {
+                                                            "startLine": 27,
+                                                            "startFilePos": 519,
+                                                            "endLine": 27,
+                                                            "endFilePos": 525,
+                                                            "kind": 2,
+                                                            "rawValue": "\"World\""
+                                                        },
+                                                        "value": "World"
+                                                    }
+                                                ]
+                                            }
+                                        ],
+                                        "elseifs": [],
+                                        "else": null
+                                    },
+                                    {
+                                        "nodeType": "Stmt_Foreach",
+                                        "attributes": {
+                                            "startLine": 30,
+                                            "startFilePos": 555,
+                                            "endLine": 34,
+                                            "endFilePos": 661
+                                        },
+                                        "expr": {
+                                            "nodeType": "Expr_Array",
+                                            "attributes": {
+                                                "startLine": 30,
+                                                "startFilePos": 564,
+                                                "endLine": 30,
+                                                "endFilePos": 577,
+                                                "kind": 1
+                                            },
+                                            "items": [
+                                                {
+                                                    "nodeType": "Expr_ArrayItem",
+                                                    "attributes": {
+                                                        "startLine": 30,
+                                                        "startFilePos": 570,
+                                                        "endLine": 30,
+                                                        "endFilePos": 570
+                                                    },
+                                                    "key": null,
+                                                    "value": {
+                                                        "nodeType": "Scalar_LNumber",
+                                                        "attributes": {
+                                                            "startLine": 30,
+                                                            "startFilePos": 570,
+                                                            "endLine": 30,
+                                                            "endFilePos": 570,
+                                                            "rawValue": "1",
+                                                            "kind": 10
+                                                        },
+                                                        "value": 1
+                                                    },
+                                                    "byRef": false,
+                                                    "unpack": false
+                                                },
+                                                {
+                                                    "nodeType": "Expr_ArrayItem",
+                                                    "attributes": {
+                                                        "startLine": 30,
+                                                        "startFilePos": 573,
+                                                        "endLine": 30,
+                                                        "endFilePos": 573
+                                                    },
+                                                    "key": null,
+                                                    "value": {
+                                                        "nodeType": "Scalar_LNumber",
+                                                        "attributes": {
+                                                            "startLine": 30,
+                                                            "startFilePos": 573,
+                                                            "endLine": 30,
+                                                            "endFilePos": 573,
+                                                            "rawValue": "2",
+                                                            "kind": 10
+                                                        },
+                                                        "value": 2
+                                                    },
+                                                    "byRef": false,
+                                                    "unpack": false
+                                                },
+                                                {
+                                                    "nodeType": "Expr_ArrayItem",
+                                                    "attributes": {
+                                                        "startLine": 30,
+                                                        "startFilePos": 576,
+                                                        "endLine": 30,
+                                                        "endFilePos": 576
+                                                    },
+                                                    "key": null,
+                                                    "value": {
+                                                        "nodeType": "Scalar_LNumber",
+                                                        "attributes": {
+                                                            "startLine": 30,
+                                                            "startFilePos": 576,
+                                                            "endLine": 30,
+                                                            "endFilePos": 576,
+                                                            "rawValue": "3",
+                                                            "kind": 10
+                                                        },
+                                                        "value": 3
+                                                    },
+                                                    "byRef": false,
+                                                    "unpack": false
+                                                }
+                                            ]
+                                        },
+                                        "keyVar": null,
+                                        "byRef": false,
+                                        "valueVar": {
+                                            "nodeType": "Expr_Variable",
+                                            "attributes": {
+                                                "startLine": 30,
+                                                "startFilePos": 582,
+                                                "endLine": 30,
+                                                "endFilePos": 587
+                                            },
+                                            "name": "value"
+                                        },
+                                        "stmts": [
+                                            {
+                                                "nodeType": "Stmt_Echo",
+                                                "attributes": {
+                                                    "startLine": 31,
+                                                    "startFilePos": 608,
+                                                    "endLine": 31,
+                                                    "endFilePos": 619
+                                                },
+                                                "exprs": [
+                                                    {
+                                                        "nodeType": "Expr_Variable",
+                                                        "attributes": {
+                                                            "startLine": 31,
+                                                            "startFilePos": 613,
+                                                            "endLine": 31,
+                                                            "endFilePos": 618
+                                                        },
+                                                        "name": "value"
+                                                    }
+                                                ]
+                                            },
+                                            {
+                                                "nodeType": "Stmt_Expression",
+                                                "attributes": {
+                                                    "startLine": 33,
+                                                    "startFilePos": 638,
+                                                    "endLine": 33,
+                                                    "endFilePos": 647
+                                                },
+                                                "expr": {
+                                                    "nodeType": "Expr_Assign",
+                                                    "attributes": {
+                                                        "startLine": 33,
+                                                        "startFilePos": 638,
+                                                        "endLine": 33,
+                                                        "endFilePos": 646
+                                                    },
+                                                    "var": {
+                                                        "nodeType": "Expr_Variable",
+                                                        "attributes": {
+                                                            "startLine": 33,
+                                                            "startFilePos": 638,
+                                                            "endLine": 33,
+                                                            "endFilePos": 642
+                                                        },
+                                                        "name": "aVar"
+                                                    },
+                                                    "expr": {
+                                                        "nodeType": "Scalar_LNumber",
+                                                        "attributes": {
+                                                            "startLine": 33,
+                                                            "startFilePos": 646,
+                                                            "endLine": 33,
+                                                            "endFilePos": 646,
+                                                            "rawValue": "4",
+                                                            "kind": 10
+                                                        },
+                                                        "value": 4
+                                                    }
+                                                }
+                                            }
+                                        ]
+                                    }
+                                ],
+                                "elseifs": [
+                                    {
+                                        "nodeType": "Stmt_ElseIf",
+                                        "attributes": {
+                                            "startLine": 36,
+                                            "startFilePos": 674,
+                                            "endLine": 38,
+                                            "endFilePos": 725
+                                        },
+                                        "cond": {
+                                            "nodeType": "Expr_ConstFetch",
+                                            "attributes": {
+                                                "startLine": 36,
+                                                "startFilePos": 682,
+                                                "endLine": 36,
+                                                "endFilePos": 686
+                                            },
+                                            "name": {
+                                                "nodeType": "Name",
+                                                "attributes": {
+                                                    "startLine": 36,
+                                                    "startFilePos": 682,
+                                                    "endLine": 36,
+                                                    "endFilePos": 686
+                                                },
+                                                "parts": [
+                                                    "false"
+                                                ]
+                                            }
+                                        },
+                                        "stmts": [
+                                            {
+                                                "nodeType": "Stmt_Echo",
+                                                "attributes": {
+                                                    "startLine": 37,
+                                                    "startFilePos": 703,
+                                                    "endLine": 37,
+                                                    "endFilePos": 715
+                                                },
+                                                "exprs": [
+                                                    {
+                                                        "nodeType": "Scalar_String",
+                                                        "attributes": {
+                                                            "startLine": 37,
+                                                            "startFilePos": 708,
+                                                            "endLine": 37,
+                                                            "endFilePos": 714,
+                                                            "kind": 2,
+                                                            "rawValue": "\"World\""
+                                                        },
+                                                        "value": "World"
+                                                    }
+                                                ]
+                                            }
+                                        ]
+                                    }
+                                ],
+                                "else": {
+                                    "nodeType": "Stmt_Else",
+                                    "attributes": {
+                                        "startLine": 38,
+                                        "startFilePos": 727,
+                                        "endLine": 40,
+                                        "endFilePos": 766
+                                    },
+                                    "stmts": [
+                                        {
+                                            "nodeType": "Stmt_Echo",
+                                            "attributes": {
+                                                "startLine": 39,
+                                                "startFilePos": 746,
+                                                "endLine": 39,
+                                                "endFilePos": 756
+                                            },
+                                            "exprs": [
+                                                {
+                                                    "nodeType": "Expr_Variable",
+                                                    "attributes": {
+                                                        "startLine": 39,
+                                                        "startFilePos": 751,
+                                                        "endLine": 39,
+                                                        "endFilePos": 755
+                                                    },
+                                                    "name": "cVar"
+                                                }
+                                            ]
+                                        }
+                                    ]
+                                }
+                            },
+                            {
+                                "nodeType": "Stmt_Expression",
+                                "attributes": {
+                                    "startLine": 42,
+                                    "startFilePos": 777,
+                                    "endLine": 42,
+                                    "endFilePos": 784
+                                },
+                                "expr": {
+                                    "nodeType": "Expr_PostInc",
+                                    "attributes": {
+                                        "startLine": 42,
+                                        "startFilePos": 777,
+                                        "endLine": 42,
+                                        "endFilePos": 783
+                                    },
+                                    "var": {
+                                        "nodeType": "Expr_Variable",
+                                        "attributes": {
+                                            "startLine": 42,
+                                            "startFilePos": 777,
+                                            "endLine": 42,
+                                            "endFilePos": 781
+                                        },
+                                        "name": "bVar"
+                                    }
+                                }
+                            }
+                        ],
+                        "attrGroups": []
+                    },
+                    {
+                        "nodeType": "Stmt_ClassMethod",
+                        "attributes": {
+                            "startLine": 45,
+                            "startFilePos": 797,
+                            "endLine": 48,
+                            "endFilePos": 858
+                        },
+                        "flags": 1,
+                        "byRef": false,
+                        "name": {
+                            "nodeType": "Identifier",
+                            "attributes": {
+                                "startLine": 45,
+                                "startFilePos": 813,
+                                "endLine": 45,
+                                "endFilePos": 825
+                            },
+                            "name": "jsonSerialize"
+                        },
+                        "params": [],
+                        "returnType": null,
+                        "stmts": [
+                            {
+                                "nodeType": "Stmt_Return",
+                                "attributes": {
+                                    "startLine": 47,
+                                    "startFilePos": 843,
+                                    "endLine": 47,
+                                    "endFilePos": 852
+                                },
+                                "expr": {
+                                    "nodeType": "Expr_Array",
+                                    "attributes": {
+                                        "startLine": 47,
+                                        "startFilePos": 850,
+                                        "endLine": 47,
+                                        "endFilePos": 851,
+                                        "kind": 2
+                                    },
+                                    "items": []
+                                }
+                            }
+                        ],
+                        "attrGroups": []
+                    }
+                ],
+                "attrGroups": [],
+                "namespacedName": null,
+                "flags": 0,
+                "extends": {
+                    "nodeType": "Name_FullyQualified",
+                    "attributes": {
+                        "startLine": 7,
+                        "startFilePos": 80,
+                        "endLine": 7,
+                        "endFilePos": 92
+                    },
+                    "parts": [
+                        "Bar",
+                        "MyClass2"
+                    ]
+                },
+                "implements": [
+                    {
+                        "nodeType": "Name_FullyQualified",
+                        "attributes": {
+                            "startLine": 7,
+                            "startFilePos": 105,
+                            "endLine": 7,
+                            "endFilePos": 121
+                        },
+                        "parts": [
+                            "JsonSerializable"
+                        ]
+                    }
+                ]
+            },
+            {
+                "nodeType": "Stmt_Class",
+                "attributes": {
+                    "startLine": 51,
+                    "startFilePos": 863,
+                    "endLine": 58,
+                    "endFilePos": 936
+                },
+                "name": {
+                    "nodeType": "Identifier",
+                    "attributes": {
+                        "startLine": 51,
+                        "startFilePos": 869,
+                        "endLine": 51,
+                        "endFilePos": 876
+                    },
+                    "name": "MyClass2"
+                },
+                "stmts": [
+                    {
+                        "nodeType": "Stmt_ClassMethod",
+                        "attributes": {
+                            "startLine": 53,
+                            "startFilePos": 884,
+                            "endLine": 57,
+                            "endFilePos": 934
+                        },
+                        "flags": 1,
+                        "byRef": false,
+                        "name": {
+                            "nodeType": "Identifier",
+                            "attributes": {
+                                "startLine": 54,
+                                "startFilePos": 917,
+                                "endLine": 54,
+                                "endFilePos": 919
+                            },
+                            "name": "bar"
+                        },
+                        "params": [],
+                        "returnType": null,
+                        "stmts": [],
+                        "attrGroups": [
+                            {
+                                "nodeType": "AttributeGroup",
+                                "attributes": {
+                                    "startLine": 53,
+                                    "startFilePos": 884,
+                                    "endLine": 53,
+                                    "endFilePos": 895
+                                },
+                                "attrs": [
+                                    {
+                                        "nodeType": "Attribute",
+                                        "attributes": {
+                                            "startLine": 53,
+                                            "startFilePos": 886,
+                                            "endLine": 53,
+                                            "endFilePos": 894
+                                        },
+                                        "name": {
+                                            "nodeType": "Name",
+                                            "attributes": {
+                                                "startLine": 53,
+                                                "startFilePos": 886,
+                                                "endLine": 53,
+                                                "endFilePos": 894
+                                            },
+                                            "parts": [
+                                                "Attribute"
+                                            ]
+                                        },
+                                        "args": []
+                                    }
+                                ]
+                            }
+                        ]
+                    }
+                ],
+                "attrGroups": [],
+                "namespacedName": null,
+                "flags": 0,
+                "extends": null,
+                "implements": []
+            }
+        ]
+    }
+]

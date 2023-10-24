@@ -40,7 +40,10 @@ func (v *ComplexityVisitor) LeaveNode(stmts *pb.Stmts) {
     // aggregates complexity for classes
     if len(stmts.StmtClass) > 0 {
         for _, stmt := range stmts.StmtClass {
-            //fmt.Println("LeaveNode:" + stmt.Name.Qualified)
+
+            if stmt.Stmts == nil {
+                continue
+            }
 
             var ccn int32 = 0
             for _, method := range stmt.Stmts.StmtFunction {

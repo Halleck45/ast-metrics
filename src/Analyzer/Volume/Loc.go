@@ -17,6 +17,10 @@ func (v *LocVisitor) Visit(stmts *pb.Stmts, parents *pb.Stmts) {
     // calculate the number of lines of code in each method
     for _, stmt := range parents.StmtFunction {
 
+        if stmt.Stmts == nil {
+            continue
+        }
+
         var loc int32 = 0 // lines of code
         var lloc int32 = 0 // logical lines of code
         var cloc int32 = 0 // comment lines of code
@@ -26,13 +30,17 @@ func (v *LocVisitor) Visit(stmts *pb.Stmts, parents *pb.Stmts) {
         lloc = loc - stmt.Location.BlankLines
 
         // count the number of lines of code in the comments
-        for _, comment := range stmt.Comments {
-            cloc += comment.Location.EndLine - comment.Location.StartLine + 1
+        if stmt.Comments != nil {
+            for _, comment := range stmt.Comments {
+                cloc += comment.Location.EndLine - comment.Location.StartLine + 1
+            }
         }
 
-        stmt.Stmts.Analyze.Volume.Loc = &loc
-        stmt.Stmts.Analyze.Volume.Lloc = &lloc
-        stmt.Stmts.Analyze.Volume.Cloc = &cloc
+        if stmt.Stmts != nil && stmt.Stmts.Analyze == nil {
+            stmt.Stmts.Analyze.Volume.Loc = &loc
+            stmt.Stmts.Analyze.Volume.Lloc = &lloc
+            stmt.Stmts.Analyze.Volume.Cloc = &cloc
+        }
     }
 }
 
@@ -45,6 +53,10 @@ func (v *LocVisitor) LeaveNode(stmts *pb.Stmts) {
     // aggregates loc for classes
     if len(stmts.StmtClass) > 0 {
         for _, stmt := range stmts.StmtClass {
+
+            if stmt.Stmts == nil {
+                continue
+            }
 
             var loc int32 = stmt.Location.EndLine - stmt.Location.StartLine + 1 // lines of code
             var lloc int32 = 0 // logical lines of code

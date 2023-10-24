@@ -114,6 +114,11 @@ func executeFileAnalysis(file string) {
 }
 
 func temporaryDisplayStatForClass(cl pb.StmtClass ) {
+
+    if cl.Stmts == nil {
+        return
+    }
+
     fmt.Println("\nClass: " + cl.Name.Qualified)
     fmt.Println("    Cyclomatic complexity: " + strconv.Itoa(int(*cl.Stmts.Analyze.Complexity.Cyclomatic)))
     fmt.Println("    Logical lines of code: " + strconv.Itoa(int(*cl.Stmts.Analyze.Volume.Lloc)))

@@ -31,6 +31,18 @@ class StmtFunction extends \Google\Protobuf\Internal\Message
      * Generated from protobuf field <code>repeated .NodeType.StmtComment comments = 4;</code>
      */
     private $comments;
+    /**
+     * Generated from protobuf field <code>repeated .NodeType.StmtOperator operators = 5;</code>
+     */
+    private $operators;
+    /**
+     * Generated from protobuf field <code>repeated .NodeType.StmtOperand operands = 6;</code>
+     */
+    private $operands;
+    /**
+     * Generated from protobuf field <code>repeated .NodeType.StmtParameter parameters = 7;</code>
+     */
+    private $parameters;
 
     /**
      * Constructor.
@@ -42,6 +54,9 @@ class StmtFunction extends \Google\Protobuf\Internal\Message
      *     @type \NodeType\Stmts $stmts
      *     @type \NodeType\StmtLocationInFile $location
      *     @type array<\NodeType\StmtComment>|\Google\Protobuf\Internal\RepeatedField $comments
+     *     @type array<\NodeType\StmtOperator>|\Google\Protobuf\Internal\RepeatedField $operators
+     *     @type array<\NodeType\StmtOperand>|\Google\Protobuf\Internal\RepeatedField $operands
+     *     @type array<\NodeType\StmtParameter>|\Google\Protobuf\Internal\RepeatedField $parameters
      * }
      */
     public function __construct($data = NULL) {
@@ -163,6 +178,72 @@ class StmtFunction extends \Google\Protobuf\Internal\Message
     {
         $arr = GPBUtil::checkRepeatedField($var, \Google\Protobuf\Internal\GPBType::MESSAGE, \NodeType\StmtComment::class);
         $this->comments = $arr;
+
+        return $this;
+    }
+
+    /**
+     * Generated from protobuf field <code>repeated .NodeType.StmtOperator operators = 5;</code>
+     * @return \Google\Protobuf\Internal\RepeatedField
+     */
+    public function getOperators()
+    {
+        return $this->operators;
+    }
+
+    /**
+     * Generated from protobuf field <code>repeated .NodeType.StmtOperator operators = 5;</code>
+     * @param array<\NodeType\StmtOperator>|\Google\Protobuf\Internal\RepeatedField $var
+     * @return $this
+     */
+    public function setOperators($var)
+    {
+        $arr = GPBUtil::checkRepeatedField($var, \Google\Protobuf\Internal\GPBType::MESSAGE, \NodeType\StmtOperator::class);
+        $this->operators = $arr;
+
+        return $this;
+    }
+
+    /**
+     * Generated from protobuf field <code>repeated .NodeType.StmtOperand operands = 6;</code>
+     * @return \Google\Protobuf\Internal\RepeatedField
+     */
+    public function getOperands()
+    {
+        return $this->operands;
+    }
+
+    /**
+     * Generated from protobuf field <code>repeated .NodeType.StmtOperand operands = 6;</code>
+     * @param array<\NodeType\StmtOperand>|\Google\Protobuf\Internal\RepeatedField $var
+     * @return $this
+     */
+    public function setOperands($var)
+    {
+        $arr = GPBUtil::checkRepeatedField($var, \Google\Protobuf\Internal\GPBType::MESSAGE, \NodeType\StmtOperand::class);
+        $this->operands = $arr;
+
+        return $this;
+    }
+
+    /**
+     * Generated from protobuf field <code>repeated .NodeType.StmtParameter parameters = 7;</code>
+     * @return \Google\Protobuf\Internal\RepeatedField
+     */
+    public function getParameters()
+    {
+        return $this->parameters;
+    }
+
+    /**
+     * Generated from protobuf field <code>repeated .NodeType.StmtParameter parameters = 7;</code>
+     * @param array<\NodeType\StmtParameter>|\Google\Protobuf\Internal\RepeatedField $var
+     * @return $this
+     */
+    public function setParameters($var)
+    {
+        $arr = GPBUtil::checkRepeatedField($var, \Google\Protobuf\Internal\GPBType::MESSAGE, \NodeType\StmtParameter::class);
+        $this->parameters = $arr;
 
         return $this;
     }

@@ -27,6 +27,10 @@ class StmtInterface extends \Google\Protobuf\Internal\Message
      * Generated from protobuf field <code>.NodeType.StmtLocationInFile location = 3;</code>
      */
     protected $location = null;
+    /**
+     * Generated from protobuf field <code>repeated .NodeType.Name extends = 4;</code>
+     */
+    private $extends;
 
     /**
      * Constructor.
@@ -37,6 +41,7 @@ class StmtInterface extends \Google\Protobuf\Internal\Message
      *     @type \NodeType\Name $name
      *     @type \NodeType\Stmts $stmts
      *     @type \NodeType\StmtLocationInFile $location
+     *     @type array<\NodeType\Name>|\Google\Protobuf\Internal\RepeatedField $extends
      * }
      */
     public function __construct($data = NULL) {
@@ -136,6 +141,28 @@ class StmtInterface extends \Google\Protobuf\Internal\Message
     {
         GPBUtil::checkMessage($var, \NodeType\StmtLocationInFile::class);
         $this->location = $var;
+
+        return $this;
+    }
+
+    /**
+     * Generated from protobuf field <code>repeated .NodeType.Name extends = 4;</code>
+     * @return \Google\Protobuf\Internal\RepeatedField
+     */
+    public function getExtends()
+    {
+        return $this->extends;
+    }
+
+    /**
+     * Generated from protobuf field <code>repeated .NodeType.Name extends = 4;</code>
+     * @param array<\NodeType\Name>|\Google\Protobuf\Internal\RepeatedField $var
+     * @return $this
+     */
+    public function setExtends($var)
+    {
+        $arr = GPBUtil::checkRepeatedField($var, \Google\Protobuf\Internal\GPBType::MESSAGE, \NodeType\Name::class);
+        $this->extends = $arr;
 
         return $this;
     }
