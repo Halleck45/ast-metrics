@@ -3,6 +3,7 @@
 namespace Foo;
 
 use SplObjectStorage as MyAlias;
+use SplFileInfo as MyAliasFile;
 
 class MyClass1 extends \Bar\MyClass2 implements \JsonSerializable
 {
@@ -25,6 +26,8 @@ class MyClass1 extends \Bar\MyClass2 implements \JsonSerializable
             echo "Hello";
             if (false) {
                 echo "World";
+                echo \MyAliasFile::class;
+                new \SplStack();
             }
 
             foreach (array(1, 2, 3) as $value) {

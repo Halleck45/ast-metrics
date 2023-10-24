@@ -127,6 +127,22 @@ function stmtFactory($stmt) {
 
     }
 
+    if($lastStructuredParentStmt) {
+        // External uses (new, static, etc.)
+        $exprs = array_merge($stmt['exprs'] ?? [], (array)($stmt['expr'] ?? []));
+        foreach($exprs as $expr) {
+            $usages = $lastStructuredParentStmt->getExternals() ?? [];
+            if(isset($expr['class'])) {
+                $name = nameType($expr['class']);
+                $usages[] = new \NodeType\Name([
+                    'short' => $name,
+                    'qualified' => $name,
+                ]);
+            }
+            $lastStructuredParentStmt->setExternals($usages);
+        }
+    }
+
     if (!$node) {
         return null;
     }

@@ -43,6 +43,12 @@ class StmtFunction extends \Google\Protobuf\Internal\Message
      * Generated from protobuf field <code>repeated .NodeType.StmtParameter parameters = 7;</code>
      */
     private $parameters;
+    /**
+     * dependencies
+     *
+     * Generated from protobuf field <code>repeated .NodeType.Name externals = 8;</code>
+     */
+    private $externals;
 
     /**
      * Constructor.
@@ -57,6 +63,8 @@ class StmtFunction extends \Google\Protobuf\Internal\Message
      *     @type array<\NodeType\StmtOperator>|\Google\Protobuf\Internal\RepeatedField $operators
      *     @type array<\NodeType\StmtOperand>|\Google\Protobuf\Internal\RepeatedField $operands
      *     @type array<\NodeType\StmtParameter>|\Google\Protobuf\Internal\RepeatedField $parameters
+     *     @type array<\NodeType\Name>|\Google\Protobuf\Internal\RepeatedField $externals
+     *           dependencies
      * }
      */
     public function __construct($data = NULL) {
@@ -244,6 +252,32 @@ class StmtFunction extends \Google\Protobuf\Internal\Message
     {
         $arr = GPBUtil::checkRepeatedField($var, \Google\Protobuf\Internal\GPBType::MESSAGE, \NodeType\StmtParameter::class);
         $this->parameters = $arr;
+
+        return $this;
+    }
+
+    /**
+     * dependencies
+     *
+     * Generated from protobuf field <code>repeated .NodeType.Name externals = 8;</code>
+     * @return \Google\Protobuf\Internal\RepeatedField
+     */
+    public function getExternals()
+    {
+        return $this->externals;
+    }
+
+    /**
+     * dependencies
+     *
+     * Generated from protobuf field <code>repeated .NodeType.Name externals = 8;</code>
+     * @param array<\NodeType\Name>|\Google\Protobuf\Internal\RepeatedField $var
+     * @return $this
+     */
+    public function setExternals($var)
+    {
+        $arr = GPBUtil::checkRepeatedField($var, \Google\Protobuf\Internal\GPBType::MESSAGE, \NodeType\Name::class);
+        $this->externals = $arr;
 
         return $this;
     }

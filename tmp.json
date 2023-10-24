@@ -1,0 +1,257 @@
+{
+    "path": "\/home\/jflepine\/Personnel\/go-php\/engine\/php\/resources\/file1.php",
+    "stmts": {
+        "stmtNamespace": [
+            {
+                "name": {
+                    "short": "Foo",
+                    "qualified": "Foo"
+                },
+                "stmts": {
+                    "stmtClass": [
+                        {
+                            "name": {
+                                "short": "MyClass1",
+                                "qualified": "MyClass1"
+                            },
+                            "stmts": {
+                                "stmtFunction": [
+                                    {
+                                        "name": {
+                                            "short": "baz1",
+                                            "qualified": "baz1"
+                                        },
+                                        "stmts": {
+                                            "stmtDecisionIf": [
+                                                {
+                                                    "stmts": {
+                                                        "stmtDecisionIf": [
+                                                            {
+                                                                "stmts": {},
+                                                                "location": {
+                                                                    "startLine": 26,
+                                                                    "startFilePos": 485,
+                                                                    "endLine": 30,
+                                                                    "endFilePos": 615
+                                                                }
+                                                            }
+                                                        ],
+                                                        "stmtDecisionElseIf": [
+                                                            {
+                                                                "stmts": {},
+                                                                "location": {
+                                                                    "startLine": 38,
+                                                                    "startFilePos": 749,
+                                                                    "endLine": 40,
+                                                                    "endFilePos": 800
+                                                                }
+                                                            }
+                                                        ],
+                                                        "stmtLoop": [
+                                                            {
+                                                                "stmts": {},
+                                                                "location": {
+                                                                    "startLine": 32,
+                                                                    "startFilePos": 630,
+                                                                    "endLine": 36,
+                                                                    "endFilePos": 736,
+                                                                    "blankLines": 1
+                                                                }
+                                                            }
+                                                        ]
+                                                    },
+                                                    "location": {
+                                                        "startLine": 24,
+                                                        "startFilePos": 435,
+                                                        "endLine": 42,
+                                                        "endFilePos": 841,
+                                                        "blankLines": 3
+                                                    }
+                                                }
+                                            ]
+                                        },
+                                        "location": {
+                                            "startLine": 14,
+                                            "startFilePos": 207,
+                                            "endLine": 45,
+                                            "endFilePos": 865,
+                                            "blankLines": 7
+                                        },
+                                        "comments": [
+                                            {
+                                                "location": {
+                                                    "startLine": 9,
+                                                    "startFilePos": 129,
+                                                    "endLine": 13,
+                                                    "endFilePos": 201
+                                                }
+                                            },
+                                            {
+                                                "location": {
+                                                    "startLine": 23,
+                                                    "startFilePos": 401,
+                                                    "endLine": 23,
+                                                    "endFilePos": 425
+                                                }
+                                            }
+                                        ],
+                                        "operators": [
+                                            {
+                                                "name": "Expr_Assign"
+                                            },
+                                            {
+                                                "name": "Expr_Assign"
+                                            },
+                                            {
+                                                "name": "Expr_Assign"
+                                            },
+                                            {
+                                                "name": "Expr_Assign"
+                                            },
+                                            {
+                                                "name": "Expr_New"
+                                            },
+                                            {
+                                                "name": "Expr_Array"
+                                            },
+                                            {
+                                                "name": "Expr_Assign"
+                                            },
+                                            {
+                                                "name": "Expr_PostInc"
+                                            }
+                                        ],
+                                        "operands": [
+                                            {
+                                                "name": "aVar"
+                                            },
+                                            {
+                                                "name": "bVar"
+                                            },
+                                            {
+                                                "name": "cVar"
+                                            },
+                                            {
+                                                "name": "dVar"
+                                            },
+                                            {
+                                                "name": "aVar"
+                                            },
+                                            {
+                                                "name": "bVar"
+                                            }
+                                        ],
+                                        "parameters": [
+                                            {
+                                                "name": "eVar",
+                                                "type": {}
+                                            },
+                                            {
+                                                "name": "dVar",
+                                                "type": {
+                                                    "short": "int",
+                                                    "qualified": "int"
+                                                }
+                                            },
+                                            {
+                                                "name": "storageVar",
+                                                "type": {
+                                                    "short": "SplObjectStorage",
+                                                    "qualified": "SplObjectStorage"
+                                                }
+                                            }
+                                        ],
+                                        "externals": [
+                                            {
+                                                "short": "LogicException",
+                                                "qualified": "LogicException"
+                                            },
+                                            {
+                                                "short": "SplFileInfo",
+                                                "qualified": "SplFileInfo"
+                                            }
+                                        ]
+                                    },
+                                    {
+                                        "name": {
+                                            "short": "jsonSerialize",
+                                            "qualified": "jsonSerialize"
+                                        },
+                                        "stmts": {},
+                                        "location": {
+                                            "startLine": 47,
+                                            "startFilePos": 872,
+                                            "endLine": 50,
+                                            "endFilePos": 933
+                                        },
+                                        "operators": [
+                                            {
+                                                "name": "Expr_Array"
+                                            }
+                                        ]
+                                    }
+                                ]
+                            },
+                            "location": {
+                                "startLine": 7,
+                                "startFilePos": 57,
+                                "endLine": 51,
+                                "endFilePos": 935,
+                                "blankLines": 8
+                            },
+                            "extends": [
+                                {
+                                    "short": "Bar\\MyClass2",
+                                    "qualified": "Bar\\MyClass2"
+                                }
+                            ],
+                            "implements": [
+                                {
+                                    "short": "JsonSerializable",
+                                    "qualified": "JsonSerializable"
+                                }
+                            ]
+                        },
+                        {
+                            "name": {
+                                "short": "MyClass2",
+                                "qualified": "MyClass2"
+                            },
+                            "stmts": {
+                                "stmtFunction": [
+                                    {
+                                        "name": {
+                                            "short": "bar",
+                                            "qualified": "bar"
+                                        },
+                                        "location": {
+                                            "startLine": 55,
+                                            "startFilePos": 959,
+                                            "endLine": 59,
+                                            "endFilePos": 1009,
+                                            "blankLines": 1
+                                        }
+                                    }
+                                ]
+                            },
+                            "location": {
+                                "startLine": 53,
+                                "startFilePos": 938,
+                                "endLine": 60,
+                                "endFilePos": 1011,
+                                "blankLines": 1
+                            }
+                        }
+                    ]
+                },
+                "location": {
+                    "startLine": 3,
+                    "startFilePos": 7,
+                    "endLine": 60,
+                    "endFilePos": 1011,
+                    "blankLines": 12
+                }
+            }
+        ]
+    }
+}
