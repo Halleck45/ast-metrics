@@ -4,10 +4,12 @@ import (
     "github.com/halleck45/ast-metrics/src/Storage"
     pb "github.com/halleck45/ast-metrics/src/NodeType"
     Complexity "github.com/halleck45/ast-metrics/src/Analyzer/Complexity"
+    Volume "github.com/halleck45/ast-metrics/src/Analyzer/Volume"
     "os"
     "io/ioutil"
     "log"
     "strconv"
+    "fmt"
     "sync"
     "github.com/golang/protobuf/proto"
     "github.com/pterm/pterm"
@@ -84,16 +86,37 @@ func executeFileAnalysis(file string) {
     cyclomaticVisitor := &Complexity.ComplexityVisitor{}
     root.Accept(cyclomaticVisitor)
 
+    locVisitor := &Volume.LocVisitor{}
+    root.Accept(locVisitor)
+
     // visit AST
     root.Visit()
 
     // Now pbFile contains the AST and analyze results
     // We dump it to a file with ProtoBuf
-    out, err := proto.Marshal(pbFile)
-    if err != nil {
-        log.Fatalln("Failed to encode pbFile:", err)
-    }
-
+    //out, err := proto.Marshal(pbFile)
+    //if err != nil {
+    //    log.Fatalln("Failed to encode pbFile:", err)
+    //}
     // Write the new file back to disk into "file"
-    ioutil.WriteFile(file, out, 0644)
+    //ioutil.WriteFile(file, out, 0644)
+
+    // debug for the moment
+    // iterate over nodes of pbFile
+    for _, stmt := range pbFile.Stmts.StmtClass {
+        temporaryDisplayStatForClass(*stmt)
+    }
+    for _, stmt := range pbFile.Stmts.StmtNamespace {
+        for _, s := range stmt.Stmts.StmtClass {
+            temporaryDisplayStatForClass(*s)
+        }
+    }
+}
+
+func temporaryDisplayStatForClass(cl pb.StmtClass ) {
+    fmt.Println("\nClass: " + cl.Name.Qualified)
+    fmt.Println("    Cyclomatic complexity: " + strconv.Itoa(int(*cl.Stmts.Analyze.Complexity.Cyclomatic)))
+    fmt.Println("    Logical lines of code: " + strconv.Itoa(int(*cl.Stmts.Analyze.Volume.Lloc)))
+    fmt.Println("    Comment lines of code: " + strconv.Itoa(int(*cl.Stmts.Analyze.Volume.Cloc)))
+    fmt.Println("    Lines of code: " + strconv.Itoa(int(*cl.Stmts.Analyze.Volume.Loc)))
 }

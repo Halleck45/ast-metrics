@@ -9,6 +9,11 @@ use Google\Protobuf\Internal\RepeatedField;
 use Google\Protobuf\Internal\GPBUtil;
 
 /**
+ * ------------------------------------
+ * -- Metrics
+ * ------------------------------------
+ * Represents The storage of all the metrics
+ *
  * Generated from protobuf message <code>NodeType.Analyze</code>
  */
 class Analyze extends \Google\Protobuf\Internal\Message
@@ -17,6 +22,10 @@ class Analyze extends \Google\Protobuf\Internal\Message
      * Generated from protobuf field <code>.NodeType.Complexity complexity = 1;</code>
      */
     protected $complexity = null;
+    /**
+     * Generated from protobuf field <code>.NodeType.Volume volume = 2;</code>
+     */
+    protected $volume = null;
 
     /**
      * Constructor.
@@ -25,6 +34,7 @@ class Analyze extends \Google\Protobuf\Internal\Message
      *     Optional. Data for populating the Message object.
      *
      *     @type \NodeType\Complexity $complexity
+     *     @type \NodeType\Volume $volume
      * }
      */
     public function __construct($data = NULL) {
@@ -60,6 +70,38 @@ class Analyze extends \Google\Protobuf\Internal\Message
     {
         GPBUtil::checkMessage($var, \NodeType\Complexity::class);
         $this->complexity = $var;
+
+        return $this;
+    }
+
+    /**
+     * Generated from protobuf field <code>.NodeType.Volume volume = 2;</code>
+     * @return \NodeType\Volume|null
+     */
+    public function getVolume()
+    {
+        return $this->volume;
+    }
+
+    public function hasVolume()
+    {
+        return isset($this->volume);
+    }
+
+    public function clearVolume()
+    {
+        unset($this->volume);
+    }
+
+    /**
+     * Generated from protobuf field <code>.NodeType.Volume volume = 2;</code>
+     * @param \NodeType\Volume $var
+     * @return $this
+     */
+    public function setVolume($var)
+    {
+        GPBUtil::checkMessage($var, \NodeType\Volume::class);
+        $this->volume = $var;
 
         return $this;
     }

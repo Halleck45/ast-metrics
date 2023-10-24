@@ -31,6 +31,10 @@ class StmtLocationInFile extends \Google\Protobuf\Internal\Message
      * Generated from protobuf field <code>int32 endFilePos = 4;</code>
      */
     protected $endFilePos = 0;
+    /**
+     * Generated from protobuf field <code>int32 blankLines = 5;</code>
+     */
+    protected $blankLines = 0;
 
     /**
      * Constructor.
@@ -42,6 +46,7 @@ class StmtLocationInFile extends \Google\Protobuf\Internal\Message
      *     @type int $startFilePos
      *     @type int $endLine
      *     @type int $endFilePos
+     *     @type int $blankLines
      * }
      */
     public function __construct($data = NULL) {
@@ -133,6 +138,28 @@ class StmtLocationInFile extends \Google\Protobuf\Internal\Message
     {
         GPBUtil::checkInt32($var);
         $this->endFilePos = $var;
+
+        return $this;
+    }
+
+    /**
+     * Generated from protobuf field <code>int32 blankLines = 5;</code>
+     * @return int
+     */
+    public function getBlankLines()
+    {
+        return $this->blankLines;
+    }
+
+    /**
+     * Generated from protobuf field <code>int32 blankLines = 5;</code>
+     * @param int $var
+     * @return $this
+     */
+    public function setBlankLines($var)
+    {
+        GPBUtil::checkInt32($var);
+        $this->blankLines = $var;
 
         return $this;
     }

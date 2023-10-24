@@ -4,8 +4,14 @@ namespace Foo;
 
 class MyClass1
 {
+    /**
+     * This is a multiline comment
+     *
+     * @return void
+     */
     public function baz1()
     {
+        // This is a line comment
         if (true) {
             echo "Hello";
             if (false) {
@@ -26,6 +32,7 @@ class MyClass1
 
 class MyClass2
 {
+    #[Attribute]
     public function bar()
     {
 

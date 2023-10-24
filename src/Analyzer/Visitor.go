@@ -21,6 +21,7 @@ func (recurser *HelperRecursionVisitor) Recurse(stmts *pb.Stmts, visitor Visitor
     if stmts.Analyze == nil {
         stmts.Analyze = &pb.Analyze{}
         stmts.Analyze.Complexity = &pb.Complexity{Cyclomatic: proto.Int32(1)}
+        stmts.Analyze.Volume = &pb.Volume{Loc: proto.Int32(0), Cloc: proto.Int32(0), Lloc: proto.Int32(0)}
     }
 
     // foreach type of statements

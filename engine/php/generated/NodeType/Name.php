@@ -9,6 +9,9 @@ use Google\Protobuf\Internal\RepeatedField;
 use Google\Protobuf\Internal\GPBUtil;
 
 /**
+ * ------------------------------------
+ * -- Node Types and statements
+ * ------------------------------------
  * represents an identifier (name)
  *
  * Generated from protobuf message <code>NodeType.Name</code>

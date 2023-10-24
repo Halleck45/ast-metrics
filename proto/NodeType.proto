@@ -3,6 +3,9 @@ syntax = "proto3";
 package NodeType;
 option go_package = "github.com/halleck45/ast-metrics/NodeType";
 
+// ------------------------------------
+// -- Node Types and statements
+// ------------------------------------
 // represents an identifier (name)
 message Name {
   string short = 1;
@@ -39,6 +42,7 @@ message StmtLocationInFile {
   int32 startFilePos = 2;
   int32 endLine = 3;
   int32 endFilePos = 4;
+  int32 blankLines = 5;
 }
 
 // Represents a namespace node.
@@ -60,6 +64,7 @@ message StmtClass {
   Name name = 1;
   Stmts stmts = 2;
   StmtLocationInFile location = 3;
+  repeated StmtComment comments = 4;
 }
 
 // Represents a Function node.
@@ -67,6 +72,7 @@ message StmtFunction {
   Name name = 1;
   Stmts stmts = 2;
   StmtLocationInFile location = 3;
+  repeated StmtComment comments = 4;
 }
 
 // Represents a Interface node.
@@ -115,10 +121,25 @@ message StmtLoop {
     StmtLocationInFile location = 2;
 }
 
+// Represents a comment (multiline or singline)
+message StmtComment {
+  string text = 1;
+  StmtLocationInFile location = 2;
+}
 
+// ------------------------------------
+// -- Metrics
+// ------------------------------------
+// Represents The storage of all the metrics
 message Analyze {
   Complexity complexity = 1;
+  Volume volume = 2;
 }
 message Complexity {
   optional int32 cyclomatic = 1;
+}
+message Volume {
+  optional int32 loc = 1;
+  optional int32 lloc = 2;
+  optional int32 cloc = 3;
 }

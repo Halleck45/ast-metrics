@@ -22,6 +22,11 @@ if(!isset($argv[1])) {
 }
 $file = (string) $argv[1];
 
+if (!file_exists($file)) {
+    fwrite(STDERR, "File $file does not exist.\n");
+    exit(1);
+}
+
 $lexer = new PhpParser\Lexer\Emulative(['usedAttributes' => [
     'startLine', 'endLine', 'startFilePos', 'endFilePos', 'comments'
 ]]);
@@ -29,24 +34,12 @@ $parser = (new PhpParser\ParserFactory)->create(
     PhpParser\ParserFactory::PREFER_PHP7,
     $lexer
 );
-$dumper = new PhpParser\NodeDumper([
-    'dumpComments' => true,
-    'dumpPositions' => true,
-]);
-$prettyPrinter = new PhpParser\PrettyPrinter\Standard;
-
 $traverser = new PhpParser\NodeTraverser();
 $traverser->addVisitor(new PhpParser\NodeVisitor\NameResolver);
 
-
-if (!file_exists($file)) {
-    fwrite(STDERR, "File $file does not exist.\n");
-    exit(1);
-}
-
 $code = file_get_contents($file);
+$linesOfCode = explode(PHP_EOL, $code);
 $stmts = $parser->parse($code);
-$prettyPrinter = new PhpParser\PrettyPrinter\Standard;
 $json = json_decode(json_encode($stmts), true);
 
 // This main node describe the file itself
@@ -58,7 +51,12 @@ $fileNode->setStmts($protoStmts);
 
 
 function stmtFactory($stmt) {
-    switch($stmt['nodeType']) {
+
+    global $lastStructuredParentStmt; // current class, namespace, function, etc...
+    global $linesOfCode; // current source
+
+
+    switch($stmt['nodeType'] ?? null) {
         case 'Stmt_Namespace':
             $node = new \NodeType\StmtNamespace();
             break;
@@ -106,14 +104,48 @@ function stmtFactory($stmt) {
         ]));
     }
 
+    // count blank lines in statement
+    $concernedLines = array_slice($linesOfCode, $stmt['attributes']['startLine'] - 1, $stmt['attributes']['endLine'] - $stmt['attributes']['startLine'] + 1);
     // Location (in code)
     $location = new \NodeType\StmtLocationInFile([
         'startLine' => $stmt['attributes']['startLine'],
         'endLine' => $stmt['attributes']['endLine'],
         'startFilePos' => $stmt['attributes']['startFilePos'],
         'endFilePos' => $stmt['attributes']['endFilePos'],
+        'blankLines' => count(array_filter($concernedLines, function($line) {
+            return trim($line) === '';
+        })),
     ]);
     $node->setLocation($location);
+
+    // Comments
+    if (method_exists($node, 'setComments')) {
+        $lastStructuredParentStmt = $node;
+    }
+
+    if(!empty($stmt['attributes']['comments'])) {
+        if ($lastStructuredParentStmt) {
+            // Node is a class or a method
+            $comments = $lastStructuredParentStmt->getComments() ?? [];
+            $stmtsComments = $stmt['attributes']['comments'] ?? [];
+
+            foreach ($stmtsComments as $comment) {
+                $protoComment = new \NodeType\StmtComment([
+                    //'text' => $comment['text'], // commented: today we don't need the text
+                ]);
+                $location = new \NodeType\StmtLocationInFile([
+                    'startLine' => $comment['line'],
+                    'endLine' => $comment['endLine'],
+                    'startFilePos' => $comment['filePos'],
+                    'endFilePos' => $comment['endFilePos'],
+                ]);
+                $protoComment->setLocation($location);
+                $comments[] = $protoComment;
+            }
+
+            $lastStructuredParentStmt->setComments($comments);
+        }
+    }
 
     return $node;
 }
@@ -164,7 +196,9 @@ $fileNode = new \NodeType\File([
 $protoStmts = new \NodeType\Stmts();
 $fileNode->setStmts($protoStmts);
 $subs = [];
-file_put_contents('test.json', json_encode($json, JSON_PRETTY_PRINT));
+if(getenv('DEBUG')) {
+    file_put_contents('tmp.json', json_encode($json, JSON_PRETTY_PRINT));
+}
 foreach($json as $stmt) {
     stmtToProto($stmt, $protoStmts);
 }
@@ -177,6 +211,8 @@ switch($format) {
         break;
     case 'binary':
         echo $fileNode->serializeToString();
+        break;
+    case 'null':
         break;
     case 'json':
     default:

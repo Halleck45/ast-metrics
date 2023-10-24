@@ -27,6 +27,10 @@ class StmtClass extends \Google\Protobuf\Internal\Message
      * Generated from protobuf field <code>.NodeType.StmtLocationInFile location = 3;</code>
      */
     protected $location = null;
+    /**
+     * Generated from protobuf field <code>repeated .NodeType.StmtComment comments = 4;</code>
+     */
+    private $comments;
 
     /**
      * Constructor.
@@ -37,6 +41,7 @@ class StmtClass extends \Google\Protobuf\Internal\Message
      *     @type \NodeType\Name $name
      *     @type \NodeType\Stmts $stmts
      *     @type \NodeType\StmtLocationInFile $location
+     *     @type array<\NodeType\StmtComment>|\Google\Protobuf\Internal\RepeatedField $comments
      * }
      */
     public function __construct($data = NULL) {
@@ -136,6 +141,28 @@ class StmtClass extends \Google\Protobuf\Internal\Message
     {
         GPBUtil::checkMessage($var, \NodeType\StmtLocationInFile::class);
         $this->location = $var;
+
+        return $this;
+    }
+
+    /**
+     * Generated from protobuf field <code>repeated .NodeType.StmtComment comments = 4;</code>
+     * @return \Google\Protobuf\Internal\RepeatedField
+     */
+    public function getComments()
+    {
+        return $this->comments;
+    }
+
+    /**
+     * Generated from protobuf field <code>repeated .NodeType.StmtComment comments = 4;</code>
+     * @param array<\NodeType\StmtComment>|\Google\Protobuf\Internal\RepeatedField $var
+     * @return $this
+     */
+    public function setComments($var)
+    {
+        $arr = GPBUtil::checkRepeatedField($var, \Google\Protobuf\Internal\GPBType::MESSAGE, \NodeType\StmtComment::class);
+        $this->comments = $arr;
 
         return $this;
     }
