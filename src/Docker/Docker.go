@@ -9,6 +9,7 @@ import (
     "golang.org/x/net/context"
     "encoding/json"
     "io"
+    "strconv"
     "sync"
     "os"
     "github.com/pterm/pterm"
@@ -62,7 +63,7 @@ func PullImage(wg *sync.WaitGroup, progressbar *pterm.SpinnerPrinter, imageName 
             panic(err)
         }
 
-        //progressbar.UpdateText("Pulling docker " + imageName + " (" + event.ProgressDetail.Current + "/" + event.ProgressDetail.Total + ")")
+        //progressbar.UpdateText("Pulling docker " + imageName + " (" + strconv.Itoa(event.ProgressDetail.Current) + "/" + strconv.Itoa(event.ProgressDetail.Total) + ")")
 
     }
 

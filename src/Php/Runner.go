@@ -112,7 +112,7 @@ func Ensure(progressbar *pterm.SpinnerPrinter, phpSources embed.FS, sourcesToAna
         }
         phpVersion = string(phpVersionBytes)
 
-        progressbar.Info("PHP " + phpVersion)
+        progressbar.Info("PHP " + phpVersion+ " is ready")
         progressbar.Stop()
 
         return phpVersion, nil
@@ -129,7 +129,7 @@ func Ensure(progressbar *pterm.SpinnerPrinter, phpSources embed.FS, sourcesToAna
         }
 
         progressbar.UpdateText("PHP " + phpVersion)
-        progressbar.Info("PHP " + phpVersion)
+        progressbar.Info("PHP " + phpVersion + " is ready")
         defer progressbar.Stop()
     }
 
@@ -194,7 +194,7 @@ func DumpAST(progressbar *pterm.SpinnerPrinter, path string) {
 func Finish(progressbar *pterm.SpinnerPrinter, phpSources embed.FS ) (string, error) {
     cleanup(phpSources)
     //Docker.RemoveContainer("ast-php")
-    progressbar.Info("PHP ast dumped")
+    progressbar.Info("AST dumped for PHP files")
     //progressbar.Stop()
 
     return "", nil

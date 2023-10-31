@@ -5,6 +5,8 @@ import (
     "path/filepath"
     "bufio"
     "os"
+    "strconv"
+    "fmt"
     "github.com/urfave/cli/v2"
     "github.com/halleck45/ast-metrics/src/Php"
     "github.com/pterm/pterm"
@@ -18,8 +20,6 @@ var enginPhpSources embed.FS
 
 func main() {
 
-
-    //log.SetLevel(log.TraceLevel)
     log.SetLevel(log.TraceLevel)
 
     app := &cli.App{
@@ -60,7 +60,14 @@ func main() {
                         path, err = filepath.Abs(path)
                         if err != nil {
                             pterm.Error.Println(err.Error())
+                            return err
                         }
+                    }
+
+                    // ensure path exists
+                    if _, err := os.Stat(path); err != nil {
+                       pterm.Error.Println("Path '" + path + "' does not exist or is not readable")
+                       return err
                     }
 
                     // Prepare workdir
@@ -110,17 +117,27 @@ func main() {
                     // Now we start the analysis of each AST file
                     spinnerAllExecution.UpdateTitle("Analyzing...")
                     spinnerAllExecution.Increment()
-                    Analyzer.Start(pbAnalaysis1)
+                    allResults := Analyzer.Start(pbAnalaysis1)
+
                     // Start aggregating results
-                    pbAnalaysis1.Info("Aggregated results")
+                    spinnerAllExecution.UpdateTitle("Aggregating...")
+                    aggregated := Analyzer.Aggregates(allResults)
 
                     spinnerAllExecution.UpdateTitle("")
                     spinnerAllExecution.Stop()
                     multi.Stop()
 
                     // Inform user
-                    pterm.DefaultBasicText.Println("")
-                    pterm.DefaultBasicText.Println("Finished.")
+                    pterm.Success.Println("Finished")
+
+                   pterm.DefaultTable.WithBoxed().WithHasHeader().WithData(pterm.TableData{
+                   		{"Classes", "Methods", "AVG methods per class", "Min cyclomatic complexity", "Max cyclomatic complexity"},
+                   		{strconv.Itoa(aggregated.NbClasses), strconv.Itoa(aggregated.NbMethods), fmt.Sprintf("%.2f", aggregated.AverageMethodsPerClass), strconv.Itoa(aggregated.MinCyclomaticComplexity), strconv.Itoa(aggregated.MaxCyclomaticComplexity),},
+                   	}).Render()
+
+                   	pterm.Println() // Blank line
+
+
                     return nil
                 },
             },
