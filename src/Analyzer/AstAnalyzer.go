@@ -63,9 +63,8 @@ func Start(progressbar *pterm.SpinnerPrinter) {
     }
 
     wg.Wait()
-    progressbar.UpdateText("")
     progressbar.Info("Analysis finished")
-    progressbar.Stop()
+    //progressbar.Stop()
 }
 
 func executeFileAnalysis(file string) {
@@ -73,11 +72,20 @@ func executeFileAnalysis(file string) {
     // load AST via ProtoBuf (using NodeType package)
     in, err := ioutil.ReadFile(file)
     if err != nil {
-        log.Fatalln("Error reading file:", err)
+        log.Fatal("Error reading file:", err)
+        return
     }
+
+    // if file is empty, return
+    if len(in) == 0 {
+        log.Fatal("File is empty:", err)
+        return
+    }
+
     pbFile := &pb.File{}
     if err := proto.Unmarshal(in, pbFile); err != nil {
         log.Fatalln("Failed to parse address pbFile:", err)
+        return
     }
 
     root := &ASTNode{children: pbFile.Stmts}
@@ -119,6 +127,7 @@ func temporaryDisplayStatForClass(cl pb.StmtClass ) {
         return
     }
 
+    return
     fmt.Println("\nClass: " + cl.Name.Qualified)
     fmt.Println("    Cyclomatic complexity: " + strconv.Itoa(int(*cl.Stmts.Analyze.Complexity.Cyclomatic)))
     fmt.Println("    Logical lines of code: " + strconv.Itoa(int(*cl.Stmts.Analyze.Volume.Lloc)))
