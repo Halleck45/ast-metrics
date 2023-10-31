@@ -7,7 +7,7 @@ import (
     "io/fs"
     "os"
     "path/filepath"
-    "log"
+    log "github.com/sirupsen/logrus"
     "os/exec"
     "strings"
     "strconv"
@@ -15,19 +15,19 @@ import (
     "crypto/md5"
     "encoding/hex"
     "io"
-    "io/ioutil"
-    "bytes"
     "github.com/pterm/pterm"
     "github.com/halleck45/ast-metrics/src/Storage"
+    "github.com/halleck45/ast-metrics/src/Docker"
+    "github.com/docker/docker/api/types/mount"
 )
 
-func Ensure(progressbar *pterm.SpinnerPrinter, phpSources embed.FS ) (string, error) {
+func Ensure(progressbar *pterm.SpinnerPrinter, phpSources embed.FS, sourcesToAnalyzePath string) (string, error) {
 
     // clean up
     cleanup(phpSources)
 
     // Install sources locally (vendors)
-    tempDir := ".temp"
+    tempDir := Storage.Path() + "/.temp"
     if err := os.Mkdir(tempDir, 0755); err != nil {
         log.Fatal(err)
     }
@@ -52,19 +52,87 @@ func Ensure(progressbar *pterm.SpinnerPrinter, phpSources embed.FS ) (string, er
         log.Fatal(err)
     }
 
-	// Get PHP binary path. IF env PHP_BINARY_PATH is not set, use default value
-    phpBinaryPath := getPHPBinaryPath()
 
-    // Get PHP version
-    phpVersion := getPHPVersion(phpBinaryPath)
+    var useDocker bool = true // @todo add an option
+    var phpVersion string
+    if useDocker {
 
-    // if version is empty, throw error
-    if phpVersion == "" {
-        return "", errors.New("Cannot get PHP version using the PHP binary path: " + phpBinaryPath + ". Please check if PHP is installed, or set the PHP_BINARY_PATH environment variable to the correct path.")
+        imageName := "php:8.1-cli-alpine"
+        // Pull
+        var wg sync.WaitGroup
+        wg.Add(1)
+        progressbar.UpdateText("Pulling docker " + imageName + " image")
+        go Docker.PullImage(&wg, progressbar, imageName)
+        wg.Wait()
+
+        // Ensure outdir exists
+        if _, err := os.Stat(getLocalOutDirectory()); os.IsNotExist(err) {
+            if err := os.Mkdir(getLocalOutDirectory(), 0755); err != nil {
+                log.Fatal(err)
+            }
+        }
+
+        // Run container
+        // do not mount /tmp : permissions issues
+        mounts := []mount.Mount{
+           {
+               Type:     mount.TypeBind,
+               Source:   Storage.Path() + "/.temp/engine/php",
+               Target:   "/tmp/engine",
+               ReadOnly: true,
+           },
+           {
+              Type:     mount.TypeBind,
+                Source:   sourcesToAnalyzePath,
+                Target:   "/tmp/sources",
+                ReadOnly: true,
+            },
+           {
+              Type:     mount.TypeBind,
+                Source:   getLocalOutDirectory(),
+                Target:   getContainerOutDirectory(),
+                ReadOnly: false,
+
+            },
+        }
+        // Create and start container. We want a deamonized, container, with an infinite loop. Loop stops when /tmp/engine is deleted
+        loopString :=  []string{"sh", "-c", "until [ ! -f /tmp/engine/dump.php ]; do echo wait; sleep 1; done"}
+        Docker.RunImage(imageName, "ast-php", mounts, loopString)
+
+        // Execute command in container
+        progressbar.UpdateText("Checking PHP version")
+        command := []string{"sh", "-c", "php -r 'echo PHP_VERSION;' > " + getContainerOutDirectory() + "/php_version"}
+        Docker.ExecuteInRunningContainer("ast-php", command)
+        // get content of local file
+        phpVersionBytes, err := os.ReadFile(getLocalOutDirectory() + "/php_version")
+        if err != nil {
+            log.Fatal(err)
+            progressbar.Fail("Error while checking PHP version")
+            return "", err
+        }
+        phpVersion = string(phpVersionBytes)
+
+        progressbar.Info("PHP " + phpVersion)
+        progressbar.Stop()
+
+        return phpVersion, nil
+    } else {
+        // Get PHP binary path. IF env PHP_BINARY_PATH is not set, use default value
+        phpBinaryPath := getPHPBinaryPath()
+
+        // Get PHP version
+        phpVersion := getPHPVersion(phpBinaryPath)
+
+        // if version is empty, throw error
+        if phpVersion == "" {
+            return "", errors.New("Cannot get PHP version using the PHP binary path: " + phpBinaryPath + ". Please check if PHP is installed, or set the PHP_BINARY_PATH environment variable to the correct path.")
+        }
+
+        progressbar.UpdateText("PHP " + phpVersion)
+        progressbar.Info("PHP " + phpVersion)
+        defer progressbar.Stop()
     }
 
-    progressbar.Info("PHP is ready (v" + phpVersion + ")")
-    progressbar.Stop()
 
     return phpVersion, nil
 }
@@ -79,11 +147,10 @@ func DumpAST(progressbar *pterm.SpinnerPrinter, path string) {
         progressbar.Fail("Error while listing PHP files")
     }
 
-
     maxParallelCommands := os.Getenv("MAX_PARALLEL_COMMANDS")
     // if maxParallelCommands is empty, set default value
     if maxParallelCommands == "" {
-        maxParallelCommands = "10"
+        maxParallelCommands = "100"
     }
     // to int
     maxParallelCommandsInt, err := strconv.Atoi(maxParallelCommands)
@@ -91,7 +158,7 @@ func DumpAST(progressbar *pterm.SpinnerPrinter, path string) {
         progressbar.Fail("Error while parsing MAX_PARALLEL_COMMANDS env variable")
     }
 
-    workDir := Storage.Path()
+    workDir := getLocalOutDirectory()
 
     // Wait for end of all goroutines
     var wg sync.WaitGroup
@@ -105,7 +172,7 @@ func DumpAST(progressbar *pterm.SpinnerPrinter, path string) {
             sem <- struct{}{}
             go func(file string) {
                 defer wg.Done()
-                executePHPCommandForFile(workDir, file)
+                executePHPCommandForFile(workDir, file, path)
 
                 // details is the number of files processed / total number of files
                 details := strconv.Itoa(nbParsingFiles) + "/" + strconv.Itoa(len(matches))
@@ -121,21 +188,21 @@ func DumpAST(progressbar *pterm.SpinnerPrinter, path string) {
     }
 
     wg.Wait()
-    progressbar.UpdateText("")
     progressbar.Info("PHP analysis finished")
-    progressbar.Stop()
 }
 
 func Finish(progressbar *pterm.SpinnerPrinter, phpSources embed.FS ) (string, error) {
     cleanup(phpSources)
-    progressbar.Info("Cleaned up")
-    progressbar.Stop()
+    //Docker.RemoveContainer("ast-php")
+    progressbar.Info("PHP ast dumped")
+    //progressbar.Stop()
+
     return "", nil
 }
 
 func cleanup(phpSources embed.FS ) (string, error) {
     // Remove temp directory
-    tempDir := ".temp"
+    tempDir := Storage.Path() + "/.temp"
 
     // check if tempDir exists
     if _, err := os.Stat(tempDir); os.IsNotExist(err) {
@@ -164,7 +231,7 @@ func getFileHash(filePath string) (string, error) {
     return hex.EncodeToString(hasher.Sum(nil)), nil
 }
 
-func executePHPCommandForFile(tmpDir string, file string) {
+func executePHPCommandForFile(tmpDir string, file string, path string) {
 
     hash, err := getFileHash(file)
     if err != nil {
@@ -173,38 +240,26 @@ func executePHPCommandForFile(tmpDir string, file string) {
     }
     outputFilePath := filepath.Join(tmpDir, hash + ".bin")
 
+    relativePath := strings.Replace(file, path, "", 1)
+    relativePath = strings.TrimLeft(relativePath, "/")
+
     // if file already exists, skip
     if _, err := os.Stat(outputFilePath); !os.IsNotExist(err) {
         return
     }
 
     phpBinaryPath := getPHPBinaryPath()
-    cmd := exec.Command(phpBinaryPath, ".temp/engine/php/dump.php", file)
-    cmd.Env = os.Environ()
-    cmd.Env = append(cmd.Env, "OUTPUT_FORMAT=binary")
-    var out bytes.Buffer
-    cmd.Stdout = io.MultiWriter(ioutil.Discard, &out)
-
-    if err := cmd.Run(); err != nil {
-        log.Printf("Cannot execute command %s : %v\n", cmd.String(), err)
-
-        // output
-        log.Printf("Output : %s\n", out.String())
-        return
-    }
-
-    jsonBytes := out.Bytes()
-
-    if err := ioutil.WriteFile(outputFilePath, jsonBytes, 0644); err != nil {
-        log.Printf("Cannot write file %s : %v\n", outputFilePath, err)
-    }
-
-    // Redirige la sortie de la commande vers /dev/null
-    cmd.Stdout = ioutil.Discard
-    cmd.Stderr = os.Stderr
+    containerOutputFilePath := getContainerOutDirectory() + "/" + hash + ".bin"
+    command := "(" + phpBinaryPath + " /tmp/engine/dump.php /tmp/sources/" + relativePath + " > " + containerOutputFilePath + ") || rm " + containerOutputFilePath
+    Docker.ExecuteInRunningContainer("ast-php", []string{"sh", "-c", command})
 }
 
 func getPHPBinaryPath() string {
+    var useDocker bool = true // @todo add an option
+    if useDocker {
+        return "php"
+    }
+
     phpBinaryPath := os.Getenv("PHP_BINARY_PATH")
     if phpBinaryPath == "" {
         phpBinaryPath = "php"
@@ -228,4 +283,11 @@ func getPHPVersion(phpBinaryPath string) string {
     outString = strings.TrimSpace(outString)
 
     return outString
+}
+
+func getContainerOutDirectory() string {
+    return "/root/output"
+}
+func getLocalOutDirectory() string {
+    return Storage.Path() + "/output"
 }
