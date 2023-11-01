@@ -29,7 +29,7 @@ build-protobuff:
 	@echo "\e[34m\033[1mDONE \033[0m\e[39m\n"
 build-go:
 	@echo "\e[34m\033[1m-> Building go binaries\033[0m\e[39m\n"
-	go build -o bin/ast-metrics
+	go build -o bin/ghostea
 	@echo "\e[34m\033[1mDONE \033[0m\e[39m\n"
 build: install build-go build-protobuff
 	@echo "\n\e[42m  BUILD FINISHED  \e[49m\n"
