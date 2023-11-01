@@ -21,10 +21,33 @@ import (
     "github.com/docker/docker/api/types/mount"
 )
 
-func Ensure(progressbar *pterm.SpinnerPrinter, phpSources embed.FS, sourcesToAnalyzePath string) (string, error) {
+type PhpRunner struct {
+    progressbar *pterm.SpinnerPrinter
+    phpSources embed.FS
+    SourcesToAnalyzePath string
+}
+
+func (r PhpRunner) IsRequired() (bool) {
+    return true
+}
+
+func (r *PhpRunner) SetProgressbar(progressbar *pterm.SpinnerPrinter) {
+    (*r).progressbar = progressbar
+}
+
+func (r *PhpRunner) SetSourcesToAnalyzePath(path string) {
+    (*r).SourcesToAnalyzePath = path
+}
+
+func (r *PhpRunner) SetEmbeddedSources(sources embed.FS) {
+    (*r).phpSources = sources
+}
+
+
+func (r PhpRunner) Ensure() (error) {
 
     // clean up
-    cleanup(phpSources)
+    cleanup(r.phpSources)
 
     // Install sources locally (vendors)
     tempDir := Storage.Path() + "/.temp"
@@ -33,9 +56,14 @@ func Ensure(progressbar *pterm.SpinnerPrinter, phpSources embed.FS, sourcesToAna
     }
 
     // Extract PHP sources for directories "engine/php/vendor", etc
-    if err := fs.WalkDir(phpSources, "engine/php", func(path string, d fs.DirEntry, err error) error {
+    if err := fs.WalkDir(r.phpSources, "engine/php", func(path string, d fs.DirEntry, err error) error {
+
+        if err != nil {
+            return err
+        }
+
         if d.Type().IsRegular() {
-            content, err := phpSources.ReadFile(path)
+            content, err := r.phpSources.ReadFile(path)
             if err != nil {
                 return err
             }
@@ -61,8 +89,8 @@ func Ensure(progressbar *pterm.SpinnerPrinter, phpSources embed.FS, sourcesToAna
         // Pull
         var wg sync.WaitGroup
         wg.Add(1)
-        progressbar.UpdateText("Pulling docker " + imageName + " image")
-        go Docker.PullImage(&wg, progressbar, imageName)
+        r.progressbar.UpdateText("Pulling docker " + imageName + " image")
+        go Docker.PullImage(&wg, r.progressbar, imageName)
         wg.Wait()
 
         // Ensure outdir exists
@@ -83,7 +111,7 @@ func Ensure(progressbar *pterm.SpinnerPrinter, phpSources embed.FS, sourcesToAna
            },
            {
               Type:     mount.TypeBind,
-                Source:   sourcesToAnalyzePath,
+                Source:   r.SourcesToAnalyzePath,
                 Target:   "/tmp/sources",
                 ReadOnly: true,
             },
@@ -100,22 +128,22 @@ func Ensure(progressbar *pterm.SpinnerPrinter, phpSources embed.FS, sourcesToAna
         Docker.RunImage(imageName, "ast-php", mounts, loopString)
 
         // Execute command in container
-        progressbar.UpdateText("Checking PHP version")
+        r.progressbar.UpdateText("Checking PHP version")
         command := []string{"sh", "-c", "php -r 'echo PHP_VERSION;' > " + getContainerOutDirectory() + "/php_version"}
         Docker.ExecuteInRunningContainer("ast-php", command)
         // get content of local file
         phpVersionBytes, err := os.ReadFile(getLocalOutDirectory() + "/php_version")
         if err != nil {
             log.Fatal(err)
-            progressbar.Fail("Error while checking PHP version")
-            return "", err
+            r.progressbar.Fail("Error while checking PHP version")
+            return  err
         }
         phpVersion = string(phpVersionBytes)
 
-        progressbar.Info("PHP " + phpVersion+ " is ready")
-        progressbar.Stop()
+        r.progressbar.Info("PHP " + phpVersion+ " is ready")
+        r.progressbar.Stop()
 
-        return phpVersion, nil
+        return nil
     } else {
         // Get PHP binary path. IF env PHP_BINARY_PATH is not set, use default value
         phpBinaryPath := getPHPBinaryPath()
@@ -125,26 +153,26 @@ func Ensure(progressbar *pterm.SpinnerPrinter, phpSources embed.FS, sourcesToAna
 
         // if version is empty, throw error
         if phpVersion == "" {
-            return "", errors.New("Cannot get PHP version using the PHP binary path: " + phpBinaryPath + ". Please check if PHP is installed, or set the PHP_BINARY_PATH environment variable to the correct path.")
+            return errors.New("Cannot get PHP version using the PHP binary path: " + phpBinaryPath + ". Please check if PHP is installed, or set the PHP_BINARY_PATH environment variable to the correct path.")
         }
 
-        progressbar.UpdateText("PHP " + phpVersion)
-        progressbar.Info("PHP " + phpVersion + " is ready")
-        defer progressbar.Stop()
+        r.progressbar.UpdateText("PHP " + phpVersion)
+        r.progressbar.Info("PHP " + phpVersion + " is ready")
+        defer r.progressbar.Stop()
     }
 
 
-    return phpVersion, nil
+    return nil
 }
 
-func DumpAST(progressbar *pterm.SpinnerPrinter, path string) {
+func (r PhpRunner) DumpAST() {
 
     // list all .php file in path, recursively
-    path = strings.TrimRight(path, "/")
+    path := strings.TrimRight(r.SourcesToAnalyzePath, "/")
 
     matches, err := filepathx.Glob(path + "/**/*.php")
     if err != nil {
-        progressbar.Fail("Error while listing PHP files")
+        r.progressbar.Fail("Error while listing PHP files")
     }
 
     maxParallelCommands := os.Getenv("MAX_PARALLEL_COMMANDS")
@@ -155,7 +183,7 @@ func DumpAST(progressbar *pterm.SpinnerPrinter, path string) {
     // to int
     maxParallelCommandsInt, err := strconv.Atoi(maxParallelCommands)
     if err != nil {
-        progressbar.Fail("Error while parsing MAX_PARALLEL_COMMANDS env variable")
+        r.progressbar.Fail("Error while parsing MAX_PARALLEL_COMMANDS env variable")
     }
 
     workDir := getLocalOutDirectory()
@@ -176,7 +204,7 @@ func DumpAST(progressbar *pterm.SpinnerPrinter, path string) {
 
                 // details is the number of files processed / total number of files
                 details := strconv.Itoa(nbParsingFiles) + "/" + strconv.Itoa(len(matches))
-                progressbar.UpdateText("Parsing PHP files (" + details + ")")
+                r.progressbar.UpdateText("Parsing PHP files (" + details + ")")
                 <-sem
             }(file)
         }
@@ -188,16 +216,13 @@ func DumpAST(progressbar *pterm.SpinnerPrinter, path string) {
     }
 
     wg.Wait()
-    progressbar.Info("PHP analysis finished")
+    r.progressbar.Info("PHP analysis finished")
 }
 
-func Finish(progressbar *pterm.SpinnerPrinter, phpSources embed.FS ) (string, error) {
-    cleanup(phpSources)
-    //Docker.RemoveContainer("ast-php")
-    progressbar.Info("AST dumped for PHP files")
-    //progressbar.Stop()
-
-    return "", nil
+func (r PhpRunner)  Finish() (error) {
+    cleanup(r.phpSources)
+    r.progressbar.Info("AST dumped for PHP files")
+    return nil
 }
 
 func cleanup(phpSources embed.FS ) (string, error) {

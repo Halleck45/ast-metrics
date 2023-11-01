@@ -11,6 +11,7 @@ import (
     "github.com/halleck45/ast-metrics/src/Php"
     "github.com/pterm/pterm"
     "github.com/halleck45/ast-metrics/src/Storage"
+    "github.com/halleck45/ast-metrics/src/Engine"
     "github.com/halleck45/ast-metrics/src/Analyzer"
     log "github.com/sirupsen/logrus"
 )
@@ -77,39 +78,51 @@ func main() {
                     multi := pterm.DefaultMultiPrinter.WithWriter(outWriter)
                     spinnerAllExecution, _ := pterm.DefaultProgressbar.WithTotal(3).WithWriter(multi.NewWriter()).WithTitle("Analyzing").Start()
 
-                    pb1, _ := pterm.DefaultSpinner.WithWriter(multi.NewWriter()).Start("Checking PHP Engine")
-                    pb2, _ := pterm.DefaultSpinner.WithWriter(multi.NewWriter()).Start("Parsing PHP files")
+                    //pb2, _ := pterm.DefaultSpinner.WithWriter(multi.NewWriter()).Start("Parsing PHP files")
                     pbAnalaysis1, _ := pterm.DefaultSpinner.WithWriter(multi.NewWriter()).Start("Main analysis")
+
+                    // Engines
+                    runnerPhp := Php.PhpRunner{}
+                    progressBarEnginePhp, _ := pterm.DefaultSpinner.WithWriter(multi.NewWriter()).Start("Checking PHP Engine")
+                    runnerPhp.SetProgressbar(progressBarEnginePhp)
+                    runnerPhp.SetSourcesToAnalyzePath(path)
+                    runnerPhp.SetEmbeddedSources(enginPhpSources)
+
+                    // Add engines to the list
+                    runners := []Engine.Engine{&runnerPhp}
+
+                    // Start progress bars
                     multi.Start()
 
-                    // Ensure engines are installed
-                    // @todo: make engine dynamic, and loop through all engines
-                    spinnerAllExecution.UpdateTitle("Downloading dependencies...")
-                    spinnerAllExecution.Increment()
-                    _, err := Php.Ensure(pb1, enginPhpSources, path)
-                    if err != nil {
-                        pterm.Error.Println(err.Error())
-                        return err
+                    for _, runner := range runners {
+
+                        if runner.IsRequired() {
+                            spinnerAllExecution.Increment()
+                            err := runner.Ensure()
+                            if err != nil {
+                                pterm.Error.Println(err.Error())
+                                return err
+                            }
+
+                            // Dump ASTs (in parallel)
+                            spinnerAllExecution.UpdateTitle("Dumping AST code...")
+                            spinnerAllExecution.Increment()
+                            done := make(chan struct{})
+                                go func() {
+                                    runner.DumpAST()
+                                    close(done)
+                                }()
+                            <-done
+
+                            // Cleaning up
+                            err = runner.Finish()
+                            if err != nil {
+                                pterm.Error.Println(err.Error())
+                                return err
+                            }
+                        }
                     }
 
-                    // Dump ASTs (in parallel)
-                    spinnerAllExecution.UpdateTitle("Dumping AST code...")
-                    spinnerAllExecution.Increment()
-                    done := make(chan struct{})
-                        go func() {
-                            Php.DumpAST(pb2, path)
-                            close(done)
-                        }()
-                    <-done
-
-
-                    // Cleaning up
-                    // @todo: make engine dynamic, and loop through all engines
-                    _, err = Php.Finish(pb2, enginPhpSources)
-                    if err != nil {
-                        pterm.Error.Println(err.Error())
-                        return err
-                    }
 
                     // Wait for all sub-processes to finish
                     outWriter.Flush()
