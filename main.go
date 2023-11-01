@@ -78,9 +78,6 @@ func main() {
                     multi := pterm.DefaultMultiPrinter.WithWriter(outWriter)
                     spinnerAllExecution, _ := pterm.DefaultProgressbar.WithTotal(3).WithWriter(multi.NewWriter()).WithTitle("Analyzing").Start()
 
-                    //pb2, _ := pterm.DefaultSpinner.WithWriter(multi.NewWriter()).Start("Parsing PHP files")
-                    pbAnalaysis1, _ := pterm.DefaultSpinner.WithWriter(multi.NewWriter()).Start("Main analysis")
-
                     // Engines
                     runnerPhp := Php.PhpRunner{}
                     progressBarEnginePhp, _ := pterm.DefaultSpinner.WithWriter(multi.NewWriter()).Start("Checking PHP Engine")
@@ -128,6 +125,7 @@ func main() {
                     outWriter.Flush()
 
                     // Now we start the analysis of each AST file
+                    pbAnalaysis1, _ := pterm.DefaultSpinner.WithWriter(multi.NewWriter()).Start("Main analysis")
                     spinnerAllExecution.UpdateTitle("Analyzing...")
                     spinnerAllExecution.Increment()
                     allResults := Analyzer.Start(pbAnalaysis1)

@@ -89,7 +89,7 @@ func (r PhpRunner) Ensure() (error) {
         // Pull
         var wg sync.WaitGroup
         wg.Add(1)
-        r.progressbar.UpdateText("Pulling docker " + imageName + " image")
+        r.progressbar.UpdateText("🐘 Pulling docker " + imageName + " image")
         go Docker.PullImage(&wg, r.progressbar, imageName)
         wg.Wait()
 
@@ -140,7 +140,7 @@ func (r PhpRunner) Ensure() (error) {
         }
         phpVersion = string(phpVersionBytes)
 
-        r.progressbar.Info("PHP " + phpVersion+ " is ready")
+        r.progressbar.Info("🐘 PHP " + phpVersion+ " is ready")
         r.progressbar.Stop()
 
         return nil
@@ -173,6 +173,7 @@ func (r PhpRunner) DumpAST() {
     matches, err := filepathx.Glob(path + "/**/*.php")
     if err != nil {
         r.progressbar.Fail("Error while listing PHP files")
+        return
     }
 
     maxParallelCommands := os.Getenv("MAX_PARALLEL_COMMANDS")
@@ -184,6 +185,7 @@ func (r PhpRunner) DumpAST() {
     maxParallelCommandsInt, err := strconv.Atoi(maxParallelCommands)
     if err != nil {
         r.progressbar.Fail("Error while parsing MAX_PARALLEL_COMMANDS env variable")
+        return
     }
 
     workDir := getLocalOutDirectory()
@@ -204,7 +206,7 @@ func (r PhpRunner) DumpAST() {
 
                 // details is the number of files processed / total number of files
                 details := strconv.Itoa(nbParsingFiles) + "/" + strconv.Itoa(len(matches))
-                r.progressbar.UpdateText("Parsing PHP files (" + details + ")")
+                r.progressbar.UpdateText("🐘 Parsing PHP files (" + details + ")")
                 <-sem
             }(file)
         }
@@ -216,12 +218,11 @@ func (r PhpRunner) DumpAST() {
     }
 
     wg.Wait()
-    r.progressbar.Info("PHP analysis finished")
+    r.progressbar.Info("🐘 PHP code dumped")
 }
 
 func (r PhpRunner)  Finish() (error) {
     cleanup(r.phpSources)
-    r.progressbar.Info("AST dumped for PHP files")
     return nil
 }
 
