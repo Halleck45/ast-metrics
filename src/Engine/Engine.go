@@ -4,6 +4,7 @@ package Engine
 import (
     "embed"
     "github.com/pterm/pterm"
+    "github.com/halleck45/ast-metrics/src/Driver"
 )
 
 type Engine interface {
@@ -14,4 +15,5 @@ type Engine interface {
     SetProgressbar(progressbar *pterm.SpinnerPrinter)
     SetSourcesToAnalyzePath(path string)
     SetEmbeddedSources(sources embed.FS)
+    SetDriver(driver Driver.Driver)
 }

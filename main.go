@@ -13,6 +13,7 @@ import (
     "github.com/halleck45/ast-metrics/src/Storage"
     "github.com/halleck45/ast-metrics/src/Engine"
     "github.com/halleck45/ast-metrics/src/Analyzer"
+    "github.com/halleck45/ast-metrics/src/Driver"
     log "github.com/sirupsen/logrus"
 )
 
@@ -22,6 +23,8 @@ var enginPhpSources embed.FS
 func main() {
 
     log.SetLevel(log.TraceLevel)
+
+    var driverSelected string
 
     app := &cli.App{
 
@@ -35,6 +38,12 @@ func main() {
                         Name:  "verbose",
                         Aliases:  []string{"v"},
                         Usage: "Enable verbose mode",
+                    },
+                    &cli.StringFlag{
+                        Name:        "driver",
+                        Value:       "docker",
+                        Usage:       "Driver to use (docker or native)",
+                        Destination: &driverSelected,
                     },
                 },
                 Action: func(cCtx *cli.Context) error {
@@ -92,6 +101,14 @@ func main() {
                     multi.Start()
 
                     for _, runner := range runners {
+
+                        // Driver
+                        var driver Driver.Driver
+                        driver = Driver.Native
+                        if driverSelected == "docker" {
+                            driver = Driver.Docker
+                        }
+                        runner.SetDriver(driver)
 
                         if runner.IsRequired() {
                             spinnerAllExecution.Increment()
