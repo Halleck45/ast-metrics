@@ -1,7 +1,6 @@
 package main
 
 import (
-    "embed"
     "path/filepath"
     "bufio"
     "os"
@@ -17,17 +16,12 @@ import (
     log "github.com/sirupsen/logrus"
 )
 
-//go:embed engine/php/vendor/* engine/php/generated/* engine/php/dump.php
-var enginPhpSources embed.FS
-
 func main() {
 
     log.SetLevel(log.TraceLevel)
-
     var driverSelected string
 
     app := &cli.App{
-
         Commands: []*cli.Command{
             {
                 Name:    "analyze",
@@ -87,14 +81,8 @@ func main() {
                     multi := pterm.DefaultMultiPrinter.WithWriter(outWriter)
                     spinnerAllExecution, _ := pterm.DefaultProgressbar.WithTotal(3).WithWriter(multi.NewWriter()).WithTitle("Analyzing").Start()
 
-                    // Engines
+                    // Supported engines are here
                     runnerPhp := Php.PhpRunner{}
-                    progressBarEnginePhp, _ := pterm.DefaultSpinner.WithWriter(multi.NewWriter()).Start("Checking PHP Engine")
-                    runnerPhp.SetProgressbar(progressBarEnginePhp)
-                    runnerPhp.SetSourcesToAnalyzePath(path)
-                    runnerPhp.SetEmbeddedSources(enginPhpSources)
-
-                    // Add engines to the list
                     runners := []Engine.Engine{&runnerPhp}
 
                     // Start progress bars
@@ -109,6 +97,9 @@ func main() {
                             driver = Driver.Docker
                         }
                         runner.SetDriver(driver)
+                        progressBarSpecificForEngine, _ := pterm.DefaultSpinner.WithWriter(multi.NewWriter()).Start("Checking PHP Engine")
+                        runnerPhp.SetProgressbar(progressBarSpecificForEngine)
+                        runnerPhp.SetSourcesToAnalyzePath(path)
 
                         if runner.IsRequired() {
                             spinnerAllExecution.Increment()
@@ -136,7 +127,6 @@ func main() {
                             }
                         }
                     }
-
 
                     // Wait for all sub-processes to finish
                     outWriter.Flush()

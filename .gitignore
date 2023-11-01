@@ -1,4 +1,4 @@
 .ast-metrics-cache
-engine/php/vendor
+vendor
 .idea
 bin

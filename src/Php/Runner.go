@@ -21,9 +21,12 @@ import (
     "github.com/docker/docker/api/types/mount"
 )
 
+// This allows to embed PHP sources in GO binary
+//go:embed phpsources
+var phpSources embed.FS
+
 type PhpRunner struct {
     progressbar *pterm.SpinnerPrinter
-    phpSources embed.FS
     sourcesToAnalyzePath string
     driver Driver.Driver
 }
@@ -40,14 +43,9 @@ func (r *PhpRunner) SetSourcesToAnalyzePath(path string) {
     (*r).sourcesToAnalyzePath = path
 }
 
-func (r *PhpRunner) SetEmbeddedSources(sources embed.FS) {
-    (*r).phpSources = sources
-}
-
 func (r *PhpRunner) SetDriver(driver Driver.Driver) {
     (*r).driver = driver
 }
-
 
 func (r *PhpRunner) getContainerOutDirectory() string {
     return "/root/output"
@@ -56,27 +54,27 @@ func (r *PhpRunner) getLocalOutDirectory() string {
     return Storage.Path() + "/output"
 }
 
-
 func (r PhpRunner) Ensure() (error) {
 
     // clean up
-    cleanup(r.phpSources)
+    cleanup(phpSources)
 
     // Install sources locally (vendors)
     tempDir := Storage.Path() + "/.temp"
     if err := os.Mkdir(tempDir, 0755); err != nil {
         log.Fatal(err)
+        return err
     }
 
-    // Extract PHP sources for directories "engine/php/vendor", etc
-    if err := fs.WalkDir(r.phpSources, "engine/php", func(path string, d fs.DirEntry, err error) error {
+    // Extract PHP sources for directories "vendor", etc
+    if err := fs.WalkDir(phpSources, ".", func(path string, d fs.DirEntry, err error) error {
 
         if err != nil {
             return err
         }
 
         if d.Type().IsRegular() {
-            content, err := r.phpSources.ReadFile(path)
+            content, err := phpSources.ReadFile(path)
             if err != nil {
                 return err
             }
@@ -91,6 +89,7 @@ func (r PhpRunner) Ensure() (error) {
         return nil
     }); err != nil {
         log.Fatal(err)
+        return err
     }
 
     // Ensure outdir exists
@@ -116,7 +115,7 @@ func (r PhpRunner) Ensure() (error) {
         mounts := []mount.Mount{
            {
                Type:     mount.TypeBind,
-               Source:   Storage.Path() + "/.temp/engine/php",
+               Source:   Storage.Path() + "/.temp/phpsources",
                Target:   "/tmp/engine",
                ReadOnly: true,
            },
@@ -147,7 +146,7 @@ func (r PhpRunner) Ensure() (error) {
         Docker.ExecuteInRunningContainer("ast-php", command)
     } else {
         phpBinaryPath := getPHPBinaryPath()
-        cmd := exec.Command(phpBinaryPath, "-r", "echo PHP_VERSION;", ">", r.getLocalOutDirectory() + "/php_version")
+        cmd := exec.Command("sh", "-c" , phpBinaryPath +  " -r 'echo PHP_VERSION;' > " +  r.getLocalOutDirectory() + "/php_version")
         if err := cmd.Run(); err != nil {
             log.Fatal(err)
             return err
@@ -226,7 +225,7 @@ func (r PhpRunner) DumpAST() {
 }
 
 func (r PhpRunner) Finish() (error) {
-    cleanup(r.phpSources)
+    cleanup(phpSources)
     return nil
 }
 
@@ -278,10 +277,19 @@ func (r PhpRunner)  executePHPCommandForFile(tmpDir string, file string, path st
         return
     }
 
-    phpBinaryPath := getPHPBinaryPath()
-    containerOutputFilePath := r.getContainerOutDirectory() + "/" + hash + ".bin"
-    command := "(" + phpBinaryPath + " /tmp/engine/dump.php /tmp/sources/" + relativePath + " > " + containerOutputFilePath + ") || rm " + containerOutputFilePath
-    Docker.ExecuteInRunningContainer("ast-php", []string{"sh", "-c", command})
+    if r.driver == Driver.Docker {
+        containerOutputFilePath := r.getContainerOutDirectory() + "/" + hash + ".bin"
+        command := "(php /tmp/engine/dump.php /tmp/sources/" + relativePath + " > " + containerOutputFilePath + ") || rm " + containerOutputFilePath
+        Docker.ExecuteInRunningContainer("ast-php", []string{"sh", "-c", command})
+    } else {
+        phpBinaryPath := getPHPBinaryPath()
+        tempDir := Storage.Path() + "/.temp"
+        cmd := exec.Command("sh", "-c" , phpBinaryPath + " " + tempDir + "/phpsources/dump.php " + file + " > " + outputFilePath)
+        if err := cmd.Run(); err != nil {
+            log.Printf("Cannot execute command %s : %v\n", cmd.String(), err)
+            return
+        }
+    }
 }
 
 func getPHPBinaryPath() string {
@@ -297,21 +305,3 @@ func getPHPBinaryPath() string {
 
     return phpBinaryPath
 }
-
-func getPHPVersion(phpBinaryPath string) string {
-    cmd := exec.Command(phpBinaryPath, "-v")
-    out, err := cmd.CombinedOutput()
-    if err != nil {
-        return ""
-    }
-
-    outString  := string(out)
-    outString  = outString[0:10]
-    outString  = outString[4:10]
-
-    // trim
-    outString = strings.TrimSpace(outString)
-
-    return outString
-}
-
