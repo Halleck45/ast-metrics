@@ -4,8 +4,6 @@ import (
     "path/filepath"
     "bufio"
     "os"
-    "strconv"
-    "fmt"
     "github.com/urfave/cli/v2"
     "github.com/halleck45/ast-metrics/src/Php"
     "github.com/pterm/pterm"
@@ -81,6 +79,7 @@ func main() {
                     // Prepare progress bars
                     multi := pterm.DefaultMultiPrinter.WithWriter(outWriter)
                     spinnerAllExecution, _ := pterm.DefaultProgressbar.WithTotal(3).WithWriter(multi.NewWriter()).WithTitle("Analyzing").Start()
+                    spinnerAllExecution.RemoveWhenDone = true
 
                     // Supported engines are here
                     runnerPhp := Php.PhpRunner{}
@@ -146,17 +145,8 @@ func main() {
                     spinnerAllExecution.Stop()
                     multi.Stop()
 
-                    // Inform user
-                    pterm.Success.Println("Finished")
-
-                    pterm.DefaultTable.WithBoxed().WithHasHeader().WithData(pterm.TableData{
-                   		{"Classes", "Methods", "AVG methods per class", "Min cyclomatic complexity", "Max cyclomatic complexity", "AVG Halstead Volume"},
-                   		{strconv.Itoa(aggregated.NbClasses), strconv.Itoa(aggregated.NbMethods), fmt.Sprintf("%.2f", aggregated.AverageMethodsPerClass), strconv.Itoa(aggregated.MinCyclomaticComplexity), strconv.Itoa(aggregated.MaxCyclomaticComplexity), fmt.Sprintf("%.2f", aggregated.AverageHalsteadVolume)},
-                    }).Render()
-
-                    pterm.Println() // Blank line
-
-
+                    // Dislpay results
+                    Cli.AggregationSummary(aggregated)
                     Cli.TableForClasses(allResults)
 
                     return nil

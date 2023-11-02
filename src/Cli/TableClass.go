@@ -8,6 +8,7 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 	pb "github.com/halleck45/ast-metrics/src/NodeType"
+    "github.com/charmbracelet/glamour"
 )
 
 var baseStyle = lipgloss.NewStyle().
@@ -25,18 +26,8 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
 		switch msg.String() {
-		case "esc":
-			if m.table.Focused() {
-				m.table.Blur()
-			} else {
-				m.table.Focus()
-			}
-		case "q", "ctrl+c":
+		case "q", "ctrl+c", "esc":
 			return m, tea.Quit
-		case "enter":
-			return m, tea.Batch(
-				tea.Printf("Let's go to %s!", m.table.SelectedRow()[1]),
-			)
 		}
 	}
 	m.table, cmd = m.table.Update(msg)
@@ -48,6 +39,16 @@ func (m model) View() string {
 }
 
 func TableForClasses(pbFiles []pb.File) {
+
+    in := `# Classes overview
+
+    > Use arrows to navigate and esc to quit.
+
+    `
+    out, _ := glamour.Render(in, "dark")
+    fmt.Print(out)
+
+
 	columns := []table.Column{
 		{Title: "Class", Width: 20},
 		{Title: "LLoc", Width: 10},
