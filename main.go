@@ -13,6 +13,7 @@ import (
     "github.com/halleck45/ast-metrics/src/Engine"
     "github.com/halleck45/ast-metrics/src/Analyzer"
     "github.com/halleck45/ast-metrics/src/Driver"
+    "github.com/halleck45/ast-metrics/src/Cli"
     log "github.com/sirupsen/logrus"
 )
 
@@ -148,13 +149,15 @@ func main() {
                     // Inform user
                     pterm.Success.Println("Finished")
 
-                   pterm.DefaultTable.WithBoxed().WithHasHeader().WithData(pterm.TableData{
+                    pterm.DefaultTable.WithBoxed().WithHasHeader().WithData(pterm.TableData{
                    		{"Classes", "Methods", "AVG methods per class", "Min cyclomatic complexity", "Max cyclomatic complexity", "AVG Halstead Volume"},
                    		{strconv.Itoa(aggregated.NbClasses), strconv.Itoa(aggregated.NbMethods), fmt.Sprintf("%.2f", aggregated.AverageMethodsPerClass), strconv.Itoa(aggregated.MinCyclomaticComplexity), strconv.Itoa(aggregated.MaxCyclomaticComplexity), fmt.Sprintf("%.2f", aggregated.AverageHalsteadVolume)},
-                   	}).Render()
+                    }).Render()
 
-                   	pterm.Println() // Blank line
+                    pterm.Println() // Blank line
 
+
+                    Cli.TableForClasses(allResults)
 
                     return nil
                 },
