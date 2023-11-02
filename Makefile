@@ -40,7 +40,10 @@ build-release:
 build: install build-protobuff build-release
 	@echo "\n\e[42m  BUILD FINISHED  \e[49m\n"
 
-
+test:
+	@echo "\e[34m\033[1m-> Running tests\033[0m\e[39m\n"
+	go test ./...
+	@echo "\e[34m\033[1mDONE \033[0m\e[39m\n"
 
 tmp:
 	go run . analyze src/Php/phpsources/resources/||true

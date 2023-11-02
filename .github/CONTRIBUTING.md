@@ -23,6 +23,14 @@ make build-protobuff
 
 ## Releasing
 
+First ensure tests pass:
+
+```bash
+make test
+```
+
+Then release new version:
+
 ```bash
 make build
 ```
