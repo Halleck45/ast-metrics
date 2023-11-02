@@ -27,12 +27,20 @@ build-protobuff:
 	mv src/github.com/halleck45/ast-metrics/NodeType src
 	rm -rf src/github.com
 	@echo "\e[34m\033[1mDONE \033[0m\e[39m\n"
-build-go:
+build-go: # for local development and tests
 	@echo "\e[34m\033[1m-> Building go binaries\033[0m\e[39m\n"
-	go build -o bin/ghostea
+	go build -o bin/ast-metrics
 	@echo "\e[34m\033[1mDONE \033[0m\e[39m\n"
-build: install build-go build-protobuff
+build-release:
+	@echo "\e[34m\033[1m-> Building go binaries for supported platforms\033[0m\e[39m\n"
+	rm -Rf dist || true
+	go install github.com/goreleaser/goreleaser@latest
+	GOPATH=$(HOME)/go PATH=$$PATH:$(HOME)/go/bin goreleaser build --snapshot
+	@echo "\e[34m\033[1mDONE \033[0m\e[39m\n"
+build: install build-protobuff build-release
 	@echo "\n\e[42m  BUILD FINISHED  \e[49m\n"
+
+
 
 tmp:
 	go run . analyze src/Php/phpsources/resources/||true

@@ -40,7 +40,7 @@ $traverser->addVisitor(new PhpParser\NodeVisitor\NameResolver);
 $code = file_get_contents($file);
 $linesOfCode = explode(PHP_EOL, $code);
 $stmts = $parser->parse($code);
-$json = json_decode(json_encode($stmts), true);
+$json = (array)json_decode(json_encode($stmts), true);
 
 // This main node describe the file itself
 $fileNode = new \NodeType\File([
@@ -103,8 +103,8 @@ function stmtFactory($stmt) {
     // Operators is a raw list of operators, like "=" or "++
     // Operands is a list of variables, like "$a" or "$b"
     // It's useful to calculate Halsdstead's complexity
-    if ($lastStructuredParentStmt && strpos($stmt['nodeType'] ?? '', 'Stmt_Expr') !== false
-        || isset($stmt['expr'])
+    if ($lastStructuredParentStmt
+        && (strpos($stmt['nodeType'] ?? '', 'Stmt_Expr') !== false || isset($stmt['expr']))
     ) {
         $operator= new \NodeType\StmtOperator([
                 'name' => $stmt['expr']['nodeType'] ?? $stmt['nodeType'] ?? $stmt['expr'] ?? null,
@@ -114,7 +114,7 @@ function stmtFactory($stmt) {
         $lastStructuredParentStmt->setOperators($operators);
     }
     // Operands
-    if ($lastStructuredParentStmt && (isset($stmt['expr']['var']) || isset($stmt['var']))) {
+    if ($lastStructuredParentStmt && ((isset($stmt['expr']['var']) || isset($stmt['var'])))) {
         $name = nameVar($stmt);
         if($name) {
             $operand = new \NodeType\StmtOperand([

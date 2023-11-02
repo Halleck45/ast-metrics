@@ -3,6 +3,7 @@
 ## Requirements
 
 + Go 1.21+
++ Make
 
 ## Setup
 

@@ -49,7 +49,7 @@ func main() {
 
                     // Cli app
                     outWriter := bufio.NewWriter(os.Stdout)
-                    pterm.DefaultBasicText.Println(pterm.LightMagenta(" GhosTea Metrics ") + "is a language-agnostic static code analyzer.")
+                    pterm.DefaultBasicText.Println(pterm.LightMagenta(" AST Metrics ") + "is a language-agnostic static code analyzer.")
 
                     // Valide args
                     if cCtx.Args().Len() == 0 {
@@ -171,6 +171,7 @@ func main() {
             },
         },
     }
+    app.Suggest = true
 
     if err := app.Run(os.Args); err != nil {
         log.Fatal(err)

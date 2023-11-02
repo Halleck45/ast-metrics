@@ -8,7 +8,6 @@ import (
     "io/ioutil"
     "log"
     "strconv"
-    "fmt"
     "sync"
     "github.com/golang/protobuf/proto"
     "github.com/pterm/pterm"
@@ -78,7 +77,7 @@ func executeFileAnalysis(file string, channelResult chan<- pb.File) {
 
     pbFile := &pb.File{}
     if err := proto.Unmarshal(in, pbFile); err != nil {
-        log.Fatalln("Failed to parse address pbFile:", err)
+        log.Fatalln("Failed to parse address pbFile (" + file + "):", err)
         return
     }
 
@@ -96,37 +95,4 @@ func executeFileAnalysis(file string, channelResult chan<- pb.File) {
 
     channelResult <- *pbFile
     return
-    // Now pbFile contains the AST and analyze results
-    // We dump it to a file with ProtoBuf
-    //out, err := proto.Marshal(pbFile)
-    //if err != nil {
-    //    log.Fatalln("Failed to encode pbFile:", err)
-    //}
-    // Write the new file back to disk into "file"
-    //ioutil.WriteFile(file, out, 0644)
-
-    // debug for the moment
-    // iterate over nodes of pbFile
-    for _, stmt := range pbFile.Stmts.StmtClass {
-        temporaryDisplayStatForClass(*stmt)
-    }
-    for _, stmt := range pbFile.Stmts.StmtNamespace {
-        for _, s := range stmt.Stmts.StmtClass {
-            temporaryDisplayStatForClass(*s)
-        }
-    }
-}
-
-func temporaryDisplayStatForClass(cl pb.StmtClass ) {
-
-    if cl.Stmts == nil {
-        return
-    }
-
-    return
-    fmt.Println("\nClass: " + cl.Name.Qualified)
-    fmt.Println("    Cyclomatic complexity: " + strconv.Itoa(int(*cl.Stmts.Analyze.Complexity.Cyclomatic)))
-    fmt.Println("    Logical lines of code: " + strconv.Itoa(int(*cl.Stmts.Analyze.Volume.Lloc)))
-    fmt.Println("    Comment lines of code: " + strconv.Itoa(int(*cl.Stmts.Analyze.Volume.Cloc)))
-    fmt.Println("    Lines of code: " + strconv.Itoa(int(*cl.Stmts.Analyze.Volume.Loc)))
 }
