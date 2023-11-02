@@ -149,8 +149,8 @@ func main() {
                     pterm.Success.Println("Finished")
 
                    pterm.DefaultTable.WithBoxed().WithHasHeader().WithData(pterm.TableData{
-                   		{"Classes", "Methods", "AVG methods per class", "Min cyclomatic complexity", "Max cyclomatic complexity"},
-                   		{strconv.Itoa(aggregated.NbClasses), strconv.Itoa(aggregated.NbMethods), fmt.Sprintf("%.2f", aggregated.AverageMethodsPerClass), strconv.Itoa(aggregated.MinCyclomaticComplexity), strconv.Itoa(aggregated.MaxCyclomaticComplexity),},
+                   		{"Classes", "Methods", "AVG methods per class", "Min cyclomatic complexity", "Max cyclomatic complexity", "AVG Halstead Volume"},
+                   		{strconv.Itoa(aggregated.NbClasses), strconv.Itoa(aggregated.NbMethods), fmt.Sprintf("%.2f", aggregated.AverageMethodsPerClass), strconv.Itoa(aggregated.MinCyclomaticComplexity), strconv.Itoa(aggregated.MaxCyclomaticComplexity), fmt.Sprintf("%.2f", aggregated.AverageHalsteadVolume)},
                    	}).Render()
 
                    	pterm.Println() // Blank line

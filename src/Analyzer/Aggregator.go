@@ -17,6 +17,11 @@ type Aggregated struct {
     AverageCyclomaticComplexityPerClass float64
     MinCyclomaticComplexity int
     MaxCyclomaticComplexity int
+    AverageHalsteadDifficulty float64
+    AverageHalsteadEffort float64
+    AverageHalsteadVolume float64
+    AverageHalsteadTime float64
+    AverageHalsteadBugs float64
 }
 
 func Aggregates(files []pb.File) Aggregated {
@@ -57,8 +62,31 @@ func Aggregates(files []pb.File) Aggregated {
                 aggregated.MaxCyclomaticComplexity = int(*class.Stmts.Analyze.Complexity.Cyclomatic)
             }
         }
+
+        // Halstead
+        if class.Stmts.Analyze.Volume != nil {
+            if class.Stmts.Analyze.Volume.HalsteadDifficulty != nil {
+                aggregated.AverageHalsteadDifficulty += float64(*class.Stmts.Analyze.Volume.HalsteadDifficulty)
+            }
+            if class.Stmts.Analyze.Volume.HalsteadEffort != nil {
+                aggregated.AverageHalsteadEffort += float64(*class.Stmts.Analyze.Volume.HalsteadEffort)
+            }
+            if class.Stmts.Analyze.Volume.HalsteadVolume != nil {
+                aggregated.AverageHalsteadVolume += float64(*class.Stmts.Analyze.Volume.HalsteadVolume)
+            }
+            if class.Stmts.Analyze.Volume.HalsteadTime != nil {
+                aggregated.AverageHalsteadTime += float64(*class.Stmts.Analyze.Volume.HalsteadTime)
+            }
+        }
     }
+
+    // averages
     aggregated.AverageMethodsPerClass = float64(aggregated.NbMethods) / float64(aggregated.NbClasses)
+    aggregated.AverageCyclomaticComplexityPerClass = aggregated.AverageCyclomaticComplexityPerClass / float64(aggregated.NbClasses)
+    aggregated.AverageHalsteadDifficulty = aggregated.AverageHalsteadDifficulty / float64(aggregated.NbClasses)
+    aggregated.AverageHalsteadEffort = aggregated.AverageHalsteadEffort / float64(aggregated.NbClasses)
+    aggregated.AverageHalsteadVolume = aggregated.AverageHalsteadVolume / float64(aggregated.NbClasses)
+    aggregated.AverageHalsteadTime = aggregated.AverageHalsteadTime / float64(aggregated.NbClasses)
 
     return aggregated
 }

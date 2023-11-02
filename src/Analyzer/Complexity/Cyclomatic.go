@@ -2,7 +2,6 @@ package Analyzer
 
 import (
     pb "github.com/halleck45/ast-metrics/src/NodeType"
-    //"fmt"
 )
 
 type ComplexityVisitor struct {
@@ -52,8 +51,6 @@ func (v *ComplexityVisitor) LeaveNode(stmts *pb.Stmts) {
                 }
             }
             stmt.Stmts.Analyze.Complexity.Cyclomatic = &ccn
-
-            //fmt.Println("ccn:" + fmt.Sprint(ccn))
         }
     }
 }

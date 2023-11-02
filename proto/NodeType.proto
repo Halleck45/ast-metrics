@@ -167,4 +167,11 @@ message Volume {
   optional int32 loc = 1;
   optional int32 lloc = 2;
   optional int32 cloc = 3;
+  optional int32 halsteadVocabulary = 4;
+  optional int32 halsteadLength = 5;
+  optional float halsteadVolume = 6;
+  optional float halsteadDifficulty = 7;
+  optional float halsteadEffort = 8;
+  optional float halsteadTime = 9;
+  optional float halsteadEstimatedLength = 10;
 }

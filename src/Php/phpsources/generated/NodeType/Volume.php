@@ -25,6 +25,34 @@ class Volume extends \Google\Protobuf\Internal\Message
      * Generated from protobuf field <code>optional int32 cloc = 3;</code>
      */
     protected $cloc = null;
+    /**
+     * Generated from protobuf field <code>optional int32 halsteadVocabulary = 4;</code>
+     */
+    protected $halsteadVocabulary = null;
+    /**
+     * Generated from protobuf field <code>optional int32 halsteadLength = 5;</code>
+     */
+    protected $halsteadLength = null;
+    /**
+     * Generated from protobuf field <code>optional float halsteadVolume = 6;</code>
+     */
+    protected $halsteadVolume = null;
+    /**
+     * Generated from protobuf field <code>optional float halsteadDifficulty = 7;</code>
+     */
+    protected $halsteadDifficulty = null;
+    /**
+     * Generated from protobuf field <code>optional float halsteadEffort = 8;</code>
+     */
+    protected $halsteadEffort = null;
+    /**
+     * Generated from protobuf field <code>optional float halsteadTime = 9;</code>
+     */
+    protected $halsteadTime = null;
+    /**
+     * Generated from protobuf field <code>optional float halsteadEstimatedLength = 10;</code>
+     */
+    protected $halsteadEstimatedLength = null;
 
     /**
      * Constructor.
@@ -35,6 +63,13 @@ class Volume extends \Google\Protobuf\Internal\Message
      *     @type int $loc
      *     @type int $lloc
      *     @type int $cloc
+     *     @type int $halsteadVocabulary
+     *     @type int $halsteadLength
+     *     @type float $halsteadVolume
+     *     @type float $halsteadDifficulty
+     *     @type float $halsteadEffort
+     *     @type float $halsteadTime
+     *     @type float $halsteadEstimatedLength
      * }
      */
     public function __construct($data = NULL) {
@@ -134,6 +169,230 @@ class Volume extends \Google\Protobuf\Internal\Message
     {
         GPBUtil::checkInt32($var);
         $this->cloc = $var;
+
+        return $this;
+    }
+
+    /**
+     * Generated from protobuf field <code>optional int32 halsteadVocabulary = 4;</code>
+     * @return int
+     */
+    public function getHalsteadVocabulary()
+    {
+        return isset($this->halsteadVocabulary) ? $this->halsteadVocabulary : 0;
+    }
+
+    public function hasHalsteadVocabulary()
+    {
+        return isset($this->halsteadVocabulary);
+    }
+
+    public function clearHalsteadVocabulary()
+    {
+        unset($this->halsteadVocabulary);
+    }
+
+    /**
+     * Generated from protobuf field <code>optional int32 halsteadVocabulary = 4;</code>
+     * @param int $var
+     * @return $this
+     */
+    public function setHalsteadVocabulary($var)
+    {
+        GPBUtil::checkInt32($var);
+        $this->halsteadVocabulary = $var;
+
+        return $this;
+    }
+
+    /**
+     * Generated from protobuf field <code>optional int32 halsteadLength = 5;</code>
+     * @return int
+     */
+    public function getHalsteadLength()
+    {
+        return isset($this->halsteadLength) ? $this->halsteadLength : 0;
+    }
+
+    public function hasHalsteadLength()
+    {
+        return isset($this->halsteadLength);
+    }
+
+    public function clearHalsteadLength()
+    {
+        unset($this->halsteadLength);
+    }
+
+    /**
+     * Generated from protobuf field <code>optional int32 halsteadLength = 5;</code>
+     * @param int $var
+     * @return $this
+     */
+    public function setHalsteadLength($var)
+    {
+        GPBUtil::checkInt32($var);
+        $this->halsteadLength = $var;
+
+        return $this;
+    }
+
+    /**
+     * Generated from protobuf field <code>optional float halsteadVolume = 6;</code>
+     * @return float
+     */
+    public function getHalsteadVolume()
+    {
+        return isset($this->halsteadVolume) ? $this->halsteadVolume : 0.0;
+    }
+
+    public function hasHalsteadVolume()
+    {
+        return isset($this->halsteadVolume);
+    }
+
+    public function clearHalsteadVolume()
+    {
+        unset($this->halsteadVolume);
+    }
+
+    /**
+     * Generated from protobuf field <code>optional float halsteadVolume = 6;</code>
+     * @param float $var
+     * @return $this
+     */
+    public function setHalsteadVolume($var)
+    {
+        GPBUtil::checkFloat($var);
+        $this->halsteadVolume = $var;
+
+        return $this;
+    }
+
+    /**
+     * Generated from protobuf field <code>optional float halsteadDifficulty = 7;</code>
+     * @return float
+     */
+    public function getHalsteadDifficulty()
+    {
+        return isset($this->halsteadDifficulty) ? $this->halsteadDifficulty : 0.0;
+    }
+
+    public function hasHalsteadDifficulty()
+    {
+        return isset($this->halsteadDifficulty);
+    }
+
+    public function clearHalsteadDifficulty()
+    {
+        unset($this->halsteadDifficulty);
+    }
+
+    /**
+     * Generated from protobuf field <code>optional float halsteadDifficulty = 7;</code>
+     * @param float $var
+     * @return $this
+     */
+    public function setHalsteadDifficulty($var)
+    {
+        GPBUtil::checkFloat($var);
+        $this->halsteadDifficulty = $var;
+
+        return $this;
+    }
+
+    /**
+     * Generated from protobuf field <code>optional float halsteadEffort = 8;</code>
+     * @return float
+     */
+    public function getHalsteadEffort()
+    {
+        return isset($this->halsteadEffort) ? $this->halsteadEffort : 0.0;
+    }
+
+    public function hasHalsteadEffort()
+    {
+        return isset($this->halsteadEffort);
+    }
+
+    public function clearHalsteadEffort()
+    {
+        unset($this->halsteadEffort);
+    }
+
+    /**
+     * Generated from protobuf field <code>optional float halsteadEffort = 8;</code>
+     * @param float $var
+     * @return $this
+     */
+    public function setHalsteadEffort($var)
+    {
+        GPBUtil::checkFloat($var);
+        $this->halsteadEffort = $var;
+
+        return $this;
+    }
+
+    /**
+     * Generated from protobuf field <code>optional float halsteadTime = 9;</code>
+     * @return float
+     */
+    public function getHalsteadTime()
+    {
+        return isset($this->halsteadTime) ? $this->halsteadTime : 0.0;
+    }
+
+    public function hasHalsteadTime()
+    {
+        return isset($this->halsteadTime);
+    }
+
+    public function clearHalsteadTime()
+    {
+        unset($this->halsteadTime);
+    }
+
+    /**
+     * Generated from protobuf field <code>optional float halsteadTime = 9;</code>
+     * @param float $var
+     * @return $this
+     */
+    public function setHalsteadTime($var)
+    {
+        GPBUtil::checkFloat($var);
+        $this->halsteadTime = $var;
+
+        return $this;
+    }
+
+    /**
+     * Generated from protobuf field <code>optional float halsteadEstimatedLength = 10;</code>
+     * @return float
+     */
+    public function getHalsteadEstimatedLength()
+    {
+        return isset($this->halsteadEstimatedLength) ? $this->halsteadEstimatedLength : 0.0;
+    }
+
+    public function hasHalsteadEstimatedLength()
+    {
+        return isset($this->halsteadEstimatedLength);
+    }
+
+    public function clearHalsteadEstimatedLength()
+    {
+        unset($this->halsteadEstimatedLength);
+    }
+
+    /**
+     * Generated from protobuf field <code>optional float halsteadEstimatedLength = 10;</code>
+     * @param float $var
+     * @return $this
+     */
+    public function setHalsteadEstimatedLength($var)
+    {
+        GPBUtil::checkFloat($var);
+        $this->halsteadEstimatedLength = $var;
 
         return $this;
     }

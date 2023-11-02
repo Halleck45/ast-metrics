@@ -90,6 +90,9 @@ func executeFileAnalysis(file string, channelResult chan<- pb.File) {
     locVisitor := &Volume.LocVisitor{}
     root.Accept(locVisitor)
 
+    halsteadVisitor := &Volume.HalsteadMetricsVisitor{}
+    root.Accept(halsteadVisitor)
+
     // visit AST
     root.Visit()
 
