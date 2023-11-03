@@ -1,10 +1,14 @@
 # AST Metrics
 
-AST Metrics is a language-agnostic static code analyzer.
-
-[![latest](https://github.com/Halleck45/ast-metrics/actions/workflows/test.yml/badge.svg)](https://github.com/Halleck45/ast-metrics/actions/workflows/test.yml)
+[![Go](https://github.com/Halleck45/ast-metrics/actions/workflows/test.yml/badge.svg)](https://github.com/Halleck45/ast-metrics/actions/workflows/test.yml)
 
 ![](./docs/preview.gif)
+
+<img src="https://raw.githubusercontent.com/Halleck45/ast-metrics/main/docs/ghostea-small.png" height="80px" alt="AST Metrics" align="left" style="margin-right:20px"/>
+
+AST Metrics is a language-agnostic static code analyzer.
+
+[Twitter](https://twitter.com/Halleck45) | [Contributing](.github/CONTRIBUTING.md)
 
 ## Usage
 
