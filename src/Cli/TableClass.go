@@ -127,6 +127,9 @@ func TableForClasses(pbFiles []pb.File) {
 	        if class == nil {
                 continue
             }
+            if class.Stmts == nil {
+                continue
+            }
             if class.Stmts.Analyze == nil {
                 continue
             }

@@ -53,6 +53,7 @@ $comments = [];
 function stmtFactory($stmt) {
 
     global $lastStructuredParentStmt; // current class, namespace, function, etc...
+    global $lastNamespace;
     global $linesOfCode; // current source
     global $aliases; // uses and aliases
 
@@ -60,6 +61,7 @@ function stmtFactory($stmt) {
     switch($stmt['nodeType'] ?? null) {
         case 'Stmt_Namespace':
             $node = new \NodeType\StmtNamespace();
+            $lastNamespace = nameType($stmt['name']);
             $aliases = [];
             break;
         case 'Stmt_Class':
@@ -153,7 +155,7 @@ function stmtFactory($stmt) {
         $name = nameType($stmt);
         $node->setName(new \NodeType\Name([
             'short' => $name,
-            'qualified' => $name,
+            'qualified' => $lastNamespace . $name,
         ]));
     }
 
