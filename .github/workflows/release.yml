@@ -30,6 +30,14 @@ jobs:
           php_version: "8.1"
           args: "--working-dir=src/Php/phpsources --optimize-autoloader"
 
+      # Commit changes
+      - name: "Commit changes"
+        run: |
+            git config --local user.email "bot@ast-metrics.org"
+            git config --local user.name "AST Metrics Bot"
+            git add .
+            git commit -m "chore: update dependencies"
+
       # Install go dependencies
       - uses: actions/setup-go@v4
         with:
@@ -44,6 +52,6 @@ jobs:
         with:
           distribution: goreleaser
           version: latest
-          args: release --clean --snapshot
+          args: release --clean
         env:
           GITHUB_TOKEN: ${{ secrets.PUSH_TOKEN }}
