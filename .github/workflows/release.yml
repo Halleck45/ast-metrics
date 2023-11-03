@@ -23,6 +23,9 @@ jobs:
       # Fetch tags
       - run: git fetch --force --tags
 
+      - name: Set env
+        run: echo "RELEASE_VERSION=${GITHUB_REF#refs/*/}" >> $GITHUB_ENV
+
       # Install dependencies
       - uses: php-actions/composer@v6
         with:
@@ -31,13 +34,15 @@ jobs:
           args: "--working-dir=src/Php/phpsources --optimize-autoloader"
 
       # Commit changes
+      # goreleaser does not allow to release when there is uncommited changes
       - name: "Commit changes"
         run: |
             git config --local user.email "bot@ast-metrics.org"
             git config --local user.name "AST Metrics Bot"
             git add .
             git commit -m "chore: update dependencies"
-            git tag -a -m "chore: update dependencies" "v$(date +'%Y%m%d%H%M%S')"
+            git tag -d ${{ env.RELEASE_VERSION }}
+            git tag ${{ env.RELEASE_VERSION }}
 
       # Install go dependencies
       - uses: actions/setup-go@v4
