@@ -31,9 +31,13 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m, tea.Quit
         case "c":
             // change sort column
-            m.sortColumnIndex = 2
+            m.sortColumnIndex = 3
             return m, nil
 		case "l":
+            // change sort column
+            m.sortColumnIndex = 2
+            return m, nil
+        case "m":
             // change sort column
             m.sortColumnIndex = 1
             return m, nil
@@ -80,12 +84,14 @@ func TableForClasses(pbFiles []pb.File) {
         - (n) to sort by name
         - (l) to sort by LLOC
         - (c) to sort by cyclomatic complexity
+        - (m) to sort by number of methods
     `
     fmt.Println(style.Render(help))
 
 
 	columns := []table.Column{
 		{Title: "Class", Width: 30},
+		{Title: "Methods", Width: 10},
 		{Title: "LLoc", Width: 10},
 		{Title: "Cyclomatic", Width: 15},
 		{Title: "Halstead Length", Width: 15},
@@ -105,6 +111,7 @@ func TableForClasses(pbFiles []pb.File) {
 
             rows = append(rows, table.Row{
                 class.Name.Qualified,
+                strconv.Itoa(len(class.Stmts.StmtFunction)),
                 strconv.Itoa(int(*class.Stmts.Analyze.Volume.Loc)),
                 strconv.Itoa(int(*class.Stmts.Analyze.Complexity.Cyclomatic)),
                 strconv.Itoa(int(*class.Stmts.Analyze.Volume.HalsteadLength)),
@@ -123,6 +130,7 @@ func TableForClasses(pbFiles []pb.File) {
 
                     rows = append(rows, table.Row{
                         class.Name.Qualified,
+                        strconv.Itoa(len(class.Stmts.StmtFunction)),
                         strconv.Itoa(int(*class.Stmts.Analyze.Volume.Loc)),
                         strconv.Itoa(int(*class.Stmts.Analyze.Complexity.Cyclomatic)),
                         strconv.Itoa(int(*class.Stmts.Analyze.Volume.HalsteadLength)),
