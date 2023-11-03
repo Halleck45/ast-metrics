@@ -2,6 +2,8 @@
 
 AST Metrics is a language-agnostic static code analyzer.
 
+![](./docs/preview.gif)
+
 ## Usage
 
 ```bash
