@@ -15,23 +15,35 @@ jobs:
   goreleaser:
     runs-on: ubuntu-latest
     steps:
+      # Checkout the repository
       - uses: actions/checkout@v3
         with:
           fetch-depth: 0
+
+      # Fetch tags
       - run: git fetch --force --tags
+
+      # Install dependencies
+      - uses: php-actions/composer@v6
+        with:
+          dev: no
+          php_version: "8.1"
+          args: "--working-dir=src/Php/phpsources --optimize-autoloader"
+
+      # Install go dependencies
       - uses: actions/setup-go@v4
         with:
           go-version: stable
-      # More assembly might be required: Docker logins, GPG, etc.
-      # It all depends on your needs.
+
+      # run tests
+      - name: "Test application"
+        run: go test
+
+      # Build artifacts
       - uses: goreleaser/goreleaser-action@v5
         with:
-          # either 'goreleaser' (default) or 'goreleaser-pro':
           distribution: goreleaser
           version: latest
           args: release --clean
         env:
           GITHUB_TOKEN: ${{ secrets.PUSH_TOKEN }}
-          # Your GoReleaser Pro key, if you are using the 'goreleaser-pro'
-          # distribution:
-          # GORELEASER_KEY: ${{ secrets.GORELEASER_KEY }}
