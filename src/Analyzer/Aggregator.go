@@ -55,6 +55,20 @@ func Aggregates(files []pb.File) Aggregated {
             aggregated.NbMethods += len(class.Stmts.StmtFunction)
         }
 
+        // Average cyclomatic complexity per method
+        if class.Stmts.StmtFunction != nil {
+            for _, method := range class.Stmts.StmtFunction {
+                if method.Stmts == nil {
+                    continue
+                }
+                if method.Stmts.Analyze.Complexity != nil {
+                    if method.Stmts.Analyze.Complexity.Cyclomatic != nil {
+                        aggregated.AverageCyclomaticComplexityPerMethod += float64(*method.Stmts.Analyze.Complexity.Cyclomatic)
+                    }
+                }
+            }
+        }
+
         // lines of code
         if class.Stmts.Analyze.Volume != nil {
             if class.Stmts.Analyze.Volume.Loc != nil {
@@ -89,8 +103,6 @@ func Aggregates(files []pb.File) Aggregated {
                 }
             }
         }
-
-
 
 
         // cyclomatic complexity per class
@@ -132,6 +144,8 @@ func Aggregates(files []pb.File) Aggregated {
     aggregated.AverageLocPerMethod = aggregated.AverageLocPerMethod / float64(aggregated.NbMethods)
     aggregated.AverageClocPerMethod = aggregated.AverageClocPerMethod / float64(aggregated.NbMethods)
     aggregated.AverageLlocPerMethod = aggregated.AverageLlocPerMethod / float64(aggregated.NbMethods)
+
+    aggregated.AverageCyclomaticComplexityPerMethod = aggregated.AverageCyclomaticComplexityPerMethod / float64(aggregated.NbMethods)
 
     return aggregated
 }
