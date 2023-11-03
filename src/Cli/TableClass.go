@@ -3,12 +3,12 @@ package Cli
 import (
 	"fmt"
 	"os"
+	"sort"
 	"strconv"
 	"github.com/charmbracelet/bubbles/table"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 	pb "github.com/halleck45/ast-metrics/src/NodeType"
-    "github.com/charmbracelet/glamour"
 )
 
 var baseStyle = lipgloss.NewStyle().
@@ -17,6 +17,7 @@ var baseStyle = lipgloss.NewStyle().
 
 type model struct {
 	table table.Model
+	sortColumnIndex int
 }
 
 func (m model) Init() tea.Cmd { return nil }
@@ -28,29 +29,63 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		switch msg.String() {
 		case "q", "ctrl+c", "esc":
 			return m, tea.Quit
-		}
+        case "c":
+            // change sort column
+            m.sortColumnIndex = 2
+            return m, nil
+		case "l":
+            // change sort column
+            m.sortColumnIndex = 1
+            return m, nil
+        case "n":
+            // change sort column
+            m.sortColumnIndex = 0
+            return m, nil
+        }
 	}
 	m.table, cmd = m.table.Update(msg)
 	return m, cmd
 }
 
 func (m model) View() string {
+
+    // Sort rows by second column (Loc)
+    rows := m.table.Rows()
+    sort.Slice(rows, func(i, j int) bool {
+        if m.sortColumnIndex == 0 {
+            return rows[i][m.sortColumnIndex] < rows[j][m.sortColumnIndex]
+        }
+        a, _ := strconv.Atoi(rows[i][m.sortColumnIndex])
+        b, _ := strconv.Atoi(rows[j][m.sortColumnIndex])
+        return a > b
+    })
+    m.table.SetRows(rows)
+
 	return baseStyle.Render(m.table.View()) + "\n"
 }
 
 func TableForClasses(pbFiles []pb.File) {
 
-    in := `# Classes overview
+    style := StyleTitle()
+    fmt.Println(style.Render("Classes"))
 
-    > Use arrows to navigate and esc to quit.
+     style = lipgloss.NewStyle().
+            Italic(true).
+            Foreground(lipgloss.Color("#666666")).
+            PaddingLeft(0)
 
+     help := `
+     Use arrows to navigate and esc to quit.
+     Press:
+        - (n) to sort by name
+        - (l) to sort by LLOC
+        - (c) to sort by cyclomatic complexity
     `
-    out, _ := glamour.Render(in, "dark")
-    fmt.Print(out)
+    fmt.Println(style.Render(help))
 
 
 	columns := []table.Column{
-		{Title: "Class", Width: 20},
+		{Title: "Class", Width: 30},
 		{Title: "LLoc", Width: 10},
 		{Title: "Cyclomatic", Width: 15},
 		{Title: "Halstead Length", Width: 15},
@@ -97,6 +132,11 @@ func TableForClasses(pbFiles []pb.File) {
             }
 	}
 
+    // sort by name by default
+    sort.Slice(rows, func(i, j int) bool {
+        return rows[i][0] < rows[j][0]
+    })
+
 	t := table.New(
 		table.WithColumns(columns),
 		table.WithRows(rows),
@@ -116,7 +156,8 @@ func TableForClasses(pbFiles []pb.File) {
 		Bold(false)
 	t.SetStyles(s)
 
-	m := model{t}
+	m := model{table: t, sortColumnIndex: 0}
+
 	if _, err := tea.NewProgram(m).Run(); err != nil {
 		fmt.Println("Error running program:", err)
 		os.Exit(1)

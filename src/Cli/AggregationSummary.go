@@ -9,9 +9,10 @@ import (
 
 func AggregationSummary(aggregated Analyzer.Aggregated) {
 
-   in := `# Results overview
+    style := StyleTitle()
+    fmt.Println(style.Render("Results overview"))
 
-   *This code is composed from ` + strconv.Itoa(aggregated.Loc) + ` lines of code, ` + strconv.Itoa(aggregated.Cloc) + ` comment lines of code and ` + strconv.Itoa(aggregated.Lloc) + ` logical lines of code.*
+   in := `*This code is composed from ` + strconv.Itoa(aggregated.Loc) + ` lines of code, ` + strconv.Itoa(aggregated.Cloc) + ` comment lines of code and ` + strconv.Itoa(aggregated.Lloc) + ` logical lines of code.*
 
    ## Complexity
 
