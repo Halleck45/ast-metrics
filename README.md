@@ -4,7 +4,7 @@
 
 ![](./docs/preview.gif)
 
-<img src="https://raw.githubusercontent.com/Halleck45/ast-metrics/main/docs/ghostea-small.png" height="80px" alt="AST Metrics" align="left" style="margin-right:20px"/>
+<img src="https://github.com/Halleck45/ast-metrics/blob/main/docs/logo-small.png?raw=true" height="80px" alt="AST Metrics" align="left" style="margin-right:20px"/>
 
 AST Metrics is a language-agnostic static code analyzer.
 
