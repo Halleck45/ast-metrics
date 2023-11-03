@@ -31,6 +31,9 @@ type Aggregated struct {
     SumHalsteadVolume float64
     SumHalsteadTime float64
     SumHalsteadBugs float64
+    AverageMI float64
+    AverageMIwoc float64
+    AverageMIcw float64
 }
 
 func Aggregates(files []pb.File) Aggregated {
@@ -110,6 +113,15 @@ func Aggregates(files []pb.File) Aggregated {
             }
         }
 
+        // Maintainability Index
+        if class.Stmts.Analyze.Maintainability != nil {
+            if class.Stmts.Analyze.Maintainability.MaintainabilityIndex != nil {
+                aggregated.AverageMI += float64(*class.Stmts.Analyze.Maintainability.MaintainabilityIndex)
+                aggregated.AverageMIwoc += float64(*class.Stmts.Analyze.Maintainability.MaintainabilityIndexWithoutComments)
+                aggregated.AverageMIcw += float64(*class.Stmts.Analyze.Maintainability.CommentWeight)
+            }
+        }
+
 
         // cyclomatic complexity per class
         if class.Stmts.Analyze.Complexity.Cyclomatic != nil {
@@ -156,6 +168,11 @@ func Aggregates(files []pb.File) Aggregated {
     aggregated.AverageLlocPerMethod = aggregated.AverageLlocPerMethod / float64(aggregated.NbMethods)
 
     aggregated.AverageCyclomaticComplexityPerMethod = aggregated.AverageCyclomaticComplexityPerMethod / float64(aggregated.NbMethods)
+
+    aggregated.AverageMI = aggregated.AverageMI / float64(aggregated.NbClasses)
+    aggregated.AverageMIwoc = aggregated.AverageMIwoc / float64(aggregated.NbClasses)
+    aggregated.AverageMIcw = aggregated.AverageMIcw / float64(aggregated.NbClasses)
+
 
     return aggregated
 }

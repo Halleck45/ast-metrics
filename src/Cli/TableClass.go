@@ -138,7 +138,7 @@ func TableForClasses(pbFiles []pb.File) {
                 strconv.Itoa(int(*class.Stmts.Analyze.Complexity.Cyclomatic)),
                 strconv.Itoa(int(*class.Stmts.Analyze.Volume.HalsteadLength)),
                 strconv.Itoa(int(*class.Stmts.Analyze.Volume.HalsteadVolume)),
-                decorateMaintainability(int(*class.Stmts.Analyze.Maintainability.MaintainabilityIndex)),
+                DecorateMaintainabilityIndex(int(*class.Stmts.Analyze.Maintainability.MaintainabilityIndex)),
             })
         }
 
@@ -159,7 +159,7 @@ func TableForClasses(pbFiles []pb.File) {
                         strconv.Itoa(int(*class.Stmts.Analyze.Complexity.Cyclomatic)),
                         strconv.Itoa(int(*class.Stmts.Analyze.Volume.HalsteadLength)),
                         strconv.Itoa(int(*class.Stmts.Analyze.Volume.HalsteadVolume)),
-                        decorateMaintainability(int(*class.Stmts.Analyze.Maintainability.MaintainabilityIndex)),
+                        DecorateMaintainabilityIndex(int(*class.Stmts.Analyze.Maintainability.MaintainabilityIndex)),
                     })
                 }
             }
@@ -195,15 +195,4 @@ func TableForClasses(pbFiles []pb.File) {
 		fmt.Println("Error running program:", err)
 		os.Exit(1)
 	}
-}
-
-func decorateMaintainability(mi int) string {
-    if mi < 64 {
-        return "🔴 " + strconv.Itoa(mi)
-    }
-    if mi < 85 {
-        return "🟡 " + strconv.Itoa(mi)
-    }
-
-    return "🟢 " + strconv.Itoa(mi)
 }

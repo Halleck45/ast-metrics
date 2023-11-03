@@ -41,7 +41,6 @@ func AggregationSummary(aggregated Analyzer.Aggregated) {
         ` | ` + fmt.Sprintf("%.2f", aggregated.AverageCyclomaticComplexityPerMethod) +
         ` |
 
-
    ### Halstead metrics
 
    *Halstead metrics are software metrics introduced to empirically determine the complexity of a program.*
@@ -66,6 +65,15 @@ func AggregationSummary(aggregated Analyzer.Aggregated) {
    | Classes | Methods | Average methods per class |
    | --- | --- | --- |
    | ` + strconv.Itoa(aggregated.NbClasses) + ` | ` + strconv.Itoa(aggregated.NbMethods) + ` | ` + fmt.Sprintf("%.2f", aggregated.AverageMethodsPerClass) + ` |
+
+   ## Maintainability
+
+   *Maintainability Index is a software metric which measures how maintainable (easy to support and change) the source code is.
+   If you have a high MI (>85), your code is easy to maintain.*
+
+   | Maintainability index | MI without comments | Comment weight |
+   | --- | --- | --- |
+   | ` + DecorateMaintainabilityIndex(int(aggregated.AverageMI)) + ` | ` + fmt.Sprintf("%.2f", aggregated.AverageMIwoc) + ` | ` + fmt.Sprintf("%.2f", aggregated.AverageMIcw) + ` |
 
    `
    out, _ := glamour.Render(in, "dark")
