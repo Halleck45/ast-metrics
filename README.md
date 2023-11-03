@@ -2,6 +2,8 @@
 
 AST Metrics is a language-agnostic static code analyzer.
 
+[![latest](https://github.com/Halleck45/ast-metrics/actions/workflows/test.yml/badge.svg)](https://github.com/Halleck45/ast-metrics/actions/workflows/test.yml)
+
 ![](./docs/preview.gif)
 
 ## Usage
