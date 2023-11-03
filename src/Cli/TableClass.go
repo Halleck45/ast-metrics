@@ -5,6 +5,7 @@ import (
 	"os"
 	"sort"
 	"strconv"
+	"strings"
 	"github.com/charmbracelet/bubbles/table"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
@@ -63,6 +64,21 @@ func (m model) View() string {
         if m.sortColumnIndex == 0 {
             return rows[i][m.sortColumnIndex] < rows[j][m.sortColumnIndex]
         }
+
+        if m.sortColumnIndex == 6 {
+            // replace emoji
+            a := strings.Replace(rows[i][m.sortColumnIndex], "🔴 ", "", 1)
+            a = strings.Replace(a, "🟡 ", "", 1)
+            a = strings.Replace(a, "🟢 ", "", 1)
+            b  := strings.Replace(rows[j][m.sortColumnIndex], "🔴 ", "", 1)
+            b = strings.Replace(b, "🟡 ", "", 1)
+            b = strings.Replace(b, "🟢 ", "", 1)
+
+            aInt, _ := strconv.Atoi(a)
+            bInt, _ := strconv.Atoi(b)
+            return aInt < bInt
+        }
+
         a, _ := strconv.Atoi(rows[i][m.sortColumnIndex])
         b, _ := strconv.Atoi(rows[j][m.sortColumnIndex])
         return a > b
@@ -122,7 +138,7 @@ func TableForClasses(pbFiles []pb.File) {
                 strconv.Itoa(int(*class.Stmts.Analyze.Complexity.Cyclomatic)),
                 strconv.Itoa(int(*class.Stmts.Analyze.Volume.HalsteadLength)),
                 strconv.Itoa(int(*class.Stmts.Analyze.Volume.HalsteadVolume)),
-                strconv.Itoa(int(*class.Stmts.Analyze.Maintainability.MaintainabilityIndex)),
+                decorateMaintainability(int(*class.Stmts.Analyze.Maintainability.MaintainabilityIndex)),
             })
         }
 
@@ -143,7 +159,7 @@ func TableForClasses(pbFiles []pb.File) {
                         strconv.Itoa(int(*class.Stmts.Analyze.Complexity.Cyclomatic)),
                         strconv.Itoa(int(*class.Stmts.Analyze.Volume.HalsteadLength)),
                         strconv.Itoa(int(*class.Stmts.Analyze.Volume.HalsteadVolume)),
-                        strconv.Itoa(int(*class.Stmts.Analyze.Maintainability.MaintainabilityIndex)),
+                        decorateMaintainability(int(*class.Stmts.Analyze.Maintainability.MaintainabilityIndex)),
                     })
                 }
             }
@@ -179,4 +195,15 @@ func TableForClasses(pbFiles []pb.File) {
 		fmt.Println("Error running program:", err)
 		os.Exit(1)
 	}
+}
+
+func decorateMaintainability(mi int) string {
+    if mi < 64 {
+        return "🔴 " + strconv.Itoa(mi)
+    }
+    if mi < 85 {
+        return "🟡 " + strconv.Itoa(mi)
+    }
+
+    return "🟢 " + strconv.Itoa(mi)
 }
