@@ -49,6 +49,8 @@ For the moment, only PHP is supported. But we are working on adding more languag
 
 ## Contributing
 
+AST Metrics is experimental and actively developed. We welcome contributions.
+
 See [CONTRIBUTING](.github/CONTRIBUTING.md).
 
 ## License
