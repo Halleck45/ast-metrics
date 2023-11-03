@@ -2,6 +2,7 @@ package Analyzer
 
 import (
     pb "github.com/halleck45/ast-metrics/src/NodeType"
+    "math"
 )
 
 type Aggregated struct {
@@ -25,6 +26,11 @@ type Aggregated struct {
     AverageHalsteadVolume float64
     AverageHalsteadTime float64
     AverageHalsteadBugs float64
+    SumHalsteadDifficulty float64
+    SumHalsteadEffort float64
+    SumHalsteadVolume float64
+    SumHalsteadTime float64
+    SumHalsteadBugs float64
 }
 
 func Aggregates(files []pb.File) Aggregated {
@@ -118,17 +124,21 @@ func Aggregates(files []pb.File) Aggregated {
 
         // Halstead
         if class.Stmts.Analyze.Volume != nil {
-            if class.Stmts.Analyze.Volume.HalsteadDifficulty != nil {
+            if class.Stmts.Analyze.Volume.HalsteadDifficulty != nil && !math.IsNaN(float64(*class.Stmts.Analyze.Volume.HalsteadDifficulty)) {
                 aggregated.AverageHalsteadDifficulty += float64(*class.Stmts.Analyze.Volume.HalsteadDifficulty)
+                aggregated.SumHalsteadDifficulty += float64(*class.Stmts.Analyze.Volume.HalsteadDifficulty)
             }
-            if class.Stmts.Analyze.Volume.HalsteadEffort != nil {
+            if class.Stmts.Analyze.Volume.HalsteadEffort != nil && !math.IsNaN(float64(*class.Stmts.Analyze.Volume.HalsteadEffort)) {
                 aggregated.AverageHalsteadEffort += float64(*class.Stmts.Analyze.Volume.HalsteadEffort)
+                aggregated.SumHalsteadEffort += float64(*class.Stmts.Analyze.Volume.HalsteadEffort)
             }
-            if class.Stmts.Analyze.Volume.HalsteadVolume != nil {
+            if class.Stmts.Analyze.Volume.HalsteadVolume != nil && !math.IsNaN(float64(*class.Stmts.Analyze.Volume.HalsteadVolume)) {
                 aggregated.AverageHalsteadVolume += float64(*class.Stmts.Analyze.Volume.HalsteadVolume)
+                aggregated.SumHalsteadVolume += float64(*class.Stmts.Analyze.Volume.HalsteadVolume)
             }
-            if class.Stmts.Analyze.Volume.HalsteadTime != nil {
+            if class.Stmts.Analyze.Volume.HalsteadTime != nil && !math.IsNaN(float64(*class.Stmts.Analyze.Volume.HalsteadTime)) {
                 aggregated.AverageHalsteadTime += float64(*class.Stmts.Analyze.Volume.HalsteadTime)
+                aggregated.SumHalsteadTime += float64(*class.Stmts.Analyze.Volume.HalsteadTime)
             }
         }
     }

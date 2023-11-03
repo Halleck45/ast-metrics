@@ -22,18 +22,34 @@ func AggregationSummary(aggregated Analyzer.Aggregated) {
    More you have paths, more your code is complex.*
 
 
-   | Min | Max | Average | Average per class | Average per method |
-   | --- | --- | --- | --- | --- |
-   | ` + strconv.Itoa(aggregated.MinCyclomaticComplexity) + ` | ` + strconv.Itoa(aggregated.MaxCyclomaticComplexity) + ` | ` + fmt.Sprintf("%.2f", aggregated.AverageCyclomaticComplexityPerClass) + ` | ` + fmt.Sprintf("%.2f", aggregated.AverageCyclomaticComplexityPerClass) + ` | ` + fmt.Sprintf("%.2f", aggregated.AverageCyclomaticComplexityPerMethod) + ` |
+   | Min | Max | Average per class | Average per method |
+   | --- | --- | --- | --- |
+   | ` +
+        strconv.Itoa(aggregated.MinCyclomaticComplexity) +
+        ` | ` + strconv.Itoa(aggregated.MaxCyclomaticComplexity) +
+        ` | ` + fmt.Sprintf("%.2f", aggregated.AverageCyclomaticComplexityPerClass) +
+        ` | ` + fmt.Sprintf("%.2f", aggregated.AverageCyclomaticComplexityPerMethod) +
+        ` |
 
 
    ### Halstead metrics
 
    *Halstead metrics are software metrics introduced to empirically determine the complexity of a program.*
 
-   | Difficulty | Effort | Volume | Time |
-   | --- | --- | --- | --- |
-   | ` + fmt.Sprintf("%.2f", aggregated.AverageHalsteadDifficulty) + ` | ` + fmt.Sprintf("%.2f", aggregated.AverageHalsteadEffort) + ` | ` + fmt.Sprintf("%.2f", aggregated.AverageHalsteadVolume) + ` | ` + fmt.Sprintf("%.2f", aggregated.AverageHalsteadTime) + ` |
+   | | Difficulty | Effort | Volume | Time |
+   | --- | --- | --- | --- | --- |
+    ` +
+        ` | Total` +
+        ` | ` + fmt.Sprintf("%.2f", aggregated.SumHalsteadDifficulty) +
+        ` | ` + fmt.Sprintf("%.2f", aggregated.SumHalsteadEffort) +
+        ` | ` + fmt.Sprintf("%.2f", aggregated.SumHalsteadVolume) +
+        ` | ` + fmt.Sprintf("%.2f", aggregated.SumHalsteadTime) +
+        "\n | Average per class" +
+        ` | ` + fmt.Sprintf("%.2f", aggregated.AverageHalsteadDifficulty) +
+        ` | ` + fmt.Sprintf("%.2f", aggregated.AverageHalsteadEffort) +
+        ` | ` + fmt.Sprintf("%.2f", aggregated.AverageHalsteadVolume) +
+        ` | ` + fmt.Sprintf("%.2f", aggregated.AverageHalsteadTime) +
+        ` |
 
    ### Classes and methods
 
