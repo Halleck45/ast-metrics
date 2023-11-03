@@ -49,6 +49,7 @@ $fileNode = new \NodeType\File([
 $protoStmts = new \NodeType\Stmts();
 $fileNode->setStmts($protoStmts);
 $aliases = [];
+$comments = [];
 function stmtFactory($stmt) {
 
     global $lastStructuredParentStmt; // current class, namespace, function, etc...
@@ -216,6 +217,30 @@ function stmtFactory($stmt) {
         $lastStructuredParentStmt = $node;
     }
 
+
+    if(!empty($stmt['attributes']['comments'])) {
+        if ($lastStructuredParentStmt) {
+            // Node is a class or a method
+            $comments = $lastStructuredParentStmt->getComments() ?? [];
+            $stmtsComments = $stmt['attributes']['comments'] ?? [];
+
+            foreach ($stmtsComments as $comment) {
+                $protoComment = new \NodeType\StmtComment([
+                    //'text' => $comment['text'], // commented: today we don't need the text
+                ]);
+                $location = new \NodeType\StmtLocationInFile([
+                    'startLine' => $comment['line'],
+                    'endLine' => $comment['endLine'],
+                    'startFilePos' => $comment['filePos'],
+                    'endFilePos' => $comment['endFilePos'],
+                ]);
+                $protoComment->setLocation($location);
+                $comments[] = $protoComment;
+            }
+
+            $lastStructuredParentStmt->setComments($comments);
+        }
+    }
 
     if(!empty($stmt['attributes']['comments'])) {
         if ($lastStructuredParentStmt) {

@@ -36,7 +36,7 @@ func (v *LocVisitor) Visit(stmts *pb.Stmts, parents *pb.Stmts) {
             }
         }
 
-        if stmt.Stmts != nil && stmt.Stmts.Analyze == nil {
+        if stmt.Stmts != nil && stmt.Stmts.Analyze != nil {
             stmt.Stmts.Analyze.Volume.Loc = &loc
             stmt.Stmts.Analyze.Volume.Lloc = &lloc
             stmt.Stmts.Analyze.Volume.Cloc = &cloc

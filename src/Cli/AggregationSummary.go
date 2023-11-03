@@ -9,10 +9,20 @@ import (
 
 func AggregationSummary(aggregated Analyzer.Aggregated) {
 
-    style := StyleTitle()
-    fmt.Println(style.Render("Results overview"))
+   style := StyleTitle()
+   fmt.Println(style.Render("Results overview"))
 
-   in := `*This code is composed from ` + strconv.Itoa(aggregated.Loc) + ` lines of code, ` + strconv.Itoa(aggregated.Cloc) + ` comment lines of code and ` + strconv.Itoa(aggregated.Lloc) + ` logical lines of code.*
+   var percentageCloc int = 0
+   var percentageLloc int = 0
+   if aggregated.Loc > 0 {
+        percentageCloc = 100 * aggregated.Cloc / aggregated.Loc
+        percentageLloc = 100 * aggregated.Lloc / aggregated.Loc
+   }
+
+   in := `*This code is composed from ` +
+        strconv.Itoa(aggregated.Loc) + ` lines of code, ` +
+        strconv.Itoa(aggregated.Cloc) + ` (` + ( strconv.Itoa(percentageCloc) )+ `%) comment lines of code and ` +
+        strconv.Itoa(aggregated.Lloc) + ` (` + ( strconv.Itoa(percentageLloc) )+ `%) logical lines of code.*
 
    ## Complexity
 
