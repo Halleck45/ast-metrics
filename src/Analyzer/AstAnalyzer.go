@@ -5,6 +5,7 @@ import (
     pb "github.com/halleck45/ast-metrics/src/NodeType"
     Complexity "github.com/halleck45/ast-metrics/src/Analyzer/Complexity"
     Volume "github.com/halleck45/ast-metrics/src/Analyzer/Volume"
+    Component "github.com/halleck45/ast-metrics/src/Analyzer/Component"
     "io/ioutil"
     "log"
     "strconv"
@@ -92,6 +93,9 @@ func executeFileAnalysis(file string, channelResult chan<- pb.File) {
 
     halsteadVisitor := &Volume.HalsteadMetricsVisitor{}
     root.Accept(halsteadVisitor)
+
+    maintainabilityIndexVisitor := &Component.MaintainabilityIndexVisitor{}
+    root.Accept(maintainabilityIndexVisitor)
 
     // visit AST
     root.Visit()

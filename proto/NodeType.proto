@@ -159,6 +159,7 @@ message StmtOperand {
 message Analyze {
   Complexity complexity = 1;
   Volume volume = 2;
+  Maintainability maintainability = 3;
 }
 message Complexity {
   optional int32 cyclomatic = 1;
@@ -174,4 +175,9 @@ message Volume {
   optional float halsteadEffort = 8;
   optional float halsteadTime = 9;
   optional float halsteadEstimatedLength = 10;
+}
+message Maintainability {
+  optional float maintainabilityIndex = 1;
+  optional float maintainabilityIndexWithoutComments = 2;
+  optional float commentWeight = 3;
 }

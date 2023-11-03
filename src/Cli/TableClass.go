@@ -29,20 +29,24 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		switch msg.String() {
 		case "q", "ctrl+c", "esc":
 			return m, tea.Quit
+        case "i":
+            // sort by maintainability index
+            m.sortColumnIndex = 6
+            return m, nil
         case "c":
-            // change sort column
+            // sort by cyclomatic complexity
             m.sortColumnIndex = 3
             return m, nil
 		case "l":
-            // change sort column
+            // sort by LLOC
             m.sortColumnIndex = 2
             return m, nil
         case "m":
-            // change sort column
+            // sort by number of methods
             m.sortColumnIndex = 1
             return m, nil
         case "n":
-            // change sort column
+            // sort by name
             m.sortColumnIndex = 0
             return m, nil
         }
@@ -85,6 +89,7 @@ func TableForClasses(pbFiles []pb.File) {
         - (l) to sort by LLOC
         - (c) to sort by cyclomatic complexity
         - (m) to sort by number of methods
+        - (i) to sort by maintainability index
     `
     fmt.Println(style.Render(help))
 
@@ -96,6 +101,7 @@ func TableForClasses(pbFiles []pb.File) {
 		{Title: "Cyclomatic", Width: 15},
 		{Title: "Halstead Length", Width: 15},
 		{Title: "Halstead Volume", Width: 15},
+		{Title: "Maintainability Index", Width: 15},
 	}
 
 	rows := []table.Row{}
@@ -115,6 +121,8 @@ func TableForClasses(pbFiles []pb.File) {
                 strconv.Itoa(int(*class.Stmts.Analyze.Volume.Loc)),
                 strconv.Itoa(int(*class.Stmts.Analyze.Complexity.Cyclomatic)),
                 strconv.Itoa(int(*class.Stmts.Analyze.Volume.HalsteadLength)),
+                strconv.Itoa(int(*class.Stmts.Analyze.Volume.HalsteadVolume)),
+                strconv.Itoa(int(*class.Stmts.Analyze.Maintainability.MaintainabilityIndex)),
             })
         }
 
@@ -135,6 +143,7 @@ func TableForClasses(pbFiles []pb.File) {
                         strconv.Itoa(int(*class.Stmts.Analyze.Complexity.Cyclomatic)),
                         strconv.Itoa(int(*class.Stmts.Analyze.Volume.HalsteadLength)),
                         strconv.Itoa(int(*class.Stmts.Analyze.Volume.HalsteadVolume)),
+                        strconv.Itoa(int(*class.Stmts.Analyze.Maintainability.MaintainabilityIndex)),
                     })
                 }
             }

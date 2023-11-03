@@ -26,6 +26,10 @@ class Analyze extends \Google\Protobuf\Internal\Message
      * Generated from protobuf field <code>.NodeType.Volume volume = 2;</code>
      */
     protected $volume = null;
+    /**
+     * Generated from protobuf field <code>.NodeType.Maintainability maintainability = 3;</code>
+     */
+    protected $maintainability = null;
 
     /**
      * Constructor.
@@ -35,6 +39,7 @@ class Analyze extends \Google\Protobuf\Internal\Message
      *
      *     @type \NodeType\Complexity $complexity
      *     @type \NodeType\Volume $volume
+     *     @type \NodeType\Maintainability $maintainability
      * }
      */
     public function __construct($data = NULL) {
@@ -102,6 +107,38 @@ class Analyze extends \Google\Protobuf\Internal\Message
     {
         GPBUtil::checkMessage($var, \NodeType\Volume::class);
         $this->volume = $var;
+
+        return $this;
+    }
+
+    /**
+     * Generated from protobuf field <code>.NodeType.Maintainability maintainability = 3;</code>
+     * @return \NodeType\Maintainability|null
+     */
+    public function getMaintainability()
+    {
+        return $this->maintainability;
+    }
+
+    public function hasMaintainability()
+    {
+        return isset($this->maintainability);
+    }
+
+    public function clearMaintainability()
+    {
+        unset($this->maintainability);
+    }
+
+    /**
+     * Generated from protobuf field <code>.NodeType.Maintainability maintainability = 3;</code>
+     * @param \NodeType\Maintainability $var
+     * @return $this
+     */
+    public function setMaintainability($var)
+    {
+        GPBUtil::checkMessage($var, \NodeType\Maintainability::class);
+        $this->maintainability = $var;
 
         return $this;
     }
