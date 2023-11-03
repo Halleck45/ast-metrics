@@ -37,6 +37,8 @@ jobs:
             git config --local user.name "AST Metrics Bot"
             git add .
             git commit -m "chore: update dependencies"
+            git tag -a -m "chore: update dependencies" "v$(date +'%Y%m%d%H%M%S')"
+            git push --follow-tags
 
       # Install go dependencies
       - uses: actions/setup-go@v4
