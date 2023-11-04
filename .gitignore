@@ -3,3 +3,4 @@ vendor
 .idea
 bin
 dist/
+.phpunit.result.cache
