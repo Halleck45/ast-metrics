@@ -1,6 +1,6 @@
 <?php
 
-namespace Foo;
+namespace Foo\Ns1;
 
 use SplObjectStorage as MyAlias;
 use SplFileInfo as MyAliasFile;

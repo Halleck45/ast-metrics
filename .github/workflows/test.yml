@@ -9,10 +9,25 @@ jobs:
     strategy:
       matrix:
         go-version: [ '1.21.x' ]
+        php-version: [ '8.1', '8.2' ]
 
     steps:
       - uses: actions/checkout@v4
 
+      # Test suite for PHP parser
+      - uses: php-actions/composer@v6
+        with:
+          dev: no
+          php_version: ${{ matrix.php-version }}
+          args: "--working-dir=src/Php/phpsources --optimize-autoloader"
+          working_directory: "src/Php/phpsources"
+
+      - uses: php-actions/phpunit@v3
+        with:
+          php_version: ${{ matrix.php-version }}
+          configuration: src/Php/phpsources/phpunit.xml.dist
+
+      # Test suite for Go parser
       - name: Setup Go ${{ matrix.go-version }}
         uses: actions/setup-go@v4
         with:
