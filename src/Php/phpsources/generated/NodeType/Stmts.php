@@ -65,6 +65,10 @@ class Stmts extends \Google\Protobuf\Internal\Message
      * Generated from protobuf field <code>repeated .NodeType.StmtLoop stmtLoop = 12;</code>
      */
     private $stmtLoop;
+    /**
+     * Generated from protobuf field <code>repeated .NodeType.StmtDecisionSwitch stmtDecisionSwitch = 13;</code>
+     */
+    private $stmtDecisionSwitch;
 
     /**
      * Constructor.
@@ -85,6 +89,7 @@ class Stmts extends \Google\Protobuf\Internal\Message
      *     @type array<\NodeType\StmtDecisionElse>|\Google\Protobuf\Internal\RepeatedField $stmtDecisionElse
      *     @type array<\NodeType\StmtDecisionCase>|\Google\Protobuf\Internal\RepeatedField $stmtDecisionCase
      *     @type array<\NodeType\StmtLoop>|\Google\Protobuf\Internal\RepeatedField $stmtLoop
+     *     @type array<\NodeType\StmtDecisionSwitch>|\Google\Protobuf\Internal\RepeatedField $stmtDecisionSwitch
      * }
      */
     public function __construct($data = NULL) {
@@ -366,6 +371,28 @@ class Stmts extends \Google\Protobuf\Internal\Message
     {
         $arr = GPBUtil::checkRepeatedField($var, \Google\Protobuf\Internal\GPBType::MESSAGE, \NodeType\StmtLoop::class);
         $this->stmtLoop = $arr;
+
+        return $this;
+    }
+
+    /**
+     * Generated from protobuf field <code>repeated .NodeType.StmtDecisionSwitch stmtDecisionSwitch = 13;</code>
+     * @return \Google\Protobuf\Internal\RepeatedField
+     */
+    public function getStmtDecisionSwitch()
+    {
+        return $this->stmtDecisionSwitch;
+    }
+
+    /**
+     * Generated from protobuf field <code>repeated .NodeType.StmtDecisionSwitch stmtDecisionSwitch = 13;</code>
+     * @param array<\NodeType\StmtDecisionSwitch>|\Google\Protobuf\Internal\RepeatedField $var
+     * @return $this
+     */
+    public function setStmtDecisionSwitch($var)
+    {
+        $arr = GPBUtil::checkRepeatedField($var, \Google\Protobuf\Internal\GPBType::MESSAGE, \NodeType\StmtDecisionSwitch::class);
+        $this->stmtDecisionSwitch = $arr;
 
         return $this;
     }
