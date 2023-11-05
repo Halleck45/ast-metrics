@@ -23,6 +23,10 @@ class File extends \Google\Protobuf\Internal\Message
      * Generated from protobuf field <code>.NodeType.Stmts stmts = 2;</code>
      */
     protected $stmts = null;
+    /**
+     * Generated from protobuf field <code>.NodeType.LinesOfCode linesOfCode = 3;</code>
+     */
+    protected $linesOfCode = null;
 
     /**
      * Constructor.
@@ -32,6 +36,7 @@ class File extends \Google\Protobuf\Internal\Message
      *
      *     @type string $path
      *     @type \NodeType\Stmts $stmts
+     *     @type \NodeType\LinesOfCode $linesOfCode
      * }
      */
     public function __construct($data = NULL) {
@@ -89,6 +94,38 @@ class File extends \Google\Protobuf\Internal\Message
     {
         GPBUtil::checkMessage($var, \NodeType\Stmts::class);
         $this->stmts = $var;
+
+        return $this;
+    }
+
+    /**
+     * Generated from protobuf field <code>.NodeType.LinesOfCode linesOfCode = 3;</code>
+     * @return \NodeType\LinesOfCode|null
+     */
+    public function getLinesOfCode()
+    {
+        return $this->linesOfCode;
+    }
+
+    public function hasLinesOfCode()
+    {
+        return isset($this->linesOfCode);
+    }
+
+    public function clearLinesOfCode()
+    {
+        unset($this->linesOfCode);
+    }
+
+    /**
+     * Generated from protobuf field <code>.NodeType.LinesOfCode linesOfCode = 3;</code>
+     * @param \NodeType\LinesOfCode $var
+     * @return $this
+     */
+    public function setLinesOfCode($var)
+    {
+        GPBUtil::checkMessage($var, \NodeType\LinesOfCode::class);
+        $this->linesOfCode = $var;
 
         return $this;
     }

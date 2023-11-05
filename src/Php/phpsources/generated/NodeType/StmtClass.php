@@ -51,6 +51,10 @@ class StmtClass extends \Google\Protobuf\Internal\Message
      * Generated from protobuf field <code>repeated .NodeType.Name uses = 9;</code>
      */
     private $uses;
+    /**
+     * Generated from protobuf field <code>.NodeType.LinesOfCode linesOfCode = 10;</code>
+     */
+    protected $linesOfCode = null;
 
     /**
      * Constructor.
@@ -67,6 +71,7 @@ class StmtClass extends \Google\Protobuf\Internal\Message
      *     @type array<\NodeType\Name>|\Google\Protobuf\Internal\RepeatedField $extends
      *     @type array<\NodeType\Name>|\Google\Protobuf\Internal\RepeatedField $implements
      *     @type array<\NodeType\Name>|\Google\Protobuf\Internal\RepeatedField $uses
+     *     @type \NodeType\LinesOfCode $linesOfCode
      * }
      */
     public function __construct($data = NULL) {
@@ -298,6 +303,38 @@ class StmtClass extends \Google\Protobuf\Internal\Message
     {
         $arr = GPBUtil::checkRepeatedField($var, \Google\Protobuf\Internal\GPBType::MESSAGE, \NodeType\Name::class);
         $this->uses = $arr;
+
+        return $this;
+    }
+
+    /**
+     * Generated from protobuf field <code>.NodeType.LinesOfCode linesOfCode = 10;</code>
+     * @return \NodeType\LinesOfCode|null
+     */
+    public function getLinesOfCode()
+    {
+        return $this->linesOfCode;
+    }
+
+    public function hasLinesOfCode()
+    {
+        return isset($this->linesOfCode);
+    }
+
+    public function clearLinesOfCode()
+    {
+        unset($this->linesOfCode);
+    }
+
+    /**
+     * Generated from protobuf field <code>.NodeType.LinesOfCode linesOfCode = 10;</code>
+     * @param \NodeType\LinesOfCode $var
+     * @return $this
+     */
+    public function setLinesOfCode($var)
+    {
+        GPBUtil::checkMessage($var, \NodeType\LinesOfCode::class);
+        $this->linesOfCode = $var;
 
         return $this;
     }

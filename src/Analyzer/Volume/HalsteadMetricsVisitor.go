@@ -30,19 +30,11 @@ func (v *HalsteadMetricsVisitor) Visit(stmts *pb.Stmts, parents *pb.Stmts) {
     var N int32 // program length (N)
     var N1 int32
     var N2 int32
-    var hatN float64 // estimated program length (𝑁̂)
-    var V float64 // volume (V)
-    var D float64 // difficulty (D)
-    var E float64 // effort (E)
-    var T float64 // time required to program (T)
-
-    // initialize default values
-    hatN = 0
-    V = 0
-    D = 0
-    E = 0
-    T = 0
-
+    var hatN float64 = 0// estimated program length (𝑁̂)
+    var V float64 = 0 // volume (V)
+    var D float64 = 0 // difficulty (D)
+    var E float64 = 0 // effort (E)
+    var T float64 = 0 // time required to program (T)
 
     for _, stmt := range parents.StmtFunction {
         if stmt.Stmts == nil {
@@ -69,7 +61,6 @@ func (v *HalsteadMetricsVisitor) Visit(stmts *pb.Stmts, parents *pb.Stmts) {
             }
         }
 
-
         // Calculate Halstead metrics
         n1 = int32(len(operatorSet))
         n2 = int32(len(operandSet))
@@ -83,13 +74,22 @@ func (v *HalsteadMetricsVisitor) Visit(stmts *pb.Stmts, parents *pb.Stmts) {
         N = int32(N1 + N2)
 
         // Calculate estimated program length (𝑁̂)
-        hatN = float64(n1)*math.Log2(float64(n1)) + float64(n2)*math.Log2(float64(n2))
+        hatN = float64(n1) * math.Log2(float64(n1)) + float64(n2) * math.Log2(float64(n2))
+        if math.IsNaN(hatN) {
+            hatN = 0
+        }
 
         // Calculate volume (V)
         V = float64(N) * math.Log2(float64(n))
+        if math.IsNaN(V) {
+            V = 0
+        }
 
         // Calculate difficulty (D)
         D = float64(n1) / 2 * float64(N2) / float64(n2)
+        if math.IsNaN(D) {
+            D = 0
+        }
 
         // Calculate effort (E)
         E = D * V
@@ -112,6 +112,7 @@ func (v *HalsteadMetricsVisitor) Visit(stmts *pb.Stmts, parents *pb.Stmts) {
         stmt.Stmts.Analyze.Volume.HalsteadDifficulty = &D32
         stmt.Stmts.Analyze.Volume.HalsteadEffort = &E32
         stmt.Stmts.Analyze.Volume.HalsteadTime = &T32
+
     }
 }
 

@@ -8,6 +8,10 @@ install-php:
 	@echo "\e[34m\033[1m-> Downloading PHP dependencies\033[0m\e[39m\n"
 	cd src/Php/phpsources && composer install
 	@echo "\e[34m\033[1mDONE \033[0m\e[39m\n"
+test-php:
+	@echo "\e[34m\033[1m-> Testing PHP Code\033[0m\e[39m\n"
+	cd src/Php/phpsources && php vendor/bin/phpunit
+	@echo "\e[34m\033[1mDONE \033[0m\e[39m\n"
 install-protobuff:
 	@echo "\e[34m\033[1m-> Downloading protobuff\033[0m\e[39m\n"
 	mkdir -p bin
@@ -40,7 +44,8 @@ build-release:
 build: install build-protobuff build-release
 	@echo "\n\e[42m  BUILD FINISHED  \e[49m\n"
 
-test:
+test: test-php test-go
+test-go:
 	@echo "\e[34m\033[1m-> Running tests\033[0m\e[39m\n"
 	go test ./...
 	@echo "\e[34m\033[1mDONE \033[0m\e[39m\n"
