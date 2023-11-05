@@ -18,7 +18,7 @@ class Dumper
     private array $aliases = [];
     private string $file;
     private $lastStructuredParentStmt;
-    private string $lastNamespace;
+    private string $lastNamespace = '';
     private array $linesOfCode=[];
 
     public function __construct(string $file)
@@ -40,6 +40,7 @@ class Dumper
         if (getenv('DEBUG')) {
             file_put_contents('tmp.json', json_encode($json, JSON_PRETTY_PRINT));
         }
+
         foreach ($json as $stmt) {
             $this->stmtToProto($stmt, $protoStmts);
         }
@@ -79,6 +80,9 @@ class Dumper
                 break;
             case 'Stmt_Else':
                 $node = new \NodeType\StmtDecisionElse();
+                break;
+            case 'Stmt_Switch':
+                $node = new \NodeType\StmtDecisionSwitch();
                 break;
             case 'Stmt_Case':
                 $node = new \NodeType\StmtDecisionCase();
@@ -146,7 +150,7 @@ class Dumper
         // Determine the name if the statement has one
         if (isset($stmt['name'])) {
             $name = $this->nameType($stmt);
-            $qualified = $this->lastNamespace . $name;
+            $qualified = $this->lastNamespace . '\\' . $name;
             if($node instanceof StmtNamespace) {
                 $qualified = $name;
             }
@@ -199,18 +203,20 @@ class Dumper
 
 
         // count blank lines in statement
-        $concernedLines = array_slice($this->linesOfCode, $stmt['attributes']['startLine'] - 1, $stmt['attributes']['endLine'] - $stmt['attributes']['startLine'] + 1);
-        // Location (in code)
-        $location = new \NodeType\StmtLocationInFile([
-            'startLine' => $stmt['attributes']['startLine'],
-            'endLine' => $stmt['attributes']['endLine'],
-            'startFilePos' => $stmt['attributes']['startFilePos'],
-            'endFilePos' => $stmt['attributes']['endFilePos'],
-            'blankLines' => count(array_filter($concernedLines, function ($line) {
-                return trim($line) === '';
-            })),
-        ]);
-        $node->setLocation($location);
+        if (!empty($stmt['attributes']['startLine'])) {
+            $concernedLines = array_slice($this->linesOfCode, $stmt['attributes']['startLine'] - 1, $stmt['attributes']['endLine'] - $stmt['attributes']['startLine'] + 1);
+            // Location (in code)
+            $location = new \NodeType\StmtLocationInFile([
+                'startLine' => $stmt['attributes']['startLine'],
+                'endLine' => $stmt['attributes']['endLine'],
+                'startFilePos' => $stmt['attributes']['startFilePos'],
+                'endFilePos' => $stmt['attributes']['endFilePos'],
+                'blankLines' => count(array_filter($concernedLines, function ($line) {
+                    return trim($line) === '';
+                })),
+            ]);
+            $node->setLocation($location);
+        }
 
         // Determine if the statement is a decision or a structure
         if (method_exists($node, 'setComments')) {
@@ -327,20 +333,46 @@ class Dumper
         $collection = 'get' . str_replace('NodeType\\', '', get_class($protoNode));
         $parent->$collection()[] = $protoNode;
 
-
         // if contains sub statements, do the same for each of them
+        $else = $stmt['else'] ?? [];
+        if (!is_array($else) || isset($else['nodeType'])) {
+            $else = [$else];
+        }
+
+        $cases = $stmt['cases'] ?? [];
+        if (!is_array($cases) || isset($cases['nodeType'])) {
+            $cases = [$cases];
+        }
+
+        $elseifs = $stmt['elseifs'] ?? [];
+        if (!is_array($elseifs) || isset($elseifs['nodeType'])) {
+            $elseifs = [$elseifs];
+        }
+
+        $decisions = array_filter(array_merge($else, $cases, $elseifs));
+        foreach ($decisions as $decision) {
+            $this->stmtToProto($decision, $parent);
+        }
+
         $subStatements = array_filter(array_merge(
             $stmt['stmts'] ?? [],
-            $stmt['cases'] ?? [],
-            $stmt['else'] ?? [],
-            $stmt['elseifs'] ?? [],
             [$stmt['stmt'] ?? []]
         ));
+
         if (!empty($subStatements) && is_array($subStatements)) {
             $protoStmts = new \NodeType\Stmts();
             $protoNode->setStmts($protoStmts);
             foreach ($subStatements as $stmt) {
+
                 if (!is_array($stmt)) {
+                    continue;
+                }
+
+                // if array is composed only from numeric keys, it's a list of statements
+                if (array_keys($stmt) === range(0, count($stmt) - 1)) {
+                    foreach ($stmt as $subStmt) {
+                        $this->stmtToProto($subStmt, $protoStmts);
+                    }
                     continue;
                 }
 

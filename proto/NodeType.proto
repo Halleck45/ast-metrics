@@ -28,6 +28,7 @@ message Stmts {
   repeated StmtDecisionElse stmtDecisionElse = 10;
   repeated StmtDecisionCase stmtDecisionCase = 11;
   repeated StmtLoop stmtLoop = 12;
+  repeated StmtDecisionSwitch stmtDecisionSwitch = 13;
 }
 
 // Represents a file
@@ -126,6 +127,12 @@ message StmtDecisionElse {
 
 // Represents a decision (CASE)
 message StmtDecisionCase {
+    Stmts stmts = 1;
+    StmtLocationInFile location = 2;
+}
+
+// Represents a group of decisions (SWITCH)
+message StmtDecisionSwitch {
     Stmts stmts = 1;
     StmtLocationInFile location = 2;
 }
