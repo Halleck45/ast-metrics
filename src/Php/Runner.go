@@ -62,7 +62,7 @@ func (r PhpRunner) Ensure() (error) {
     // Install sources locally (vendors)
     tempDir := Storage.Path() + "/.temp"
     if err := os.Mkdir(tempDir, 0755); err != nil {
-        log.Fatal(err)
+        log.Error(err)
         return err
     }
 
@@ -88,14 +88,14 @@ func (r PhpRunner) Ensure() (error) {
         }
         return nil
     }); err != nil {
-        log.Fatal(err)
+        log.Error(err)
         return err
     }
 
     // Ensure outdir exists
     if _, err := os.Stat(r.getLocalOutDirectory()); os.IsNotExist(err) {
         if err := os.Mkdir(r.getLocalOutDirectory(), 0755); err != nil {
-            log.Fatal(err)
+            log.Error(err)
             return err
         }
     }
@@ -148,8 +148,8 @@ func (r PhpRunner) Ensure() (error) {
         phpBinaryPath := getPHPBinaryPath()
         cmd := exec.Command("sh", "-c" , phpBinaryPath +  " -r 'echo PHP_VERSION;' > " +  r.getLocalOutDirectory() + "/php_version")
         if err := cmd.Run(); err != nil {
-            log.Printf("Cannot execute command %s : %v\n", cmd.String(), err)
-            log.Fatal(err)
+            log.Error("Cannot execute command %s : %v\n", cmd.String(), err)
+            log.Error(err)
             return err
         }
     }
@@ -157,7 +157,7 @@ func (r PhpRunner) Ensure() (error) {
     // get content of local file
     phpVersionBytes, err := os.ReadFile(r.getLocalOutDirectory() + "/php_version")
     if err != nil {
-        log.Fatal(err)
+        log.Error("Cannot read file " + r.getLocalOutDirectory() + "/php_version")
         r.progressbar.Fail("Error while checking PHP version")
         return  err
     }
@@ -245,7 +245,7 @@ func cleanup(phpSources embed.FS ) (string, error) {
         return "", nil
     }
     if err := os.RemoveAll(tempDir); err != nil {
-        log.Fatal(err)
+        log.Error(err)
         return "", err
     }
 
@@ -276,6 +276,11 @@ func (r PhpRunner)  executePHPCommandForFile(tmpDir string, file string, path st
     }
     outputFilePath := filepath.Join(tmpDir, hash + ".bin")
 
+    if log.GetLevel() == log.DebugLevel {
+        log.Debug("file " + file + " has hash " + hash)
+        log.Debug("Dumping file " + file + " to " + outputFilePath)
+    }
+
     relativePath := strings.Replace(file, path, "", 1)
     relativePath = strings.TrimLeft(relativePath, "/")
 
@@ -300,7 +305,12 @@ func (r PhpRunner)  executePHPCommandForFile(tmpDir string, file string, path st
         }
         cmd := exec.Command("sh", "-c" , phpBinaryPath + " " + tempDir + "/phpsources/dump.php " + file + " > " + outputFilePath)
         if err := cmd.Run(); err != nil {
-            log.Printf("Cannot execute command %s : %v\n", cmd.String(), err)
+            log.Error("[SKIP] " + file + " - Cannot execute command %s :\n", cmd.String(), "\n", err)
+
+            // remove file
+            if err := os.Remove(outputFilePath); err != nil {
+                log.Error("Cannot remove file " + outputFilePath + " : %v\n", err)
+            }
             return
         }
     }

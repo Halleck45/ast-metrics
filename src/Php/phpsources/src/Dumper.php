@@ -74,7 +74,7 @@ class Dumper
         switch ($stmt['nodeType'] ?? null) {
             case 'Stmt_Namespace':
                 $node = new \NodeType\StmtNamespace();
-                $this->lastNamespace = $this->nameType($stmt['name']);
+                $this->lastNamespace = $this->nameType($stmt['name']) ?? '\\';
                 $this->aliases = [];
                 break;
             case 'Stmt_Class':
@@ -294,6 +294,10 @@ class Dumper
         }
         if (isset($what['expr'])) {
             return $this->nameVar($what['expr']);
+        }
+
+        if(is_array($what['name'])) {
+            return $this->nameVar($what['name']);
         }
 
         return $what['name'] ?? null;
