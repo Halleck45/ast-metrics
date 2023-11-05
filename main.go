@@ -132,10 +132,10 @@ func main() {
                     outWriter.Flush()
 
                     // Now we start the analysis of each AST file
-                    pbAnalaysis1, _ := pterm.DefaultSpinner.WithWriter(multi.NewWriter()).Start("Main analysis")
+                    progressBarAnalysis, _ := pterm.DefaultSpinner.WithWriter(multi.NewWriter()).Start("Main analysis")
                     spinnerAllExecution.UpdateTitle("Analyzing...")
                     spinnerAllExecution.Increment()
-                    allResults := Analyzer.Start(pbAnalaysis1)
+                    allResults := Analyzer.Start(progressBarAnalysis)
 
                     // Start aggregating results
                     spinnerAllExecution.UpdateTitle("Aggregating...")

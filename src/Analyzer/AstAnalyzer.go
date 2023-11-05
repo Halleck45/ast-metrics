@@ -38,9 +38,8 @@ func Start(progressbar *pterm.SpinnerPrinter) ([]pb.File){
         wg.Add(1)
         nbParsingFiles++
         go func(file string) {
-            executeFileAnalysis(file, channelResult)
             defer wg.Done()
-
+            executeFileAnalysis(file, channelResult)
             // details is the number of files processed / total number of files
             details := strconv.Itoa(nbParsingFiles) + "/" + strconv.Itoa(len(astFiles))
             progressbar.UpdateText("Analyzing (" + details + ")")
@@ -48,9 +47,9 @@ func Start(progressbar *pterm.SpinnerPrinter) ([]pb.File){
     }
 
 
+
     wg.Wait()
     progressbar.Info("AST Analysis finished")
-
     // Convert it to slice of pb.File
     allResults := make([]pb.File, 0, len(astFiles))
     for i := 0; i < len(astFiles); i++ {
@@ -61,25 +60,25 @@ func Start(progressbar *pterm.SpinnerPrinter) ([]pb.File){
     return allResults
 }
 
-func executeFileAnalysis(file string, channelResult chan<- pb.File) {
+func executeFileAnalysis(file string, channelResult chan<- pb.File) (error) {
 
     // load AST via ProtoBuf (using NodeType package)
     in, err := ioutil.ReadFile(file)
     if err != nil {
-        log.Fatal("Error reading file:", err)
-        return
+        log.Fatal("Error reading file: ", err)
+        return err
     }
 
     // if file is empty, return
     if len(in) == 0 {
-        log.Fatal("File is empty:", err)
-        return
+        log.Fatal("File is empty: ", file)
+        return err
     }
 
     pbFile := &pb.File{}
     if err := proto.Unmarshal(in, pbFile); err != nil {
         log.Fatalln("Failed to parse address pbFile (" + file + "):", err)
-        return
+        return err
     }
 
     root := &ASTNode{children: pbFile.Stmts}
@@ -101,5 +100,5 @@ func executeFileAnalysis(file string, channelResult chan<- pb.File) {
     root.Visit()
 
     channelResult <- *pbFile
-    return
+    return nil
 }
