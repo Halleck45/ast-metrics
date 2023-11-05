@@ -2,16 +2,21 @@
 
 namespace App;
 
-class FileParser {
+class FileParser
+{
 
     private bool $withDetails = true;
 
     public function parse(string $file): array
     {
         $attributes = [];
-        if($this->withDetails) {
+        if ($this->withDetails) {
             $attributes = [
-                'startLine', 'endLine', 'startFilePos', 'endFilePos', 'comments'
+                'startLine',
+                'endLine',
+                'startFilePos',
+                'endFilePos',
+                'comments'
             ];
         }
 

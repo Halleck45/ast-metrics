@@ -35,6 +35,7 @@ message Stmts {
 message File {
   string path = 1;
   Stmts stmts = 2;
+  LinesOfCode linesOfCode = 3;
 }
 
 // Describe the location of statement in file.
@@ -51,6 +52,7 @@ message StmtNamespace {
   Name name = 1;
   Stmts stmts = 2;
   StmtLocationInFile location = 3;
+  LinesOfCode linesOfCode = 4;
 }
 
 // Represents a Use (or Import) node.
@@ -71,6 +73,7 @@ message StmtClass {
   repeated Name extends = 7;
   repeated Name implements = 8;
   repeated Name uses = 9;
+  LinesOfCode linesOfCode = 10;
 }
 
 // Represents a Function node.
@@ -83,6 +86,7 @@ message StmtFunction {
   repeated StmtOperand operands = 6;
   repeated StmtParameter parameters = 7;
   repeated Name externals = 8; // dependencies
+  LinesOfCode linesOfCode = 9;
 }
 
 message StmtParameter {
@@ -157,6 +161,16 @@ message StmtOperator {
 }
 message StmtOperand {
   string name = 1;
+}
+
+// ------------------------------------
+// -- Volume: LinesOfCode
+// ------------------------------------
+message LinesOfCode {
+  int32 linesOfCode = 1;
+  int32 logicalLinesOfCode = 2;
+  int32 commentLinesOfCode = 3;
+  int32 nonCommentLinesOfCode = 4;
 }
 
 // ------------------------------------

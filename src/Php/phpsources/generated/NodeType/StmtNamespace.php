@@ -27,6 +27,10 @@ class StmtNamespace extends \Google\Protobuf\Internal\Message
      * Generated from protobuf field <code>.NodeType.StmtLocationInFile location = 3;</code>
      */
     protected $location = null;
+    /**
+     * Generated from protobuf field <code>.NodeType.LinesOfCode linesOfCode = 4;</code>
+     */
+    protected $linesOfCode = null;
 
     /**
      * Constructor.
@@ -37,6 +41,7 @@ class StmtNamespace extends \Google\Protobuf\Internal\Message
      *     @type \NodeType\Name $name
      *     @type \NodeType\Stmts $stmts
      *     @type \NodeType\StmtLocationInFile $location
+     *     @type \NodeType\LinesOfCode $linesOfCode
      * }
      */
     public function __construct($data = NULL) {
@@ -136,6 +141,38 @@ class StmtNamespace extends \Google\Protobuf\Internal\Message
     {
         GPBUtil::checkMessage($var, \NodeType\StmtLocationInFile::class);
         $this->location = $var;
+
+        return $this;
+    }
+
+    /**
+     * Generated from protobuf field <code>.NodeType.LinesOfCode linesOfCode = 4;</code>
+     * @return \NodeType\LinesOfCode|null
+     */
+    public function getLinesOfCode()
+    {
+        return $this->linesOfCode;
+    }
+
+    public function hasLinesOfCode()
+    {
+        return isset($this->linesOfCode);
+    }
+
+    public function clearLinesOfCode()
+    {
+        unset($this->linesOfCode);
+    }
+
+    /**
+     * Generated from protobuf field <code>.NodeType.LinesOfCode linesOfCode = 4;</code>
+     * @param \NodeType\LinesOfCode $var
+     * @return $this
+     */
+    public function setLinesOfCode($var)
+    {
+        GPBUtil::checkMessage($var, \NodeType\LinesOfCode::class);
+        $this->linesOfCode = $var;
 
         return $this;
     }

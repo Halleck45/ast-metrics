@@ -9,6 +9,7 @@ namespace App;
 
 use Google\Protobuf\Internal\RepeatedField;
 use NodeType\File;
+use NodeType\LinesOfCode;
 use NodeType\StmtNamespace;
 
 
@@ -19,7 +20,7 @@ class Dumper
     private string $file;
     private $lastStructuredParentStmt;
     private string $lastNamespace = '';
-    private array $linesOfCode=[];
+    private array $linesOfCode = [];
 
     public function __construct(string $file)
     {
@@ -35,20 +36,38 @@ class Dumper
         ]);
         $protoStmts = new \NodeType\Stmts();
         $fileNode->setStmts($protoStmts);
+        $loc = new LinesOfCode();
+        $fileNode->setLinesOfCode($loc);
+        $this->lastStructuredParentStmt = $fileNode;
+        $this->linesOfCode = file($this->file);
 
-        $subs = [];
         if (getenv('DEBUG')) {
             file_put_contents('tmp.json', json_encode($json, JSON_PRETTY_PRINT));
         }
 
         foreach ($json as $stmt) {
-            $this->stmtToProto($stmt, $protoStmts);
+            $addedNode = $this->stmtToProto($stmt, $protoStmts);
+
+            if (!$addedNode) {
+                continue;
+            }
+
+            if (method_exists($addedNode, 'getLinesOfCode') && $addedNode->getLinesOfCode() instanceof LinesOfCode) {
+                $loc->setLinesOfCode($loc->getLinesOfCode() + $addedNode->getLinesOfCode()->getLinesOfCode());
+                $loc->setLogicalLinesOfCode($loc->getLogicalLinesOfCode() + $addedNode->getLinesOfCode()->getLogicalLinesOfCode());
+                $loc->setCommentLinesOfCode($loc->getCommentLinesOfCode() + $addedNode->getLinesOfCode()->getCommentLinesOfCode());
+                $loc->setNonCommentLinesOfCode($loc->getNonCommentLinesOfCode() + $addedNode->getLinesOfCode()->getNonCommentLinesOfCode());
+            }
+        }
+
+        if (getenv('DEBUG')) {
+            file_put_contents('tmp.json', json_encode($json, JSON_PRETTY_PRINT));
         }
 
         return $fileNode;
     }
-    
-    
+
+
     private function stmtFactory(array $stmt)
     {
         $node = null;
@@ -64,6 +83,7 @@ class Dumper
             case 'Stmt_Function':
             case 'Stmt_ClassMethod':
                 $node = new \NodeType\StmtFunction();
+                $this->lastStructuredParentStmt = $node;
                 break;
             case 'Stmt_If':
                 $node = new \NodeType\StmtDecisionIf();
@@ -96,6 +116,7 @@ class Dumper
                 break;
         }
 
+
         // Expressions
         // Operators and operands
         // We don't need to store the details for all statements, so we only store the details for the parent struct
@@ -104,19 +125,26 @@ class Dumper
         // Operands is a list of variables, like "$a" or "$b"
         // It's useful to calculate Halsdstead's complexity
         if ($this->lastStructuredParentStmt
+            && method_exists($this->lastStructuredParentStmt, 'setOperators')
             && (strpos($stmt['nodeType'] ?? '', 'Stmt_Expr') !== false || isset($stmt['expr']))
         ) {
-            $operator = new \NodeType\StmtOperator([
-                'name' => $stmt['expr']['nodeType'] ?? $stmt['nodeType'] ?? $stmt['expr'] ?? null,
-            ]);
+            $foundOperators = $this->getOperators($stmt);
             $operators = $this->lastStructuredParentStmt->getOperators() ?? [];
-            $operators[] = $operator;
-            $this->lastStructuredParentStmt->setOperators($operators);
+            foreach ($foundOperators as $operator) {
+                $operator = new \NodeType\StmtOperator([
+                    'name' => $operator,
+                ]);
+                $operators[] = $operator;
+                $this->lastStructuredParentStmt->setOperators($operators);
+            }
         }
+
         // Operands
-        if ($this->lastStructuredParentStmt && ((isset($stmt['expr']['var']) || isset($stmt['var'])))) {
+        if ($this->lastStructuredParentStmt && method_exists($this->lastStructuredParentStmt,
+                'setOperators') && ((isset($stmt['expr']['var']) || isset($stmt['var'])))) {
             $name = $this->nameVar($stmt);
             if ($name) {
+                // todo utiliser ExprVariable
                 $operand = new \NodeType\StmtOperand([
                     'name' => $name,
                 ]);
@@ -124,10 +152,9 @@ class Dumper
                 $operands[] = $operand;
                 $this->lastStructuredParentStmt->setOperands($operands);
             }
-
         }
 
-        if ($this->lastStructuredParentStmt) {
+        if ($this->lastStructuredParentStmt && method_exists($this->lastStructuredParentStmt, 'getExternals')) {
             // External uses (new, static, etc.)
             $exprs = array_merge($stmt['exprs'] ?? [], (array)($stmt['expr'] ?? []));
             foreach ($exprs as $expr) {
@@ -144,6 +171,7 @@ class Dumper
         }
 
         if (!$node) {
+            // even if node is not supported, we iterate on its children
             return null;
         }
 
@@ -151,7 +179,7 @@ class Dumper
         if (isset($stmt['name'])) {
             $name = $this->nameType($stmt);
             $qualified = $this->lastNamespace . '\\' . $name;
-            if($node instanceof StmtNamespace) {
+            if ($node instanceof StmtNamespace) {
                 $qualified = $name;
             }
 
@@ -204,7 +232,8 @@ class Dumper
 
         // count blank lines in statement
         if (!empty($stmt['attributes']['startLine'])) {
-            $concernedLines = array_slice($this->linesOfCode, $stmt['attributes']['startLine'] - 1, $stmt['attributes']['endLine'] - $stmt['attributes']['startLine'] + 1);
+            $concernedLines = array_slice($this->linesOfCode, $stmt['attributes']['startLine'] - 1,
+                $stmt['attributes']['endLine'] - $stmt['attributes']['startLine'] + 1);
             // Location (in code)
             $location = new \NodeType\StmtLocationInFile([
                 'startLine' => $stmt['attributes']['startLine'],
@@ -218,65 +247,28 @@ class Dumper
             $node->setLocation($location);
         }
 
-        // Determine if the statement is a decision or a structure
-        if (method_exists($node, 'setComments')) {
-            $this->lastStructuredParentStmt = $node;
+        // Count comments lines
+        if ($this->lastStructuredParentStmt && empty($this->lastStructuredParentStmt->getLinesOfCode())) {
+            $this->lastStructuredParentStmt->setLinesOfCode(new LinesOfCode());
         }
 
-
-        if (!empty($stmt['attributes']['comments'])) {
-            if ($this->lastStructuredParentStmt) {
-                // Node is a class or a method
-                $this->comments = $this->lastStructuredParentStmt->getComments() ?? [];
-                $stmtsComments = $stmt['attributes']['comments'] ?? [];
-
-                foreach ($stmtsComments as $comment) {
-                    $protoComment = new \NodeType\StmtComment([
-                        //'text' => $comment['text'], // commented: today we don't need the text
-                    ]);
-                    $location = new \NodeType\StmtLocationInFile([
-                        'startLine' => $comment['line'],
-                        'endLine' => $comment['endLine'],
-                        'startFilePos' => $comment['filePos'],
-                        'endFilePos' => $comment['endFilePos'],
-                    ]);
-                    $protoComment->setLocation($location);
-                    $this->comments[] = $protoComment;
-                }
-
-                $this->lastStructuredParentStmt->setComments($this->comments);
-            }
-        }
-
-        if (!empty($stmt['attributes']['comments'])) {
-            if ($this->lastStructuredParentStmt) {
-                // Node is a class or a method
-                $this->comments = $this->lastStructuredParentStmt->getComments() ?? [];
-                $stmtsComments = $stmt['attributes']['comments'] ?? [];
-
-                foreach ($stmtsComments as $comment) {
-                    $protoComment = new \NodeType\StmtComment([
-                        //'text' => $comment['text'], // commented: today we don't need the text
-                    ]);
-                    $location = new \NodeType\StmtLocationInFile([
-                        'startLine' => $comment['line'],
-                        'endLine' => $comment['endLine'],
-                        'startFilePos' => $comment['filePos'],
-                        'endFilePos' => $comment['endFilePos'],
-                    ]);
-                    $protoComment->setLocation($location);
-                    $this->comments[] = $protoComment;
-                }
-
-                $this->lastStructuredParentStmt->setComments($this->comments);
-            }
+        // Count code lines (for node itself)
+        if (method_exists($node, 'getLinesOfCode')) {
+            $r = $this->countLinesOfCode($stmt);
+            $r['lloc'] = max(1, $r['loc'] - ($r['blanks'] + $r['cloc']));
+            $node->setLinesOfCode(new LinesOfCode());
+            $node->getLinesOfCode()->setLinesOfCode($r['loc']);
+            $node->getLinesOfCode()->setLogicalLinesOfCode($r['lloc']);
+            $node->getLinesOfCode()->setCommentLinesOfCode($r['cloc']);
+            $node->getLinesOfCode()->setNonCommentLinesOfCode($r['ncloc']);
         }
 
         return $node;
     }
 
 
-    public function unalias($name) : ?string {
+    public function unalias($name): ?string
+    {
         if (isset($this->aliases[$name])) {
             return $this->aliases[$name];
         }
@@ -287,6 +279,16 @@ class Dumper
 
     public function nameVar($what): ?string
     {
+        if (isset($what['var']['name'], $what['name']['name'])) {
+
+            // not nested vars
+            if (isset($what['var']['var']['name'])) {
+                return null;
+            }
+
+            return $what['var']['name'] . '->' . $what['name']['name'];
+        }
+
         if (isset($what['var'])) {
             return $this->nameVar($what['var']);
         }
@@ -381,5 +383,110 @@ class Dumper
         }
 
         return $protoNode;
+    }
+
+    private function countLinesOfCode(array $stmt)
+    {
+        $result = [
+            'loc' => 0,
+            'lloc' => 0,
+            'cloc' => 0,
+            'ncloc' => 0,
+            'blanks' => 0,
+        ];
+
+        // loc
+        if (!empty($stmt['attributes']['startLine'])) {
+            $result['loc'] = $stmt['attributes']['endLine'] - $stmt['attributes']['startLine'] + 1;
+        }
+
+        if (!empty($stmt['attributes']['comments'])) {
+            $stmtsComments = $stmt['attributes']['comments'] ?? [];
+            foreach ($stmtsComments as $comment) {
+                $result['cloc'] += $comment['endLine'] - $comment['line'] + 1;
+
+                // with php-parser, comments are not included in the loc
+                $result['loc'] += $result['cloc'];
+            }
+        }
+
+
+        // blank lines
+        if (!empty($stmt['attributes']['startLine'])) {
+            $concernedLines = array_slice($this->linesOfCode, $stmt['attributes']['startLine'] - 1,
+                $stmt['attributes']['endLine'] - $stmt['attributes']['startLine'] + 1);
+
+            $result['blanks'] = count(array_filter($concernedLines, function ($line) {
+                return trim($line) === '';
+            }));
+        }
+
+        // foreach substatement
+        foreach ($stmt as $index => $subStmt) {
+            // if array is composed only from numeric keys, it's a list of statements
+            if (!is_array($subStmt)) {
+                continue;
+            }
+
+
+            if (array_keys($subStmt) === range(0, count($subStmt) - 1)) {
+                foreach ($subStmt as $subSubStmt) {
+                    if (!is_array($subSubStmt)) {
+                        continue;
+                    }
+                    $subResult = $this->countLinesOfCode($subSubStmt);
+                    //$result['lloc'] += $subResult['lloc'];
+                    $result['cloc'] += $subResult['cloc'];
+                }
+            }
+        }
+
+        // lloc
+        //$result['lloc'] = max(1, $result['loc'] - $result['cloc'] - $result['blanks']);
+
+        return $result;
+
+    }
+
+    private function getOperators(array $stmt): array
+    {
+        $operators = [];
+        $expressions = array_merge($stmt['exprs'] ?? [], (array)($stmt['expr'] ?? []));
+
+        foreach ($expressions as $expr) {
+
+            if (!empty($expr['expr'])) {
+                $subs = $this->getOperators($expr);
+                foreach ($subs as $sub) {
+                    $operators[] = $sub;
+                }
+                continue;
+            }
+
+            // if expr is composed only from numeric keys, it's a list of statements
+            if (!isset($expr['nodeType']) && is_array($expr)) {
+                continue;
+            }
+
+            if (is_array($expr) && array_keys($expr) === range(0, count($expr) - 1)) {
+                $operators[] = current($expr);
+                continue;
+            }
+
+            $name = $expr['nodeType'] ?? $expr;
+            if (false === strpos($name, 'Expr_')) {
+                continue;
+            }
+
+            $name = str_replace('Expr_', '', $name);
+            if (in_array($name, ['Variable', 'PropertyFetch', 'MethodCall'])) {
+                continue;
+            }
+
+            $operators[] = $name;
+        }
+
+        return $operators;
+
     }
 }

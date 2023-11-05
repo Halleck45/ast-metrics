@@ -140,7 +140,7 @@ func TableForClasses(pbFiles []pb.File) {
                 strconv.Itoa(int(*class.Stmts.Analyze.Volume.Loc)),
                 strconv.Itoa(int(*class.Stmts.Analyze.Complexity.Cyclomatic)),
                 strconv.Itoa(int(*class.Stmts.Analyze.Volume.HalsteadLength)),
-                strconv.Itoa(int(*class.Stmts.Analyze.Volume.HalsteadVolume)),
+                fmt.Sprintf("%.2f", ToFixed(float64(*class.Stmts.Analyze.Volume.HalsteadVolume), 2)),
                 DecorateMaintainabilityIndex(int(*class.Stmts.Analyze.Maintainability.MaintainabilityIndex)),
             })
         }
@@ -161,7 +161,7 @@ func TableForClasses(pbFiles []pb.File) {
                         strconv.Itoa(int(*class.Stmts.Analyze.Volume.Loc)),
                         strconv.Itoa(int(*class.Stmts.Analyze.Complexity.Cyclomatic)),
                         strconv.Itoa(int(*class.Stmts.Analyze.Volume.HalsteadLength)),
-                        strconv.Itoa(int(*class.Stmts.Analyze.Volume.HalsteadVolume)),
+                        fmt.Sprintf("%.2f", ToFixed(float64(*class.Stmts.Analyze.Volume.HalsteadVolume), 2)),
                         DecorateMaintainabilityIndex(int(*class.Stmts.Analyze.Maintainability.MaintainabilityIndex)),
                     })
                 }
