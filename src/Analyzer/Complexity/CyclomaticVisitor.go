@@ -4,58 +4,65 @@ import (
     pb "github.com/halleck45/ast-metrics/src/NodeType"
 )
 
-type ComplexityVisitor struct {
+type CyclomaticComplexityVisitor struct {
     complexity int
 }
 
-func (v *ComplexityVisitor) Visit(stmts *pb.Stmts, parents *pb.Stmts) {
-
+func (v *CyclomaticComplexityVisitor) Visit(stmts *pb.Stmts, parents *pb.Stmts) {
     if stmts == nil {
         return
     }
+
+    var ccn int32 = v.Calculate(stmts)
+    *stmts.Analyze.Complexity.Cyclomatic = ccn
+}
+
+func (v *CyclomaticComplexityVisitor) LeaveNode(stmts *pb.Stmts) {
+}
+
+/**
+ * Calculates cyclomatic complexity
+ */
+func (v *CyclomaticComplexityVisitor) Calculate(stmts *pb.Stmts) int32 {
+
+    if stmts == nil {
+        return 0
+    }
+
+    var ccn int32 = 0
 
     // count decision points
-    var ccn int32
-    ccn  = int32(len(stmts.StmtLoop) + len(stmts.StmtDecisionIf) + len(stmts.StmtDecisionElseIf) + len(stmts.StmtDecisionElse) + len(stmts.StmtDecisionCase))
+    ccn = int32(len(stmts.StmtLoop) +
+            len(stmts.StmtDecisionIf) +
+            len(stmts.StmtDecisionElseIf) +
+            len(stmts.StmtDecisionCase))
+    // else is not a decision point for ccn
 
-    currentCyclomatic := *stmts.Analyze.Complexity.Cyclomatic
-    currentCyclomatic += ccn
-    *stmts.Analyze.Complexity.Cyclomatic = currentCyclomatic
-
-    // increase parents complexity
-    if parents != nil {
-        currentCyclomatic = *parents.Analyze.Complexity.Cyclomatic
-        currentCyclomatic += ccn
-        *parents.Analyze.Complexity.Cyclomatic = currentCyclomatic
-    }
-}
-
-func (v *ComplexityVisitor) LeaveNode(stmts *pb.Stmts) {
-
-    if stmts == nil {
-        return
+    // iterate over children
+    for _, stmt := range stmts.StmtFunction {
+        ccn += v.Calculate(stmt.Stmts)
     }
 
-    // aggregates complexity for classes
-    if len(stmts.StmtClass) > 0 {
-        for _, stmt := range stmts.StmtClass {
-
-            if stmt.Stmts == nil {
-                continue
-            }
-
-            var ccn int32 = 0
-            for _, method := range stmt.Stmts.StmtFunction {
-                if method.Stmts != nil {
-                    ccn += *method.Stmts.Analyze.Complexity.Cyclomatic
-                }
-            }
-            stmt.Stmts.Analyze.Complexity.Cyclomatic = &ccn
-        }
+    for _, stmt := range stmts.StmtLoop {
+        ccn += v.Calculate(stmt.Stmts)
     }
+
+    for _, stmt := range stmts.StmtDecisionIf {
+        ccn += v.Calculate(stmt.Stmts)
+    }
+
+    for _, stmt := range stmts.StmtDecisionElseIf {
+        ccn += v.Calculate(stmt.Stmts)
+    }
+
+    for _, stmt := range stmts.StmtDecisionElse {
+        ccn += v.Calculate(stmt.Stmts)
+    }
+
+    for _, stmt := range stmts.StmtDecisionCase {
+        ccn += v.Calculate(stmt.Stmts)
+    }
+
+    return ccn
 }
 
-
-func (v *ComplexityVisitor) GetComplexity() int {
-	return v.complexity
-}

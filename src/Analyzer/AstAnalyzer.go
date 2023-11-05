@@ -85,7 +85,7 @@ func executeFileAnalysis(file string, channelResult chan<- pb.File) {
     root := &ASTNode{children: pbFile.Stmts}
 
     // register visitors
-    cyclomaticVisitor := &Complexity.ComplexityVisitor{}
+    cyclomaticVisitor := &Complexity.CyclomaticComplexityVisitor{}
     root.Accept(cyclomaticVisitor)
 
     locVisitor := &Volume.LocVisitor{}

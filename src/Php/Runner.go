@@ -173,8 +173,14 @@ func (r PhpRunner) DumpAST() {
 
     // list all .php file in path, recursively
     path := strings.TrimRight(r.sourcesToAnalyzePath, "/")
-
-    matches, err := filepathx.Glob(path + "/**/*.php")
+    var matches []string
+    var err error
+    // if is a PHP file, add it
+    if strings.HasSuffix(path, ".php") {
+        matches = append(matches, path)
+    } else {
+        matches, err = filepathx.Glob(path + "/**/*.php")
+    }
     if err != nil {
         r.progressbar.Fail("Error while listing PHP files")
         return
@@ -281,10 +287,17 @@ func (r PhpRunner)  executePHPCommandForFile(tmpDir string, file string, path st
     if r.driver == Driver.Docker {
         containerOutputFilePath := r.getContainerOutDirectory() + "/" + hash + ".bin"
         command := "(php /tmp/engine/dump.php /tmp/sources/" + relativePath + " > " + containerOutputFilePath + ") || rm " + containerOutputFilePath
+        if log.GetLevel() == log.DebugLevel {
+            log.Debug("Executing command : " + command)
+        }
         Docker.ExecuteInRunningContainer("ast-php", []string{"sh", "-c", command})
+
     } else {
         phpBinaryPath := getPHPBinaryPath()
         tempDir := Storage.Path() + "/.temp"
+        if log.GetLevel() == log.DebugLevel {
+            log.Debug("Executing command : " + phpBinaryPath + " " + tempDir + "/phpsources/dump.php " + file + " > " + outputFilePath)
+        }
         cmd := exec.Command("sh", "-c" , phpBinaryPath + " " + tempDir + "/phpsources/dump.php " + file + " > " + outputFilePath)
         if err := cmd.Run(); err != nil {
             log.Printf("Cannot execute command %s : %v\n", cmd.String(), err)
