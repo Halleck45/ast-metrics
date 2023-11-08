@@ -10,7 +10,19 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 	pb "github.com/halleck45/ast-metrics/src/NodeType"
+    "github.com/halleck45/ast-metrics/src/Analyzer"
+	"github.com/mattn/go-isatty"
 )
+
+type RendererTableClass struct {
+    isInteractive bool
+}
+
+func NewRendererTableClass(isInteractive bool) *RendererTableClass {
+    return &RendererTableClass{
+        isInteractive: isInteractive,
+    }
+}
 
 var baseStyle = lipgloss.NewStyle().
 	BorderStyle(lipgloss.NormalBorder()).
@@ -88,7 +100,12 @@ func (m model) View() string {
 	return baseStyle.Render(m.table.View()) + "\n"
 }
 
-func TableForClasses(pbFiles []pb.File) {
+func (v *RendererTableClass) Render (pbFiles []pb.File, aggregated Analyzer.Aggregated) {
+
+	// if not a tty, stop here tea program
+	if !isatty.IsTerminal(os.Stdout.Fd()) || !v.isInteractive {
+	    return
+    }
 
     style := StyleTitle()
     fmt.Println(style.Render("Classes"))

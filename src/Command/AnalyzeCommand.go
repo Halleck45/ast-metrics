@@ -16,14 +16,16 @@ type AnalyzeCommand struct {
     driver Driver.Driver
     outWriter *bufio.Writer
     runners []Engine.Engine
+    isInteractive bool
 }
 
-func NewAnalyzeCommand(path string, driver Driver.Driver, outWriter *bufio.Writer, runners []Engine.Engine) *AnalyzeCommand {
+func NewAnalyzeCommand(path string, driver Driver.Driver, outWriter *bufio.Writer, runners []Engine.Engine, isInteractive bool) *AnalyzeCommand {
     return &AnalyzeCommand{
         path: path,
         driver: driver,
         outWriter: outWriter,
         runners: runners,
+        isInteractive: isInteractive,
     }
 }
 
@@ -98,8 +100,11 @@ func (v *AnalyzeCommand) Execute() error {
     multi.Stop()
 
     // Dislpay results
+    // @todo: move this to a renderer and use a loop of renderers
     Cli.AggregationSummary(aggregated)
-    Cli.TableForClasses(allResults)
+
+    renderer := Cli.NewRendererTableClass(v.isInteractive)
+    renderer.Render(allResults, aggregated)
 
     return nil
 }
