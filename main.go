@@ -40,12 +40,24 @@ func main() {
                         Usage:       "Driver to use (docker or native)",
                         Destination: &driverSelected,
                     },
+                    &cli.BoolFlag{
+                        Name:  "non-interactive",
+                        Aliases:  []string{"i"},
+                        Usage: "Disable interactive mode",
+                    },
                 },
                 Action: func(cCtx *cli.Context) error {
 
                     // get option --verbose
                     if cCtx.Bool("verbose") {
                         log.SetLevel(log.DebugLevel)
+                    }
+
+                    // get option --non-interactive
+                    isInteractive := true
+                    if cCtx.Bool("non-interactive") {
+                        pterm.DisableColor()
+                        isInteractive = false
                     }
 
                     // Stdout
@@ -78,7 +90,7 @@ func main() {
                     }
 
                     // Run command
-                    command := Command.NewAnalyzeCommand(path, driver, outWriter, runners)
+                    command := Command.NewAnalyzeCommand(path, driver, outWriter, runners, isInteractive)
                     err := command.Execute()
                     if err != nil {
                         pterm.Error.Println(err.Error())
