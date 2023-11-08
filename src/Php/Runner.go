@@ -148,7 +148,7 @@ func (r PhpRunner) Ensure() (error) {
         phpBinaryPath := getPHPBinaryPath()
         cmd := exec.Command("sh", "-c" , phpBinaryPath +  " -r 'echo PHP_VERSION;' > " +  r.getLocalOutDirectory() + "/php_version")
         if err := cmd.Run(); err != nil {
-            log.Error("Cannot execute command %s : %v\n", cmd.String(), err)
+            log.Error("Cannot execute command: \n", cmd.String(), err)
             log.Error(err)
             return err
         }
