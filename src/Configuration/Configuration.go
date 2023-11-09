@@ -3,6 +3,7 @@ package Configuration
 import (
     "github.com/halleck45/ast-metrics/src/Driver"
     "path/filepath"
+    "os"
 )
 
 type Configuration struct {
@@ -35,6 +36,11 @@ func (c *Configuration) SetSourcesToAnalyzePath(paths []string) error {
             if err != nil {
                 return err
             }
+        }
+
+        // ensure path exists
+        if _, err := os.Stat(paths[i]); err != nil {
+           return err
         }
     }
 

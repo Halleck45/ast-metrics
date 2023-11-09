@@ -2,19 +2,16 @@ package Command
 
 import (
     "bufio"
-    "os"
     "github.com/pterm/pterm"
     "github.com/halleck45/ast-metrics/src/Storage"
     "github.com/halleck45/ast-metrics/src/Engine"
     "github.com/halleck45/ast-metrics/src/Configuration"
     "github.com/halleck45/ast-metrics/src/Analyzer"
-    "github.com/halleck45/ast-metrics/src/Driver"
     "github.com/halleck45/ast-metrics/src/Cli"
 )
 
 type AnalyzeCommand struct {
-    path string
-    driver Driver.Driver
+    configuration *Configuration.Configuration
     outWriter *bufio.Writer
     runners []Engine.Engine
     isInteractive bool
@@ -22,8 +19,7 @@ type AnalyzeCommand struct {
 
 func NewAnalyzeCommand(configuration *Configuration.Configuration, outWriter *bufio.Writer, runners []Engine.Engine, isInteractive bool) *AnalyzeCommand {
     return &AnalyzeCommand{
-        path: configuration.SourcesToAnalyzePath[0], // @todo: handle multiple paths
-        driver: configuration.Driver,
+        configuration: configuration,
         outWriter: outWriter,
         runners: runners,
         isInteractive: isInteractive,
@@ -31,12 +27,6 @@ func NewAnalyzeCommand(configuration *Configuration.Configuration, outWriter *bu
 }
 
 func (v *AnalyzeCommand) Execute() error {
-
-    // ensure path exists
-    if _, err := os.Stat(v.path); err != nil {
-       pterm.Error.Println("Path '" + v.    path + "' does not exist or is not readable")
-       return err
-    }
 
     // Prepare workdir
     Storage.Ensure()
@@ -51,10 +41,9 @@ func (v *AnalyzeCommand) Execute() error {
 
     for _, runner := range v.runners {
 
-        runner.SetDriver(v.driver)
+        runner.SetConfiguration(v.configuration)
         progressBarSpecificForEngine, _ := pterm.DefaultSpinner.WithWriter(multi.NewWriter()).Start("Checking PHP Engine")
         runner.SetProgressbar(progressBarSpecificForEngine)
-        runner.SetSourcesToAnalyzePath(v.path)
 
         if runner.IsRequired() {
             spinnerAllExecution.Increment()

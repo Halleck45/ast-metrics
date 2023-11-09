@@ -18,6 +18,7 @@ import (
     "github.com/halleck45/ast-metrics/src/Storage"
     "github.com/halleck45/ast-metrics/src/Docker"
     "github.com/halleck45/ast-metrics/src/Driver"
+    "github.com/halleck45/ast-metrics/src/Configuration"
     "github.com/docker/docker/api/types/mount"
 )
 
@@ -27,24 +28,54 @@ var phpSources embed.FS
 
 type PhpRunner struct {
     progressbar *pterm.SpinnerPrinter
-    sourcesToAnalyzePath string
-    driver Driver.Driver
+    configuration *Configuration.Configuration
+    files []string
 }
 
 func (r PhpRunner) IsRequired() (bool) {
-    return true
+    // If at least one PHP file is found, we need to run PHP engine
+    return len(r.getFileList()) > 0
 }
+
+func (r PhpRunner) getFileList() []string {
+
+    if len(r.files) > 0 {
+        // if r.files is not empty, return it
+        return r.files
+    }
+
+    // Search for PHP files in each directory
+    for _, path := range r.configuration.SourcesToAnalyzePath {
+
+        path := strings.TrimRight(path, "/")
+        var matches []string
+        // if is a PHP file, add it
+        if strings.HasSuffix(path, ".php") {
+            matches = append(matches, path)
+        } else {
+            matches, _ = filepathx.Glob(path + "/**/*.php")
+        }
+
+        // deal with excluded files
+        for _, file := range matches {
+            for _, excludedFile := range r.configuration.ExcludePatterns {
+                if !strings.Contains(file, excludedFile) {
+                    r.files = append(r.files, file)
+                }
+            }
+        }
+    }
+
+    return r.files
+}
+
 
 func (r *PhpRunner) SetProgressbar(progressbar *pterm.SpinnerPrinter) {
     (*r).progressbar = progressbar
 }
 
-func (r *PhpRunner) SetSourcesToAnalyzePath(path string) {
-    (*r).sourcesToAnalyzePath = path
-}
-
-func (r *PhpRunner) SetDriver(driver Driver.Driver) {
-    (*r).driver = driver
+func (r *PhpRunner) SetConfiguration(configuration *Configuration.Configuration) {
+    (*r).configuration = configuration
 }
 
 func (r *PhpRunner) getContainerOutDirectory() string {
@@ -101,7 +132,7 @@ func (r PhpRunner) Ensure() (error) {
     }
 
     var phpVersion string
-    if r.driver == Driver.Docker {
+    if r.configuration.Driver == Driver.Docker {
         // Pull
         imageName := "php:8.1-cli-alpine"
         var wg sync.WaitGroup
@@ -141,7 +172,7 @@ func (r PhpRunner) Ensure() (error) {
     // Execute command
     r.progressbar.UpdateText("Checking PHP version")
 
-    if r.driver == Driver.Docker {
+    if r.configuration.Driver == Driver.Docker {
         command := []string{"sh", "-c", "php -r 'echo PHP_VERSION;' > " + r.getContainerOutDirectory() + "/php_version"}
         Docker.ExecuteInRunningContainer("ast-php", command)
     } else {
@@ -171,21 +202,6 @@ func (r PhpRunner) Ensure() (error) {
 
 func (r PhpRunner) DumpAST() {
 
-    // list all .php file in path, recursively
-    path := strings.TrimRight(r.sourcesToAnalyzePath, "/")
-    var matches []string
-    var err error
-    // if is a PHP file, add it
-    if strings.HasSuffix(path, ".php") {
-        matches = append(matches, path)
-    } else {
-        matches, err = filepathx.Glob(path + "/**/*.php")
-    }
-    if err != nil {
-        r.progressbar.Fail("Error while listing PHP files")
-        return
-    }
-
     maxParallelCommands := os.Getenv("MAX_PARALLEL_COMMANDS")
     // if maxParallelCommands is empty, set default value
     if maxParallelCommands == "" {
@@ -205,21 +221,19 @@ func (r PhpRunner) DumpAST() {
 
     nbParsingFiles := 0
     sem := make(chan struct{}, maxParallelCommandsInt)
-    for _, file := range matches {
-        if !strings.Contains(file, "/vendor/") {
-            wg.Add(1)
-            nbParsingFiles++
-            sem <- struct{}{}
-            go func(file string) {
-                defer wg.Done()
-                r.executePHPCommandForFile(workDir, file, path)
+    for _, file := range r.getFileList() {
+        wg.Add(1)
+        nbParsingFiles++
+        sem <- struct{}{}
+        go func(file string) {
+            defer wg.Done()
+            r.executePHPCommandForFile(workDir, file)
 
-                // details is the number of files processed / total number of files
-                details := strconv.Itoa(nbParsingFiles) + "/" + strconv.Itoa(len(matches))
-                r.progressbar.UpdateText("🐘 Parsing PHP files (" + details + ")")
-                <-sem
-            }(file)
-        }
+            // details is the number of files processed / total number of files
+            details := strconv.Itoa(nbParsingFiles) + "/" + strconv.Itoa(len(matches))
+            r.progressbar.UpdateText("🐘 Parsing PHP files (" + details + ")")
+            <-sem
+        }(file)
     }
 
     // Wait for all goroutines to finish
@@ -267,7 +281,7 @@ func getFileHash(filePath string) (string, error) {
     return hex.EncodeToString(hasher.Sum(nil)), nil
 }
 
-func (r PhpRunner)  executePHPCommandForFile(tmpDir string, file string, path string) {
+func (r PhpRunner)  executePHPCommandForFile(tmpDir string, file string) {
 
     hash, err := getFileHash(file)
     if err != nil {
@@ -289,7 +303,7 @@ func (r PhpRunner)  executePHPCommandForFile(tmpDir string, file string, path st
         return
     }
 
-    if r.driver == Driver.Docker {
+    if r.configuration.Driver == Driver.Docker {
         containerOutputFilePath := r.getContainerOutDirectory() + "/" + hash + ".bin"
         command := "(php /tmp/engine/dump.php /tmp/sources/" + relativePath + " > " + containerOutputFilePath + ") || rm " + containerOutputFilePath
         if log.GetLevel() == log.DebugLevel {
