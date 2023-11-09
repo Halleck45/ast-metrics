@@ -2,7 +2,7 @@ package Engine
 
 import (
     "github.com/pterm/pterm"
-    "github.com/halleck45/ast-metrics/src/Driver"
+    "github.com/halleck45/ast-metrics/src/Configuration"
 )
 
 type Engine interface {
@@ -11,6 +11,5 @@ type Engine interface {
     DumpAST()
     Finish() (error)
     SetProgressbar(progressbar *pterm.SpinnerPrinter)
-    SetSourcesToAnalyzePath(path string)
-    SetDriver(driver Driver.Driver)
+    SetConfiguration(configuration *Configuration.Configuration)
 }

@@ -34,8 +34,8 @@ Download the latest version of AST Metrics from the [releases page](https://gith
 For example, on Linux:
 
 ```bash
-export version=v0.0.1-alpha # Replace with the latest version
-curl -L https://github.com/Halleck45/ast-metrics/releases/download/${version}/ast-metrics_Linux_i386.tar.gz
+export version=v0.0.1-gamma # Replace with the latest version
+curl -L https://github.com/Halleck45/ast-metrics/releases/download/${version}/ast-metrics_Linux_i386.tar.gz -o ast-metrics_Linux_i386.tar.gz
 tar -xvf  ast-metrics_Linux_i386.tar.gz
 mv ast-metrics /usr/local/bin/ast-metrics
 chmod +x /usr/local/bin/ast-metrics

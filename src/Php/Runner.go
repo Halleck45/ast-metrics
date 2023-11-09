@@ -1,331 +1,409 @@
 package Php
 
 import (
-    "sync"
-    "embed"
-    "io/fs"
-    "os"
-    "path/filepath"
-    log "github.com/sirupsen/logrus"
-    "os/exec"
-    "strings"
-    "strconv"
-    "github.com/yargevad/filepathx"
-    "crypto/md5"
-    "encoding/hex"
-    "io"
-    "github.com/pterm/pterm"
-    "github.com/halleck45/ast-metrics/src/Storage"
-    "github.com/halleck45/ast-metrics/src/Docker"
-    "github.com/halleck45/ast-metrics/src/Driver"
-    "github.com/docker/docker/api/types/mount"
+	"crypto/md5"
+	"embed"
+	"encoding/hex"
+	"io"
+	"io/fs"
+	"os"
+	"os/exec"
+	"path/filepath"
+	"strconv"
+	"strings"
+	"sync"
+
+	"github.com/docker/docker/api/types/mount"
+	"github.com/halleck45/ast-metrics/src/Configuration"
+	"github.com/halleck45/ast-metrics/src/Docker"
+	"github.com/halleck45/ast-metrics/src/Driver"
+	"github.com/halleck45/ast-metrics/src/Storage"
+	"github.com/pterm/pterm"
+	log "github.com/sirupsen/logrus"
+	"github.com/yargevad/filepathx"
 )
 
 // This allows to embed PHP sources in GO binary
+//
 //go:embed phpsources
 var phpSources embed.FS
 
 type PhpRunner struct {
-    progressbar *pterm.SpinnerPrinter
-    sourcesToAnalyzePath string
-    driver Driver.Driver
+	progressbar   *pterm.SpinnerPrinter
+	configuration *Configuration.Configuration
+	files         []string
+	// map of files, grouped by directory
+	filesByDirectory map[string][]string
 }
 
-func (r PhpRunner) IsRequired() (bool) {
-    return true
+func (r PhpRunner) IsRequired() bool {
+	// If at least one PHP file is found, we need to run PHP engine
+	return len(r.getFileList()) > 0
+}
+
+func (r *PhpRunner) getFileList() []string {
+
+	if len(r.files) > 0 {
+		// if r.files is not empty, return it
+		return r.files
+	}
+
+	r.filesByDirectory = make(map[string][]string)
+
+	// Search for PHP files in each directory
+	for _, path := range r.configuration.SourcesToAnalyzePath {
+
+		path := strings.TrimRight(path, "/")
+		var matches []string
+		// if is a PHP file, add it
+		if strings.HasSuffix(path, ".php") {
+			matches = append(matches, path)
+		} else {
+			matches, _ = filepathx.Glob(path + "/**/*.php")
+		}
+
+		// deal with excluded files
+		for _, file := range matches {
+			var excluded bool = false
+
+			for _, excludedFile := range r.configuration.ExcludePatterns {
+				if strings.Contains(file, excludedFile) {
+					excluded = true
+				}
+			}
+
+			if !excluded {
+				r.files = append(r.files, file)
+
+				// add file to filesByDirectory
+				directory := path
+				if _, ok := r.filesByDirectory[directory]; !ok {
+					r.filesByDirectory[directory] = []string{}
+				}
+
+				r.filesByDirectory[directory] = append(r.filesByDirectory[directory], file)
+
+			}
+		}
+	}
+
+	if log.GetLevel() == log.DebugLevel {
+		log.Debug("Found " + strconv.Itoa(len(r.files)) + " PHP files to analyze")
+	}
+
+	return r.files
 }
 
 func (r *PhpRunner) SetProgressbar(progressbar *pterm.SpinnerPrinter) {
-    (*r).progressbar = progressbar
+	(*r).progressbar = progressbar
 }
 
-func (r *PhpRunner) SetSourcesToAnalyzePath(path string) {
-    (*r).sourcesToAnalyzePath = path
-}
-
-func (r *PhpRunner) SetDriver(driver Driver.Driver) {
-    (*r).driver = driver
+func (r *PhpRunner) SetConfiguration(configuration *Configuration.Configuration) {
+	(*r).configuration = configuration
 }
 
 func (r *PhpRunner) getContainerOutDirectory() string {
-    return "/root/output"
+	return "/root/output"
 }
 func (r *PhpRunner) getLocalOutDirectory() string {
-    return Storage.Path() + "/output"
+	return Storage.Path() + "/output"
 }
 
-func (r PhpRunner) Ensure() (error) {
+func (r PhpRunner) Ensure() error {
 
-    // clean up
-    cleanup(phpSources)
+	// clean up
+	cleanup(phpSources)
 
-    // Install sources locally (vendors)
-    tempDir := Storage.Path() + "/.temp"
-    if err := os.Mkdir(tempDir, 0755); err != nil {
-        log.Error(err)
-        return err
-    }
+	// Install sources locally (vendors)
+	tempDir := Storage.Path() + "/.temp"
+	if err := os.Mkdir(tempDir, 0755); err != nil {
+		log.Error(err)
+		return err
+	}
 
-    // Extract PHP sources for directories "vendor", etc
-    if err := fs.WalkDir(phpSources, ".", func(path string, d fs.DirEntry, err error) error {
+	// Extract PHP sources for directories "vendor", etc
+	if err := fs.WalkDir(phpSources, ".", func(path string, d fs.DirEntry, err error) error {
 
-        if err != nil {
-            return err
-        }
+		if err != nil {
+			return err
+		}
 
-        if d.Type().IsRegular() {
-            content, err := phpSources.ReadFile(path)
-            if err != nil {
-                return err
-            }
-            outputPath := tempDir + "/" + path
-            if err := os.MkdirAll(filepath.Dir(outputPath), 0755); err != nil {
-                return err
-            }
-            if err := os.WriteFile(outputPath, content, 0644); err != nil {
-                return err
-            }
-        }
-        return nil
-    }); err != nil {
-        log.Error(err)
-        return err
-    }
+		if d.Type().IsRegular() {
+			content, err := phpSources.ReadFile(path)
+			if err != nil {
+				return err
+			}
+			outputPath := tempDir + "/" + path
+			if err := os.MkdirAll(filepath.Dir(outputPath), 0755); err != nil {
+				return err
+			}
+			if err := os.WriteFile(outputPath, content, 0644); err != nil {
+				return err
+			}
+		}
+		return nil
+	}); err != nil {
+		log.Error(err)
+		return err
+	}
 
-    // Ensure outdir exists
-    if _, err := os.Stat(r.getLocalOutDirectory()); os.IsNotExist(err) {
-        if err := os.Mkdir(r.getLocalOutDirectory(), 0755); err != nil {
-            log.Error(err)
-            return err
-        }
-    }
+	// Ensure outdir exists
+	if _, err := os.Stat(r.getLocalOutDirectory()); os.IsNotExist(err) {
+		if err := os.Mkdir(r.getLocalOutDirectory(), 0755); err != nil {
+			log.Error(err)
+			return err
+		}
+	}
 
-    var phpVersion string
-    if r.driver == Driver.Docker {
-        // Pull
-        imageName := "php:8.1-cli-alpine"
-        var wg sync.WaitGroup
-        wg.Add(1)
-        r.progressbar.UpdateText("🐘 Pulling docker " + imageName + " image")
-        go Docker.PullImage(&wg, r.progressbar, imageName)
-        wg.Wait()
+	var phpVersion string
+	if r.configuration.Driver == Driver.Docker {
+		// Pull
+		imageName := "php:8.1-cli-alpine"
+		var wg sync.WaitGroup
+		wg.Add(1)
+		r.progressbar.UpdateText("🐘 Pulling docker " + imageName + " image")
+		go Docker.PullImage(&wg, r.progressbar, imageName)
+		wg.Wait()
 
-        // Run container
-        // do not mount /tmp : permissions issues
-        mounts := []mount.Mount{
-           {
-               Type:     mount.TypeBind,
-               Source:   Storage.Path() + "/.temp/phpsources",
-               Target:   "/tmp/engine",
-               ReadOnly: true,
-           },
-           {
-              Type:     mount.TypeBind,
-                Source:   r.sourcesToAnalyzePath,
-                Target:   "/tmp/sources",
-                ReadOnly: true,
-            },
-           {
-              Type:     mount.TypeBind,
-                Source:   r.getLocalOutDirectory(),
-                Target:   r.getContainerOutDirectory(),
-                ReadOnly: false,
+		// Run container
+		// do not mount /tmp : permissions issues
+		debugMountsAsString := ""
+		mounts := []mount.Mount{
+			{
+				Type:     mount.TypeBind,
+				Source:   Storage.Path() + "/.temp/phpsources",
+				Target:   "/tmp/engine",
+				ReadOnly: true,
+			},
+			{
+				Type:     mount.TypeBind,
+				Source:   r.getLocalOutDirectory(),
+				Target:   r.getContainerOutDirectory(),
+				ReadOnly: false,
+			},
+		}
+		debugMountsAsString += " -v " + Storage.Path() + "/.temp/phpsources:/tmp/engine:ro"
+		debugMountsAsString += " -v " + r.getLocalOutDirectory() + ":" + r.getContainerOutDirectory() + ":rw"
 
-            },
-        }
-        // Create and start container. We want a deamonized, container, with an infinite loop. Loop stops when /tmp/engine is deleted
-        loopString :=  []string{"sh", "-c", "until [ ! -f /tmp/engine/dump.php ]; do echo wait; sleep 1; done"}
-        Docker.RunImage(imageName, "ast-php", mounts, loopString)
-    }
+		// for each path to analyze, add a mount
+		for index, path := range r.configuration.SourcesToAnalyzePath {
+			mounts = append(mounts, mount.Mount{
+				Type:     mount.TypeBind,
+				Source:   path,
+				Target:   "/tmp/sources" + strconv.Itoa(index),
+				ReadOnly: true,
+			})
+			debugMountsAsString += " -v " + path + ":/tmp/sources" + strconv.Itoa(index) + ":ro"
+		}
 
-    // Execute command
-    r.progressbar.UpdateText("Checking PHP version")
+		// Create and start container. We want a deamonized, container, with an infinite loop. Loop stops when /tmp/engine is deleted
+		loopString := []string{"sh", "-c", "until [ ! -f /tmp/engine/dump.php ]; do echo wait; sleep 1; done"}
+		Docker.RunImage(imageName, "ast-php", mounts, loopString)
 
-    if r.driver == Driver.Docker {
-        command := []string{"sh", "-c", "php -r 'echo PHP_VERSION;' > " + r.getContainerOutDirectory() + "/php_version"}
-        Docker.ExecuteInRunningContainer("ast-php", command)
-    } else {
-        phpBinaryPath := getPHPBinaryPath()
-        cmd := exec.Command("sh", "-c" , phpBinaryPath +  " -r 'echo PHP_VERSION;' > " +  r.getLocalOutDirectory() + "/php_version")
-        if err := cmd.Run(); err != nil {
-            log.Error("Cannot execute command: \n", cmd.String(), err)
-            log.Error(err)
-            return err
-        }
-    }
+		// Give to the user the CLI command to run the same container with the same options
+		if log.GetLevel() == log.DebugLevel {
+			log.Debug("🐘 Run the following command to run the same container with the same options :")
+			log.Debug("docker run --rm -it " + debugMountsAsString + " " + imageName + " " + strings.Join(loopString, " "))
+		}
+	}
 
-    // get content of local file
-    phpVersionBytes, err := os.ReadFile(r.getLocalOutDirectory() + "/php_version")
-    if err != nil {
-        log.Error("Cannot read file " + r.getLocalOutDirectory() + "/php_version")
-        r.progressbar.Fail("Error while checking PHP version")
-        return  err
-    }
-    phpVersion = string(phpVersionBytes)
+	// Execute command
+	r.progressbar.UpdateText("Checking PHP version")
 
-    r.progressbar.Info("🐘 PHP " + phpVersion+ " is ready")
-    r.progressbar.Stop()
+	if r.configuration.Driver == Driver.Docker {
+		command := []string{"sh", "-c", "php -r 'echo PHP_VERSION;' > " + r.getContainerOutDirectory() + "/php_version"}
+		Docker.ExecuteInRunningContainer("ast-php", command)
+	} else {
+		phpBinaryPath := getPHPBinaryPath()
+		cmd := exec.Command("sh", "-c", phpBinaryPath+" -r 'echo PHP_VERSION;' > "+r.getLocalOutDirectory()+"/php_version")
+		if err := cmd.Run(); err != nil {
+			log.Error("Cannot execute command: \n", cmd.String(), err)
+			log.Error(err)
+			return err
+		}
+	}
 
-    return nil
+	// get content of local file
+	phpVersionBytes, err := os.ReadFile(r.getLocalOutDirectory() + "/php_version")
+	if err != nil {
+		log.Error("Cannot read file " + r.getLocalOutDirectory() + "/php_version")
+		r.progressbar.Fail("Error while checking PHP version")
+		return err
+	}
+	phpVersion = string(phpVersionBytes)
+
+	r.progressbar.Info("🐘 PHP " + phpVersion + " is ready")
+	r.progressbar.Stop()
+
+	return nil
 }
 
 func (r PhpRunner) DumpAST() {
 
-    // list all .php file in path, recursively
-    path := strings.TrimRight(r.sourcesToAnalyzePath, "/")
-    var matches []string
-    var err error
-    // if is a PHP file, add it
-    if strings.HasSuffix(path, ".php") {
-        matches = append(matches, path)
-    } else {
-        matches, err = filepathx.Glob(path + "/**/*.php")
-    }
-    if err != nil {
-        r.progressbar.Fail("Error while listing PHP files")
-        return
-    }
+	maxParallelCommands := os.Getenv("MAX_PARALLEL_COMMANDS")
+	// if maxParallelCommands is empty, set default value
+	if maxParallelCommands == "" {
+		maxParallelCommands = "100"
+	}
+	// to int
+	maxParallelCommandsInt, err := strconv.Atoi(maxParallelCommands)
+	if err != nil {
+		r.progressbar.Fail("Error while parsing MAX_PARALLEL_COMMANDS env variable")
+		return
+	}
+	workDir := r.getLocalOutDirectory()
 
-    maxParallelCommands := os.Getenv("MAX_PARALLEL_COMMANDS")
-    // if maxParallelCommands is empty, set default value
-    if maxParallelCommands == "" {
-        maxParallelCommands = "100"
-    }
-    // to int
-    maxParallelCommandsInt, err := strconv.Atoi(maxParallelCommands)
-    if err != nil {
-        r.progressbar.Fail("Error while parsing MAX_PARALLEL_COMMANDS env variable")
-        return
-    }
+	// Wait for end of all goroutines
+	var wg sync.WaitGroup
+	var nbFiles int = len(r.getFileList())
 
-    workDir := r.getLocalOutDirectory()
+	nbParsingFiles := 0
+	sem := make(chan struct{}, maxParallelCommandsInt)
 
-    // Wait for end of all goroutines
-    var wg sync.WaitGroup
+	for directory, files := range r.filesByDirectory {
 
-    nbParsingFiles := 0
-    sem := make(chan struct{}, maxParallelCommandsInt)
-    for _, file := range matches {
-        if !strings.Contains(file, "/vendor/") {
-            wg.Add(1)
-            nbParsingFiles++
-            sem <- struct{}{}
-            go func(file string) {
-                defer wg.Done()
-                r.executePHPCommandForFile(workDir, file, path)
+		var directoryToAnalyze string = directory //  directory captured by func literal
+		for _, file := range files {
+			wg.Add(1)
+			nbParsingFiles++
+			sem <- struct{}{}
+			go func(file string) {
+				defer wg.Done()
+				r.executePHPCommandForFile(workDir, directoryToAnalyze, file)
 
-                // details is the number of files processed / total number of files
-                details := strconv.Itoa(nbParsingFiles) + "/" + strconv.Itoa(len(matches))
-                r.progressbar.UpdateText("🐘 Parsing PHP files (" + details + ")")
-                <-sem
-            }(file)
-        }
-    }
+				// details is the number of files processed / total number of files
+				details := strconv.Itoa(nbParsingFiles) + "/" + strconv.Itoa(nbFiles)
+				r.progressbar.UpdateText("🐘 Parsing PHP files (" + details + ")")
+				<-sem
+			}(file)
+		}
+	}
 
-    // Wait for all goroutines to finish
-    for i := 0; i < maxParallelCommandsInt; i++ {
-        sem <- struct{}{}
-    }
+	// Wait for all goroutines to finish
+	for i := 0; i < maxParallelCommandsInt; i++ {
+		sem <- struct{}{}
+	}
 
-    wg.Wait()
-    r.progressbar.Info("🐘 PHP code dumped")
+	wg.Wait()
+	r.progressbar.Info("🐘 PHP code dumped")
 }
 
-func (r PhpRunner) Finish() (error) {
-    cleanup(phpSources)
-    return nil
+func (r PhpRunner) Finish() error {
+	cleanup(phpSources)
+	return nil
 }
 
-func cleanup(phpSources embed.FS ) (string, error) {
-    // Remove temp directory
-    tempDir := Storage.Path() + "/.temp"
+func cleanup(phpSources embed.FS) (string, error) {
+	// Remove temp directory
+	tempDir := Storage.Path() + "/.temp"
 
-    // check if tempDir exists
-    if _, err := os.Stat(tempDir); os.IsNotExist(err) {
-        return "", nil
-    }
-    if err := os.RemoveAll(tempDir); err != nil {
-        log.Error(err)
-        return "", err
-    }
+	// check if tempDir exists
+	if _, err := os.Stat(tempDir); os.IsNotExist(err) {
+		return "", nil
+	}
+	if err := os.RemoveAll(tempDir); err != nil {
+		log.Error(err)
+		return "", err
+	}
 
-    return "", nil
+	return "", nil
 }
 
 func getFileHash(filePath string) (string, error) {
-    file, err := os.Open(filePath)
-    if err != nil {
-        return "", err
-    }
-    defer file.Close()
+	file, err := os.Open(filePath)
+	if err != nil {
+		return "", err
+	}
+	defer file.Close()
 
-    hasher := md5.New()
-    if _, err := io.Copy(hasher, file); err != nil {
-        return "", err
-    }
+	hasher := md5.New()
+	if _, err := io.Copy(hasher, file); err != nil {
+		return "", err
+	}
 
-    return hex.EncodeToString(hasher.Sum(nil)), nil
+	return hex.EncodeToString(hasher.Sum(nil)), nil
 }
 
-func (r PhpRunner)  executePHPCommandForFile(tmpDir string, file string, path string) {
+func (r PhpRunner) executePHPCommandForFile(tmpDir string, currentlyAnalysedDirectory string, file string) {
 
-    hash, err := getFileHash(file)
-    if err != nil {
-        log.Printf("Cannot get hash for file %s : %v\n", file, err)
-        return
-    }
-    outputFilePath := filepath.Join(tmpDir, hash + ".bin")
+	hash, err := getFileHash(file)
+	if err != nil {
+		log.Printf("Cannot get hash for file %s : %v\n", file, err)
+		return
+	}
+	outputFilePath := filepath.Join(tmpDir, hash+".bin")
 
-    if log.GetLevel() == log.DebugLevel {
-        log.Debug("file " + file + " has hash " + hash)
-        log.Debug("Dumping file " + file + " to " + outputFilePath)
-    }
+	if log.GetLevel() == log.DebugLevel {
+		log.Debug("Dumping file " + file + " to " + outputFilePath)
+	}
 
-    relativePath := strings.Replace(file, path, "", 1)
-    relativePath = strings.TrimLeft(relativePath, "/")
+	// if file already exists, skip
+	if _, err := os.Stat(outputFilePath); !os.IsNotExist(err) {
+		return
+	}
+	if r.configuration.Driver == Driver.Docker {
+		// Get the index of the directory in the list of directories to analyze
+		// Each directory is mounted in a different directory in the container
+		// /tmp/sources0, /tmp/sources1, etc
+		var directoryIndex int = -1
+		for index, directory := range r.configuration.SourcesToAnalyzePath {
+			if directory == currentlyAnalysedDirectory {
+				directoryIndex = index
+				break
+			}
+		}
 
-    // if file already exists, skip
-    if _, err := os.Stat(outputFilePath); !os.IsNotExist(err) {
-        return
-    }
+		if directoryIndex == -1 {
+			log.Error("Cannot find directory " + currentlyAnalysedDirectory + " in list of directories to analyze")
 
-    if r.driver == Driver.Docker {
-        containerOutputFilePath := r.getContainerOutDirectory() + "/" + hash + ".bin"
-        command := "(php /tmp/engine/dump.php /tmp/sources/" + relativePath + " > " + containerOutputFilePath + ") || rm " + containerOutputFilePath
-        if log.GetLevel() == log.DebugLevel {
-            log.Debug("Executing command : " + command)
-        }
-        Docker.ExecuteInRunningContainer("ast-php", []string{"sh", "-c", command})
+			if log.GetLevel() == log.DebugLevel {
+				log.Debug("Directories map looks incorrect : " + strings.Join(r.configuration.SourcesToAnalyzePath, ", ") + "\n")
+			}
+			return
+		}
 
-    } else {
-        phpBinaryPath := getPHPBinaryPath()
-        tempDir := Storage.Path() + "/.temp"
-        if log.GetLevel() == log.DebugLevel {
-            log.Debug("Executing command : " + phpBinaryPath + " " + tempDir + "/phpsources/dump.php " + file + " > " + outputFilePath)
-        }
-        cmd := exec.Command("sh", "-c" , phpBinaryPath + " " + tempDir + "/phpsources/dump.php " + file + " > " + outputFilePath)
-        if err := cmd.Run(); err != nil {
-            log.Error("[SKIP] " + file + " - Cannot execute command %s :\n", cmd.String(), "\n", err)
+		mountDirectory := "/tmp/sources" + strconv.Itoa(directoryIndex)
 
-            // remove file
-            if err := os.Remove(outputFilePath); err != nil {
-                log.Error("Cannot remove file " + outputFilePath + " : %v\n", err)
-            }
-            return
-        }
-    }
+		relativePath := strings.Replace(file, currentlyAnalysedDirectory, "", 1)
+		relativePath = strings.TrimLeft(relativePath, "/")
+
+		containerOutputFilePath := r.getContainerOutDirectory() + "/" + hash + ".bin"
+		command := "(php /tmp/engine/dump.php " + mountDirectory + "/" + relativePath + " > " + containerOutputFilePath + ") || rm " + containerOutputFilePath
+		if log.GetLevel() == log.DebugLevel {
+			log.Debug("Executing command in container : " + command + "\n")
+		}
+
+		Docker.ExecuteInRunningContainer("ast-php", []string{"sh", "-c", command})
+
+	} else {
+		phpBinaryPath := getPHPBinaryPath()
+		tempDir := Storage.Path() + "/.temp"
+		if log.GetLevel() == log.DebugLevel {
+			log.Debug("Executing command : " + phpBinaryPath + " " + tempDir + "/phpsources/dump.php " + file + " > " + outputFilePath)
+		}
+		cmd := exec.Command("sh", "-c", phpBinaryPath+" "+tempDir+"/phpsources/dump.php "+file+" > "+outputFilePath)
+		if err := cmd.Run(); err != nil {
+			log.Error("[SKIP] "+file+" - Cannot execute command %s :\n", cmd.String(), "\n", err)
+
+			// remove file
+			if err := os.Remove(outputFilePath); err != nil {
+				log.Error("Cannot remove file "+outputFilePath+" : %v\n", err)
+			}
+			return
+		}
+	}
 }
 
 func getPHPBinaryPath() string {
-    var useDocker bool = true // @todo add an option
-    if useDocker {
-        return "php"
-    }
+	var useDocker bool = true // @todo add an option
+	if useDocker {
+		return "php"
+	}
 
-    phpBinaryPath := os.Getenv("PHP_BINARY_PATH")
-    if phpBinaryPath == "" {
-        phpBinaryPath = "php"
-    }
+	phpBinaryPath := os.Getenv("PHP_BINARY_PATH")
+	if phpBinaryPath == "" {
+		phpBinaryPath = "php"
+	}
 
-    return phpBinaryPath
+	return phpBinaryPath
 }
