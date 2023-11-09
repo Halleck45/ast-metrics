@@ -6,6 +6,7 @@ import (
     "github.com/pterm/pterm"
     "github.com/halleck45/ast-metrics/src/Storage"
     "github.com/halleck45/ast-metrics/src/Engine"
+    "github.com/halleck45/ast-metrics/src/Configuration"
     "github.com/halleck45/ast-metrics/src/Analyzer"
     "github.com/halleck45/ast-metrics/src/Driver"
     "github.com/halleck45/ast-metrics/src/Cli"
@@ -19,10 +20,10 @@ type AnalyzeCommand struct {
     isInteractive bool
 }
 
-func NewAnalyzeCommand(path string, driver Driver.Driver, outWriter *bufio.Writer, runners []Engine.Engine, isInteractive bool) *AnalyzeCommand {
+func NewAnalyzeCommand(configuration *Configuration.Configuration, outWriter *bufio.Writer, runners []Engine.Engine, isInteractive bool) *AnalyzeCommand {
     return &AnalyzeCommand{
-        path: path,
-        driver: driver,
+        path: configuration.SourcesToAnalyzePath[0], // @todo: handle multiple paths
+        driver: configuration.Driver,
         outWriter: outWriter,
         runners: runners,
         isInteractive: isInteractive,
