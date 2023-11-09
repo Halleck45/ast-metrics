@@ -37,7 +37,32 @@ type Aggregated struct {
 }
 
 func Aggregates(files []pb.File) Aggregated {
-    aggregated := Aggregated{NbClasses: 0, NbMethods: 0, AverageMethodsPerClass: 0}
+    aggregated := Aggregated{NbClasses: 0,
+        NbMethods: 0,
+        NbFunctions: 0,
+        Loc: 0,
+        Cloc: 0,
+        Lloc: 0,
+        AverageLocPerMethod: 0,
+        AverageLlocPerMethod: 0,
+        AverageClocPerMethod: 0,
+        AverageCyclomaticComplexityPerMethod: 0,
+        AverageCyclomaticComplexityPerClass: 0,
+        MinCyclomaticComplexity: 0,
+        MaxCyclomaticComplexity: 0,
+        AverageHalsteadDifficulty: 0,
+        AverageHalsteadEffort: 0,
+        AverageHalsteadVolume: 0,
+        AverageHalsteadTime: 0,
+        AverageHalsteadBugs: 0,
+        SumHalsteadDifficulty: 0,
+        SumHalsteadEffort: 0,
+        SumHalsteadVolume: 0,
+        SumHalsteadTime: 0,
+        SumHalsteadBugs: 0,
+        AverageMI: 0,
+        AverageMIwoc: 0,
+        AverageMIcw: 0}
 
     // get classes
     var classes []pb.StmtClass
@@ -122,7 +147,6 @@ func Aggregates(files []pb.File) Aggregated {
             }
         }
 
-
         // cyclomatic complexity per class
         if class.Stmts.Analyze.Complexity.Cyclomatic != nil {
             aggregated.AverageCyclomaticComplexityPerClass += float64(*class.Stmts.Analyze.Complexity.Cyclomatic)
@@ -156,23 +180,30 @@ func Aggregates(files []pb.File) Aggregated {
     }
 
     // averages
-    aggregated.AverageMethodsPerClass = float64(aggregated.NbMethods) / float64(aggregated.NbClasses)
-    aggregated.AverageCyclomaticComplexityPerClass = aggregated.AverageCyclomaticComplexityPerClass / float64(aggregated.NbClasses)
-    aggregated.AverageHalsteadDifficulty = aggregated.AverageHalsteadDifficulty / float64(aggregated.NbClasses)
-    aggregated.AverageHalsteadEffort = aggregated.AverageHalsteadEffort / float64(aggregated.NbClasses)
-    aggregated.AverageHalsteadVolume = aggregated.AverageHalsteadVolume / float64(aggregated.NbClasses)
-    aggregated.AverageHalsteadTime = aggregated.AverageHalsteadTime / float64(aggregated.NbClasses)
+    if aggregated.NbMethods > 0 {
+        aggregated.AverageMethodsPerClass = float64(aggregated.NbMethods) / float64(aggregated.NbClasses)
+        aggregated.AverageCyclomaticComplexityPerClass = aggregated.AverageCyclomaticComplexityPerClass / float64(aggregated.NbClasses)
+        aggregated.AverageHalsteadDifficulty = aggregated.AverageHalsteadDifficulty / float64(aggregated.NbClasses)
+        aggregated.AverageHalsteadEffort = aggregated.AverageHalsteadEffort / float64(aggregated.NbClasses)
+        aggregated.AverageHalsteadVolume = aggregated.AverageHalsteadVolume / float64(aggregated.NbClasses)
+        aggregated.AverageHalsteadTime = aggregated.AverageHalsteadTime / float64(aggregated.NbClasses)
+    }
 
-    aggregated.AverageLocPerMethod = aggregated.AverageLocPerMethod / float64(aggregated.NbMethods)
-    aggregated.AverageClocPerMethod = aggregated.AverageClocPerMethod / float64(aggregated.NbMethods)
-    aggregated.AverageLlocPerMethod = aggregated.AverageLlocPerMethod / float64(aggregated.NbMethods)
+    if aggregated.NbMethods > 0 {
+        aggregated.AverageLocPerMethod = aggregated.AverageLocPerMethod / float64(aggregated.NbMethods)
+        aggregated.AverageClocPerMethod = aggregated.AverageClocPerMethod / float64(aggregated.NbMethods)
+        aggregated.AverageLlocPerMethod = aggregated.AverageLlocPerMethod / float64(aggregated.NbMethods)
+    }
 
-    aggregated.AverageCyclomaticComplexityPerMethod = aggregated.AverageCyclomaticComplexityPerMethod / float64(aggregated.NbMethods)
+    if aggregated.NbClasses > 0 && aggregated.AverageCyclomaticComplexityPerClass > 0 {
+        aggregated.AverageCyclomaticComplexityPerClass = aggregated.AverageCyclomaticComplexityPerClass / float64(aggregated.NbClasses)
+    }
 
-    aggregated.AverageMI = aggregated.AverageMI / float64(aggregated.NbClasses)
-    aggregated.AverageMIwoc = aggregated.AverageMIwoc / float64(aggregated.NbClasses)
-    aggregated.AverageMIcw = aggregated.AverageMIcw / float64(aggregated.NbClasses)
-
+    if aggregated.AverageMI > 0 {
+        aggregated.AverageMI = aggregated.AverageMI / float64(aggregated.NbClasses)
+        aggregated.AverageMIwoc = aggregated.AverageMIwoc / float64(aggregated.NbClasses)
+        aggregated.AverageMIcw = aggregated.AverageMIcw / float64(aggregated.NbClasses)
+    }
 
     return aggregated
 }
