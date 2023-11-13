@@ -32,7 +32,7 @@ type PhpRunner struct {
 	progressbar               *pterm.SpinnerPrinter
 	configuration             *Configuration.Configuration
 	foundFiles                File.FileList
-	workspaceOfSourceAnalyzer CommandExecutor.WorkspaceInstaller
+	workspaceOfSourceAnalyzer CommandExecutor.EmbeddedWorkspace
 }
 
 func (r PhpRunner) IsRequired() bool {
@@ -69,7 +69,7 @@ func (r *PhpRunner) getLocalOutDirectory() string {
 
 func (r *PhpRunner) Ensure() error {
 
-	r.workspaceOfSourceAnalyzer = CommandExecutor.WorkspaceInstaller{Name: "PHP", PathToLocalSources: phpSources}
+	r.workspaceOfSourceAnalyzer = CommandExecutor.EmbeddedWorkspace{Name: "PHP", PathToLocalSources: phpSources}
 	err := r.workspaceOfSourceAnalyzer.Ensure()
 
 	if err != nil {

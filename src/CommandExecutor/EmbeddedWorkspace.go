@@ -9,12 +9,12 @@ import (
 	"github.com/halleck45/ast-metrics/src/Storage"
 )
 
-type WorkspaceInstaller struct {
+type EmbeddedWorkspace struct {
 	Name               string
 	PathToLocalSources embed.FS
 }
 
-func (r WorkspaceInstaller) Ensure() error {
+func (r EmbeddedWorkspace) Ensure() error {
 	// clean up
 	r.Cleanup()
 
@@ -36,7 +36,7 @@ func (r WorkspaceInstaller) Ensure() error {
 			if err != nil {
 				return err
 			}
-			outputPath := tempDir + "/" + path
+			outputPath := tempDir + string(os.PathSeparator) + path
 			if err := os.MkdirAll(filepath.Dir(outputPath), 0755); err != nil {
 				return err
 			}
@@ -52,7 +52,7 @@ func (r WorkspaceInstaller) Ensure() error {
 	return nil
 }
 
-func (r WorkspaceInstaller) Cleanup() error {
+func (r EmbeddedWorkspace) Cleanup() error {
 
 	// Remove temp directory
 	tempDir := r.GetPath()
@@ -68,6 +68,6 @@ func (r WorkspaceInstaller) Cleanup() error {
 	return nil
 }
 
-func (r WorkspaceInstaller) GetPath() string {
-	return Storage.Path() + "/" + r.Name + "/.temp"
+func (r EmbeddedWorkspace) GetPath() string {
+	return Storage.Path() + string(os.PathSeparator) + r.Name + string(os.PathSeparator) + ".temp"
 }
