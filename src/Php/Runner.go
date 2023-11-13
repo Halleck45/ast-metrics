@@ -17,10 +17,10 @@ import (
 	"github.com/halleck45/ast-metrics/src/Configuration"
 	"github.com/halleck45/ast-metrics/src/Docker"
 	"github.com/halleck45/ast-metrics/src/Driver"
+	"github.com/halleck45/ast-metrics/src/File"
 	"github.com/halleck45/ast-metrics/src/Storage"
 	"github.com/pterm/pterm"
 	log "github.com/sirupsen/logrus"
-	"github.com/yargevad/filepathx"
 )
 
 // This allows to embed PHP sources in GO binary
@@ -31,67 +31,24 @@ var phpSources embed.FS
 type PhpRunner struct {
 	progressbar   *pterm.SpinnerPrinter
 	configuration *Configuration.Configuration
-	files         []string
-	// map of files, grouped by directory
-	filesByDirectory map[string][]string
+	foundFiles    File.FileList
 }
 
 func (r PhpRunner) IsRequired() bool {
 	// If at least one PHP file is found, we need to run PHP engine
-	return len(r.getFileList()) > 0
+	return len(r.getFileList().Files) > 0
 }
 
-func (r *PhpRunner) getFileList() []string {
+func (r *PhpRunner) getFileList() File.FileList {
 
-	if len(r.files) > 0 {
-		// if r.files is not empty, return it
-		return r.files
+	if r.foundFiles.Files != nil {
+		return r.foundFiles
 	}
 
-	r.filesByDirectory = make(map[string][]string)
+	finder := File.Finder{Configuration: *r.configuration}
+	r.foundFiles = finder.Search(".php")
 
-	// Search for PHP files in each directory
-	for _, path := range r.configuration.SourcesToAnalyzePath {
-
-		path := strings.TrimRight(path, "/")
-		var matches []string
-		// if is a PHP file, add it
-		if strings.HasSuffix(path, ".php") {
-			matches = append(matches, path)
-		} else {
-			matches, _ = filepathx.Glob(path + "/**/*.php")
-		}
-
-		// deal with excluded files
-		for _, file := range matches {
-			var excluded bool = false
-
-			for _, excludedFile := range r.configuration.ExcludePatterns {
-				if strings.Contains(file, excludedFile) {
-					excluded = true
-				}
-			}
-
-			if !excluded {
-				r.files = append(r.files, file)
-
-				// add file to filesByDirectory
-				directory := path
-				if _, ok := r.filesByDirectory[directory]; !ok {
-					r.filesByDirectory[directory] = []string{}
-				}
-
-				r.filesByDirectory[directory] = append(r.filesByDirectory[directory], file)
-
-			}
-		}
-	}
-
-	if log.GetLevel() == log.DebugLevel {
-		log.Debug("Found " + strconv.Itoa(len(r.files)) + " PHP files to analyze")
-	}
-
-	return r.files
+	return r.foundFiles
 }
 
 func (r *PhpRunner) SetProgressbar(progressbar *pterm.SpinnerPrinter) {
@@ -255,12 +212,12 @@ func (r PhpRunner) DumpAST() {
 
 	// Wait for end of all goroutines
 	var wg sync.WaitGroup
-	var nbFiles int = len(r.getFileList())
+	var nbFiles int = len(r.getFileList().Files)
 
 	nbParsingFiles := 0
 	sem := make(chan struct{}, maxParallelCommandsInt)
 
-	for directory, files := range r.filesByDirectory {
+	for directory, files := range r.getFileList().FilesByDirectory {
 
 		var directoryToAnalyze string = directory //  directory captured by func literal
 		for _, file := range files {
