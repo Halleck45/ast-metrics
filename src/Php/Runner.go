@@ -5,7 +5,6 @@ import (
 	"embed"
 	"encoding/hex"
 	"io"
-	"io/fs"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -14,6 +13,7 @@ import (
 	"sync"
 
 	"github.com/docker/docker/api/types/mount"
+	"github.com/halleck45/ast-metrics/src/CommandExecutor"
 	"github.com/halleck45/ast-metrics/src/Configuration"
 	"github.com/halleck45/ast-metrics/src/Docker"
 	"github.com/halleck45/ast-metrics/src/Driver"
@@ -29,9 +29,10 @@ import (
 var phpSources embed.FS
 
 type PhpRunner struct {
-	progressbar   *pterm.SpinnerPrinter
-	configuration *Configuration.Configuration
-	foundFiles    File.FileList
+	progressbar               *pterm.SpinnerPrinter
+	configuration             *Configuration.Configuration
+	foundFiles                File.FileList
+	workspaceOfSourceAnalyzer CommandExecutor.WorkspaceInstaller
 }
 
 func (r PhpRunner) IsRequired() bool {
@@ -66,40 +67,12 @@ func (r *PhpRunner) getLocalOutDirectory() string {
 	return Storage.Path() + "/output"
 }
 
-func (r PhpRunner) Ensure() error {
+func (r *PhpRunner) Ensure() error {
 
-	// clean up
-	cleanup(phpSources)
+	r.workspaceOfSourceAnalyzer = CommandExecutor.WorkspaceInstaller{Name: "PHP", PathToLocalSources: phpSources}
+	err := r.workspaceOfSourceAnalyzer.Ensure()
 
-	// Install sources locally (vendors)
-	tempDir := Storage.Path() + "/.temp"
-	if err := os.Mkdir(tempDir, 0755); err != nil {
-		log.Error(err)
-		return err
-	}
-
-	// Extract PHP sources for directories "vendor", etc
-	if err := fs.WalkDir(phpSources, ".", func(path string, d fs.DirEntry, err error) error {
-
-		if err != nil {
-			return err
-		}
-
-		if d.Type().IsRegular() {
-			content, err := phpSources.ReadFile(path)
-			if err != nil {
-				return err
-			}
-			outputPath := tempDir + "/" + path
-			if err := os.MkdirAll(filepath.Dir(outputPath), 0755); err != nil {
-				return err
-			}
-			if err := os.WriteFile(outputPath, content, 0644); err != nil {
-				return err
-			}
-		}
-		return nil
-	}); err != nil {
+	if err != nil {
 		log.Error(err)
 		return err
 	}
@@ -128,7 +101,7 @@ func (r PhpRunner) Ensure() error {
 		mounts := []mount.Mount{
 			{
 				Type:     mount.TypeBind,
-				Source:   Storage.Path() + "/.temp/phpsources",
+				Source:   r.workspaceOfSourceAnalyzer.GetPath() + "/phpsources",
 				Target:   "/tmp/engine",
 				ReadOnly: true,
 			},
@@ -139,7 +112,7 @@ func (r PhpRunner) Ensure() error {
 				ReadOnly: false,
 			},
 		}
-		debugMountsAsString += " -v " + Storage.Path() + "/.temp/phpsources:/tmp/engine:ro"
+		debugMountsAsString += " -v " + r.workspaceOfSourceAnalyzer.GetPath() + "/phpsources:/tmp/engine:ro"
 		debugMountsAsString += " -v " + r.getLocalOutDirectory() + ":" + r.getContainerOutDirectory() + ":rw"
 
 		// for each path to analyze, add a mount
@@ -246,24 +219,8 @@ func (r PhpRunner) DumpAST() {
 }
 
 func (r PhpRunner) Finish() error {
-	cleanup(phpSources)
+	r.workspaceOfSourceAnalyzer.Cleanup()
 	return nil
-}
-
-func cleanup(phpSources embed.FS) (string, error) {
-	// Remove temp directory
-	tempDir := Storage.Path() + "/.temp"
-
-	// check if tempDir exists
-	if _, err := os.Stat(tempDir); os.IsNotExist(err) {
-		return "", nil
-	}
-	if err := os.RemoveAll(tempDir); err != nil {
-		log.Error(err)
-		return "", err
-	}
-
-	return "", nil
 }
 
 func getFileHash(filePath string) (string, error) {
@@ -334,7 +291,7 @@ func (r PhpRunner) executePHPCommandForFile(tmpDir string, currentlyAnalysedDire
 
 	} else {
 		phpBinaryPath := getPHPBinaryPath()
-		tempDir := Storage.Path() + "/.temp"
+		tempDir := r.workspaceOfSourceAnalyzer.GetPath()
 		if log.GetLevel() == log.DebugLevel {
 			log.Debug("Executing command : " + phpBinaryPath + " " + tempDir + "/phpsources/dump.php " + file + " > " + outputFilePath)
 		}
