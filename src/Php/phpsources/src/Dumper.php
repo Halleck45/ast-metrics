@@ -276,7 +276,6 @@ class Dumper
         return $name;
     }
 
-
     public function nameVar($what): ?string
     {
         if (isset($what['var']['name'], $what['name']['name'])) {
@@ -286,7 +285,18 @@ class Dumper
                 return null;
             }
 
-            return $what['var']['name'] . '->' . $what['name']['name'];
+            $retrieveNameInArrayRecursively = function($item) use(&$retrieveNameInArrayRecursively) {
+                $name = $item['name'] ?? null;
+                if(is_array($name)) {
+                    $name = $retrieveNameInArrayRecursively($name);
+                }
+
+                return $name;
+            };
+
+            return $retrieveNameInArrayRecursively($what['var']) 
+                . '->' 
+                . $retrieveNameInArrayRecursively($what['name']);
         }
 
         if (isset($what['var'])) {
@@ -477,7 +487,7 @@ class Dumper
                 continue;
             }
 
-            $name = $expr['nodeType'] ?? $expr;
+            $name = (string) ($expr['nodeType'] ?? $expr);
             if (false === strpos($name, 'Expr_')) {
                 continue;
             }

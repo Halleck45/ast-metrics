@@ -14,6 +14,13 @@ type EmbeddedWorkspace struct {
 	PathToLocalSources embed.FS
 }
 
+func NewEmbeddedWorkspace(name string, pathToLocalSources embed.FS) EmbeddedWorkspace {
+	return EmbeddedWorkspace{
+		Name:               name,
+		PathToLocalSources: pathToLocalSources,
+	}
+}
+
 func (r EmbeddedWorkspace) Ensure() error {
 	// clean up
 	r.Cleanup()
@@ -46,6 +53,11 @@ func (r EmbeddedWorkspace) Ensure() error {
 		}
 		return nil
 	}); err != nil {
+		return err
+	}
+
+	// Create a .keepme file in tempDir
+	if err := os.WriteFile(tempDir+string(os.PathSeparator)+".keepme", []byte(""), 0644); err != nil {
 		return err
 	}
 
