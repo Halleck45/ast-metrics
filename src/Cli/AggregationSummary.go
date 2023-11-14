@@ -15,20 +15,22 @@ func AggregationSummary(projectAggregated Analyzer.ProjectAggregated) {
 
 	// for the moment we aggregate by class only
 	// @todo
-	aggregated := projectAggregated.ByClass
-	//aggregated := projectAggregated.ByFile
+	aggregatedByClass := projectAggregated.ByClass
+	//aggregatedByFile := projectAggregated.ByFile
+	combined := projectAggregated.Combined
 
 	var percentageCloc int = 0
 	var percentageLloc int = 0
-	if aggregated.Loc > 0 {
-		percentageCloc = 100 * aggregated.Cloc / aggregated.Loc
-		percentageLloc = 100 * aggregated.Lloc / aggregated.Loc
+	if combined.Loc > 0 {
+		percentageCloc = 100 * combined.Cloc / combined.Loc
+		percentageLloc = 100 * combined.Lloc / combined.Loc
 	}
 
 	in := `*This code is composed from ` +
-		strconv.Itoa(aggregated.Loc) + ` lines of code, ` +
-		strconv.Itoa(aggregated.Cloc) + ` (` + (strconv.Itoa(percentageCloc)) + `%) comment lines of code and ` +
-		strconv.Itoa(aggregated.Lloc) + ` (` + (strconv.Itoa(percentageLloc)) + `%) logical lines of code.*
+		strconv.Itoa(combined.NbFiles) + ` files, ` +
+		strconv.Itoa(combined.Loc) + ` lines of code, ` +
+		strconv.Itoa(combined.Cloc) + ` (` + (strconv.Itoa(percentageCloc)) + `%) comment lines of code and ` +
+		strconv.Itoa(combined.Lloc) + ` (` + (strconv.Itoa(percentageLloc)) + `%) logical lines of code.*
 
    ## Complexity
 
@@ -38,13 +40,13 @@ func AggregationSummary(projectAggregated Analyzer.ProjectAggregated) {
    More you have paths, more your code is complex.*
 
 
-   | Min | Max | Average per class | Average per method |
+   | Min | Max | Average per class | Average per method | 
    | --- | --- | --- | --- |
    | ` +
-		strconv.Itoa(aggregated.MinCyclomaticComplexity) +
-		` | ` + strconv.Itoa(aggregated.MaxCyclomaticComplexity) +
-		` | ` + fmt.Sprintf("%.2f", aggregated.AverageCyclomaticComplexityPerClass) +
-		` | ` + fmt.Sprintf("%.2f", aggregated.AverageCyclomaticComplexityPerMethod) +
+		strconv.Itoa(combined.MinCyclomaticComplexity) +
+		` | ` + strconv.Itoa(combined.MaxCyclomaticComplexity) +
+		` | ` + fmt.Sprintf("%.2f", combined.AverageCyclomaticComplexityPerClass) +
+		` | ` + fmt.Sprintf("%.2f", combined.AverageCyclomaticComplexityPerMethod) +
 		` |
 
    ### Halstead metrics
@@ -55,22 +57,26 @@ func AggregationSummary(projectAggregated Analyzer.ProjectAggregated) {
    | --- | --- | --- | --- | --- |
     ` +
 		` | Total` +
-		` | ` + fmt.Sprintf("%.2f", aggregated.SumHalsteadDifficulty) +
-		` | ` + fmt.Sprintf("%.2f", aggregated.SumHalsteadEffort) +
-		` | ` + fmt.Sprintf("%.2f", aggregated.SumHalsteadVolume) +
-		` | ` + fmt.Sprintf("%.2f", aggregated.SumHalsteadTime) +
+		` | ` + fmt.Sprintf("%.2f", aggregatedByClass.SumHalsteadDifficulty) +
+		` | ` + fmt.Sprintf("%.2f", aggregatedByClass.SumHalsteadEffort) +
+		` | ` + fmt.Sprintf("%.2f", aggregatedByClass.SumHalsteadVolume) +
+		` | ` + fmt.Sprintf("%.2f", aggregatedByClass.SumHalsteadTime) +
 		"\n | Average per class" +
-		` | ` + fmt.Sprintf("%.2f", aggregated.AverageHalsteadDifficulty) +
-		` | ` + fmt.Sprintf("%.2f", aggregated.AverageHalsteadEffort) +
-		` | ` + fmt.Sprintf("%.2f", aggregated.AverageHalsteadVolume) +
-		` | ` + fmt.Sprintf("%.2f", aggregated.AverageHalsteadTime) +
+		` | ` + fmt.Sprintf("%.2f", aggregatedByClass.AverageHalsteadDifficulty) +
+		` | ` + fmt.Sprintf("%.2f", aggregatedByClass.AverageHalsteadEffort) +
+		` | ` + fmt.Sprintf("%.2f", aggregatedByClass.AverageHalsteadVolume) +
+		` | ` + fmt.Sprintf("%.2f", aggregatedByClass.AverageHalsteadTime) +
 		` |
 
    ### Classes and methods
 
-   | Classes | Methods | Average methods per class |
-   | --- | --- | --- |
-   | ` + strconv.Itoa(aggregated.NbClasses) + ` | ` + strconv.Itoa(aggregated.NbMethods) + ` | ` + fmt.Sprintf("%.2f", aggregated.AverageMethodsPerClass) + ` |
+   | Classes | Methods | Average methods per class | Average LOC per method |
+   | --- | --- | --- | --- |` + "\n" +
+		` | ` + strconv.Itoa(aggregatedByClass.NbClasses) +
+		` | ` + strconv.Itoa(combined.NbMethods) +
+		` | ` + fmt.Sprintf("%.2f", aggregatedByClass.AverageMethodsPerClass) +
+		` | ` + fmt.Sprintf("%.2f", combined.AverageLocPerMethod) +
+		` |
 
    ## Maintainability
 
@@ -79,7 +85,7 @@ func AggregationSummary(projectAggregated Analyzer.ProjectAggregated) {
 
    | Maintainability index | MI without comments | Comment weight |
    | --- | --- | --- |
-   | ` + DecorateMaintainabilityIndex(int(aggregated.AverageMI)) + ` | ` + fmt.Sprintf("%.2f", aggregated.AverageMIwoc) + ` | ` + fmt.Sprintf("%.2f", aggregated.AverageMIcw) + ` |
+   | ` + DecorateMaintainabilityIndex(int(aggregatedByClass.AverageMI)) + ` | ` + fmt.Sprintf("%.2f", aggregatedByClass.AverageMIwoc) + ` | ` + fmt.Sprintf("%.2f", aggregatedByClass.AverageMIcw) + ` |
 
    `
 	out, _ := glamour.Render(in, "dark")

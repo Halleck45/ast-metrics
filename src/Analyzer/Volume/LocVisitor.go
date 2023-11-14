@@ -10,25 +10,32 @@ type LocVisitor struct {
 
 func (v *LocVisitor) Visit(stmts *pb.Stmts, parents *pb.Stmts) {
 
-	if stmts == nil {
-		return
-	}
-
 	// calculate the number of lines of code in each method
 	for _, stmt := range parents.StmtFunction {
-		if stmt.Stmts == nil {
-			continue
-		}
 
 		if stmt.LinesOfCode == nil {
 			continue
 		}
 
-		if stmt.Stmts != nil && stmt.Stmts.Analyze != nil {
-			stmt.Stmts.Analyze.Volume.Loc = &stmt.LinesOfCode.LinesOfCode
-			stmt.Stmts.Analyze.Volume.Lloc = &stmt.LinesOfCode.LogicalLinesOfCode
-			stmt.Stmts.Analyze.Volume.Cloc = &stmt.LinesOfCode.CommentLinesOfCode
+		if stmt.Stmts == nil {
+			stmt.Stmts = &pb.Stmts{}
 		}
+
+		if stmt.Stmts.Analyze == nil {
+			stmt.Stmts.Analyze = &pb.Analyze{}
+		}
+
+		if stmt.Stmts.Analyze.Volume == nil {
+			stmt.Stmts.Analyze.Volume = &pb.Volume{}
+		}
+
+		stmt.Stmts.Analyze.Volume.Loc = &stmt.LinesOfCode.LinesOfCode
+		stmt.Stmts.Analyze.Volume.Lloc = &stmt.LinesOfCode.LogicalLinesOfCode
+		stmt.Stmts.Analyze.Volume.Cloc = &stmt.LinesOfCode.CommentLinesOfCode
+	}
+
+	if stmts == nil {
+		return
 	}
 
 	// Consolidate foreach class

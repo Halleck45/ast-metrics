@@ -7,8 +7,9 @@ import (
 )
 
 type ProjectAggregated struct {
-	ByFile  Aggregated
-	ByClass Aggregated
+	ByFile   Aggregated
+	ByClass  Aggregated
+	Combined Aggregated
 }
 
 type Aggregated struct {
@@ -54,10 +55,8 @@ func NewAggregator(files []pb.File) *Aggregator {
 	}
 }
 
-func (r *Aggregator) Aggregates() ProjectAggregated {
-	files := r.files
-
-	aggregated := Aggregated{NbClasses: 0,
+func newAggregated() Aggregated {
+	return Aggregated{NbClasses: 0,
 		NbMethods:                            0,
 		NbFunctions:                          0,
 		Loc:                                  0,
@@ -83,9 +82,20 @@ func (r *Aggregator) Aggregates() ProjectAggregated {
 		AverageMI:                            0,
 		AverageMIwoc:                         0,
 		AverageMIcw:                          0}
+}
+
+func (r *Aggregator) Aggregates() ProjectAggregated {
+	files := r.files
+
+	aggregated := newAggregated()
 
 	r.projectAggregated.ByFile = aggregated
 	r.projectAggregated.ByClass = aggregated
+	r.projectAggregated.Combined = aggregated
+
+	r.projectAggregated.ByClass.NbFiles = len(files)
+	r.projectAggregated.ByFile.NbFiles = len(files)
+	r.projectAggregated.Combined.NbFiles = len(files)
 
 	for _, file := range files {
 		if file.Stmts == nil {
@@ -94,12 +104,14 @@ func (r *Aggregator) Aggregates() ProjectAggregated {
 
 		// function included directly in file
 		r.calculate(file.Stmts, &r.projectAggregated.ByFile)
+		r.calculate(file.Stmts, &r.projectAggregated.Combined)
 
 		// classes
 		for _, stmt := range file.Stmts.StmtClass {
 			r.projectAggregated.ByClass.NbClasses++
 			r.projectAggregated.ByFile.NbClasses++
 			r.calculate(stmt.Stmts, &r.projectAggregated.ByClass)
+			r.calculate(stmt.Stmts, &r.projectAggregated.Combined)
 		}
 
 		// classes in namespace
@@ -107,6 +119,7 @@ func (r *Aggregator) Aggregates() ProjectAggregated {
 			for _, s := range stmt.Stmts.StmtClass {
 				r.projectAggregated.ByClass.NbClasses++
 				r.calculate(s.Stmts, &r.projectAggregated.ByClass)
+				r.calculate(s.Stmts, &r.projectAggregated.Combined)
 			}
 		}
 
@@ -114,7 +127,8 @@ func (r *Aggregator) Aggregates() ProjectAggregated {
 		for _, stmt := range file.Stmts.StmtNamespace {
 			for _, s := range stmt.Stmts.StmtFunction {
 				r.projectAggregated.ByFile.NbMethods++
-				r.calculate(s.Stmts, &r.projectAggregated.ByClass)
+				r.calculate(s.Stmts, &r.projectAggregated.ByFile)
+				r.calculate(s.Stmts, &r.projectAggregated.Combined)
 			}
 		}
 	}
@@ -122,6 +136,7 @@ func (r *Aggregator) Aggregates() ProjectAggregated {
 	// averages
 	r.consolidate(&r.projectAggregated.ByFile)
 	r.consolidate(&r.projectAggregated.ByClass)
+	r.consolidate(&r.projectAggregated.Combined)
 
 	return r.projectAggregated
 }
@@ -129,6 +144,10 @@ func (r *Aggregator) Aggregates() ProjectAggregated {
 func (r *Aggregator) calculate(stmts *pb.Stmts, specificAggregation *Aggregated) {
 
 	// methods per class
+	if stmts == nil {
+		return
+	}
+
 	if stmts.StmtFunction != nil {
 		specificAggregation.NbMethods += len(stmts.StmtFunction)
 	}
@@ -162,25 +181,25 @@ func (r *Aggregator) calculate(stmts *pb.Stmts, specificAggregation *Aggregated)
 		if stmts.Analyze.Volume.Lloc != nil {
 			specificAggregation.Lloc += int(*stmts.Analyze.Volume.Lloc)
 		}
+	}
 
-		// average lines of code per method
-		if stmts.StmtFunction != nil {
-			for _, method := range stmts.StmtFunction {
+	// average lines of code per method
+	if stmts.StmtFunction != nil {
+		for _, method := range stmts.StmtFunction {
 
-				if method.Stmts == nil {
-					continue
+			if method.Stmts == nil {
+				continue
+			}
+
+			if method.Stmts.Analyze.Volume != nil {
+				if method.Stmts.Analyze.Volume.Loc != nil {
+					specificAggregation.AverageLocPerMethod += float64(*method.Stmts.Analyze.Volume.Loc)
 				}
-
-				if method.Stmts.Analyze.Volume != nil {
-					if method.Stmts.Analyze.Volume.Loc != nil {
-						specificAggregation.AverageLocPerMethod += float64(*method.Stmts.Analyze.Volume.Loc)
-					}
-					if method.Stmts.Analyze.Volume.Cloc != nil {
-						specificAggregation.AverageClocPerMethod += float64(*method.Stmts.Analyze.Volume.Cloc)
-					}
-					if method.Stmts.Analyze.Volume.Lloc != nil {
-						specificAggregation.AverageLlocPerMethod += float64(*method.Stmts.Analyze.Volume.Lloc)
-					}
+				if method.Stmts.Analyze.Volume.Cloc != nil {
+					specificAggregation.AverageClocPerMethod += float64(*method.Stmts.Analyze.Volume.Cloc)
+				}
+				if method.Stmts.Analyze.Volume.Lloc != nil {
+					specificAggregation.AverageLlocPerMethod += float64(*method.Stmts.Analyze.Volume.Lloc)
 				}
 			}
 		}
@@ -230,8 +249,13 @@ func (r *Aggregator) calculate(stmts *pb.Stmts, specificAggregation *Aggregated)
 func (r *Aggregator) consolidate(aggregated *Aggregated) {
 
 	if aggregated.NbMethods > 0 {
-		aggregated.AverageMethodsPerClass = float64(aggregated.NbMethods) / float64(aggregated.NbClasses)
-		aggregated.AverageCyclomaticComplexityPerClass = aggregated.AverageCyclomaticComplexityPerClass / float64(aggregated.NbClasses)
+		if aggregated.NbClasses > 0 {
+			aggregated.AverageMethodsPerClass = float64(aggregated.NbMethods) / float64(aggregated.NbClasses)
+			aggregated.AverageCyclomaticComplexityPerClass = aggregated.AverageCyclomaticComplexityPerClass / float64(aggregated.NbClasses)
+		} else {
+			aggregated.AverageMethodsPerClass = 0
+			aggregated.AverageCyclomaticComplexityPerClass = 0
+		}
 		aggregated.AverageHalsteadDifficulty = aggregated.AverageHalsteadDifficulty / float64(aggregated.NbClasses)
 		aggregated.AverageHalsteadEffort = aggregated.AverageHalsteadEffort / float64(aggregated.NbClasses)
 		aggregated.AverageHalsteadVolume = aggregated.AverageHalsteadVolume / float64(aggregated.NbClasses)
