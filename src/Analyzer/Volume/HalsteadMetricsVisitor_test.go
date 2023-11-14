@@ -3,8 +3,8 @@ package Analyzer
 import (
 	"testing"
 
-	"github.com/golang/protobuf/jsonpb"
 	pb "github.com/halleck45/ast-metrics/src/NodeType"
+	"google.golang.org/protobuf/encoding/protojson"
 )
 
 func TestHalsteadMetricsVisitor(t *testing.T) {
@@ -72,8 +72,8 @@ func TestHalsteadMetricsVisitor(t *testing.T) {
 `
 
 	pbFile := &pb.File{}
-	if err := jsonpb.UnmarshalString(json, pbFile); err != nil {
-		t.Error("Failed to parse jsonpb")
+	if err := protojson.Unmarshal([]byte(json), pbFile); err != nil {
+		panic(err)
 	}
 
 	visitor := HalsteadMetricsVisitor{}
