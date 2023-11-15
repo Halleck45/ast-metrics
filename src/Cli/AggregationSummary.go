@@ -4,20 +4,54 @@ import (
 	"fmt"
 	"strconv"
 
+	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/glamour"
 	"github.com/halleck45/ast-metrics/src/Analyzer"
+	pb "github.com/halleck45/ast-metrics/src/NodeType"
 )
 
-func AggregationSummary(projectAggregated Analyzer.ProjectAggregated) {
+type AggregationSummary struct {
+	isInteractive     bool
+	files             []pb.File
+	projectAggregated Analyzer.ProjectAggregated
+	parent            tea.Model
+}
 
-	style := StyleTitle()
-	fmt.Println(style.Render("Results overview"))
+func (v AggregationSummary) GetScreenName() string {
+	return "Overview"
+}
+
+func (v AggregationSummary) GetModel() tea.Model {
+	m := modelAggregationSummary{parent: v.parent, files: v.files, projectAggregated: v.projectAggregated}
+	return m
+}
+
+type modelAggregationSummary struct {
+	parent            tea.Model
+	files             []pb.File
+	projectAggregated Analyzer.ProjectAggregated
+}
+
+func (m modelAggregationSummary) Init() tea.Cmd { return nil }
+
+func (m modelAggregationSummary) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+	switch msg := msg.(type) {
+	case tea.KeyMsg:
+		switch msg.String() {
+		case "q", "ctrl+c", "esc":
+			return m.parent, tea.ClearScreen
+		}
+	}
+	return m, nil
+}
+
+func (m modelAggregationSummary) View() string {
 
 	// for the moment we aggregate by class only
 	// @todo
-	aggregatedByClass := projectAggregated.ByClass
+	aggregatedByClass := m.projectAggregated.ByClass
 	//aggregatedByFile := projectAggregated.ByFile
-	combined := projectAggregated.Combined
+	combined := m.projectAggregated.Combined
 
 	var percentageCloc int = 0
 	var percentageLloc int = 0
@@ -89,5 +123,7 @@ func AggregationSummary(projectAggregated Analyzer.ProjectAggregated) {
 
    `
 	out, _ := glamour.Render(in, "dark")
-	fmt.Print(out)
+
+	return StyleTitle("Results overview").Render() + "\n" +
+		out
 }

@@ -91,11 +91,8 @@ func (v *AnalyzeCommand) Execute() error {
 	spinnerAllExecution.Stop()
 	multi.Stop()
 
-	// Dislpay results
-	// @todo: move this to a renderer and use a loop of renderers
-	Cli.AggregationSummary(projectAggregated)
-
-	renderer := Cli.NewRendererTableClass(v.isInteractive)
+	// Display results
+	renderer := Cli.NewMainReport(v.isInteractive)
 	renderer.Render(allResults, projectAggregated)
 
 	return nil

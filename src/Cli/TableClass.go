@@ -2,7 +2,6 @@ package Cli
 
 import (
 	"fmt"
-	"os"
 	"sort"
 	"strconv"
 	"strings"
@@ -12,17 +11,13 @@ import (
 	"github.com/charmbracelet/lipgloss"
 	"github.com/halleck45/ast-metrics/src/Analyzer"
 	pb "github.com/halleck45/ast-metrics/src/NodeType"
-	"github.com/mattn/go-isatty"
 )
 
 type RendererTableClass struct {
-	isInteractive bool
-}
-
-func NewRendererTableClass(isInteractive bool) *RendererTableClass {
-	return &RendererTableClass{
-		isInteractive: isInteractive,
-	}
+	isInteractive     bool
+	files             []pb.File
+	projectAggregated Analyzer.ProjectAggregated
+	parent            tea.Model
 }
 
 var baseStyle = lipgloss.NewStyle().
@@ -32,6 +27,7 @@ var baseStyle = lipgloss.NewStyle().
 type model struct {
 	table           table.Model
 	sortColumnIndex int
+	parent          tea.Model
 }
 
 func (m model) Init() tea.Cmd { return nil }
@@ -42,7 +38,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case tea.KeyMsg:
 		switch msg.String() {
 		case "q", "ctrl+c", "esc":
-			return m, tea.Quit
+			return m.parent, tea.ClearScreen
 		case "i":
 			// sort by maintainability index
 			m.sortColumnIndex = 6
@@ -98,34 +94,25 @@ func (m model) View() string {
 	})
 	m.table.SetRows(rows)
 
-	return baseStyle.Render(m.table.View()) + "\n"
+	return StyleTitle("Classes").Render() + "\n" +
+		StyleHelp(`
+		Use arrows to navigate and esc to quit.
+		Press:
+		   - (n) to sort by name
+		   - (l) to sort by LLOC
+		   - (c) to sort by cyclomatic complexity
+		   - (m) to sort by number of methods
+		   - (i) to sort by maintainability index
+
+	   `).Render() + "\n\n" +
+		baseStyle.Render(m.table.View()) + "\n"
 }
 
-func (v *RendererTableClass) Render(pbFiles []pb.File, aggregated Analyzer.ProjectAggregated) {
+func (v RendererTableClass) GetScreenName() string {
+	return "Details for classes"
+}
 
-	// if not a tty, stop here tea program
-	if !isatty.IsTerminal(os.Stdout.Fd()) || !v.isInteractive {
-		return
-	}
-
-	style := StyleTitle()
-	fmt.Println(style.Render("Classes"))
-
-	style = lipgloss.NewStyle().
-		Italic(true).
-		Foreground(lipgloss.Color("#666666")).
-		PaddingLeft(0)
-
-	help := `
-     Use arrows to navigate and esc to quit.
-     Press:
-        - (n) to sort by name
-        - (l) to sort by LLOC
-        - (c) to sort by cyclomatic complexity
-        - (m) to sort by number of methods
-        - (i) to sort by maintainability index
-    `
-	fmt.Println(style.Render(help))
+func (v RendererTableClass) GetModel() tea.Model {
 
 	columns := []table.Column{
 		{Title: "Class", Width: 30},
@@ -138,7 +125,7 @@ func (v *RendererTableClass) Render(pbFiles []pb.File, aggregated Analyzer.Proje
 	}
 
 	rows := []table.Row{}
-	for _, file := range pbFiles {
+	for _, file := range v.files {
 		for _, class := range file.Stmts.StmtClass {
 
 			if class == nil {
@@ -194,7 +181,7 @@ func (v *RendererTableClass) Render(pbFiles []pb.File, aggregated Analyzer.Proje
 		table.WithColumns(columns),
 		table.WithRows(rows),
 		table.WithFocused(true),
-		table.WithHeight(15),
+		table.WithHeight(25),
 	)
 
 	s := table.DefaultStyles()
@@ -209,10 +196,7 @@ func (v *RendererTableClass) Render(pbFiles []pb.File, aggregated Analyzer.Proje
 		Bold(false)
 	t.SetStyles(s)
 
-	m := model{table: t, sortColumnIndex: 0}
+	m := model{table: t, sortColumnIndex: 0, parent: v.parent}
 
-	if _, err := tea.NewProgram(m).Run(); err != nil {
-		fmt.Println("Error running program:", err)
-		os.Exit(1)
-	}
+	return m
 }
