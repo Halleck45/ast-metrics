@@ -6,6 +6,7 @@ import (
 
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/glamour"
+	"github.com/charmbracelet/lipgloss"
 	"github.com/halleck45/ast-metrics/src/Analyzer"
 	pb "github.com/halleck45/ast-metrics/src/NodeType"
 )
@@ -54,26 +55,31 @@ func (m modelScreenSummary) View() string {
 	//aggregatedByFile := projectAggregated.ByFile
 	combined := m.projectAggregated.Combined
 
-	var percentageCloc int = 0
-	var percentageLloc int = 0
-	if combined.Loc > 0 {
-		percentageCloc = 100 * combined.Cloc / combined.Loc
-		percentageLloc = 100 * combined.Lloc / combined.Loc
-	}
+	// Screen is composed from differents boxes
+	boxCcn := StyleNumberBox(
+		fmt.Sprintf("%.2f", combined.AverageCyclomaticComplexityPerMethod),
+		"Cycl. complexity per method",
+		fmt.Sprintf("(min: %d, max: %d)", combined.MinCyclomaticComplexity, combined.MaxCyclomaticComplexity),
+	)
+	boxMethods := StyleNumberBox(
+		fmt.Sprintf("%.2f", combined.AverageLocPerMethod),
+		"Average LOC per method",
+		"",
+	)
+	boxMaintainability := StyleNumberBox(
+		DecorateMaintainabilityIndex(int(aggregatedByClass.AverageMI)),
+		"Maintainability index",
+		fmt.Sprintf("(MI without comments: %.2f, comment weight: %.2f)", aggregatedByClass.AverageMIwoc, aggregatedByClass.AverageMIcw),
+	)
 
-	in := `*This code is composed from ` +
-		strconv.Itoa(combined.NbFiles) + ` files, ` +
-		strconv.Itoa(combined.Loc) + ` lines of code, ` +
-		strconv.Itoa(combined.Cloc) + ` (` + (strconv.Itoa(percentageCloc)) + `%) comment lines of code and ` +
-		strconv.Itoa(combined.Lloc) + ` (` + (strconv.Itoa(percentageLloc)) + `%) logical lines of code.*
+	row1 := lipgloss.JoinHorizontal(lipgloss.Top, boxCcn.Render(), boxMethods.Render(), boxMaintainability.Render())
 
-   ## Complexity
+	in := `## Complexity
 
    ### Cyclomatic complexity
 
    *Cyclomatic Complexity is a measure of the number of linearly independent paths through a program's source code.
    More you have paths, more your code is complex.*
-
 
    | Min | Max | Average per class | Average per method | 
    | --- | --- | --- | --- |
@@ -81,7 +87,7 @@ func (m modelScreenSummary) View() string {
 		strconv.Itoa(combined.MinCyclomaticComplexity) +
 		` | ` + strconv.Itoa(combined.MaxCyclomaticComplexity) +
 		` | ` + fmt.Sprintf("%.2f", aggregatedByClass.AverageCyclomaticComplexityPerClass) +
-		` | ` + fmt.Sprintf("%.2f", aggregatedByClass.AverageCyclomaticComplexityPerMethod) +
+		` | ` + fmt.Sprintf("%.2f", combined.AverageCyclomaticComplexityPerMethod) +
 		` |
 
    ### Halstead metrics
@@ -121,8 +127,8 @@ func (m modelScreenSummary) View() string {
    | Maintainability index | MI without comments | Comment weight |
    | --- | --- | --- |
    | ` + DecorateMaintainabilityIndex(int(aggregatedByClass.AverageMI)) + ` | ` + fmt.Sprintf("%.2f", aggregatedByClass.AverageMIwoc) + ` | ` + fmt.Sprintf("%.2f", aggregatedByClass.AverageMIcw) + ` |
-
    `
 	out, _ := glamour.Render(in, "dark")
-	return StyleScreen(StyleTitle("Results overview").Render() + "\n" + out).Render()
+
+	return StyleScreen(StyleTitle("Results overview").Render() + "\n" + row1 + "\n" + out).Render()
 }

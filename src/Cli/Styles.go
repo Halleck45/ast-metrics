@@ -1,6 +1,7 @@
 package Cli
 
 import (
+	"fmt"
 	"math"
 	"strconv"
 
@@ -9,11 +10,8 @@ import (
 )
 
 var (
-	subtle           = lipgloss.AdaptiveColor{Light: "#D9DCCF", Dark: "#383838"}
-	special          = lipgloss.AdaptiveColor{Light: "#43BF6D", Dark: "#73F59F"}
-	width, height, _ = osterm.GetSize(0)
-	windowWidth      = min(max(width-1, 100), 100)
-	windowHeight     = height
+	subtle  = lipgloss.AdaptiveColor{Light: "#D9DCCF", Dark: "#383838"}
+	special = lipgloss.AdaptiveColor{Light: "#43BF6D", Dark: "#73F59F"}
 
 	divider = lipgloss.NewStyle().
 		SetString("•").
@@ -22,29 +20,29 @@ var (
 		String()
 
 	titleStyle = lipgloss.NewStyle().
-			MarginLeft(1).
-			MarginRight(1).
-			MarginRight(5).
 			Padding(1).
 			Italic(true).
 			Align(lipgloss.Center).
-			Width(windowWidth).
 			Foreground(lipgloss.Color("#FFF7DB")).
 			Background(lipgloss.Color("#5A56E0"))
 
 	subtitleStyle = lipgloss.NewStyle().
 			Padding(1).
 			Italic(true).
-			Width(windowWidth).
 			Align(lipgloss.Center)
 )
 
+func windowWidth() int {
+	width, _, _ := osterm.GetSize(0)
+	return min(max(width-1, 100), 100)
+}
+
 func StyleTitle(text string) lipgloss.Style {
-	return titleStyle.SetString(text)
+	return titleStyle.Width(windowWidth()).SetString(text)
 }
 
 func StyleSubTitle(text string) lipgloss.Style {
-	return subtitleStyle.SetString(text)
+	return subtitleStyle.Width(windowWidth()).SetString(text)
 }
 
 func StyleUrl(text string) lipgloss.Style {
@@ -72,9 +70,30 @@ func StyleCommand(text string) lipgloss.Style {
 func StyleScreen(text string) lipgloss.Style {
 	return lipgloss.NewStyle().
 		SetString(text).
-		Width(width).
+		Width(windowWidth()).
 		MarginLeft(1).
 		MarginTop(1)
+}
+
+func StyleNumberBox(number string, label string, sublabel string) lipgloss.Style {
+	return lipgloss.NewStyle().
+		PaddingTop(1).
+		PaddingBottom(1).
+		MarginRight(2).
+		Border(lipgloss.RoundedBorder(), true).
+		Background(lipgloss.Color("#2563eb")).
+		Foreground(lipgloss.Color("#FFFFFF")).
+		BorderForeground(lipgloss.Color("#1e3a8a")).
+		Width(30).
+		Height(8).
+		Align(lipgloss.Center).
+		SetString(fmt.Sprintf(
+			"%s\n\n%s\n\n%s",
+			lipgloss.NewStyle().Bold(true).SetString(number).Render(),
+			lipgloss.NewStyle().Bold(false).SetString(label).Render(),
+			lipgloss.NewStyle().Foreground(lipgloss.Color("#CCCCCC")).Italic(true).SetString(sublabel).Render(),
+		))
+
 }
 
 func DecorateMaintainabilityIndex(mi int) string {
