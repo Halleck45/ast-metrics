@@ -145,6 +145,7 @@ func (r PhpRunner) DumpAST() {
 // Finish cleans up the workspace
 func (r PhpRunner) Finish() error {
 	r.workspaceOfSourceAnalyzer.Cleanup()
+	r.progressbar.Stop()
 	return nil
 }
 

@@ -56,7 +56,7 @@ func (r *GolangRunner) Ensure() error {
 
 // Finish cleans up the workspace
 func (r GolangRunner) Finish() error {
-	// pass
+	r.progressbar.Stop()
 	return nil
 }
 
@@ -87,7 +87,6 @@ func (r GolangRunner) DumpAST() {
 	}
 
 	r.progressbar.Info("🦫 Golang code dumped")
-	r.progressbar.Stop()
 
 }
 

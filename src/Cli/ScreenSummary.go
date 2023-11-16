@@ -10,31 +10,31 @@ import (
 	pb "github.com/halleck45/ast-metrics/src/NodeType"
 )
 
-type AggregationSummary struct {
+type ScreenSummary struct {
 	isInteractive     bool
 	files             []pb.File
 	projectAggregated Analyzer.ProjectAggregated
 	parent            tea.Model
 }
 
-func (v AggregationSummary) GetScreenName() string {
+func (v ScreenSummary) GetScreenName() string {
 	return "Overview"
 }
 
-func (v AggregationSummary) GetModel() tea.Model {
-	m := modelAggregationSummary{parent: v.parent, files: v.files, projectAggregated: v.projectAggregated}
+func (v ScreenSummary) GetModel() tea.Model {
+	m := modelScreenSummary{parent: v.parent, files: v.files, projectAggregated: v.projectAggregated}
 	return m
 }
 
-type modelAggregationSummary struct {
+type modelScreenSummary struct {
 	parent            tea.Model
 	files             []pb.File
 	projectAggregated Analyzer.ProjectAggregated
 }
 
-func (m modelAggregationSummary) Init() tea.Cmd { return nil }
+func (m modelScreenSummary) Init() tea.Cmd { return nil }
 
-func (m modelAggregationSummary) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+func (m modelScreenSummary) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
 		switch msg.String() {
@@ -45,7 +45,7 @@ func (m modelAggregationSummary) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return m, nil
 }
 
-func (m modelAggregationSummary) View() string {
+func (m modelScreenSummary) View() string {
 
 	// for the moment we aggregate by class only
 	// @todo
@@ -123,7 +123,5 @@ func (m modelAggregationSummary) View() string {
 
    `
 	out, _ := glamour.Render(in, "dark")
-
-	return StyleTitle("Results overview").Render() + "\n" +
-		out
+	return StyleScreen(StyleTitle("Results overview").Render() + "\n" + out).Render()
 }

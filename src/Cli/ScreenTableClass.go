@@ -13,7 +13,7 @@ import (
 	pb "github.com/halleck45/ast-metrics/src/NodeType"
 )
 
-type RendererTableClass struct {
+type ScreenTableClass struct {
 	isInteractive     bool
 	files             []pb.File
 	projectAggregated Analyzer.ProjectAggregated
@@ -94,7 +94,7 @@ func (m model) View() string {
 	})
 	m.table.SetRows(rows)
 
-	return StyleTitle("Classes").Render() + "\n" +
+	return StyleScreen(StyleTitle("Classes").Render() + "\n" +
 		StyleHelp(`
 		Use arrows to navigate and esc to quit.
 		Press:
@@ -105,14 +105,14 @@ func (m model) View() string {
 		   - (i) to sort by maintainability index
 
 	   `).Render() + "\n\n" +
-		baseStyle.Render(m.table.View()) + "\n"
+		baseStyle.Render(m.table.View()) + "\n").Render()
 }
 
-func (v RendererTableClass) GetScreenName() string {
+func (v ScreenTableClass) GetScreenName() string {
 	return "Details for classes"
 }
 
-func (v RendererTableClass) GetModel() tea.Model {
+func (v ScreenTableClass) GetModel() tea.Model {
 
 	columns := []table.Column{
 		{Title: "Class", Width: 30},

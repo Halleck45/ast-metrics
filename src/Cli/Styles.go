@@ -62,6 +62,24 @@ func StyleHelp(text string) lipgloss.Style {
 		Foreground(lipgloss.Color("#666666"))
 }
 
+func StyleChoices(text string) lipgloss.Style {
+	return lipgloss.NewStyle().
+		SetString(text).
+		MarginLeft(4)
+}
+
+func StyleCommand(text string) lipgloss.Style {
+	return lipgloss.NewStyle().
+		SetString(text).
+		Foreground(lipgloss.Color("#666666"))
+}
+func StyleScreen(text string) lipgloss.Style {
+	return lipgloss.NewStyle().
+		SetString(text).
+		MarginLeft(1).
+		MarginTop(1)
+}
+
 func DecorateMaintainabilityIndex(mi int) string {
 	if mi < 64 {
 		return "🔴 " + strconv.Itoa(mi)

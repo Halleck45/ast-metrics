@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"os"
 
+	"github.com/halleck45/ast-metrics/src/Cli"
 	"github.com/halleck45/ast-metrics/src/Command"
 	"github.com/halleck45/ast-metrics/src/Configuration"
 	"github.com/halleck45/ast-metrics/src/Driver"
@@ -75,23 +76,31 @@ func main() {
 					outWriter := bufio.NewWriter(os.Stdout)
 					pterm.DefaultBasicText.Println(pterm.LightMagenta(" AST Metrics ") + "is a language-agnostic static code analyzer.")
 
-					// Valide args
-					if cCtx.Args().Len() == 0 {
-						pterm.Error.Println("Please provide a path to analyze")
-						return nil
-					}
-
 					// Prepare configuration object
 					configuration := Configuration.NewConfiguration()
 
-					// Path
+					// Validate path selection
 					paths := cCtx.Args()
-					// make it slice of strings
 					pathsSlice := make([]string, paths.Len())
 					for i := 0; i < paths.Len(); i++ {
 						pathsSlice[i] = paths.Get(i)
 					}
-					configuration.SetSourcesToAnalyzePath(pathsSlice)
+					if cCtx.Args().Len() == 0 {
+						if isInteractive {
+							// we try to ask the user to select a file
+							pathsSlice = Cli.AskUserToSelectFile()
+						}
+					}
+
+					if len(pathsSlice) == 0 {
+						pterm.Error.Println("Please provide a path to analyze")
+						return nil
+					}
+					err := configuration.SetSourcesToAnalyzePath(pathsSlice)
+					if err != nil {
+						pterm.Error.Println(err.Error())
+						return err
+					}
 
 					// Driver
 					var driver Driver.Driver
@@ -109,7 +118,7 @@ func main() {
 
 					// Run command
 					command := Command.NewAnalyzeCommand(configuration, outWriter, runners, isInteractive)
-					err := command.Execute()
+					err = command.Execute()
 					if err != nil {
 						pterm.Error.Println(err.Error())
 						return err
