@@ -49,7 +49,6 @@ func (v *AnalyzeCommand) Execute() error {
 
 			progressBarSpecificForEngine, _ := pterm.DefaultSpinner.WithWriter(multi.NewWriter()).Start("...")
 			progressBarSpecificForEngine.RemoveWhenDone = true
-			defer progressBarSpecificForEngine.Stop()
 			runner.SetProgressbar(progressBarSpecificForEngine)
 
 			spinnerAllExecution.Increment()
@@ -71,6 +70,7 @@ func (v *AnalyzeCommand) Execute() error {
 
 			// Cleaning up
 			err = runner.Finish()
+			progressBarSpecificForEngine.Stop()
 			if err != nil {
 				pterm.Error.Println(err.Error())
 				// pass

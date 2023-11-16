@@ -5,42 +5,38 @@ import (
 	"strconv"
 
 	"github.com/charmbracelet/lipgloss"
+	osterm "golang.org/x/term"
 )
 
 var (
-	subtle    = lipgloss.AdaptiveColor{Light: "#D9DCCF", Dark: "#383838"}
-	highlight = lipgloss.AdaptiveColor{Light: "#874BFD", Dark: "#7D56F4"}
-	special   = lipgloss.AdaptiveColor{Light: "#43BF6D", Dark: "#73F59F"}
-	divider   = lipgloss.NewStyle().
-			SetString("•").
-			Padding(0, 1).
-			Foreground(subtle).
-			String()
+	subtle           = lipgloss.AdaptiveColor{Light: "#D9DCCF", Dark: "#383838"}
+	special          = lipgloss.AdaptiveColor{Light: "#43BF6D", Dark: "#73F59F"}
+	width, height, _ = osterm.GetSize(0)
+	windowWidth      = min(max(width-1, 100), 100)
+	windowHeight     = height
+
+	divider = lipgloss.NewStyle().
+		SetString("•").
+		Padding(0, 1).
+		Foreground(subtle).
+		String()
 
 	titleStyle = lipgloss.NewStyle().
 			MarginLeft(1).
+			MarginRight(1).
 			MarginRight(5).
 			Padding(1).
 			Italic(true).
 			Align(lipgloss.Center).
-			Width(80).
+			Width(windowWidth).
 			Foreground(lipgloss.Color("#FFF7DB")).
 			Background(lipgloss.Color("#5A56E0"))
 
 	subtitleStyle = lipgloss.NewStyle().
 			Padding(1).
 			Italic(true).
-			Width(80).
+			Width(windowWidth).
 			Align(lipgloss.Center)
-
-	descStyle = lipgloss.NewStyle().MarginTop(1)
-
-	infoStyle = lipgloss.NewStyle().
-			BorderStyle(lipgloss.NormalBorder()).
-			BorderTop(true).
-			BorderForeground(subtle)
-
-	url = lipgloss.NewStyle().Foreground(special).Render
 )
 
 func StyleTitle(text string) lipgloss.Style {
@@ -76,6 +72,7 @@ func StyleCommand(text string) lipgloss.Style {
 func StyleScreen(text string) lipgloss.Style {
 	return lipgloss.NewStyle().
 		SetString(text).
+		Width(width).
 		MarginLeft(1).
 		MarginTop(1)
 }

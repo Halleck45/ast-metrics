@@ -105,7 +105,7 @@ func (m modelChoices) View() string {
 	c := m.Choice
 
 	tpl := StyleTitle("AST Metrics").Render() +
-		"\n" + StyleSubTitle("AST Metrics is a language-agnostic static code analyzer. "+StyleUrl("https://github.com/Halleck45/ast-metrics").Render()).Render() +
+		"\n" + StyleSubTitle("AST Metrics is a language-agnostic static code analyzer. \n"+StyleUrl("https://github.com/Halleck45/ast-metrics").Render()).Render() +
 		fmt.Sprintf("\n\nAll %d files have been analyzed. What do you want to do next?\n\n", len(m.files))
 
 	choices := StyleHelp("Use arrows to navigate and esc to quit.").Render() + "\n\n"
