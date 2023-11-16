@@ -36,6 +36,7 @@ func (v *AnalyzeCommand) Execute() error {
 	multi := pterm.DefaultMultiPrinter.WithWriter(v.outWriter)
 	spinnerAllExecution, _ := pterm.DefaultProgressbar.WithTotal(3).WithWriter(multi.NewWriter()).WithTitle("Analyzing").Start()
 	spinnerAllExecution.RemoveWhenDone = true
+	defer spinnerAllExecution.Stop()
 
 	// Start progress bars
 	multi.Start()
@@ -48,6 +49,7 @@ func (v *AnalyzeCommand) Execute() error {
 
 			progressBarSpecificForEngine, _ := pterm.DefaultSpinner.WithWriter(multi.NewWriter()).Start("...")
 			progressBarSpecificForEngine.RemoveWhenDone = true
+			defer progressBarSpecificForEngine.Stop()
 			runner.SetProgressbar(progressBarSpecificForEngine)
 
 			spinnerAllExecution.Increment()
@@ -71,7 +73,7 @@ func (v *AnalyzeCommand) Execute() error {
 			err = runner.Finish()
 			if err != nil {
 				pterm.Error.Println(err.Error())
-				return err
+				// pass
 			}
 		}
 	}
@@ -97,8 +99,8 @@ func (v *AnalyzeCommand) Execute() error {
 	multi.Stop()
 
 	// Display results
-	renderer := Cli.NewScreenHome(v.isInteractive)
-	renderer.Render(allResults, projectAggregated)
+	renderer := Cli.NewScreenHome(v.isInteractive, allResults, projectAggregated)
+	renderer.Render()
 
 	return nil
 }

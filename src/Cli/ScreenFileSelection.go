@@ -67,7 +67,7 @@ func (m modelFileSelection) View() string {
 
 	out := StyleTitle("AST Metrics").Render() +
 		StyleHelp("\n\nYou did not provide any path to analyze. Please note that you can pass arguments to the command when you use AST Metrics."+"\n"+
-			"Example: "+StyleCommand("ast-metrics analyze ./path/to/analyze1 ./path/to/analyze2\n").Render()+"\n\n").Render()
+			"Example: "+StyleCommand("ast-metrics analyze ./path/to/analyze1 ./path/to/analyze2\n").Render()).Render() + "\n\n"
 
 	if m.err != nil {
 		out += m.filepicker.Styles.DisabledFile.Render(m.err.Error())
@@ -79,7 +79,7 @@ func (m modelFileSelection) View() string {
 
 	out += "\n\n" + m.filepicker.View() + "\n"
 
-	out += "\n\n" + StyleHelp("Use arrows to navigate, enter to select, and esc to continue.").Render() + "\n\n"
+	out += "\n\n" + StyleHelp("Use arrows to navigate, enter to select, and q to continue.").Render() + "\n\n"
 	return StyleScreen(out).Render()
 }
 

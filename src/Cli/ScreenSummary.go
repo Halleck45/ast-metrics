@@ -14,7 +14,6 @@ type ScreenSummary struct {
 	isInteractive     bool
 	files             []pb.File
 	projectAggregated Analyzer.ProjectAggregated
-	parent            tea.Model
 }
 
 func (v ScreenSummary) GetScreenName() string {
@@ -22,7 +21,7 @@ func (v ScreenSummary) GetScreenName() string {
 }
 
 func (v ScreenSummary) GetModel() tea.Model {
-	m := modelScreenSummary{parent: v.parent, files: v.files, projectAggregated: v.projectAggregated}
+	m := modelScreenSummary{files: v.files, projectAggregated: v.projectAggregated}
 	return m
 }
 
@@ -32,14 +31,16 @@ type modelScreenSummary struct {
 	projectAggregated Analyzer.ProjectAggregated
 }
 
-func (m modelScreenSummary) Init() tea.Cmd { return nil }
+func (m modelScreenSummary) Init() tea.Cmd {
+	return nil
+}
 
 func (m modelScreenSummary) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
 		switch msg.String() {
 		case "q", "ctrl+c", "esc":
-			return m.parent, tea.ClearScreen
+			return NewScreenHome(true, m.files, m.projectAggregated).GetModel(), tea.ClearScreen
 		}
 	}
 	return m, nil
@@ -79,8 +80,8 @@ func (m modelScreenSummary) View() string {
    | ` +
 		strconv.Itoa(combined.MinCyclomaticComplexity) +
 		` | ` + strconv.Itoa(combined.MaxCyclomaticComplexity) +
-		` | ` + fmt.Sprintf("%.2f", combined.AverageCyclomaticComplexityPerClass) +
-		` | ` + fmt.Sprintf("%.2f", combined.AverageCyclomaticComplexityPerMethod) +
+		` | ` + fmt.Sprintf("%.2f", aggregatedByClass.AverageCyclomaticComplexityPerClass) +
+		` | ` + fmt.Sprintf("%.2f", aggregatedByClass.AverageCyclomaticComplexityPerMethod) +
 		` |
 
    ### Halstead metrics

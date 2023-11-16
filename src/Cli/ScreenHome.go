@@ -17,7 +17,9 @@ var (
 
 // ScreenHome is the home view
 type ScreenHome struct {
-	isInteractive bool
+	isInteractive     bool
+	files             []pb.File
+	projectAggregated Analyzer.ProjectAggregated
 }
 
 // modelChoices is the model for the home view
@@ -31,17 +33,19 @@ type modelChoices struct {
 }
 
 // NewScreenHome creates a new ScreenHome
-func NewScreenHome(isInteractive bool) *ScreenHome {
+func NewScreenHome(isInteractive bool, files []pb.File, projectAggregated Analyzer.ProjectAggregated) *ScreenHome {
 	return &ScreenHome{
-		isInteractive: isInteractive,
+		isInteractive:     isInteractive,
+		files:             files,
+		projectAggregated: projectAggregated,
 	}
 }
 
 // Render renders the home view and runs the Tea program
-func (r ScreenHome) Render(pbFiles []pb.File, aggregated Analyzer.ProjectAggregated) {
+func (r ScreenHome) Render() {
 
 	// Prepare list of accepted screens
-	m := modelChoices{files: pbFiles, projectAggregated: aggregated}
+	m := modelChoices{files: r.files, projectAggregated: r.projectAggregated}
 	fillInScreens(&m)
 
 	if !r.isInteractive {
@@ -57,20 +61,32 @@ func (r ScreenHome) Render(pbFiles []pb.File, aggregated Analyzer.ProjectAggrega
 	}
 }
 
+// Get Tea model
+func (r ScreenHome) GetModel() modelChoices {
+
+	// Prepare list of accepted screens
+	m := modelChoices{files: r.files, projectAggregated: r.projectAggregated}
+	fillInScreens(&m)
+
+	return m
+}
+
 // fillInScreens fills in the screens array, and is used to avoid a circular dependency when creating the screens and coming back to the main screen
 func fillInScreens(modelChoices *modelChoices) {
+
+	if len(modelChoices.screens) > 0 {
+		return
+	}
 
 	// Create the table screen
 	viewTableClass := ScreenTableClass{isInteractive: true}
 	viewTableClass.files = modelChoices.files
 	viewTableClass.projectAggregated = modelChoices.projectAggregated
-	viewTableClass.parent = modelChoices
 
 	// Create the table screen
 	summaryScreen := ScreenSummary{isInteractive: true}
 	summaryScreen.files = modelChoices.files
 	summaryScreen.projectAggregated = modelChoices.projectAggregated
-	viewTableClass.parent = modelChoices
 
 	// Create the screen list
 	modelChoices.screens = []Screen{
@@ -121,6 +137,9 @@ func (m modelChoices) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 	}
 
+	// issue when navigating back to the main screen
+	fillInScreens(&m)
+
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
 		switch msg.String() {
@@ -136,10 +155,7 @@ func (m modelChoices) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			}
 		case "enter":
 			index := m.Choice
-			if len(m.screens) == 0 {
-				// issue when navigating back to the main screen
-				fillInScreens(&m)
-			}
+			m.Choice = 0
 			return m.screens[index].GetModel(), tea.ClearScreen
 		}
 	}

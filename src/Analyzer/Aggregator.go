@@ -214,7 +214,7 @@ func (r *Aggregator) calculate(stmts *pb.Stmts, specificAggregation *Aggregated)
 		}
 	}
 
-	// cyclomatic complexity per class
+	// cyclomatic complexity per classq
 	if stmts.Analyze.Complexity != nil && stmts.Analyze.Complexity.Cyclomatic != nil {
 		specificAggregation.AverageCyclomaticComplexityPerClass += float64(*stmts.Analyze.Complexity.Cyclomatic)
 		if specificAggregation.MinCyclomaticComplexity == 0 || int(*stmts.Analyze.Complexity.Cyclomatic) < specificAggregation.MinCyclomaticComplexity {
@@ -248,14 +248,15 @@ func (r *Aggregator) calculate(stmts *pb.Stmts, specificAggregation *Aggregated)
 
 func (r *Aggregator) consolidate(aggregated *Aggregated) {
 
+	if aggregated.NbClasses > 0 {
+		aggregated.AverageMethodsPerClass = float64(aggregated.NbMethods) / float64(aggregated.NbClasses)
+		aggregated.AverageCyclomaticComplexityPerClass = aggregated.AverageCyclomaticComplexityPerClass / float64(aggregated.NbClasses)
+	} else {
+		aggregated.AverageMethodsPerClass = 0
+		aggregated.AverageCyclomaticComplexityPerClass = 0
+	}
+
 	if aggregated.NbMethods > 0 {
-		if aggregated.NbClasses > 0 {
-			aggregated.AverageMethodsPerClass = float64(aggregated.NbMethods) / float64(aggregated.NbClasses)
-			aggregated.AverageCyclomaticComplexityPerClass = aggregated.AverageCyclomaticComplexityPerClass / float64(aggregated.NbClasses)
-		} else {
-			aggregated.AverageMethodsPerClass = 0
-			aggregated.AverageCyclomaticComplexityPerClass = 0
-		}
 		aggregated.AverageHalsteadDifficulty = aggregated.AverageHalsteadDifficulty / float64(aggregated.NbClasses)
 		aggregated.AverageHalsteadEffort = aggregated.AverageHalsteadEffort / float64(aggregated.NbClasses)
 		aggregated.AverageHalsteadVolume = aggregated.AverageHalsteadVolume / float64(aggregated.NbClasses)
@@ -266,6 +267,7 @@ func (r *Aggregator) consolidate(aggregated *Aggregated) {
 		aggregated.AverageLocPerMethod = aggregated.AverageLocPerMethod / float64(aggregated.NbMethods)
 		aggregated.AverageClocPerMethod = aggregated.AverageClocPerMethod / float64(aggregated.NbMethods)
 		aggregated.AverageLlocPerMethod = aggregated.AverageLlocPerMethod / float64(aggregated.NbMethods)
+		aggregated.AverageCyclomaticComplexityPerMethod = aggregated.AverageCyclomaticComplexityPerMethod / float64(aggregated.NbMethods)
 	}
 
 	if aggregated.AverageMI > 0 {

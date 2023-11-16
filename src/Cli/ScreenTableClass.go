@@ -17,7 +17,6 @@ type ScreenTableClass struct {
 	isInteractive     bool
 	files             []pb.File
 	projectAggregated Analyzer.ProjectAggregated
-	parent            tea.Model
 }
 
 var baseStyle = lipgloss.NewStyle().
@@ -25,9 +24,10 @@ var baseStyle = lipgloss.NewStyle().
 	BorderForeground(lipgloss.Color("240"))
 
 type model struct {
-	table           table.Model
-	sortColumnIndex int
-	parent          tea.Model
+	table             table.Model
+	sortColumnIndex   int
+	files             []pb.File
+	projectAggregated Analyzer.ProjectAggregated
 }
 
 func (m model) Init() tea.Cmd { return nil }
@@ -38,7 +38,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case tea.KeyMsg:
 		switch msg.String() {
 		case "q", "ctrl+c", "esc":
-			return m.parent, tea.ClearScreen
+			return NewScreenHome(true, m.files, m.projectAggregated).GetModel(), tea.ClearScreen
 		case "i":
 			// sort by maintainability index
 			m.sortColumnIndex = 6
@@ -196,7 +196,7 @@ func (v ScreenTableClass) GetModel() tea.Model {
 		Bold(false)
 	t.SetStyles(s)
 
-	m := model{table: t, sortColumnIndex: 0, parent: v.parent}
+	m := model{table: t, sortColumnIndex: 0, files: v.files, projectAggregated: v.projectAggregated}
 
 	return m
 }
