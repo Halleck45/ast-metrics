@@ -116,12 +116,12 @@ func (v ScreenTableClass) GetModel() tea.Model {
 
 	columns := []table.Column{
 		{Title: "Class", Width: 30},
-		{Title: "Methods", Width: 10},
-		{Title: "LLoc", Width: 10},
-		{Title: "Cyclomatic", Width: 15},
-		{Title: "Halstead Length", Width: 15},
-		{Title: "Halstead Volume", Width: 15},
-		{Title: "Maintainability Index", Width: 15},
+		{Title: "Methods", Width: 8},
+		{Title: "LLoc", Width: 8},
+		{Title: "Cyclomatic", Width: 8},
+		{Title: "Halst. Length", Width: 8},
+		{Title: "Halst. Volume", Width: 8},
+		{Title: "Maint. Index", Width: 8},
 	}
 
 	rows := []table.Row{}
