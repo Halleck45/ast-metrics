@@ -19,13 +19,13 @@ jobs:
         with:
           dev: no
           php_version: ${{ matrix.php-version }}
-          args: "--working-dir=src/Php/phpsources --optimize-autoloader"
-          working_directory: "src/Php/phpsources"
+          args: "--working-dir=src/Engine/Php/phpsources --optimize-autoloader"
+          working_directory: "src/Engine/Php/phpsources"
 
       - uses: php-actions/phpunit@v3
         with:
           php_version: ${{ matrix.php-version }}
-          configuration: src/Php/phpsources/phpunit.xml.dist
+          configuration: src/Engine/Php/phpsources/phpunit.xml.dist
 
       # Test suite for Go parser
       - name: Setup Go ${{ matrix.go-version }}

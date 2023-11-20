@@ -36,6 +36,7 @@ message File {
   string path = 1;
   Stmts stmts = 2;
   LinesOfCode linesOfCode = 3;
+  string programmingLanguage  = 4;
 }
 
 // Describe the location of statement in file.

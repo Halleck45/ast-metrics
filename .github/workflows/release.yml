@@ -31,7 +31,7 @@ jobs:
         with:
           dev: no
           php_version: "8.1"
-          args: "--working-dir=src/Php/phpsources --optimize-autoloader"
+          args: "--working-dir=src/Engine/Php/phpsources --optimize-autoloader"
 
       # Commit changes
       # goreleaser does not allow to release when there is uncommited changes
