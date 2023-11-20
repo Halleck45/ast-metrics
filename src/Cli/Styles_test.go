@@ -5,10 +5,10 @@ import (
 )
 
 func TestStyleTitle(t *testing.T) {
-	style := StyleTitle()
+	style := StyleTitle("Hello")
 
-	if style.GetWidth() != 80 {
-		t.Errorf("Expected 80, got %d", style.GetWidth())
+	if style.GetWidth() != 100 {
+		t.Errorf("Expected correct width', got %d", style.GetWidth())
 	}
 
 	// Add more assertions here for the other properties of the style...

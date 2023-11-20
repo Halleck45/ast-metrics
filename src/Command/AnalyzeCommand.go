@@ -36,6 +36,7 @@ func (v *AnalyzeCommand) Execute() error {
 	multi := pterm.DefaultMultiPrinter.WithWriter(v.outWriter)
 	spinnerAllExecution, _ := pterm.DefaultProgressbar.WithTotal(3).WithWriter(multi.NewWriter()).WithTitle("Analyzing").Start()
 	spinnerAllExecution.RemoveWhenDone = true
+	defer spinnerAllExecution.Stop()
 
 	// Start progress bars
 	multi.Start()
@@ -43,10 +44,13 @@ func (v *AnalyzeCommand) Execute() error {
 	for _, runner := range v.runners {
 
 		runner.SetConfiguration(v.configuration)
-		progressBarSpecificForEngine, _ := pterm.DefaultSpinner.WithWriter(multi.NewWriter()).Start("Checking PHP Engine")
-		runner.SetProgressbar(progressBarSpecificForEngine)
 
 		if runner.IsRequired() {
+
+			progressBarSpecificForEngine, _ := pterm.DefaultSpinner.WithWriter(multi.NewWriter()).Start("...")
+			progressBarSpecificForEngine.RemoveWhenDone = true
+			runner.SetProgressbar(progressBarSpecificForEngine)
+
 			spinnerAllExecution.Increment()
 			err := runner.Ensure()
 			if err != nil {
@@ -66,9 +70,10 @@ func (v *AnalyzeCommand) Execute() error {
 
 			// Cleaning up
 			err = runner.Finish()
+			progressBarSpecificForEngine.Stop()
 			if err != nil {
 				pterm.Error.Println(err.Error())
-				return err
+				// pass
 			}
 		}
 	}
@@ -78,9 +83,11 @@ func (v *AnalyzeCommand) Execute() error {
 
 	// Now we start the analysis of each AST file
 	progressBarAnalysis, _ := pterm.DefaultSpinner.WithWriter(multi.NewWriter()).Start("Main analysis")
+	progressBarAnalysis.RemoveWhenDone = true
 	spinnerAllExecution.UpdateTitle("Analyzing...")
 	spinnerAllExecution.Increment()
 	allResults := Analyzer.Start(progressBarAnalysis)
+	progressBarAnalysis.Stop()
 
 	// Start aggregating results
 	aggregator := Analyzer.NewAggregator(allResults)
@@ -91,12 +98,9 @@ func (v *AnalyzeCommand) Execute() error {
 	spinnerAllExecution.Stop()
 	multi.Stop()
 
-	// Dislpay results
-	// @todo: move this to a renderer and use a loop of renderers
-	Cli.AggregationSummary(projectAggregated)
-
-	renderer := Cli.NewRendererTableClass(v.isInteractive)
-	renderer.Render(allResults, projectAggregated)
+	// Display results
+	renderer := Cli.NewScreenHome(v.isInteractive, allResults, projectAggregated)
+	renderer.Render()
 
 	return nil
 }

@@ -45,7 +45,7 @@ AST Metrics is installable on Linux, macOS and Windows.
 
 ## Supported languages
 
-For the moment, only PHP is supported. But we are working on adding more languages.
+For the moment, only PHP and Golang are supported. But we are working on adding more languages.
 
 ## Contributing
 

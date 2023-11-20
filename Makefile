@@ -6,11 +6,11 @@ ARCHITECTURE=linux-x86_64
 install: install-php install-protobuff
 install-php:
 	@echo "\e[34m\033[1m-> Downloading PHP dependencies\033[0m\e[39m\n"
-	cd src/Php/phpsources && composer install
+	cd src/Engine/Php/phpsources && composer install
 	@echo "\e[34m\033[1mDONE \033[0m\e[39m\n"
 test-php:
 	@echo "\e[34m\033[1m-> Testing PHP Code\033[0m\e[39m\n"
-	cd src/Php/phpsources && php vendor/bin/phpunit
+	cd src/Engine/Php/phpsources && php vendor/bin/phpunit
 	@echo "\e[34m\033[1mDONE \033[0m\e[39m\n"
 install-protobuff:
 	@echo "\e[34m\033[1m-> Downloading protobuff\033[0m\e[39m\n"
@@ -25,9 +25,9 @@ install-protobuff:
 	@echo "\e[34m\033[1mDONE \033[0m\e[39m\n"
 build-protobuff:
 	@echo "\e[34m\033[1m-> Building protobuff\033[0m\e[39m\n"
-	rm -rf src/NodeType src/Php/phpsources/generated || true
-	mkdir src/NodeType src/Php/phpsources/generated
-	GOPATH=$(HOME)/go PATH=$$PATH:$(HOME)/go/bin ./bin/protoc --go_out=src --php_out=src/Php/phpsources/generated proto/NodeType.proto
+	rm -rf src/NodeType src/Engine/Php/phpsources/generated || true
+	mkdir src/NodeType src/Engine/Php/phpsources/generated
+	GOPATH=$(HOME)/go PATH=$$PATH:$(HOME)/go/bin ./bin/protoc --go_out=src --php_out=src/Engine/Php/phpsources/generated proto/NodeType.proto
 	mv src/github.com/halleck45/ast-metrics/NodeType src
 	rm -rf src/github.com
 	@echo "\e[34m\033[1mDONE \033[0m\e[39m\n"
@@ -51,5 +51,5 @@ test-go:
 	@echo "\e[34m\033[1mDONE \033[0m\e[39m\n"
 
 tmp:
-	go run . analyze src/Php/phpsources/resources/||true
-	docker run  --rm  -v `pwd`/src/Php/phpsources:/tmp/temp -v `pwd`/src/Php/phpsources/resources/file1.php:/tmp/file1.php php:8.1-cli-alpine php /tmp/temp/dump.php /tmp/file1.php > .ast-metrics-cache/d5fcbd9aed06efc3368f3886ff7739f6.bin-docker
+	go run . analyze src/Engine/Php/phpsources/resources/||true
+	docker run  --rm  -v `pwd`/src/Engine/Php/phpsources:/tmp/temp -v `pwd`/src/Engine/Php/phpsources/resources/file1.php:/tmp/file1.php php:8.1-cli-alpine php /tmp/temp/dump.php /tmp/file1.php > .ast-metrics-cache/d5fcbd9aed06efc3368f3886ff7739f6.bin-docker

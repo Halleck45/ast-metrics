@@ -1,6 +1,7 @@
 package File
 
 import (
+	"regexp"
 	"strings"
 
 	"github.com/halleck45/ast-metrics/src/Configuration"
@@ -44,8 +45,9 @@ func (r Finder) Search(fileExtension string) FileList {
 			var excluded bool = false
 
 			for _, excludedFile := range r.Configuration.ExcludePatterns {
-				if strings.Contains(file, excludedFile) {
-					excluded = true
+				excluded, _ = regexp.MatchString(excludedFile, file)
+				if excluded {
+					break
 				}
 			}
 

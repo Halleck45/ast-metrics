@@ -1,39 +1,117 @@
 package Cli
 
 import (
-	"github.com/charmbracelet/lipgloss"
-	"strconv"
+	"fmt"
 	"math"
+	"strconv"
+
+	"github.com/charmbracelet/lipgloss"
+	osterm "golang.org/x/term"
 )
-func StyleTitle() lipgloss.Style {
-    return lipgloss.NewStyle().
-            Bold(true).
-            Foreground(lipgloss.Color("#FAFAFA")).
-            Background(lipgloss.Color("#7D56F4")).
-            Underline(true).
-            PaddingTop(1).
-            PaddingBottom(1).
-            MarginTop(2).
-            Align(lipgloss.Center).
-            Width(80)
+
+var (
+	subtle  = lipgloss.AdaptiveColor{Light: "#D9DCCF", Dark: "#383838"}
+	special = lipgloss.AdaptiveColor{Light: "#43BF6D", Dark: "#73F59F"}
+
+	divider = lipgloss.NewStyle().
+		SetString("•").
+		Padding(0, 1).
+		Foreground(subtle).
+		String()
+
+	titleStyle = lipgloss.NewStyle().
+			Padding(1).
+			Italic(true).
+			Align(lipgloss.Center).
+			Foreground(lipgloss.Color("#FFF7DB")).
+			Background(lipgloss.Color("#5A56E0"))
+
+	subtitleStyle = lipgloss.NewStyle().
+			Padding(1).
+			Italic(true).
+			Align(lipgloss.Center)
+)
+
+func windowWidth() int {
+	width, _, _ := osterm.GetSize(0)
+	return min(max(width-1, 100), 100)
+}
+
+func StyleTitle(text string) lipgloss.Style {
+	return titleStyle.Width(windowWidth()).SetString(text)
+}
+
+func StyleSubTitle(text string) lipgloss.Style {
+	return subtitleStyle.Width(windowWidth()).SetString(text)
+}
+
+func StyleUrl(text string) lipgloss.Style {
+	return lipgloss.NewStyle().Foreground(special).SetString(text)
+}
+
+func StyleHelp(text string) lipgloss.Style {
+	return lipgloss.NewStyle().
+		SetString(text).
+		Italic(true).
+		Foreground(lipgloss.Color("#666666"))
+}
+
+func StyleChoices(text string) lipgloss.Style {
+	return lipgloss.NewStyle().
+		SetString(text).
+		MarginLeft(4)
+}
+
+func StyleCommand(text string) lipgloss.Style {
+	return lipgloss.NewStyle().
+		SetString(text).
+		Foreground(lipgloss.Color("#666666"))
+}
+func StyleScreen(text string) lipgloss.Style {
+	return lipgloss.NewStyle().
+		SetString(text).
+		Width(windowWidth()).
+		MarginLeft(1).
+		MarginTop(1)
+}
+
+func StyleNumberBox(number string, label string, sublabel string) lipgloss.Style {
+	return lipgloss.NewStyle().
+		PaddingTop(1).
+		PaddingBottom(1).
+		MarginRight(2).
+		Border(lipgloss.RoundedBorder(), true).
+		Background(lipgloss.Color("#2563eb")).
+		Foreground(lipgloss.Color("#FFFFFF")).
+		BorderForeground(lipgloss.Color("#1e3a8a")).
+		Width(30).
+		Height(8).
+		Align(lipgloss.Center).
+		SetString(fmt.Sprintf(
+			"%s\n\n%s\n\n%s",
+			lipgloss.NewStyle().Bold(true).SetString(number).Render(),
+			lipgloss.NewStyle().Bold(false).SetString(label).Render(),
+			lipgloss.NewStyle().Foreground(lipgloss.Color("#CCCCCC")).Italic(true).SetString(sublabel).Render(),
+		))
+
 }
 
 func DecorateMaintainabilityIndex(mi int) string {
-    if mi < 64 {
-        return "🔴 " + strconv.Itoa(mi)
-    }
-    if mi < 85 {
-        return "🟡 " + strconv.Itoa(mi)
-    }
+	if mi < 64 {
+		return "🔴 " + strconv.Itoa(mi)
+	}
+	if mi < 85 {
+		return "🟡 " + strconv.Itoa(mi)
+	}
 
-    return "🟢 " + strconv.Itoa(mi)
+	return "🟢 " + strconv.Itoa(mi)
 }
 
 func Round(num float64) int {
-    return int(num + math.Copysign(0.5, num))
+	return int(num + math.Copysign(0.5, num))
 }
 
 func ToFixed(num float64, precision int) float64 {
-    output := math.Pow(10, float64(precision))
-    return float64(Round(num * output)) / output
+	output := math.Pow(10, float64(precision))
+	return float64(Round(num*output)) / output
 }
