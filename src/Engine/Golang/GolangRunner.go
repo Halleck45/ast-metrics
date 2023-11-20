@@ -1,23 +1,20 @@
 package Golang
 
 import (
-	"crypto/md5"
-	"encoding/hex"
 	"fmt"
 	"go/ast"
 	"go/parser"
 	"go/token"
-	"io"
 	"log"
 	"os"
 	"strings"
 
 	"github.com/halleck45/ast-metrics/src/Configuration"
+	"github.com/halleck45/ast-metrics/src/Engine"
 	"github.com/halleck45/ast-metrics/src/File"
 	pb "github.com/halleck45/ast-metrics/src/NodeType"
 	"github.com/halleck45/ast-metrics/src/Storage"
 	"github.com/pterm/pterm"
-	"google.golang.org/protobuf/proto"
 )
 
 type GolangRunner struct {
@@ -44,13 +41,6 @@ func (r *GolangRunner) SetConfiguration(configuration *Configuration.Configurati
 
 // Ensure ensures Go is ready to run.
 func (r *GolangRunner) Ensure() error {
-
-	// Ensure outdir exists
-	if _, err := os.Stat(r.getLocalOutDirectory()); os.IsNotExist(err) {
-		if err := os.Mkdir(r.getLocalOutDirectory(), 0755); err != nil {
-			return err
-		}
-	}
 	return nil
 }
 
@@ -69,11 +59,11 @@ func (r GolangRunner) DumpAST() {
 		cnt++
 		r.progressbar.UpdateText("🦫 Dumping AST of Go files (" + fmt.Sprintf("%d", cnt) + "/" + fmt.Sprintf("%d", len(r.getFileList().Files)) + ")")
 
-		hash, err := getFileHash(filePath)
+		hash, err := Engine.GetFileHash(filePath)
 		if err != nil {
 			log.Fatal(err)
 		}
-		binPath := r.getLocalOutDirectory() + string(os.PathSeparator) + hash + ".bin"
+		binPath := Storage.OutputPath() + string(os.PathSeparator) + hash + ".bin"
 		// if file exists, skip it
 		if _, err := os.Stat(binPath); err == nil {
 			continue
@@ -83,27 +73,11 @@ func (r GolangRunner) DumpAST() {
 		protoFile := parseGoFile(filePath)
 
 		// Dump protobuf object to destination
-		dumpProtobuf(protoFile, binPath)
+		Engine.DumpProtobuf(protoFile, binPath)
 	}
 
 	r.progressbar.Info("🦫 Golang code dumped")
 
-}
-
-// Provides the hash of a file, in order to avoid to parse it twice
-func getFileHash(filePath string) (string, error) {
-	file, err := os.Open(filePath)
-	if err != nil {
-		return "", err
-	}
-	defer file.Close()
-
-	hasher := md5.New()
-	if _, err := io.Copy(hasher, file); err != nil {
-		return "", err
-	}
-
-	return hex.EncodeToString(hasher.Sum(nil)), nil
 }
 
 func parseGoFile(filePath string) *pb.File {
@@ -123,9 +97,6 @@ func parseGoFile(filePath string) *pb.File {
 	linesOfFile := strings.Split(linesOfFileString, "\n")
 
 	var funcs []*pb.StmtFunction
-	var loc, cloc, lloc, blankLines int
-	//var operators []*pb.StmtOperator
-	//var operands []*pb.StmtOperand
 
 	ast.Inspect(f, func(n ast.Node) bool {
 		switch x := n.(type) {
@@ -180,40 +151,8 @@ func parseGoFile(filePath string) *pb.File {
 			// Count lines of code
 			start := fset.Position(x.Pos()).Line
 			end := fset.Position(x.End()).Line
-			loc = end - start + 1
-			cloc = 0 //countComments(x)
-			lloc = loc
-			blankLines = 0
-
-			// get blank lines (line breaks) and declaration line
-			for i := start - 1; i < end; i++ {
-				// trim it
-				linesOfFile[i] = strings.TrimSpace(linesOfFile[i])
-
-				if linesOfFile[i] == "" {
-					lloc--
-					blankLines++
-				}
-
-				// if beginning of line is not a comment, it's a declaration line
-				if strings.HasPrefix(linesOfFile[i], "//") ||
-					strings.HasPrefix(linesOfFile[i], "/*") ||
-					strings.HasPrefix(linesOfFile[i], "*/") ||
-					strings.HasPrefix(linesOfFile[i], "*") ||
-					strings.HasPrefix(linesOfFile[i], "#") {
-					// @todo issue here.
-					// Please update it using the countComments() function
-					lloc--
-					cloc++
-				}
-			}
-
-			funcNode.LinesOfCode = &pb.LinesOfCode{}
-			funcNode.LinesOfCode.LinesOfCode = int32(loc)
-			funcNode.LinesOfCode.CommentLinesOfCode = int32(cloc)
-			// lloc = loc - (clocl + blank lines + declaration line)
-			lloc = loc - (cloc + blankLines + 2)
-			funcNode.LinesOfCode.LogicalLinesOfCode = int32(lloc)
+			loc := Engine.GetLocPositionFromSource(linesOfFile, start, end)
+			funcNode.LinesOfCode = loc
 		}
 		return true
 	})
@@ -228,24 +167,6 @@ func parseGoFile(filePath string) *pb.File {
 	}
 
 	return file
-}
-
-func dumpProtobuf(file *pb.File, binPath string) {
-	out, err := proto.Marshal(file)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	f, err := os.Create(binPath)
-	if err != nil {
-		log.Fatal(err)
-	}
-	defer f.Close()
-
-	_, err = f.Write(out)
-	if err != nil {
-		log.Fatal(err)
-	}
 }
 
 func countComments(n ast.Node) int {
@@ -272,9 +193,4 @@ func (r *GolangRunner) getFileList() File.FileList {
 	r.foundFiles = finder.Search(".go")
 
 	return r.foundFiles
-}
-
-// getLocalOutDirectory returns the path to the local output directory
-func (r *GolangRunner) getLocalOutDirectory() string {
-	return Storage.Path() + "/output"
 }

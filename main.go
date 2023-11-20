@@ -11,6 +11,7 @@ import (
 	"github.com/halleck45/ast-metrics/src/Engine"
 	"github.com/halleck45/ast-metrics/src/Engine/Golang"
 	"github.com/halleck45/ast-metrics/src/Engine/Php"
+	"github.com/halleck45/ast-metrics/src/Engine/Python"
 	"github.com/pterm/pterm"
 	log "github.com/sirupsen/logrus"
 	"github.com/urfave/cli/v2"
@@ -24,7 +25,8 @@ func main() {
 	// Prepare accepted languages
 	runnerPhp := Php.PhpRunner{}
 	runnerGolang := Golang.GolangRunner{}
-	runners := []Engine.Engine{&runnerPhp, &runnerGolang}
+	runnerPython := Python.PythonRunner{}
+	runners := []Engine.Engine{&runnerPhp, &runnerGolang, &runnerPython}
 
 	app := &cli.App{
 		Commands: []*cli.Command{

@@ -6,6 +6,7 @@ import (
 	"strconv"
 
 	"github.com/charmbracelet/lipgloss"
+	pb "github.com/halleck45/ast-metrics/src/NodeType"
 	osterm "golang.org/x/term"
 )
 
@@ -96,7 +97,13 @@ func StyleNumberBox(number string, label string, sublabel string) lipgloss.Style
 
 }
 
-func DecorateMaintainabilityIndex(mi int) string {
+func DecorateMaintainabilityIndex(mi int, analyze *pb.Analyze) string {
+
+	min := int32(1)
+	if analyze != nil && *analyze.Volume.Lloc < min {
+		return "-"
+	}
+
 	if mi < 64 {
 		return "🔴 " + strconv.Itoa(mi)
 	}

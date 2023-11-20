@@ -36,7 +36,7 @@ func (v *ComponentStatisticsOverview) Render() string {
 		"",
 	)
 	boxMaintainability := StyleNumberBox(
-		DecorateMaintainabilityIndex(int(v.aggregated.AverageMI)),
+		DecorateMaintainabilityIndex(int(v.aggregated.AverageMI), nil),
 		"Maintainability index",
 		fmt.Sprintf("(MI without comments: %.2f, comment weight: %.2f)", v.aggregated.AverageMIwoc, v.aggregated.AverageMIcw),
 	)

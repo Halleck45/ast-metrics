@@ -52,7 +52,18 @@ func (m modelByProgrammingLanguage) View() string {
 }
 
 func (v ScreenByProgrammingLanguage) GetScreenName() string {
-	return v.programmingLangageName + " overview"
+	// @todo use dynamic emoji
+	emoji := "  "
+	switch v.programmingLangageName {
+	case "PHP":
+		emoji = "🐘 "
+	case "Python":
+		emoji = "🐍 "
+	case "Golang":
+		emoji = "🐹 "
+	}
+
+	return emoji + v.programmingLangageName + " overview"
 }
 
 func (v ScreenByProgrammingLanguage) GetModel() tea.Model {

@@ -108,7 +108,7 @@ func (m modelScreenSummary) View() string {
 
    | Maintainability index | MI without comments | Comment weight |
    | --- | --- | --- |
-   | ` + DecorateMaintainabilityIndex(int(aggregatedByClass.AverageMI)) + ` | ` + fmt.Sprintf("%.2f", aggregatedByClass.AverageMIwoc) + ` | ` + fmt.Sprintf("%.2f", aggregatedByClass.AverageMIcw) + ` |
+   | ` + DecorateMaintainabilityIndex(int(aggregatedByClass.AverageMI), nil) + ` | ` + fmt.Sprintf("%.2f", aggregatedByClass.AverageMIwoc) + ` | ` + fmt.Sprintf("%.2f", aggregatedByClass.AverageMIcw) + ` |
    `
 	out, _ := glamour.Render(in, "dark")
 

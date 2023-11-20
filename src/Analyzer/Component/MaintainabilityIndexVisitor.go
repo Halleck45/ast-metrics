@@ -1,8 +1,9 @@
 package Analyzer
 
 import (
-	pb "github.com/halleck45/ast-metrics/src/NodeType"
 	"math"
+
+	pb "github.com/halleck45/ast-metrics/src/NodeType"
 )
 
 type MaintainabilityIndexVisitor struct {
@@ -85,6 +86,13 @@ func (v *MaintainabilityIndexVisitor) Calculate(stmts *pb.Stmts) {
 	}
 
 	MI = MIwoC + commentWeight
+
+	// Case where no code is found
+	if loc+lloc+cloc == 0 {
+		MI = 0
+		MIwoC = 0
+		commentWeight = 0
+	}
 
 	MI32 := float32(MI)
 	MIwoC32 := float32(MIwoC)
