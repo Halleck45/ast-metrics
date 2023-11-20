@@ -222,8 +222,9 @@ func parseGoFile(filePath string) *pb.File {
 	stmts.StmtFunction = funcs
 
 	file := &pb.File{
-		Path:  filePath,
-		Stmts: &stmts,
+		Path:                filePath,
+		ProgrammingLanguage: "Golang",
+		Stmts:               &stmts,
 	}
 
 	return file

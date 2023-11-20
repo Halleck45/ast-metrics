@@ -93,6 +93,17 @@ func fillInScreens(modelChoices *modelChoices) {
 		summaryScreen,
 		viewTableClass,
 	}
+
+	// Append one screen per programming language
+	for languageName, lang := range modelChoices.projectAggregated.ByProgrammingLanguage {
+		viewByProgrammingLanguage := ScreenByProgrammingLanguage{isInteractive: true}
+		viewByProgrammingLanguage.programmingLangageName = languageName
+		viewByProgrammingLanguage.programmingLangageAggregated = lang
+		viewByProgrammingLanguage.files = modelChoices.files
+		viewByProgrammingLanguage.projectAggregated = modelChoices.projectAggregated
+
+		modelChoices.screens = append(modelChoices.screens, viewByProgrammingLanguage)
+	}
 }
 
 // Init initializes the Tea model

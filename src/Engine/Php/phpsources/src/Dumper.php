@@ -33,6 +33,7 @@ class Dumper
         // This main node describe the file itself
         $fileNode = new File([
             'path' => realpath($this->file),
+            'programmingLanguage' => 'PHP'
         ]);
         $protoStmts = new \NodeType\Stmts();
         $fileNode->setStmts($protoStmts);

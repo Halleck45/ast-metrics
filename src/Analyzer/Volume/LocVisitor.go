@@ -47,6 +47,18 @@ func (v *LocVisitor) Visit(stmts *pb.Stmts, parents *pb.Stmts) {
 
 		v.consolidate(class.Stmts, class.LinesOfCode)
 	}
+
+	// Consolidate foreach method (if file is not a class)
+	if len(stmts.StmtClass) == 0 {
+		for _, function := range stmts.StmtFunction {
+
+			if function.Stmts == nil {
+				continue
+			}
+
+			v.consolidate(function.Stmts, function.LinesOfCode)
+		}
+	}
 }
 
 func (v *LocVisitor) LeaveNode(stmts *pb.Stmts) {

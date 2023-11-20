@@ -6,7 +6,6 @@ import (
 
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/glamour"
-	"github.com/charmbracelet/lipgloss"
 	"github.com/halleck45/ast-metrics/src/Analyzer"
 	pb "github.com/halleck45/ast-metrics/src/NodeType"
 )
@@ -52,27 +51,10 @@ func (m modelScreenSummary) View() string {
 	// for the moment we aggregate by class only
 	// @todo
 	aggregatedByClass := m.projectAggregated.ByClass
-	//aggregatedByFile := projectAggregated.ByFile
 	combined := m.projectAggregated.Combined
 
-	// Screen is composed from differents boxes
-	boxCcn := StyleNumberBox(
-		fmt.Sprintf("%.2f", combined.AverageCyclomaticComplexityPerMethod),
-		"Cycl. complexity per method",
-		fmt.Sprintf("(min: %d, max: %d)", combined.MinCyclomaticComplexity, combined.MaxCyclomaticComplexity),
-	)
-	boxMethods := StyleNumberBox(
-		fmt.Sprintf("%.2f", combined.AverageLocPerMethod),
-		"Average LOC per method",
-		"",
-	)
-	boxMaintainability := StyleNumberBox(
-		DecorateMaintainabilityIndex(int(aggregatedByClass.AverageMI)),
-		"Maintainability index",
-		fmt.Sprintf("(MI without comments: %.2f, comment weight: %.2f)", aggregatedByClass.AverageMIwoc, aggregatedByClass.AverageMIcw),
-	)
-
-	row1 := lipgloss.JoinHorizontal(lipgloss.Top, boxCcn.Render(), boxMethods.Render(), boxMaintainability.Render())
+	// Header (statistics overview)
+	row1 := NewComponentStatisticsOverview(m.files, m.projectAggregated.Combined).Render()
 
 	in := `## Complexity
 
@@ -86,7 +68,7 @@ func (m modelScreenSummary) View() string {
    | ` +
 		strconv.Itoa(combined.MinCyclomaticComplexity) +
 		` | ` + strconv.Itoa(combined.MaxCyclomaticComplexity) +
-		` | ` + fmt.Sprintf("%.2f", aggregatedByClass.AverageCyclomaticComplexityPerClass) +
+		` | ` + fmt.Sprintf("%.2f", combined.AverageCyclomaticComplexityPerClass) +
 		` | ` + fmt.Sprintf("%.2f", combined.AverageCyclomaticComplexityPerMethod) +
 		` |
 

@@ -7,9 +7,10 @@ import (
 )
 
 type ProjectAggregated struct {
-	ByFile   Aggregated
-	ByClass  Aggregated
-	Combined Aggregated
+	ByFile                Aggregated
+	ByClass               Aggregated
+	Combined              Aggregated
+	ByProgrammingLanguage map[string]Aggregated
 }
 
 type Aggregated struct {
@@ -41,6 +42,9 @@ type Aggregated struct {
 	AverageMI                            float64
 	AverageMIwoc                         float64
 	AverageMIcw                          float64
+	AverageMIPerMethod                   float64
+	AverageMIwocPerMethod                float64
+	AverageMIcwPerMethod                 float64
 }
 
 type Aggregator struct {
@@ -81,7 +85,11 @@ func newAggregated() Aggregated {
 		SumHalsteadBugs:                      0,
 		AverageMI:                            0,
 		AverageMIwoc:                         0,
-		AverageMIcw:                          0}
+		AverageMIcw:                          0,
+		AverageMIPerMethod:                   0,
+		AverageMIwocPerMethod:                0,
+		AverageMIcwPerMethod:                 0,
+	}
 }
 
 func (r *Aggregator) Aggregates() ProjectAggregated {
@@ -98,28 +106,46 @@ func (r *Aggregator) Aggregates() ProjectAggregated {
 	r.projectAggregated.Combined.NbFiles = len(files)
 
 	for _, file := range files {
+
 		if file.Stmts == nil {
 			continue
 		}
 
+		// By language
+		if r.projectAggregated.ByProgrammingLanguage == nil {
+			r.projectAggregated.ByProgrammingLanguage = make(map[string]Aggregated)
+		}
+		if _, ok := r.projectAggregated.ByProgrammingLanguage[file.ProgrammingLanguage]; !ok {
+			r.projectAggregated.ByProgrammingLanguage[file.ProgrammingLanguage] = newAggregated()
+		}
+		byLanguage := r.projectAggregated.ByProgrammingLanguage[file.ProgrammingLanguage]
+
 		// function included directly in file
 		r.calculate(file.Stmts, &r.projectAggregated.ByFile)
 		r.calculate(file.Stmts, &r.projectAggregated.Combined)
+		r.calculate(file.Stmts, &byLanguage)
 
 		// classes
 		for _, stmt := range file.Stmts.StmtClass {
 			r.projectAggregated.ByClass.NbClasses++
 			r.projectAggregated.ByFile.NbClasses++
+			r.projectAggregated.Combined.NbClasses++
+			byLanguage.NbClasses++
 			r.calculate(stmt.Stmts, &r.projectAggregated.ByClass)
 			r.calculate(stmt.Stmts, &r.projectAggregated.Combined)
+			r.calculate(stmt.Stmts, &byLanguage)
 		}
 
 		// classes in namespace
 		for _, stmt := range file.Stmts.StmtNamespace {
 			for _, s := range stmt.Stmts.StmtClass {
 				r.projectAggregated.ByClass.NbClasses++
+				r.projectAggregated.ByFile.NbClasses++
+				r.projectAggregated.Combined.NbClasses++
+				byLanguage.NbClasses++
 				r.calculate(s.Stmts, &r.projectAggregated.ByClass)
 				r.calculate(s.Stmts, &r.projectAggregated.Combined)
+				r.calculate(s.Stmts, &byLanguage)
 			}
 		}
 
@@ -127,16 +153,29 @@ func (r *Aggregator) Aggregates() ProjectAggregated {
 		for _, stmt := range file.Stmts.StmtNamespace {
 			for _, s := range stmt.Stmts.StmtFunction {
 				r.projectAggregated.ByFile.NbMethods++
+				r.projectAggregated.ByClass.NbMethods++
+				r.projectAggregated.Combined.NbMethods++
+				byLanguage.NbMethods++
 				r.calculate(s.Stmts, &r.projectAggregated.ByFile)
 				r.calculate(s.Stmts, &r.projectAggregated.Combined)
+				r.calculate(s.Stmts, &byLanguage)
 			}
 		}
+
+		// update by language
+		r.projectAggregated.ByProgrammingLanguage[file.ProgrammingLanguage] = byLanguage
 	}
 
 	// averages
 	r.consolidate(&r.projectAggregated.ByFile)
 	r.consolidate(&r.projectAggregated.ByClass)
 	r.consolidate(&r.projectAggregated.Combined)
+
+	// by language
+	for lng, byLanguage := range r.projectAggregated.ByProgrammingLanguage {
+		r.consolidate(&byLanguage)
+		r.projectAggregated.ByProgrammingLanguage[lng] = byLanguage
+	}
 
 	return r.projectAggregated
 }
@@ -167,6 +206,24 @@ func (r *Aggregator) calculate(stmts *pb.Stmts, specificAggregation *Aggregated)
 					specificAggregation.AverageCyclomaticComplexityPerMethod += float64(*method.Stmts.Analyze.Complexity.Cyclomatic)
 				}
 			}
+		}
+	}
+
+	// Average maintainability index per method
+	if stmts.StmtFunction != nil {
+		for _, method := range stmts.StmtFunction {
+			if method.Stmts == nil {
+				continue
+			}
+
+			if (method.Stmts.Analyze.Maintainability == nil) ||
+				(method.Stmts.Analyze.Maintainability.MaintainabilityIndex == nil) || math.IsNaN(float64(*method.Stmts.Analyze.Maintainability.MaintainabilityIndex)) {
+				continue
+			}
+
+			specificAggregation.AverageMIPerMethod += float64(*method.Stmts.Analyze.Maintainability.MaintainabilityIndex)
+			specificAggregation.AverageMIwocPerMethod += float64(*method.Stmts.Analyze.Maintainability.MaintainabilityIndexWithoutComments)
+			specificAggregation.AverageMIcwPerMethod += float64(*method.Stmts.Analyze.Maintainability.CommentWeight)
 		}
 	}
 
@@ -274,5 +331,18 @@ func (r *Aggregator) consolidate(aggregated *Aggregated) {
 		aggregated.AverageMI = aggregated.AverageMI / float64(aggregated.NbClasses)
 		aggregated.AverageMIwoc = aggregated.AverageMIwoc / float64(aggregated.NbClasses)
 		aggregated.AverageMIcw = aggregated.AverageMIcw / float64(aggregated.NbClasses)
+	}
+
+	if aggregated.AverageMIPerMethod > 0 {
+		aggregated.AverageMIPerMethod = aggregated.AverageMIPerMethod / float64(aggregated.NbMethods)
+		aggregated.AverageMIwocPerMethod = aggregated.AverageMIwocPerMethod / float64(aggregated.NbMethods)
+		aggregated.AverageMIcwPerMethod = aggregated.AverageMIcwPerMethod / float64(aggregated.NbMethods)
+	}
+
+	// if langage without classes
+	if aggregated.NbClasses == 0 {
+		aggregated.AverageMI = aggregated.AverageMIPerMethod
+		aggregated.AverageMIwoc = aggregated.AverageMIwocPerMethod
+		aggregated.AverageMIcw = aggregated.AverageMIcwPerMethod
 	}
 }

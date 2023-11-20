@@ -27,6 +27,10 @@ class File extends \Google\Protobuf\Internal\Message
      * Generated from protobuf field <code>.NodeType.LinesOfCode linesOfCode = 3;</code>
      */
     protected $linesOfCode = null;
+    /**
+     * Generated from protobuf field <code>string programmingLanguage = 4;</code>
+     */
+    protected $programmingLanguage = '';
 
     /**
      * Constructor.
@@ -37,6 +41,7 @@ class File extends \Google\Protobuf\Internal\Message
      *     @type string $path
      *     @type \NodeType\Stmts $stmts
      *     @type \NodeType\LinesOfCode $linesOfCode
+     *     @type string $programmingLanguage
      * }
      */
     public function __construct($data = NULL) {
@@ -126,6 +131,28 @@ class File extends \Google\Protobuf\Internal\Message
     {
         GPBUtil::checkMessage($var, \NodeType\LinesOfCode::class);
         $this->linesOfCode = $var;
+
+        return $this;
+    }
+
+    /**
+     * Generated from protobuf field <code>string programmingLanguage = 4;</code>
+     * @return string
+     */
+    public function getProgrammingLanguage()
+    {
+        return $this->programmingLanguage;
+    }
+
+    /**
+     * Generated from protobuf field <code>string programmingLanguage = 4;</code>
+     * @param string $var
+     * @return $this
+     */
+    public function setProgrammingLanguage($var)
+    {
+        GPBUtil::checkString($var, True);
+        $this->programmingLanguage = $var;
 
         return $this;
     }
