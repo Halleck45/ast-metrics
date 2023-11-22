@@ -41,13 +41,6 @@ func main() {
 						Usage:    "Enable verbose mode",
 						Category: "Global options",
 					},
-					&cli.StringFlag{
-						Name:        "driver",
-						Value:       "docker",
-						Usage:       "Driver to use (docker or native)",
-						Destination: &driverSelected,
-						Category:    "Global options",
-					},
 					&cli.StringSliceFlag{
 						Name:     "exclude",
 						Usage:    "Regular expression to exclude files from analysis",
