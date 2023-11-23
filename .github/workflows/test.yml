@@ -14,19 +14,6 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      # Test suite for PHP parser
-      - uses: php-actions/composer@v6
-        with:
-          dev: no
-          php_version: ${{ matrix.php-version }}
-          args: "--working-dir=src/Engine/Php/phpsources --optimize-autoloader"
-          working_directory: "src/Engine/Php/phpsources"
-
-      - uses: php-actions/phpunit@v3
-        with:
-          php_version: ${{ matrix.php-version }}
-          configuration: src/Engine/Php/phpsources/phpunit.xml.dist
-
       # Test suite for Go parser
       - name: Setup Go ${{ matrix.go-version }}
         uses: actions/setup-go@v4

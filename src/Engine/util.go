@@ -103,3 +103,25 @@ func GetFileHash(filePath string) (string, error) {
 
 	return hex.EncodeToString(hasher.Sum(nil)), nil
 }
+
+func GetClassesInFile(file *pb.File) []*pb.StmtClass {
+	var classes []*pb.StmtClass
+	for _, namespace := range file.Stmts.StmtNamespace {
+		classes = append(classes, namespace.Stmts.StmtClass...)
+	}
+	classes = append(classes, file.Stmts.StmtClass...)
+	return classes
+}
+
+func GetFunctionsInFile(file *pb.File) []*pb.StmtFunction {
+	var functions []*pb.StmtFunction
+	for _, namespace := range file.Stmts.StmtNamespace {
+		functions = append(functions, namespace.Stmts.StmtFunction...)
+	}
+	classes := GetClassesInFile(file)
+	for _, class := range classes {
+		functions = append(functions, class.Stmts.StmtFunction...)
+	}
+	functions = append(functions, file.Stmts.StmtFunction...)
+	return functions
+}

@@ -55,13 +55,13 @@ func (v *ComponentTableClass) Render() string {
 func (v *ComponentTableClass) Init() {
 
 	columns := []table.Column{
-		{Title: "Class", Width: 30},
-		{Title: "Methods", Width: 8},
-		{Title: "LLoc", Width: 8},
-		{Title: "Cyclomatic", Width: 8},
-		{Title: "Halst. Length", Width: 8},
-		{Title: "Halst. Volume", Width: 8},
-		{Title: "Maint. Index", Width: 8},
+		{Title: "Class", Width: 35},
+		{Title: "Methods", Width: 9},
+		{Title: "LLoc", Width: 9},
+		{Title: "Cyclomatic", Width: 9},
+		{Title: "H. Length", Width: 9},
+		{Title: "H. Volume", Width: 9},
+		{Title: "H. Index", Width: 9},
 	}
 
 	rows := []table.Row{}

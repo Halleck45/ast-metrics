@@ -16,6 +16,14 @@ type ScreenSummary struct {
 	projectAggregated Analyzer.ProjectAggregated
 }
 
+func NewScreenSummary(isInteractive bool, files []pb.File, projectAggregated Analyzer.ProjectAggregated) ScreenSummary {
+	return ScreenSummary{
+		isInteractive:     isInteractive,
+		files:             files,
+		projectAggregated: projectAggregated,
+	}
+}
+
 func (v ScreenSummary) GetScreenName() string {
 	return "Overview"
 }
@@ -112,5 +120,10 @@ func (m modelScreenSummary) View() string {
    `
 	out, _ := glamour.Render(in, "dark")
 
-	return StyleScreen(StyleTitle("Results overview").Render() + "\n" + row1 + "\n" + out).Render()
+	// tempporary disabled
+	out = ""
+
+	return StyleScreen(StyleTitle("Results overview").Render() +
+		"\n" + row1 +
+		"\n" + out).Render()
 }

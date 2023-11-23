@@ -12,6 +12,14 @@ type ScreenTableClass struct {
 	projectAggregated Analyzer.ProjectAggregated
 }
 
+func NewScreenTableClass(isInteractive bool, files []pb.File, projectAggregated Analyzer.ProjectAggregated) ScreenTableClass {
+	return ScreenTableClass{
+		isInteractive:     isInteractive,
+		files:             files,
+		projectAggregated: projectAggregated,
+	}
+}
+
 type model struct {
 	table             *ComponentTableClass
 	sortColumnIndex   int

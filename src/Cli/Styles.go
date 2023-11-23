@@ -35,7 +35,7 @@ var (
 
 func windowWidth() int {
 	width, _, _ := osterm.GetSize(0)
-	return min(max(width-1, 100), 100)
+	return min(max(width-1, 120), 120)
 }
 
 func StyleTitle(text string) lipgloss.Style {
@@ -85,8 +85,8 @@ func StyleNumberBox(number string, label string, sublabel string) lipgloss.Style
 		Background(lipgloss.Color("#2563eb")).
 		Foreground(lipgloss.Color("#FFFFFF")).
 		BorderForeground(lipgloss.Color("#1e3a8a")).
-		Width(30).
-		Height(8).
+		Width(35).
+		Height(13).
 		Align(lipgloss.Center).
 		SetString(fmt.Sprintf(
 			"%s\n\n%s\n\n%s",

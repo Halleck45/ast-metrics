@@ -164,6 +164,9 @@ func parseGoFile(filePath string) *pb.File {
 		Path:                filePath,
 		ProgrammingLanguage: "Golang",
 		Stmts:               &stmts,
+		LinesOfCode: &pb.LinesOfCode{
+			LinesOfCode: int32(len(linesOfFile)),
+		},
 	}
 
 	return file

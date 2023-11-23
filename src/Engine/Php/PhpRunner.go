@@ -99,6 +99,7 @@ func parsePhpFile(filename string) (*pb.File, error) {
 		Path:                filename,
 		ProgrammingLanguage: "PHP",
 		Stmts:               stmts,
+		LinesOfCode:         &pb.LinesOfCode{},
 	}
 
 	sourceCode, err := os.ReadFile(filename)
@@ -106,6 +107,7 @@ func parsePhpFile(filename string) (*pb.File, error) {
 		return file, err
 	}
 	linesOfFile := strings.Split(string(sourceCode), "\n")
+	file.LinesOfCode.LinesOfCode = int32(len(linesOfFile))
 
 	// Error handler
 	var parserErrors []*errors.Error

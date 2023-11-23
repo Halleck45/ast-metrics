@@ -9,8 +9,6 @@ import (
 )
 
 func TestPhpRunner(t *testing.T) {
-
-	// randomly selected, and found at https://github.com/jaraco/path/blob/main/path/classes.py
 	pythonSource := `
 <?php
 namespace Foo\Bar;
@@ -100,7 +98,7 @@ class calculatrice {
 	assert.Equal(t, operatorsExpectedAsString, operatorsAsString, "Expected operators to be %s, got %s", operatorsExpectedAsString, operatorsAsString)
 
 	// Ensure operators of function 2
-	// [==, /
+	// [==, / ]
 	// Convert to string (for easier comparison)
 	operatorsAsString = fmt.Sprintf("%v", func2.Operators)
 	operatorsExpectedAsString = "[name:\"==\" name:\"/\" name:\"+=\"]"

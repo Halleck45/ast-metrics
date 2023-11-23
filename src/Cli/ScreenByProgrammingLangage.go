@@ -1,6 +1,8 @@
 package Cli
 
 import (
+	"fmt"
+
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/halleck45/ast-metrics/src/Analyzer"
 	pb "github.com/halleck45/ast-metrics/src/NodeType"
@@ -63,7 +65,14 @@ func (v ScreenByProgrammingLanguage) GetScreenName() string {
 		emoji = "🐹 "
 	}
 
-	return emoji + v.programmingLangageName + " overview"
+	count := 0
+	for _, file := range v.files {
+		if file.ProgrammingLanguage == v.programmingLangageName {
+			count++
+		}
+	}
+
+	return fmt.Sprintf("%s%s (%d files)", emoji, v.programmingLangageName, count)
 }
 
 func (v ScreenByProgrammingLanguage) GetModel() tea.Model {

@@ -3,8 +3,6 @@ package Configuration
 import (
 	"os"
 	"path/filepath"
-
-	"github.com/halleck45/ast-metrics/src/Driver"
 )
 
 type Configuration struct {
@@ -13,16 +11,12 @@ type Configuration struct {
 
 	// Exclude patterns (list of regular expressions. When a file matches one of these patterns, it is not analyzed)
 	ExcludePatterns []string
-
-	// Drivers to use
-	Driver Driver.Driver
 }
 
 func NewConfiguration() *Configuration {
 	return &Configuration{
 		SourcesToAnalyzePath: []string{},
 		ExcludePatterns:      []string{"/vendor/", "/node_modules/", "/.git/", "/.idea/", "/tests/", "/Tests/", "/test/", "/Test/", "/spec/", "/Spec/"},
-		Driver:               Driver.Docker,
 	}
 }
 
@@ -65,8 +59,4 @@ func (c *Configuration) SetExcludePatterns(patterns []string) {
 	// Ensure patterns are valid regular expressions
 	// @todo
 	(*c).ExcludePatterns = patterns
-}
-
-func (c *Configuration) SetDriver(driver Driver.Driver) {
-	(*c).Driver = driver
 }

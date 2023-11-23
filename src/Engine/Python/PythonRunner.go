@@ -91,6 +91,7 @@ func parsePythonFile(filename string) (*pb.File, error) {
 		Path:                filename,
 		ProgrammingLanguage: "Python",
 		Stmts:               stmts,
+		LinesOfCode:         &pb.LinesOfCode{},
 	}
 
 	sourceCode, err := os.ReadFile(filename)
@@ -106,6 +107,7 @@ func parsePythonFile(filename string) (*pb.File, error) {
 	// Read file content. make it slice of lines (one line per element)
 	linesOfFileString := string(sourceCode)
 	linesOfFile := strings.Split(linesOfFileString, "\n")
+	file.LinesOfCode.LinesOfCode = int32(len(linesOfFile))
 
 	var classNode *pb.StmtClass
 
@@ -197,7 +199,10 @@ func parsePythonFile(filename string) (*pb.File, error) {
 					funcNode.Operators = append(funcNode.Operators, &pb.StmtOperator{Name: string(x.Op.String())})
 				case *ast.Compare:
 					// x == 1
-					funcNode.Operators = append(funcNode.Operators, &pb.StmtOperator{Name: "=="})
+					operators := []string{}
+					for _, op := range x.Ops {
+						operators = append(operators, string(op.String()))
+					}
 				}
 				return true
 			})

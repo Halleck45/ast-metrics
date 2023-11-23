@@ -7,7 +7,7 @@ import (
 func TestStyleTitle(t *testing.T) {
 	style := StyleTitle("Hello")
 
-	if style.GetWidth() != 100 {
+	if style.GetWidth() != 120 {
 		t.Errorf("Expected correct width', got %d", style.GetWidth())
 	}
 

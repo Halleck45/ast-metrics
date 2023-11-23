@@ -456,6 +456,10 @@ func (v *PhpVisitor) ExprBinaryDiv(node *ast.ExprBinaryDiv) {
 }
 
 func (v *PhpVisitor) ExprBinaryEqual(node *ast.ExprBinaryEqual) {
+	if v.currentMethod == nil {
+		return
+	}
+	v.currentMethod.Operators = append(v.currentMethod.Operators, &pb.StmtOperator{Name: "=="})
 }
 
 func (v *PhpVisitor) ExprBinaryGreater(node *ast.ExprBinaryGreater) {

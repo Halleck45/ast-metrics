@@ -79,14 +79,10 @@ func fillInScreens(modelChoices *modelChoices) {
 	}
 
 	// Create the table screen
-	viewTableClass := ScreenTableClass{isInteractive: true}
-	viewTableClass.files = modelChoices.files
-	viewTableClass.projectAggregated = modelChoices.projectAggregated
+	viewTableClass := NewScreenTableClass(true, modelChoices.files, modelChoices.projectAggregated)
 
 	// Create the table screen
-	summaryScreen := ScreenSummary{isInteractive: true}
-	summaryScreen.files = modelChoices.files
-	summaryScreen.projectAggregated = modelChoices.projectAggregated
+	summaryScreen := NewScreenSummary(true, modelChoices.files, modelChoices.projectAggregated)
 
 	// Create the screen list
 	modelChoices.screens = []Screen{
@@ -133,7 +129,6 @@ func (m modelChoices) View() string {
 	tpl += StyleChoices(choices).Render()
 
 	tpl += "\n\nAST Metrics is an Open Source project. Contributions are welcome!\nDo not hesitate to open issue at " + StyleUrl("https://github.com/Halleck45/ast-metrics/issues").Render() + ". ❤️  Thanks!\n"
-
 	return StyleScreen(tpl).Render()
 }
 

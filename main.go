@@ -7,7 +7,6 @@ import (
 	"github.com/halleck45/ast-metrics/src/Cli"
 	"github.com/halleck45/ast-metrics/src/Command"
 	"github.com/halleck45/ast-metrics/src/Configuration"
-	"github.com/halleck45/ast-metrics/src/Driver"
 	"github.com/halleck45/ast-metrics/src/Engine"
 	"github.com/halleck45/ast-metrics/src/Engine/Golang"
 	"github.com/halleck45/ast-metrics/src/Engine/Php"
@@ -20,7 +19,6 @@ import (
 func main() {
 
 	log.SetLevel(log.TraceLevel)
-	var driverSelected string
 
 	// Prepare accepted languages
 	runnerPhp := Php.PhpRunner{}
@@ -96,14 +94,6 @@ func main() {
 						pterm.Error.Println(err.Error())
 						return err
 					}
-
-					// Driver
-					var driver Driver.Driver
-					driver = Driver.Native
-					if driverSelected == "docker" {
-						driver = Driver.Docker
-					}
-					configuration.SetDriver(driver)
 
 					// Exclude patterns
 					excludePatterns := cCtx.StringSlice("exclude")
