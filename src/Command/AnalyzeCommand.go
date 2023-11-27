@@ -30,6 +30,7 @@ func NewAnalyzeCommand(configuration *Configuration.Configuration, outWriter *bu
 func (v *AnalyzeCommand) Execute() error {
 
 	// Prepare workdir
+	Storage.Purge()
 	Storage.Ensure()
 
 	// Prepare progress bars

@@ -16,6 +16,14 @@ type ScreenSummary struct {
 	projectAggregated Analyzer.ProjectAggregated
 }
 
+func NewScreenSummary(isInteractive bool, files []pb.File, projectAggregated Analyzer.ProjectAggregated) ScreenSummary {
+	return ScreenSummary{
+		isInteractive:     isInteractive,
+		files:             files,
+		projectAggregated: projectAggregated,
+	}
+}
+
 func (v ScreenSummary) GetScreenName() string {
 	return "Overview"
 }
@@ -108,9 +116,14 @@ func (m modelScreenSummary) View() string {
 
    | Maintainability index | MI without comments | Comment weight |
    | --- | --- | --- |
-   | ` + DecorateMaintainabilityIndex(int(aggregatedByClass.AverageMI)) + ` | ` + fmt.Sprintf("%.2f", aggregatedByClass.AverageMIwoc) + ` | ` + fmt.Sprintf("%.2f", aggregatedByClass.AverageMIcw) + ` |
+   | ` + DecorateMaintainabilityIndex(int(aggregatedByClass.AverageMI), nil) + ` | ` + fmt.Sprintf("%.2f", aggregatedByClass.AverageMIwoc) + ` | ` + fmt.Sprintf("%.2f", aggregatedByClass.AverageMIcw) + ` |
    `
 	out, _ := glamour.Render(in, "dark")
 
-	return StyleScreen(StyleTitle("Results overview").Render() + "\n" + row1 + "\n" + out).Render()
+	// tempporary disabled
+	out = ""
+
+	return StyleScreen(StyleTitle("Results overview").Render() +
+		"\n" + row1 +
+		"\n" + out).Render()
 }

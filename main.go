@@ -7,10 +7,10 @@ import (
 	"github.com/halleck45/ast-metrics/src/Cli"
 	"github.com/halleck45/ast-metrics/src/Command"
 	"github.com/halleck45/ast-metrics/src/Configuration"
-	"github.com/halleck45/ast-metrics/src/Driver"
 	"github.com/halleck45/ast-metrics/src/Engine"
 	"github.com/halleck45/ast-metrics/src/Engine/Golang"
 	"github.com/halleck45/ast-metrics/src/Engine/Php"
+	"github.com/halleck45/ast-metrics/src/Engine/Python"
 	"github.com/pterm/pterm"
 	log "github.com/sirupsen/logrus"
 	"github.com/urfave/cli/v2"
@@ -19,12 +19,12 @@ import (
 func main() {
 
 	log.SetLevel(log.TraceLevel)
-	var driverSelected string
 
 	// Prepare accepted languages
 	runnerPhp := Php.PhpRunner{}
 	runnerGolang := Golang.GolangRunner{}
-	runners := []Engine.Engine{&runnerPhp, &runnerGolang}
+	runnerPython := Python.PythonRunner{}
+	runners := []Engine.Engine{&runnerPhp, &runnerGolang, &runnerPython}
 
 	app := &cli.App{
 		Commands: []*cli.Command{
@@ -38,13 +38,6 @@ func main() {
 						Aliases:  []string{"v"},
 						Usage:    "Enable verbose mode",
 						Category: "Global options",
-					},
-					&cli.StringFlag{
-						Name:        "driver",
-						Value:       "docker",
-						Usage:       "Driver to use (docker or native)",
-						Destination: &driverSelected,
-						Category:    "Global options",
 					},
 					&cli.StringSliceFlag{
 						Name:     "exclude",
@@ -101,14 +94,6 @@ func main() {
 						pterm.Error.Println(err.Error())
 						return err
 					}
-
-					// Driver
-					var driver Driver.Driver
-					driver = Driver.Native
-					if driverSelected == "docker" {
-						driver = Driver.Docker
-					}
-					configuration.SetDriver(driver)
 
 					// Exclude patterns
 					excludePatterns := cCtx.StringSlice("exclude")

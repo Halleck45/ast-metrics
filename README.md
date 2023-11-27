@@ -18,14 +18,7 @@ ast-metrics analyze <path>
 
 ## Requirements
 
-Requirements depend on your stack (use the `--driver` option):
-
-+ `--driver=docker (default)`: **If you have docker installed**, AST-Metrics downloads automatically 
-all required dependencies using docker images.
-
-+ `--driver=native`: **If you don't have docker installed**, you need to have language you want to analyze installed on your machine. For example, `php` is required if you want to analyze a php project.
-
-Note that AST Metrics is faster with the `--driver=native` option.
+AST Metrics is a standalone package. It does not require any other software to be installed.
 
 ## Installation
 
@@ -45,7 +38,7 @@ AST Metrics is installable on Linux, macOS and Windows.
 
 ## Supported languages
 
-For the moment, only PHP and Golang are supported. But we are working on adding more languages.
+For the moment PHP, Python Golang are supported. But we are working on adding more languages.
 
 ## Contributing
 

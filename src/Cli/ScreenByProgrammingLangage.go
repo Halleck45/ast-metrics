@@ -1,6 +1,8 @@
 package Cli
 
 import (
+	"fmt"
+
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/halleck45/ast-metrics/src/Analyzer"
 	pb "github.com/halleck45/ast-metrics/src/NodeType"
@@ -52,7 +54,25 @@ func (m modelByProgrammingLanguage) View() string {
 }
 
 func (v ScreenByProgrammingLanguage) GetScreenName() string {
-	return v.programmingLangageName + " overview"
+	// @todo use dynamic emoji
+	emoji := "  "
+	switch v.programmingLangageName {
+	case "PHP":
+		emoji = "🐘 "
+	case "Python":
+		emoji = "🐍 "
+	case "Golang":
+		emoji = "🐹 "
+	}
+
+	count := 0
+	for _, file := range v.files {
+		if file.ProgrammingLanguage == v.programmingLangageName {
+			count++
+		}
+	}
+
+	return fmt.Sprintf("%s%s (%d files)", emoji, v.programmingLangageName, count)
 }
 
 func (v ScreenByProgrammingLanguage) GetModel() tea.Model {

@@ -3,19 +3,7 @@ package Configuration
 import (
 	"os"
 	"testing"
-
-	"github.com/halleck45/ast-metrics/src/Driver"
 )
-
-func TestConfigurationAcceptsDriver(t *testing.T) {
-
-	configuration := NewConfiguration()
-	configuration.SetDriver(Driver.Docker)
-
-	if configuration.Driver != Driver.Docker {
-		t.Errorf("Driver = %s; want %s", configuration.Driver, Driver.Docker)
-	}
-}
 
 func TestConfigurationAcceptsSourcesToAnalyzePath(t *testing.T) {
 

@@ -17,6 +17,7 @@ type Aggregated struct {
 	NbFiles                              int
 	NbFunctions                          int
 	NbClasses                            int
+	NbClassesWithCode                    int
 	NbMethods                            int
 	Loc                                  int
 	Cloc                                 int
@@ -60,7 +61,9 @@ func NewAggregator(files []pb.File) *Aggregator {
 }
 
 func newAggregated() Aggregated {
-	return Aggregated{NbClasses: 0,
+	return Aggregated{
+		NbClasses:                            0,
+		NbClassesWithCode:                    0,
 		NbMethods:                            0,
 		NbFunctions:                          0,
 		Loc:                                  0,
@@ -131,6 +134,14 @@ func (r *Aggregator) Aggregates() ProjectAggregated {
 			r.projectAggregated.ByFile.NbClasses++
 			r.projectAggregated.Combined.NbClasses++
 			byLanguage.NbClasses++
+
+			if stmt.LinesOfCode != nil && stmt.LinesOfCode.LinesOfCode > 0 {
+				r.projectAggregated.ByClass.NbClassesWithCode++
+				r.projectAggregated.ByFile.NbClassesWithCode++
+				r.projectAggregated.Combined.NbClassesWithCode++
+				byLanguage.NbClassesWithCode++
+			}
+
 			r.calculate(stmt.Stmts, &r.projectAggregated.ByClass)
 			r.calculate(stmt.Stmts, &r.projectAggregated.Combined)
 			r.calculate(stmt.Stmts, &byLanguage)
@@ -143,6 +154,14 @@ func (r *Aggregator) Aggregates() ProjectAggregated {
 				r.projectAggregated.ByFile.NbClasses++
 				r.projectAggregated.Combined.NbClasses++
 				byLanguage.NbClasses++
+
+				if s.LinesOfCode != nil && s.LinesOfCode.LinesOfCode > 0 {
+					r.projectAggregated.ByClass.NbClassesWithCode++
+					r.projectAggregated.ByFile.NbClassesWithCode++
+					r.projectAggregated.Combined.NbClassesWithCode++
+					byLanguage.NbClassesWithCode++
+				}
+
 				r.calculate(s.Stmts, &r.projectAggregated.ByClass)
 				r.calculate(s.Stmts, &r.projectAggregated.Combined)
 				r.calculate(s.Stmts, &byLanguage)
@@ -264,7 +283,7 @@ func (r *Aggregator) calculate(stmts *pb.Stmts, specificAggregation *Aggregated)
 
 	// Maintainability Index
 	if stmts.Analyze.Maintainability != nil {
-		if stmts.Analyze.Maintainability.MaintainabilityIndex != nil {
+		if stmts.Analyze.Maintainability.MaintainabilityIndex != nil && !math.IsNaN(float64(*stmts.Analyze.Maintainability.MaintainabilityIndex)) {
 			specificAggregation.AverageMI += float64(*stmts.Analyze.Maintainability.MaintainabilityIndex)
 			specificAggregation.AverageMIwoc += float64(*stmts.Analyze.Maintainability.MaintainabilityIndexWithoutComments)
 			specificAggregation.AverageMIcw += float64(*stmts.Analyze.Maintainability.CommentWeight)
@@ -328,9 +347,9 @@ func (r *Aggregator) consolidate(aggregated *Aggregated) {
 	}
 
 	if aggregated.AverageMI > 0 {
-		aggregated.AverageMI = aggregated.AverageMI / float64(aggregated.NbClasses)
-		aggregated.AverageMIwoc = aggregated.AverageMIwoc / float64(aggregated.NbClasses)
-		aggregated.AverageMIcw = aggregated.AverageMIcw / float64(aggregated.NbClasses)
+		aggregated.AverageMI = aggregated.AverageMI / float64(aggregated.NbClassesWithCode)
+		aggregated.AverageMIwoc = aggregated.AverageMIwoc / float64(aggregated.NbClassesWithCode)
+		aggregated.AverageMIcw = aggregated.AverageMIcw / float64(aggregated.NbClassesWithCode)
 	}
 
 	if aggregated.AverageMIPerMethod > 0 {
