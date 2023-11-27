@@ -26,13 +26,6 @@ jobs:
       - name: Set env
         run: echo "RELEASE_VERSION=${GITHUB_REF#refs/*/}" >> $GITHUB_ENV
 
-      # Install dependencies
-      - uses: php-actions/composer@v6
-        with:
-          dev: no
-          php_version: "8.1"
-          args: "--working-dir=src/Engine/Php/phpsources --optimize-autoloader"
-
       # Commit changes
       # goreleaser does not allow to release when there is uncommited changes
       - name: "Commit changes"

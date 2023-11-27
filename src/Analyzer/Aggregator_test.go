@@ -13,6 +13,7 @@ func TestConsolidate(t *testing.T) {
 	aggregated := Aggregated{
 		NbMethods:                           10,
 		NbClasses:                           5,
+		NbClassesWithCode:                   5,
 		AverageCyclomaticComplexityPerClass: 20,
 		AverageHalsteadDifficulty:           30,
 		AverageHalsteadEffort:               40,

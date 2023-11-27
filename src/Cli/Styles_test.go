@@ -7,7 +7,7 @@ import (
 func TestStyleTitle(t *testing.T) {
 	style := StyleTitle("Hello")
 
-	if style.GetWidth() != 100 {
+	if style.GetWidth() != 120 {
 		t.Errorf("Expected correct width', got %d", style.GetWidth())
 	}
 
@@ -15,16 +15,16 @@ func TestStyleTitle(t *testing.T) {
 }
 
 func TestDecorateMaintainabilityIndex(t *testing.T) {
-	if DecorateMaintainabilityIndex(63) != "🔴 63" {
-		t.Errorf("Expected '🔴 63', got '%s'", DecorateMaintainabilityIndex(63))
+	if DecorateMaintainabilityIndex(63, nil) != "🔴 63" {
+		t.Errorf("Expected '🔴 63', got '%s'", DecorateMaintainabilityIndex(63, nil))
 	}
 
-	if DecorateMaintainabilityIndex(84) != "🟡 84" {
-		t.Errorf("Expected '🟡 84', got '%s'", DecorateMaintainabilityIndex(84))
+	if DecorateMaintainabilityIndex(84, nil) != "🟡 84" {
+		t.Errorf("Expected '🟡 84', got '%s'", DecorateMaintainabilityIndex(84, nil))
 	}
 
-	if DecorateMaintainabilityIndex(85) != "🟢 85" {
-		t.Errorf("Expected '🟢 85', got '%s'", DecorateMaintainabilityIndex(85))
+	if DecorateMaintainabilityIndex(85, nil) != "🟢 85" {
+		t.Errorf("Expected '🟢 85', got '%s'", DecorateMaintainabilityIndex(85, nil))
 	}
 }
 

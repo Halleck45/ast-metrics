@@ -34,6 +34,16 @@ func (v *LocVisitor) Visit(stmts *pb.Stmts, parents *pb.Stmts) {
 		stmt.Stmts.Analyze.Volume.Cloc = &stmt.LinesOfCode.CommentLinesOfCode
 	}
 
+	// Consolidate foreach class
+	for _, class := range parents.StmtClass {
+
+		if class.Stmts == nil {
+			continue
+		}
+
+		v.consolidate(class.Stmts, class.LinesOfCode)
+	}
+
 	if stmts == nil {
 		return
 	}

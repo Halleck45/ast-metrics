@@ -25,20 +25,25 @@ func NewComponentStatisticsOverview(files []pb.File, aggregated Analyzer.Aggrega
 func (v *ComponentStatisticsOverview) Render() string {
 
 	// Screen is composed from differents boxes
+	chartRepartitionCyclomatic := NewComponentBarchartCyclomaticByMethodRepartition(v.aggregated, v.files)
 	boxCcn := StyleNumberBox(
 		fmt.Sprintf("%.2f", v.aggregated.AverageCyclomaticComplexityPerMethod),
 		"Cycl. complexity per method",
-		fmt.Sprintf("(min: %d, max: %d)", v.aggregated.MinCyclomaticComplexity, v.aggregated.MaxCyclomaticComplexity),
+		chartRepartitionCyclomatic.Render()+"     ",
 	)
+	chartRepartitionLocByMethod := NewComponentBarchartLocByMethodRepartition(v.aggregated, v.files)
 	boxMethods := StyleNumberBox(
 		fmt.Sprintf("%.2f", v.aggregated.AverageLocPerMethod),
 		"Average LOC per method",
-		"",
+		chartRepartitionLocByMethod.Render()+"     ",
 	)
+
+	// MI repartition
+	chartRepartitionMI := NewComponentBarchartMaintainabilityIndexRepartition(v.aggregated, v.files)
 	boxMaintainability := StyleNumberBox(
-		DecorateMaintainabilityIndex(int(v.aggregated.AverageMI)),
+		DecorateMaintainabilityIndex(int(v.aggregated.AverageMI), nil),
 		"Maintainability index",
-		fmt.Sprintf("(MI without comments: %.2f, comment weight: %.2f)", v.aggregated.AverageMIwoc, v.aggregated.AverageMIcw),
+		chartRepartitionMI.Render(),
 	)
 
 	row1 := lipgloss.JoinHorizontal(lipgloss.Top, boxCcn.Render(), boxMethods.Render(), boxMaintainability.Render())
