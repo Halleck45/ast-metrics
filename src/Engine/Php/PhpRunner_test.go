@@ -26,6 +26,9 @@ class calculatrice {
 	}
 
 
+	/**
+	 * Divide a by b
+	 */
 	public function divide(int $a, int $b) {
 		if ($b == 0) {
 			throw new \InvalidArgumentException('Division by zero.');
@@ -107,10 +110,10 @@ class calculatrice {
 	// Ensure LOC
 	assert.Equal(t, int32(7), func1.LinesOfCode.LinesOfCode, "Expected LOC")
 	assert.Equal(t, int32(1), func1.LinesOfCode.LogicalLinesOfCode, "Expected LLOC")
-	assert.Equal(t, int32(4), func1.LinesOfCode.CommentLinesOfCode, "Expected LLOC")
+	assert.Equal(t, int32(4), func1.LinesOfCode.CommentLinesOfCode, "Expected CLOC")
 	// Ensure LOC
 	assert.Equal(t, int32(12), func2.LinesOfCode.LinesOfCode, "Expected LOC")
 	assert.Equal(t, int32(7), func2.LinesOfCode.LogicalLinesOfCode, "Expected LLOC")
-	assert.Equal(t, int32(0), func2.LinesOfCode.CommentLinesOfCode, "Expected LLOC")
+	assert.Equal(t, int32(3), func2.LinesOfCode.CommentLinesOfCode, "Expected CLOC")
 
 }
