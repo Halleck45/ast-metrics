@@ -1,6 +1,8 @@
 package Php
 
 import (
+	"strings"
+
 	"github.com/VKCOM/php-parser/pkg/ast"
 	"github.com/VKCOM/php-parser/pkg/visitor"
 	"github.com/halleck45/ast-metrics/src/Engine"
@@ -131,6 +133,7 @@ func (v *PhpVisitor) StmtClassMethod(node *ast.StmtClassMethod) {
 	end := node.GetPosition().EndLine
 	loc := Engine.GetLocPositionFromSource(v.linesOfFile, start, end)
 	method.LinesOfCode = loc
+	v.findPhpDocBlock(start, end, method.LinesOfCode)
 
 	// Add to class
 	v.currentClass.LinesOfCode.LinesOfCode += loc.LinesOfCode
@@ -140,6 +143,45 @@ func (v *PhpVisitor) StmtClassMethod(node *ast.StmtClassMethod) {
 	v.currentClass.Stmts.StmtFunction = append(v.currentClass.Stmts.StmtFunction, method)
 	v.currentStmts = method.Stmts
 	v.currentMethod = method
+}
+
+func (v *PhpVisitor) findPhpDocBlock(start int, end int, linesOfCode *pb.LinesOfCode) {
+
+	// iterate over previous lines of code to find docblock
+	endDocBlock := 0
+	startDocBlock := 0
+	docBlockEndFound := false
+	docBlockStartFound := false
+	for i := start - 1; i >= 0; i-- {
+		line := v.linesOfFile[i]
+
+		// remove leading spaces
+		line = strings.TrimSpace(line)
+
+		if len(line) < 2 {
+			continue
+		}
+
+		if line[0] == '/' && line[1] == '/' {
+			continue
+		}
+
+		if line[0] == '/' && line[1] == '*' {
+			docBlockStartFound = true
+			startDocBlock = i
+			break
+		}
+
+		if line[0] == '*' && line[1] == '/' {
+			endDocBlock = i
+			docBlockEndFound = true
+		}
+	}
+
+	if docBlockEndFound && docBlockStartFound && endDocBlock > startDocBlock {
+		nbLinesInDocBlock := endDocBlock - startDocBlock + 1
+		linesOfCode.CommentLinesOfCode += int32(nbLinesInDocBlock)
+	}
 }
 
 func (v *PhpVisitor) StmtFunction(node *ast.StmtFunction) {
@@ -158,6 +200,7 @@ func (v *PhpVisitor) StmtFunction(node *ast.StmtFunction) {
 	end := node.GetPosition().EndLine
 	loc := Engine.GetLocPositionFromSource(v.linesOfFile, start, end)
 	method.LinesOfCode = loc
+	v.findPhpDocBlock(start, end, method.LinesOfCode)
 
 	v.file.Stmts.StmtFunction = append(v.file.Stmts.StmtFunction, method)
 	v.currentStmts = method.Stmts
