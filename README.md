@@ -2,9 +2,7 @@
 
 [![Go](https://github.com/Halleck45/ast-metrics/actions/workflows/test.yml/badge.svg)](https://github.com/Halleck45/ast-metrics/actions/workflows/test.yml)
 
-![](./docs/preview.gif)
-
-<img src="https://github.com/Halleck45/ast-metrics/blob/main/docs/logo-small.png?raw=true" height="80px" alt="AST Metrics" align="left" style="margin-right:20px"/>
+![AST Metrics is a language-agnostic static code analyzer.](./docs/preview.gif)
 
 AST Metrics is a language-agnostic static code analyzer.
 
@@ -27,7 +25,7 @@ Download the latest version of AST Metrics from the [releases page](https://gith
 For example, on Linux:
 
 ```bash
-export version=v0.0.1-gamma # Replace with the latest version
+export version=v0.0.3-beta # Replace with the latest version
 curl -L https://github.com/Halleck45/ast-metrics/releases/download/${version}/ast-metrics_Linux_i386.tar.gz -o ast-metrics_Linux_i386.tar.gz
 tar -xvf  ast-metrics_Linux_i386.tar.gz
 mv ast-metrics /usr/local/bin/ast-metrics
