@@ -3,6 +3,7 @@ package Analyzer
 import (
 	"math"
 
+	"github.com/halleck45/ast-metrics/src/Engine"
 	pb "github.com/halleck45/ast-metrics/src/NodeType"
 )
 
@@ -14,6 +15,7 @@ type ProjectAggregated struct {
 }
 
 type Aggregated struct {
+	ConcernedFiles                       []*pb.File
 	NbFiles                              int
 	NbFunctions                          int
 	NbClasses                            int
@@ -46,14 +48,15 @@ type Aggregated struct {
 	AverageMIPerMethod                   float64
 	AverageMIwocPerMethod                float64
 	AverageMIcwPerMethod                 float64
+	CommitCountForPeriod                 int
 }
 
 type Aggregator struct {
-	files             []pb.File
+	files             []*pb.File
 	projectAggregated ProjectAggregated
 }
 
-func NewAggregator(files []pb.File) *Aggregator {
+func NewAggregator(files []*pb.File) *Aggregator {
 	return &Aggregator{
 		files:             files,
 		projectAggregated: ProjectAggregated{},
@@ -62,6 +65,7 @@ func NewAggregator(files []pb.File) *Aggregator {
 
 func newAggregated() Aggregated {
 	return Aggregated{
+		ConcernedFiles:                       make([]*pb.File, 0),
 		NbClasses:                            0,
 		NbClassesWithCode:                    0,
 		NbMethods:                            0,
@@ -92,6 +96,7 @@ func newAggregated() Aggregated {
 		AverageMIPerMethod:                   0,
 		AverageMIwocPerMethod:                0,
 		AverageMIcwPerMethod:                 0,
+		CommitCountForPeriod:                 0,
 	}
 }
 
@@ -122,6 +127,14 @@ func (r *Aggregator) Aggregates() ProjectAggregated {
 			r.projectAggregated.ByProgrammingLanguage[file.ProgrammingLanguage] = newAggregated()
 		}
 		byLanguage := r.projectAggregated.ByProgrammingLanguage[file.ProgrammingLanguage]
+
+		// files
+		r.projectAggregated.Combined.ConcernedFiles = append(r.projectAggregated.Combined.ConcernedFiles, file)
+		// by programming language
+		if byLanguage.ConcernedFiles == nil {
+			byLanguage.ConcernedFiles = make([]*pb.File, 0)
+		}
+		byLanguage.ConcernedFiles = append(byLanguage.ConcernedFiles, file)
 
 		// function included directly in file
 		r.calculate(file.Stmts, &r.projectAggregated.ByFile)
@@ -183,6 +196,29 @@ func (r *Aggregator) Aggregates() ProjectAggregated {
 
 		// update by language
 		r.projectAggregated.ByProgrammingLanguage[file.ProgrammingLanguage] = byLanguage
+
+		// @todo: make a visitor method to call file itself
+		functions := Engine.GetFunctionsInFile(file)
+		for _, function := range functions {
+			if file.Stmts == nil {
+				continue
+			}
+
+			if file.Stmts.Analyze == nil {
+				zero := int32(0)
+				file.Stmts.Analyze = &pb.Analyze{
+					Complexity: &pb.Complexity{
+						Cyclomatic: &zero,
+					},
+				}
+			}
+
+			// calculate sum of cyclomatic complexity
+			if function.Stmts.Analyze.Complexity != nil && function.Stmts.Analyze.Complexity.Cyclomatic != nil {
+				*file.Stmts.Analyze.Complexity.Cyclomatic = *file.Stmts.Analyze.Complexity.Cyclomatic + *function.Stmts.Analyze.Complexity.Cyclomatic
+			}
+		}
+
 	}
 
 	// averages
@@ -196,14 +232,21 @@ func (r *Aggregator) Aggregates() ProjectAggregated {
 		r.projectAggregated.ByProgrammingLanguage[lng] = byLanguage
 	}
 
+	// Risks
+	riskAnalyzer := NewRiskAnalyzer()
+	riskAnalyzer.Analyze(r.projectAggregated)
+
 	return r.projectAggregated
 }
 
 func (r *Aggregator) calculate(stmts *pb.Stmts, specificAggregation *Aggregated) {
-
 	// methods per class
 	if stmts == nil {
 		return
+	}
+
+	if stmts.Analyze == nil {
+		stmts.Analyze = &pb.Analyze{}
 	}
 
 	if stmts.StmtFunction != nil {
@@ -247,17 +290,16 @@ func (r *Aggregator) calculate(stmts *pb.Stmts, specificAggregation *Aggregated)
 	}
 
 	// lines of code
-	if stmts.Analyze.Volume != nil {
-		if stmts.Analyze.Volume.Loc != nil {
-			specificAggregation.Loc += int(*stmts.Analyze.Volume.Loc)
-		}
-		if stmts.Analyze.Volume.Cloc != nil {
-			specificAggregation.Cloc += int(*stmts.Analyze.Volume.Cloc)
-		}
-		if stmts.Analyze.Volume.Lloc != nil {
-			specificAggregation.Lloc += int(*stmts.Analyze.Volume.Lloc)
+	if stmts.Analyze.Volume == nil {
+		stmts.Analyze.Volume = &pb.Volume{
+			Loc:  new(int32),
+			Cloc: new(int32),
+			Lloc: new(int32),
 		}
 	}
+	specificAggregation.Loc += int(*stmts.Analyze.Volume.Loc)
+	specificAggregation.Cloc += int(*stmts.Analyze.Volume.Cloc)
+	specificAggregation.Lloc += int(*stmts.Analyze.Volume.Lloc)
 
 	// average lines of code per method
 	if stmts.StmtFunction != nil {
@@ -364,4 +406,41 @@ func (r *Aggregator) consolidate(aggregated *Aggregated) {
 		aggregated.AverageMIwoc = aggregated.AverageMIwocPerMethod
 		aggregated.AverageMIcw = aggregated.AverageMIcwPerMethod
 	}
+
+	// Total locs: increment loc of each file
+	aggregated.Loc = 0
+	aggregated.Cloc = 0
+	aggregated.Lloc = 0
+	for _, file := range aggregated.ConcernedFiles {
+		aggregated.Loc += int(*&file.LinesOfCode.LinesOfCode)
+		aggregated.Cloc += int(*&file.LinesOfCode.CommentLinesOfCode)
+		aggregated.Lloc += int(*&file.LinesOfCode.LogicalLinesOfCode)
+
+		// count of commits
+		if file.Commits != nil {
+			aggregated.CommitCountForPeriod += int(file.Commits.Count)
+		}
+
+		// Calculate alternate MI using average MI per method when file has no class
+		if file.Stmts.StmtClass == nil || len(file.Stmts.StmtClass) == 0 {
+			if file.Stmts.Analyze.Maintainability == nil {
+				file.Stmts.Analyze.Maintainability = &pb.Maintainability{}
+			}
+
+			methods := file.Stmts.StmtFunction
+			if methods == nil || len(methods) == 0 {
+				continue
+			}
+			averageForFile := float32(0)
+			for _, method := range methods {
+				if method.Stmts.Analyze == nil || method.Stmts.Analyze.Maintainability == nil {
+					continue
+				}
+				averageForFile += float32(*method.Stmts.Analyze.Maintainability.MaintainabilityIndex)
+			}
+			averageForFile = averageForFile / float32(len(methods))
+			file.Stmts.Analyze.Maintainability.MaintainabilityIndex = &averageForFile
+		}
+	}
+
 }

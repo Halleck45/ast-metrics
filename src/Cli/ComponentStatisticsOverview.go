@@ -11,11 +11,11 @@ import (
 
 type ComponentStatisticsOverview struct {
 	isInteractive bool
-	files         []pb.File
+	files         []*pb.File
 	aggregated    Analyzer.Aggregated
 }
 
-func NewComponentStatisticsOverview(files []pb.File, aggregated Analyzer.Aggregated) *ComponentStatisticsOverview {
+func NewComponentStatisticsOverview(files []*pb.File, aggregated Analyzer.Aggregated) *ComponentStatisticsOverview {
 	return &ComponentStatisticsOverview{
 		files:      files,
 		aggregated: aggregated,

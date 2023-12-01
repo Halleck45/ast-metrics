@@ -37,6 +37,8 @@ message File {
   Stmts stmts = 2;
   LinesOfCode linesOfCode = 3;
   string programmingLanguage  = 4;
+  Commits commits = 5;
+  repeated string errors = 6;
 }
 
 // Describe the location of statement in file.
@@ -182,6 +184,7 @@ message Analyze {
   Complexity complexity = 1;
   Volume volume = 2;
   Maintainability maintainability = 3;
+  Risk risk = 4;
 }
 message Complexity {
   optional int32 cyclomatic = 1;
@@ -202,4 +205,25 @@ message Maintainability {
   optional float maintainabilityIndex = 1;
   optional float maintainabilityIndexWithoutComments = 2;
   optional float commentWeight = 3;
+}
+
+// ------------------------------------
+// -- SCM
+// ------------------------------------
+message Commits {
+  int32 count = 1;
+  int32 countCommiters = 2;
+  repeated Commit commits = 3;
+}
+message Commit {
+  string hash = 1;
+  string author = 2;
+  int64 date = 3;
+}
+
+// ------------------------------------
+// -- Risk
+// ------------------------------------
+message Risk {
+  float score = 1; // score of risk. Lower is better
 }

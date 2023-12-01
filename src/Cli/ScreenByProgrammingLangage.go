@@ -12,14 +12,14 @@ type ScreenByProgrammingLanguage struct {
 	isInteractive                bool
 	programmingLangageName       string
 	programmingLangageAggregated Analyzer.Aggregated
-	files                        []pb.File
+	files                        []*pb.File
 	projectAggregated            Analyzer.ProjectAggregated
 }
 
 type modelByProgrammingLanguage struct {
 	programmingLangageName string
-	componentTableClass    *ComponentTableClass
-	files                  []pb.File
+	componentTableClass    Component
+	files                  []*pb.File
 	projectAggregated      Analyzer.ProjectAggregated
 }
 
@@ -78,13 +78,21 @@ func (v ScreenByProgrammingLanguage) GetScreenName() string {
 func (v ScreenByProgrammingLanguage) GetModel() tea.Model {
 
 	// table of classes, but only for the programming language
-	files := []pb.File{}
+	files := []*pb.File{}
 	for _, file := range v.files {
 		if file.ProgrammingLanguage == v.programmingLangageName {
 			files = append(files, file)
 		}
 	}
-	table := NewComponentTableClass(v.isInteractive, files)
+
+	// for no OOP language, we display the file table
+	// @todo: make it dynamic
+	var table Component
+	if v.programmingLangageName == "Golang" {
+		table = NewComponentFileTable(v.isInteractive, files)
+	} else {
+		table = NewComponentTableClass(v.isInteractive, files)
+	}
 
 	m := modelByProgrammingLanguage{
 		programmingLangageName: v.programmingLangageName,

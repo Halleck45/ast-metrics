@@ -18,6 +18,8 @@ install-protobuff:
 	@echo "\e[34m\033[1mDONE \033[0m\e[39m\n"
 build-protobuff:
 	@echo "\e[34m\033[1m-> Building protobuff\033[0m\e[39m\n"
+	rm -rf src/NodeType || true
+	GOPATH=$(HOME)/go PATH=$$PATH:$(HOME)/go/bin ./bin/protoc --go_out=src proto/NodeType.proto
 	mv src/github.com/halleck45/ast-metrics/NodeType src
 	rm -rf src/github.com
 	@echo "\e[34m\033[1mDONE \033[0m\e[39m\n"

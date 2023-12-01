@@ -7,6 +7,7 @@ import (
 	"github.com/halleck45/ast-metrics/src/Cli"
 	"github.com/halleck45/ast-metrics/src/Configuration"
 	"github.com/halleck45/ast-metrics/src/Engine"
+	Report "github.com/halleck45/ast-metrics/src/Report/Html"
 	"github.com/halleck45/ast-metrics/src/Storage"
 	"github.com/pterm/pterm"
 )
@@ -35,7 +36,7 @@ func (v *AnalyzeCommand) Execute() error {
 
 	// Prepare progress bars
 	multi := pterm.DefaultMultiPrinter.WithWriter(v.outWriter)
-	spinnerAllExecution, _ := pterm.DefaultProgressbar.WithTotal(3).WithWriter(multi.NewWriter()).WithTitle("Analyzing").Start()
+	spinnerAllExecution, _ := pterm.DefaultProgressbar.WithTotal(7).WithWriter(multi.NewWriter()).WithTitle("Analyzing").Start()
 	spinnerAllExecution.RemoveWhenDone = true
 	defer spinnerAllExecution.Stop()
 
@@ -79,7 +80,6 @@ func (v *AnalyzeCommand) Execute() error {
 		}
 	}
 
-	// Wait for all sub-processes to finish
 	v.outWriter.Flush()
 
 	// Now we start the analysis of each AST file
@@ -90,10 +90,31 @@ func (v *AnalyzeCommand) Execute() error {
 	allResults := Analyzer.Start(progressBarAnalysis)
 	progressBarAnalysis.Stop()
 
+	// Git analysis
+	spinnerAllExecution.UpdateTitle("Git analysis...")
+	spinnerAllExecution.Increment()
+	gitAnalyzer := Analyzer.NewGitAnalyzer()
+	gitAnalyzer.Start(allResults)
+	progressBarAnalysis.Stop()
+	v.outWriter.Flush()
+
 	// Start aggregating results
 	aggregator := Analyzer.NewAggregator(allResults)
 	spinnerAllExecution.UpdateTitle("Aggregating...")
 	projectAggregated := aggregator.Aggregates()
+
+	// Generate reports
+	if v.configuration.HtmlReportPath != "" {
+		spinnerAllExecution.UpdateTitle("Generating reports...")
+		spinnerAllExecution.Increment()
+		htmlReportGenerator := Report.NewReportGenerator(v.configuration.HtmlReportPath)
+		err := htmlReportGenerator.Generate(allResults, projectAggregated)
+
+		if err != nil {
+			pterm.Error.Println(err.Error())
+			return err
+		}
+	}
 
 	spinnerAllExecution.UpdateTitle("")
 	spinnerAllExecution.Stop()
