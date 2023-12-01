@@ -14,12 +14,12 @@ import (
 
 type ComponentTableClass struct {
 	isInteractive   bool
-	files           []pb.File
+	files           []*pb.File
 	sortColumnIndex int
 	table           table.Model
 }
 
-func NewComponentTableClass(isInteractive bool, files []pb.File) *ComponentTableClass {
+func NewComponentTableClass(isInteractive bool, files []*pb.File) *ComponentTableClass {
 	v := &ComponentTableClass{
 		isInteractive:   isInteractive,
 		files:           files,
@@ -56,6 +56,7 @@ func (v *ComponentTableClass) Init() {
 
 	columns := []table.Column{
 		{Title: "Class", Width: 35},
+		{Title: "Commits", Width: 9},
 		{Title: "Methods", Width: 9},
 		{Title: "LLoc", Width: 9},
 		{Title: "Cyclomatic", Width: 9},
@@ -66,11 +67,18 @@ func (v *ComponentTableClass) Init() {
 
 	rows := []table.Row{}
 	for _, file := range v.files {
+
+		nbCommits := 0
+		if file.Commits != nil {
+			nbCommits = int(file.Commits.Count)
+		}
+
 		for _, class := range file.Stmts.StmtClass {
 
 			if class == nil {
 				continue
 			}
+
 			if class.Stmts == nil {
 				continue
 			}
@@ -80,6 +88,7 @@ func (v *ComponentTableClass) Init() {
 
 			rows = append(rows, table.Row{
 				class.Name.Qualified,
+				strconv.Itoa(nbCommits),
 				strconv.Itoa(len(class.Stmts.StmtFunction)),
 				strconv.Itoa(int(*class.Stmts.Analyze.Volume.Loc)),
 				strconv.Itoa(int(*class.Stmts.Analyze.Complexity.Cyclomatic)),

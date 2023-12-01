@@ -24,6 +24,12 @@ func GetLocPositionFromSource(sourceCode []string, start int, end int) *pb.Lines
 
 	// get blank lines (line breaks) and declaration line
 	for i := start - 1; i < end; i++ {
+
+		// if line exceeds source code length, skip it
+		if i >= len(sourceCode) {
+			continue
+		}
+
 		// trim it
 		sourceCode[i] = strings.TrimSpace(sourceCode[i])
 

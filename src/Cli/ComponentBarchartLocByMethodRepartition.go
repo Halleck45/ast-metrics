@@ -10,11 +10,11 @@ import (
 // ComponentBarchartLocByMethodRepartition is the barchart component for the loc repartition
 type ComponentBarchartLocByMethodRepartition struct {
 	aggregated Analyzer.Aggregated
-	files      []pb.File
+	files      []*pb.File
 }
 
 // NewComponentBarchartLocByMethodRepartition is the constructor for the ComponentBarchartLocByMethodRepartition
-func NewComponentBarchartLocByMethodRepartition(aggregated Analyzer.Aggregated, files []pb.File) *ComponentBarchartLocByMethodRepartition {
+func NewComponentBarchartLocByMethodRepartition(aggregated Analyzer.Aggregated, files []*pb.File) *ComponentBarchartLocByMethodRepartition {
 	return &ComponentBarchartLocByMethodRepartition{
 		aggregated: aggregated,
 		files:      files,
@@ -33,7 +33,7 @@ func (c *ComponentBarchartLocByMethodRepartition) Render() string {
 
 	// repartition of files by LOC
 	for _, file := range c.files {
-		functions := Engine.GetFunctionsInFile(&file)
+		functions := Engine.GetFunctionsInFile(file)
 		for _, funct := range functions {
 			if funct.Stmts.Analyze == nil {
 				continue

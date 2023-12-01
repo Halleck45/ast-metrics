@@ -8,11 +8,11 @@ import (
 
 type ScreenTableClass struct {
 	isInteractive     bool
-	files             []pb.File
+	files             []*pb.File
 	projectAggregated Analyzer.ProjectAggregated
 }
 
-func NewScreenTableClass(isInteractive bool, files []pb.File, projectAggregated Analyzer.ProjectAggregated) ScreenTableClass {
+func NewScreenTableClass(isInteractive bool, files []*pb.File, projectAggregated Analyzer.ProjectAggregated) ScreenTableClass {
 	return ScreenTableClass{
 		isInteractive:     isInteractive,
 		files:             files,
@@ -23,7 +23,7 @@ func NewScreenTableClass(isInteractive bool, files []pb.File, projectAggregated 
 type model struct {
 	table             *ComponentTableClass
 	sortColumnIndex   int
-	files             []pb.File
+	files             []*pb.File
 	projectAggregated Analyzer.ProjectAggregated
 }
 

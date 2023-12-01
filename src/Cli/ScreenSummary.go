@@ -12,11 +12,11 @@ import (
 
 type ScreenSummary struct {
 	isInteractive     bool
-	files             []pb.File
+	files             []*pb.File
 	projectAggregated Analyzer.ProjectAggregated
 }
 
-func NewScreenSummary(isInteractive bool, files []pb.File, projectAggregated Analyzer.ProjectAggregated) ScreenSummary {
+func NewScreenSummary(isInteractive bool, files []*pb.File, projectAggregated Analyzer.ProjectAggregated) ScreenSummary {
 	return ScreenSummary{
 		isInteractive:     isInteractive,
 		files:             files,
@@ -35,7 +35,7 @@ func (v ScreenSummary) GetModel() tea.Model {
 
 type modelScreenSummary struct {
 	parent            tea.Model
-	files             []pb.File
+	files             []*pb.File
 	projectAggregated Analyzer.ProjectAggregated
 }
 

@@ -49,11 +49,11 @@ type Aggregated struct {
 }
 
 type Aggregator struct {
-	files             []pb.File
+	files             []*pb.File
 	projectAggregated ProjectAggregated
 }
 
-func NewAggregator(files []pb.File) *Aggregator {
+func NewAggregator(files []*pb.File) *Aggregator {
 	return &Aggregator{
 		files:             files,
 		projectAggregated: ProjectAggregated{},

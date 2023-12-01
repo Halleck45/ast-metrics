@@ -10,11 +10,11 @@ import (
 // ComponentBarchartMaintainabilityIndexRepartition is the barchart component for the loc repartition
 type ComponentBarchartMaintainabilityIndexRepartition struct {
 	aggregated Analyzer.Aggregated
-	files      []pb.File
+	files      []*pb.File
 }
 
 // NewComponentBarchartMaintainabilityIndexRepartition is the constructor for the ComponentBarchartMaintainabilityIndexRepartition
-func NewComponentBarchartMaintainabilityIndexRepartition(aggregated Analyzer.Aggregated, files []pb.File) *ComponentBarchartMaintainabilityIndexRepartition {
+func NewComponentBarchartMaintainabilityIndexRepartition(aggregated Analyzer.Aggregated, files []*pb.File) *ComponentBarchartMaintainabilityIndexRepartition {
 	return &ComponentBarchartMaintainabilityIndexRepartition{
 		aggregated: aggregated,
 		files:      files,
@@ -33,7 +33,7 @@ func (c *ComponentBarchartMaintainabilityIndexRepartition) Render() string {
 
 	// repartition of files by LOC
 	for _, file := range c.files {
-		classes := Engine.GetClassesInFile(&file)
+		classes := Engine.GetClassesInFile(file)
 		for _, class := range classes {
 			if class.Stmts == nil || class.Stmts.Analyze == nil || class.Stmts.Analyze.Maintainability == nil {
 				continue

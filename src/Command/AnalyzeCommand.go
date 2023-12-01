@@ -35,7 +35,7 @@ func (v *AnalyzeCommand) Execute() error {
 
 	// Prepare progress bars
 	multi := pterm.DefaultMultiPrinter.WithWriter(v.outWriter)
-	spinnerAllExecution, _ := pterm.DefaultProgressbar.WithTotal(3).WithWriter(multi.NewWriter()).WithTitle("Analyzing").Start()
+	spinnerAllExecution, _ := pterm.DefaultProgressbar.WithTotal(6).WithWriter(multi.NewWriter()).WithTitle("Analyzing").Start()
 	spinnerAllExecution.RemoveWhenDone = true
 	defer spinnerAllExecution.Stop()
 
@@ -79,7 +79,6 @@ func (v *AnalyzeCommand) Execute() error {
 		}
 	}
 
-	// Wait for all sub-processes to finish
 	v.outWriter.Flush()
 
 	// Now we start the analysis of each AST file
@@ -89,6 +88,14 @@ func (v *AnalyzeCommand) Execute() error {
 	spinnerAllExecution.Increment()
 	allResults := Analyzer.Start(progressBarAnalysis)
 	progressBarAnalysis.Stop()
+
+	// Git analysis
+	spinnerAllExecution.UpdateTitle("Git analysis...")
+	spinnerAllExecution.Increment()
+	gitAnalyzer := Analyzer.NewGitAnalyzer()
+	gitAnalyzer.Start(allResults)
+	progressBarAnalysis.Stop()
+	v.outWriter.Flush()
 
 	// Start aggregating results
 	aggregator := Analyzer.NewAggregator(allResults)

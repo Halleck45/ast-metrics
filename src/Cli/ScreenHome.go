@@ -18,13 +18,13 @@ var (
 // ScreenHome is the home view
 type ScreenHome struct {
 	isInteractive     bool
-	files             []pb.File
+	files             []*pb.File
 	projectAggregated Analyzer.ProjectAggregated
 }
 
 // modelChoices is the model for the home view
 type modelChoices struct {
-	files             []pb.File
+	files             []*pb.File
 	projectAggregated Analyzer.ProjectAggregated
 	Choice            int
 
@@ -33,7 +33,7 @@ type modelChoices struct {
 }
 
 // NewScreenHome creates a new ScreenHome
-func NewScreenHome(isInteractive bool, files []pb.File, projectAggregated Analyzer.ProjectAggregated) *ScreenHome {
+func NewScreenHome(isInteractive bool, files []*pb.File, projectAggregated Analyzer.ProjectAggregated) *ScreenHome {
 	return &ScreenHome{
 		isInteractive:     isInteractive,
 		files:             files,

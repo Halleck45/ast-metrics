@@ -37,6 +37,7 @@ message File {
   Stmts stmts = 2;
   LinesOfCode linesOfCode = 3;
   string programmingLanguage  = 4;
+  Commits commits = 5;
 }
 
 // Describe the location of statement in file.
@@ -202,4 +203,11 @@ message Maintainability {
   optional float maintainabilityIndex = 1;
   optional float maintainabilityIndexWithoutComments = 2;
   optional float commentWeight = 3;
+}
+
+// ------------------------------------
+// -- SCM
+// ------------------------------------
+message Commits {
+  int32 count = 1;
 }
