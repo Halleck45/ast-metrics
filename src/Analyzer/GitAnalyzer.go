@@ -3,11 +3,10 @@ package Analyzer
 import (
 	"fmt"
 	"os"
-	"time"
+	"path/filepath"
 
-	git "github.com/go-git/go-git/v5"
-	"github.com/go-git/go-git/v5/plumbing/object"
 	pb "github.com/halleck45/ast-metrics/src/NodeType"
+	git2go "github.com/libgit2/git2go/v34"
 )
 
 type GitAnalyzer struct {
@@ -19,128 +18,118 @@ func NewGitAnalyzer() *GitAnalyzer {
 
 func (gitAnalyzer *GitAnalyzer) Start(files []*pb.File) {
 
-	// go-git have issues with file analysis
-	// https://github.com/go-git/go-git/issues/811
-	// https://github.com/go-git/go-git/issues/137
-	// https://github.com/go-git/go-git/issues/534
-	//
-	// So we will use a workaround:
+	// Map of files by git repository
+	filesByGitRepo := make(map[string][]*pb.File)
 
-	// Create a map of all files, indexed by path of the .git folder
-	// This is to avoid opening the same .git folder multiple times
-	// associative array of files, but filename is the key in order to speed up the search
-
-	gitRepoMap := make(map[string]map[string]bool)
-
-	var repoPath string
 	for _, file := range files {
-		openOptions := &git.PlainOpenOptions{DetectDotGit: true}
-		gitRepo, err := git.PlainOpenWithOptions(file.Path, openOptions)
+		// Search root of git repository
+		repoRoot, err := findGitRoot(file.Path)
 		if err != nil {
-			repoPath = "unversioned"
-		} else {
-			worktree, _ := gitRepo.Worktree()
-			repoPath = worktree.Filesystem.Root() + string(os.PathSeparator)
+			continue
 		}
 
-		// add file to the list of files for this repo
-		if _, ok := gitRepoMap[repoPath]; !ok {
-			gitRepoMap[repoPath] = make(map[string]bool)
+		// Add file to map
+		if _, ok := filesByGitRepo[repoRoot]; !ok {
+			filesByGitRepo[repoRoot] = make([]*pb.File, 0)
 		}
 
-		gitRepoMap[repoPath][file.Path] = true
+		filesByGitRepo[repoRoot] = append(filesByGitRepo[repoRoot], file)
 	}
 
-	// Map of commits
-	// map of string to pb.Commits
-	commitsMap := make(map[string]*pb.Commits)
-
-	// for each repo, open it and analyze all files
-	for repoPath, filesOfRepo := range gitRepoMap {
-		if repoPath == "unversioned" {
-			continue
-		}
-
-		// open repo
-		openOptions := &git.PlainOpenOptions{DetectDotGit: true}
-		gitRepo, err := git.PlainOpenWithOptions(repoPath, openOptions)
-
+	// For each git repository
+	for repoRoot, files := range filesByGitRepo {
+		// Open repo
+		repo, err := git2go.OpenRepository(repoRoot)
 		if err != nil {
-			fmt.Println("Error opening repo: ", err)
 			continue
 		}
 
-		// start from HEAD
-		ref, _ := gitRepo.Head()
-
-		// limit to 1 year
-		since := time.Now().AddDate(-1, 0, 0)
-
-		// Execute the git log command
-		options := &git.LogOptions{
-			PathFilter: func(path string) bool {
-				// return true if path in the list of files
-				fullpath := repoPath + path
-
-				if _, ok := filesOfRepo[fullpath]; !ok {
-					return false
-				}
-
-				return true
-			},
-			From: ref.Hash(),
-			// only 1 year
-			Since: &since,
-			Order: git.LogOrderCommitterTime,
-		}
-		commits, _ := gitRepo.Log(options)
-		defer commits.Close()
-
-		commits.ForEach(func(commit *object.Commit) error {
-
-			parent, _ := commit.Parent(0)
-			if parent == nil {
-				return nil
-			}
-
-			fmt.Println("Commit: ", commit.Hash.String())
-
-			// get diff between parent and commit
-			diff, _ := parent.Patch(commit)
-			patches := diff.FilePatches()
-			for _, patch := range patches {
-
-				from, to := patch.Files()
-				if from == nil || to == nil {
-					continue
-				}
-
-				// get filename
-				filename := from.Path()
-				fullpath := repoPath + filename
-
-				// if not a file we are interested (filesOfRepo) in, skip
-				if _, ok := filesOfRepo[fullpath]; !ok {
-					return nil
-				}
-
-				if _, ok := commitsMap[fullpath]; !ok {
-					commitsMap[fullpath] = &pb.Commits{Count: 0}
-				}
-
-				fmt.Println("Commit: ", commit.Hash.String(), "File: ", fullpath)
-				commitsMap[fullpath].Count++
-				return nil
-			}
-
-			return nil
-		})
-
-		// for each file, add the number of commits
+		// Create a hash map of files, indexed by relative path
+		// Will be useful to retrieve file by path
+		filesByPath := make(map[string]*pb.File)
 		for _, file := range files {
-			if _, ok := commitsMap[file.Path]; ok {
-				file.Commits = commitsMap[file.Path]
+			relativePath := file.Path[len(repoRoot)+1:]
+
+			if file.Commits == nil {
+				file.Commits = &pb.Commits{
+					Count: 0,
+				}
 			}
+			filesByPath[relativePath] = file
 		}
+
+		// Get file history
+		commits, err := repo.Walk()
+		if err != nil {
+			continue
+		}
+
+		commits.PushHead()
+		commits.Sorting(git2go.SortTime)
+
+		commits.Iterate(func(commit *git2go.Commit) bool {
+
+			// get the list of impacted files by this commit
+			commitTree, err := commit.Tree()
+			if err != nil {
+				return true
+			}
+
+			// Compare with parent commit
+			parents := commit.ParentCount()
+			if parents == 0 {
+				return true
+			}
+
+			parentCommit := commit.Parent(0)
+			parentTree, err := parentCommit.Tree()
+			if err != nil {
+				return true
+			}
+
+			// Get diff
+			diff, err := repo.DiffTreeToTree(parentTree, commitTree, nil)
+			if err != nil {
+				return true
+			}
+
+			// Get diff delta
+			diff.ForEach(func(delta git2go.DiffDelta, progress float64) (git2go.DiffForEachHunkCallback, error) {
+
+				// Ignore deleted files
+				if delta.Status == git2go.DeltaDeleted {
+					return nil, nil
+				}
+
+				// Ignore files that are not in the list
+				if _, ok := filesByPath[delta.NewFile.Path]; !ok {
+					return nil, nil
+				}
+
+				// Get file
+				file := filesByPath[delta.NewFile.Path]
+
+				// Increment commits count
+				file.Commits.Count++
+
+				return nil, nil
+			}, git2go.DiffDetailFiles)
+			return true
+		})
 	}
+}
+
+func findGitRoot(filePath string) (string, error) {
+	// Parcourir les dossiers parent jusqu'à ce qu'un dossier .git soit trouvé
+	for filePath != "" {
+
+		checkedPath := filepath.Join(filePath, ".git")
+		if _, err := os.Stat(checkedPath); err == nil {
+			return filePath, nil
+		}
+
+		filePath = filepath.Dir(filePath)
+	}
+
+	return "", fmt.Errorf("no git repository found")
 }
