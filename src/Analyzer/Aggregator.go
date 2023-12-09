@@ -3,6 +3,7 @@ package Analyzer
 import (
 	"math"
 
+	"github.com/halleck45/ast-metrics/src/Engine"
 	pb "github.com/halleck45/ast-metrics/src/NodeType"
 )
 
@@ -183,6 +184,29 @@ func (r *Aggregator) Aggregates() ProjectAggregated {
 
 		// update by language
 		r.projectAggregated.ByProgrammingLanguage[file.ProgrammingLanguage] = byLanguage
+
+		// @todo: make a visitor method to call file itself
+		functions := Engine.GetFunctionsInFile(file)
+		for _, function := range functions {
+			if file.Stmts == nil {
+				continue
+			}
+
+			if file.Stmts.Analyze == nil {
+				zero := int32(0)
+				file.Stmts.Analyze = &pb.Analyze{
+					Complexity: &pb.Complexity{
+						Cyclomatic: &zero,
+					},
+				}
+			}
+
+			// calculate sum of cyclomatic complexity
+			if function.Stmts.Analyze.Complexity != nil && function.Stmts.Analyze.Complexity.Cyclomatic != nil {
+				*file.Stmts.Analyze.Complexity.Cyclomatic = *file.Stmts.Analyze.Complexity.Cyclomatic + *function.Stmts.Analyze.Complexity.Cyclomatic
+			}
+		}
+
 	}
 
 	// averages
@@ -200,10 +224,13 @@ func (r *Aggregator) Aggregates() ProjectAggregated {
 }
 
 func (r *Aggregator) calculate(stmts *pb.Stmts, specificAggregation *Aggregated) {
-
 	// methods per class
 	if stmts == nil {
 		return
+	}
+
+	if stmts.Analyze == nil {
+		stmts.Analyze = &pb.Analyze{}
 	}
 
 	if stmts.StmtFunction != nil {
@@ -247,17 +274,16 @@ func (r *Aggregator) calculate(stmts *pb.Stmts, specificAggregation *Aggregated)
 	}
 
 	// lines of code
-	if stmts.Analyze.Volume != nil {
-		if stmts.Analyze.Volume.Loc != nil {
-			specificAggregation.Loc += int(*stmts.Analyze.Volume.Loc)
-		}
-		if stmts.Analyze.Volume.Cloc != nil {
-			specificAggregation.Cloc += int(*stmts.Analyze.Volume.Cloc)
-		}
-		if stmts.Analyze.Volume.Lloc != nil {
-			specificAggregation.Lloc += int(*stmts.Analyze.Volume.Lloc)
+	if stmts.Analyze.Volume == nil {
+		stmts.Analyze.Volume = &pb.Volume{
+			Loc:  new(int32),
+			Cloc: new(int32),
+			Lloc: new(int32),
 		}
 	}
+	specificAggregation.Loc += int(*stmts.Analyze.Volume.Loc)
+	specificAggregation.Cloc += int(*stmts.Analyze.Volume.Cloc)
+	specificAggregation.Lloc += int(*stmts.Analyze.Volume.Lloc)
 
 	// average lines of code per method
 	if stmts.StmtFunction != nil {
