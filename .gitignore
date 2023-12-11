@@ -6,3 +6,5 @@ dist/
 .phpunit.result.cache
 .phpunit.cache
 .vscode
+build
+bindata.go

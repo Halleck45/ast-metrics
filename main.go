@@ -20,6 +20,30 @@ func main() {
 
 	log.SetLevel(log.TraceLevel)
 
+	// Loading external built dependencies (C libraries)
+	data, err := Asset("build/libgit/libgit2-1.5.0/build")
+	if err != nil {
+		// Skipping the Git part
+		// @todo
+		log.Fatal(err)
+	}
+	// Create a temporary directory
+	build, err := os.MkdirTemp("", "ast-metrics")
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer os.RemoveAll(build)
+	// Write the content of the asset to the temporary directory
+	err = os.WriteFile(build+"/build", data, 0644)
+	if err != nil {
+		log.Fatal(err)
+	}
+	// Load the library
+	err = os.Setenv("LD_LIBRARY_PATH", build+"/build")
+	if err != nil {
+		log.Fatal(err)
+	}
+
 	// Prepare accepted languages
 	runnerPhp := Php.PhpRunner{}
 	runnerGolang := Golang.GolangRunner{}

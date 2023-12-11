@@ -25,6 +25,8 @@ build-protobuff:
 	@echo "\e[34m\033[1mDONE \033[0m\e[39m\n"
 build-go: # for local development and tests
 	@echo "\e[34m\033[1m-> Building go binaries\033[0m\e[39m\n"
+	export CGO_LDFLAGS="-Lbuild/libgit/libgit2-1.5.0/build/ -Wl,-rpath -Wl,\$ORIGIN/build/libgit/libgit2-1.5.0/build/"
+	export CGO_CFLAGS="-Ibuild/libgit/libgit2-1.5.0/build/"
 	go build -o bin/ast-metrics
 	@echo "\e[34m\033[1mDONE \033[0m\e[39m\n"
 build-release:
@@ -33,7 +35,25 @@ build-release:
 	go install github.com/goreleaser/goreleaser@latest
 	GOPATH=$(HOME)/go PATH=$$PATH:$(HOME)/go/bin goreleaser build --snapshot
 	@echo "\e[34m\033[1mDONE \033[0m\e[39m\n"
-build: install build-protobuff build-release
+
+build-deps-libgit:
+	@echo "\e[34m\033[1m-> Compiling libgit\033[0m\e[39m\n"
+	rm -Rf build/libgit || true
+	mkdir -p build/libgit
+	cd build/libgit && curl -L https://github.com/libgit2/libgit2/archive/refs/tags/v1.5.0.tar.gz -o libgit2-1.5.0.tar.gz
+	cd build/libgit && tar -xzf libgit2-1.5.0.tar.gz
+	cd build/libgit/libgit2-1.5.0 && mkdir build && cd build && cmake .. -DBUILD_CLAR=OFF -DTHREADSAFE=ON -DBUILD_SHARED_LIBS=OFF -DCMAKE_BUILD_TYPE=Release
+	cd lbuild/libgit/libgit2-1.5.0/build/ && make
+build-deps-libgit-embed: # build-deps-libgit
+	@echo "\e[34m\033[1m-> Embedding libgit to current binary\033[0m\e[39m\n"
+	rm -Rf build/libgit2/build/src build/libgit2/build/tests
+	go install github.com/jteeuwen/go-bindata/...
+	GOPATH=$(HOME)/go PATH=$$PATH:$(HOME)/go/bin go-bindata build/libgit/libgit2-1.5.0/build
+
+	@echo "\e[34m\033[1mDONE \033[0m\e[39m\n"
+	@echo "Remember to add build/libgit/libgit2-1.5.0/build to your LD_LIBRARY_PATH if you want to test"
+
+build: install build-protobuff build-deps-libgit-embed build-release
 	@echo "\n\e[42m  BUILD FINISHED  \e[49m\n"
 
 test: test-go
