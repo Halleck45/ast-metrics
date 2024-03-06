@@ -108,7 +108,7 @@ func DecorateMaintainabilityIndex(mi int, analyze *pb.Analyze) string {
 		return "🔴 " + strconv.Itoa(mi)
 	}
 	if mi < 85 {
-		return "🟡 " + strconv.Itoa(mi)
+            return "🟡 " + strconv.Itoa(mi)
 	}
 
 	return "🟢 " + strconv.Itoa(mi)

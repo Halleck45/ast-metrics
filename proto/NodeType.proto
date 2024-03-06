@@ -210,4 +210,5 @@ message Maintainability {
 // ------------------------------------
 message Commits {
   int32 count = 1;
+  int32 commiters = 2;
 }
