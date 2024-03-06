@@ -72,6 +72,12 @@ func (gitAnalyzer *GitAnalyzer) Start(files []*pb.File) {
 			}
 			filesByPath[relativePath] = file
 		}
+		// Create a hash map of committers name by file
+		committersByFile := make(map[string]map[string]bool)
+		for _, file := range files {
+			relativePath := file.Path[len(repoRoot)+1:]
+			committersByFile[relativePath] = make(map[string]bool)
+		}
 
 		// Get file history
 		commits, err := repo.Walk()
@@ -135,12 +141,25 @@ func (gitAnalyzer *GitAnalyzer) Start(files []*pb.File) {
 
 						file.Commits.Count++
 
+						// committers
+						committersByFile[relativePath][commit.Committer().Email] = true
 					}
 				}
 			}
 
 			return true
 		})
+
+		// count committers
+		for _, file := range files {
+			relativePath := file.Path[len(repoRoot)+1:]
+			file.Commits.Commiters = int32(len(committersByFile[relativePath]))
+
+			// if 0
+			if file.Commits.Commiters == 0 {
+				file.Commits.Commiters = 1
+			}
+		}
 	}
 }
 

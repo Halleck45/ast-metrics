@@ -56,9 +56,10 @@ func (v *ComponentTableClass) Init() {
 
 	columns := []table.Column{
 		{Title: "Class", Width: 35},
-		{Title: "Commits", Width: 9},
+		{Title: "Commits", Width: 6},
+		{Title: "Authors", Width: 6},
 		{Title: "Methods", Width: 9},
-		{Title: "LLoc", Width: 9},
+		{Title: "LLoc", Width: 6},
 		{Title: "Cyclomatic", Width: 9},
 		{Title: "H. Length", Width: 9},
 		{Title: "H. Volume", Width: 9},
@@ -69,8 +70,10 @@ func (v *ComponentTableClass) Init() {
 	for _, file := range v.files {
 
 		nbCommits := 0
+		nbCommitters := 0
 		if file.Commits != nil {
 			nbCommits = int(file.Commits.Count)
+			nbCommitters = int(file.Commits.Commiters)
 		}
 
 		for _, class := range file.Stmts.StmtClass {
@@ -89,6 +92,7 @@ func (v *ComponentTableClass) Init() {
 			rows = append(rows, table.Row{
 				class.Name.Qualified,
 				strconv.Itoa(nbCommits),
+				strconv.Itoa(nbCommitters),
 				strconv.Itoa(len(class.Stmts.StmtFunction)),
 				strconv.Itoa(int(*class.Stmts.Analyze.Volume.Loc)),
 				strconv.Itoa(int(*class.Stmts.Analyze.Complexity.Cyclomatic)),

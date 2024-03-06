@@ -54,6 +54,7 @@ func (v *ComponentFileTable) Init() {
 	columns := []table.Column{
 		{Title: "File", Width: 75},
 		{Title: "Commits", Width: 9},
+		{Title: "Authors", Width: 9},
 		{Title: "LOC", Width: 9},
 		{Title: "Cyclomatic", Width: 9},
 	}
@@ -62,13 +63,16 @@ func (v *ComponentFileTable) Init() {
 	for _, file := range v.files {
 
 		nbCommits := 0
+		nbCommiters := 0
 		if file.Commits != nil {
 			nbCommits = int(file.Commits.Count)
+			nbCommiters = int(file.Commits.Commiters)
 		}
 
 		rows = append(rows, table.Row{
 			file.Path,
 			strconv.Itoa(nbCommits),
+			strconv.Itoa(nbCommiters),
 			strconv.Itoa(int(file.LinesOfCode.GetLinesOfCode())),
 			strconv.Itoa(int(*file.Stmts.Analyze.Complexity.Cyclomatic)),
 		})
