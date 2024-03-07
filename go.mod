@@ -2,8 +2,6 @@ module github.com/halleck45/ast-metrics
 
 go 1.21
 
-toolchain go1.21.3
-
 require (
 	github.com/VKCOM/php-parser v0.8.2
 	github.com/charmbracelet/bubbles v0.16.1
