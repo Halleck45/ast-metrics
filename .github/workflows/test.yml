@@ -24,6 +24,7 @@ jobs:
         run: |
           sudo apt install -y make cmake
           make build-deps-libgit
+          sudo chmod 645 ./build/libgit/libgit2-1.5.0/build
 
       - name: Display Go version
         run: go version
