@@ -21,6 +21,9 @@ jobs:
           go-version: ${{ matrix.go-version }}
           cache-dependency-path: subdir/go.sum
 
+      - name: Install dependencies
+        run: apt install -y libgit2-dev
+
       - name: Display Go version
         run: go version
 
