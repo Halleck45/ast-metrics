@@ -56,7 +56,7 @@ jobs:
         run: go get .
 
       # Zig (for C dependencies, like libgit)
-      - uses: goto-bus-stop/setup-zig@v2
+      #- uses: goto-bus-stop/setup-zig@v2
 
       - name: Set output
         id: macos_sdk

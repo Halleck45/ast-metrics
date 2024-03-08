@@ -23,6 +23,9 @@ build-protobuff:
 	mv src/github.com/halleck45/ast-metrics/NodeType src
 	rm -rf src/github.com
 	@echo "\e[34m\033[1mDONE \033[0m\e[39m\n"
+
+
+
 build-go: # for local development and tests
 	@echo "\e[34m\033[1m-> Building go binaries\033[0m\e[39m\n"
 	export CGO_LDFLAGS="-Lbuild/libgit/libgit2-1.5.0/build/ -Wl,-rpath -Wl,\$ORIGIN/build/libgit/libgit2-1.5.0/build/"

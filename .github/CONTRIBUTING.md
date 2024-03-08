@@ -4,11 +4,24 @@
 
 + Go 1.21+
 + Make
++ Cmake
 
 ## Setup
 
+Install dependencies:
+
 ```bash
 make install
+```
+
+AST-Metrics uses C librairies in order to compute metrics. Today, libgit2 is used to parse git repositories.
+
+Go libraries are used to interact with libgit2, but require a specific version of libgit2 to be installed on the system.
+
+In order to install it, please run:
+
+```bash
+make install-build
 ```
 
 ## Sources 
