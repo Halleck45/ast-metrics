@@ -23,7 +23,7 @@ jobs:
       - name: Install dependencies
         run: |
           sudo apt install -y make cmake
-          make build-deps-libgit
+          make install-build
 
       - name: Display Go version
         run: go version

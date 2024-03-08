@@ -3,7 +3,7 @@
 PROTOC_VERSION=24.4
 ARCHITECTURE=linux-x86_64
 
-install:install-protobuff
+install-dev:install-protobuff 
 	@echo "\e[34m\033[1mDONE \033[0m\e[39m\n"
 install-protobuff:
 	@echo "\e[34m\033[1m-> Downloading protobuff\033[0m\e[39m\n"
@@ -36,7 +36,13 @@ build-release:
 	GOPATH=$(HOME)/go PATH=$$PATH:$(HOME)/go/bin goreleaser build --snapshot
 	@echo "\e[34m\033[1mDONE \033[0m\e[39m\n"
 
-build-deps-libgit:
+
+
+
+
+install-build: install-git
+install-git: install-libgit bindata-bindata
+install-libgit:
 	@echo "\e[34m\033[1m-> Compiling libgit\033[0m\e[39m\n"
 	rm -Rf build/libgit || true
 	mkdir -p build/libgit
@@ -47,7 +53,7 @@ build-deps-libgit:
 	#cd build/libgit/libgit2-1.5.0/build/ && sudo make install 
 	cd build/libgit/libgit2-1.5.0 && mkdir build && cd build && cmake -DTHREADSAFE=ON -DBUILD_CLAR=OFF -DCMAKE_BUILD_TYPE="RelWithDebInfo" .. && make && sudo make install
 	cd build/libgit/libgit2-1.5.0/build/ && sudo ldconfig
-build-deps-libgit-embed: # build-deps-libgit
+bindata-bindata:
 	@echo "\e[34m\033[1m-> Embedding libgit to current binary\033[0m\e[39m\n"
 	rm -Rf build/libgit2/build/src build/libgit2/build/tests
 	go install github.com/jteeuwen/go-bindata/...
