@@ -22,7 +22,7 @@ jobs:
           cache-dependency-path: subdir/go.sum
 
       - name: Install dependencies
-        run: apt install -y libgit2-dev
+        run: sudo apt install -y libgit2-dev
 
       - name: Display Go version
         run: go version
