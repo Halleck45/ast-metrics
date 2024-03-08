@@ -1,40 +1,75 @@
 builds:
-  - id: darwin-amd64
-    main: ./
-    binary: golang-cross
+  
+
+  - id: goreleaser-zig-cross-compilation-linux-macos
     goos:
-      - darwin
+    - darwin
     goarch:
-      - amd64
-    env:
-      #- PKG_CONFIG_SYSROOT_DIR=/sysroot/macos/amd64
-      #- PKG_CONFIG_PATH=/sysroot/macos/amd64/usr/local/lib/pkgconfig
-      - CC=o64-clang
-      - CXX=o64-clang++
-    flags:
-      - -mod=readonly
+    - amd64
+    - arm64
     ldflags:
-      - -s -w -X main.version={{.Version}}
-  - id: linux-armhf
-    main: ./
-    binary: golang-cross
+    - -s -w
+    flags:
+    - -trimpath
+    - -buildmode=pie
+    env:
+    - CGO_ENABLED=1
+    - >-
+        {{- if eq .Os "darwin" }}
+          {{- if eq .Arch "amd64"}}CC=zig c -target x86_64-macos-none -F{{ .Env.SDK_PATH }}/System/Library/Frameworks{{- end }}
+          {{- if eq .Arch "arm64"}}CC=zig c -target aarch64-macos-none -F{{ .Env.SDK_PATH }}/System/Library/Frameworks{{- end }}
+        {{- end }}
+    - >-
+        {{- if eq .Os "darwin" }}
+          {{- if eq .Arch "amd64"}}CC=zig c++ -target x86_64-macos-none -F{{ .Env.SDK_PATH }}/System/Library/Frameworks{{- end }}
+          {{- if eq .Arch "arm64"}}CC=zig c++ -target aarch64-macos-none -F{{ .Env.SDK_PATH }}/System/Library/Frameworks{{- end }}
+        {{- end }}
+  
+  - id: goreleaser-zig-cross-compilation-linux
     goos:
-      - linux
+    - linux
     goarch:
-      - arm
-    goarm:
-      - 7
-    env:
-      - CC=arm-linux-gnueabihf-gcc
-      - CXX=arm-linux-gnueabihf-g++
-      - CGO_CFLAGS=--sysroot=/sysroot/linux/armhf
-      - CGO_LDFLAGS=--sysroot=/sysroot/linux/armhf
-      #- PKG_CONFIG_SYSROOT_DIR=/sysroot/linux/armhf
-      #- PKG_CONFIG_PATH=/sysroot/linux/armhf/opt/vc/lib/pkgconfig:/sysroot/linux/armhf/usr/lib/arm-linux-gnueabihf/pkgconfig:/sysroot/linux/armhf/usr/lib/pkgconfig:/sysroot/linux/armhf/usr/local/lib/pkgconfig
-    flags:
-      - -mod=readonly
+    - amd64
+    - arm64
     ldflags:
-      - -s -w -X main.version={{.Version}}
+    - -s -w
+    flags:
+    - -trimpath
+    env:
+    - CGO_ENABLED=1
+    - >-
+        {{- if eq .Os "linux" }}
+          {{- if eq .Arch "amd64" }}CC=zig c -target x86_64-linux-musl{{- end }}
+          {{- if eq .Arch "arm64"}}CC=zig c -target aarch64-linux-musl{{- end }}
+        {{- end }}
+    - >-
+        {{- if eq .Os "linux" }}
+          {{- if eq .Arch "amd64" }}CC=zig c++ -target x86_64-linux-musl{{- end }}
+          {{- if eq .Arch "arm64"}}CC=zig c++ -target aarch64-linux-musl{{- end }}
+        {{- end }}
+
+  - id: goreleaser-zig-cross-compilation-windows
+    goos:
+    - windows
+    goarch:
+    - amd64
+    - arm64
+    ldflags:
+    - -s -w
+    flags:
+    - -trimpath
+    env:
+    - CGO_ENABLED=1
+    - >-
+        {{- if eq .Os "windows" }}
+          {{- if eq .Arch "amd64" }}CC=zig c -target x86_64-windows-gnu{{- end }}
+          {{- if eq .Arch "arm64"}}CC=zig c -target aarch64-windows-gnu{{- end }}
+        {{- end }}
+    - >-
+        {{- if eq .Os "windows" }}
+          {{- if eq .Arch "amd64" }}CC=zig c++ -target x86_64-windows-gnu{{- end }}
+          {{- if eq .Arch "arm64"}}CC=zig c++ -target aarch64-windows-gnu{{- end }}
+        {{- end }}
 
 
 archives:

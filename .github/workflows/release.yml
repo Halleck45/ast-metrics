@@ -6,6 +6,9 @@ on:
     tags:
       - "*"
 
+  workflow_dispatch:
+
+
 permissions:
   contents: write
   # packages: write
@@ -13,7 +16,7 @@ permissions:
 
 jobs:
   goreleaser:
-    runs-on: ubuntu-latest
+    runs-on: macos-latest
     steps:
       # Checkout the repository
       - uses: actions/checkout@v3
@@ -24,6 +27,13 @@ jobs:
       - uses: actions/setup-go@v4
         with:
           go-version: stable
+
+      # Zig (for C dependencies, like libgit)
+      - uses: goto-bus-stop/setup-zig@v2
+
+      - name: Set output
+        id: macos_sdk
+        run: echo "path=$(xcrun --show-sdk-path)" >> $GITHUB_OUTPUT
 
       # run tests
       - name: "Test application"
@@ -37,3 +47,4 @@ jobs:
           args: release --clean
         env:
           GITHUB_TOKEN: ${{ secrets.PUSH_TOKEN }}
+          SDK_PATH: ${{ steps.macos_sdk.outputs.path }}
