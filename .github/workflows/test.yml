@@ -9,7 +9,6 @@ jobs:
     strategy:
       matrix:
         go-version: [ '1.21.x' ]
-        php-version: [ '8.1', '8.2' ]
 
     steps:
       - uses: actions/checkout@v4
@@ -36,3 +35,4 @@ jobs:
         run: go test
         env:
           LD_LIBRARY_PATH: build/libgit/libgit2-1.5.0/build
+          PKG_CONFIG_PATH: build/libgit/libgit2-1.5.0/build
