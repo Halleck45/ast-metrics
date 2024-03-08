@@ -3,20 +3,48 @@ name: Go
 on: [push]
 
 jobs:
-  build:
+  # build:
 
-    runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        go-version: [ '1.21.x' ]
+  #   runs-on: ubuntu-latest
+  #   strategy:
+  #     matrix:
+  #       go-version: [ '1.21.x' ]
 
+  #   steps:
+  #     - uses: actions/checkout@v4
+
+  #     - name: Setup Go ${{ matrix.go-version }}
+  #       uses: actions/setup-go@v4
+  #       with:
+  #         go-version: ${{ matrix.go-version }}
+  #         cache-dependency-path: subdir/go.sum
+
+  #     - name: Install system dependencies
+  #       run: |
+  #         sudo apt install -y make cmake
+  #         make install-build
+
+  #     - name: Install Go dependencies
+  #       run: go get .
+
+  #     - name: Test with the Go CLI
+  #       run: |
+  #         export PKG_CONFIG_PATH=$(pwd)/build/libgit/libgit2-1.5.0/build
+  #         export LD_LIBRARY_PATH=$(pwd)/build/libgit/libgit2-1.5.0/build
+  #         go test
+
+  goreleaser:
+    runs-on: macos-latest
     steps:
-      - uses: actions/checkout@v4
 
-      - name: Setup Go ${{ matrix.go-version }}
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Go
         uses: actions/setup-go@v4
         with:
-          go-version: ${{ matrix.go-version }}
+          go-version: stable
           cache-dependency-path: subdir/go.sum
 
       - name: Install system dependencies
@@ -27,8 +55,25 @@ jobs:
       - name: Install Go dependencies
         run: go get .
 
+      # Zig (for C dependencies, like libgit)
+      - uses: goto-bus-stop/setup-zig@v2
+
+      - name: Set output
+        id: macos_sdk
+        run: echo "path=$(xcrun --show-sdk-path)" >> $GITHUB_OUTPUT
+      
       - name: Test with the Go CLI
         run: |
           export PKG_CONFIG_PATH=$(pwd)/build/libgit/libgit2-1.5.0/build
           export LD_LIBRARY_PATH=$(pwd)/build/libgit/libgit2-1.5.0/build
           go test
+
+      # Build artifacts
+      - uses: goreleaser/goreleaser-action@v5
+        with:
+          distribution: goreleaser
+          version: latest
+          args: release --clean
+        env:
+          GITHUB_TOKEN: ${{ secrets.PUSH_TOKEN }}
+          SDK_PATH: ${{ steps.macos_sdk.outputs.path }}
