@@ -18,15 +18,25 @@ jobs:
   goreleaser:
     runs-on: macos-latest
     steps:
-      # Checkout the repository
-      - uses: actions/checkout@v3
+
+      - uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
-      # Install go dependencies
-      - uses: actions/setup-go@v4
+      - name: Setup Go ${{ matrix.go-version }}
+        uses: actions/setup-go@v4
         with:
           go-version: stable
+          cache-dependency-path: subdir/go.sum
+
+      - name: Install system dependencies
+        run: |
+          sudo apt install -y make cmake
+          make install-build
+
+      - name: Install Go dependencies
+        run: go get .
+
 
       # Zig (for C dependencies, like libgit)
       - uses: goto-bus-stop/setup-zig@v2
@@ -34,10 +44,12 @@ jobs:
       - name: Set output
         id: macos_sdk
         run: echo "path=$(xcrun --show-sdk-path)" >> $GITHUB_OUTPUT
-
-      # run tests
-      - name: "Test application"
-        run: go test
+      
+      - name: Test with the Go CLI
+        run: |
+          export PKG_CONFIG_PATH=$(pwd)/build/libgit/libgit2-1.5.0/build
+          export LD_LIBRARY_PATH=$(pwd)/build/libgit/libgit2-1.5.0/build
+          go test
 
       # Build artifacts
       - uses: goreleaser/goreleaser-action@v5

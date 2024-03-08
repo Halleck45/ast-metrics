@@ -38,8 +38,6 @@ build-release:
 
 
 
-
-
 install-build: install-git
 install-git: install-libgit bindata-bindata
 install-libgit:
@@ -62,6 +60,7 @@ bindata-bindata:
 	@echo "\e[34m\033[1mDONE \033[0m\e[39m\n"
 	@echo "Remember to add build/libgit/libgit2-1.5.0/build to your LD_LIBRARY_PATH if you want to test"
 
+
 build: install build-protobuff build-deps-libgit-embed build-release
 	@echo "\n\e[42m  BUILD FINISHED  \e[49m\n"
 
@@ -75,52 +74,3 @@ test-go:
 
 
 
-
-
-
-
-
-
-PACKAGE_NAME          := github.com/halleck45/ast-metrics
-
-SYSROOT_DIR     ?= sysroots
-SYSROOT_ARCHIVE ?= sysroots.tar.bz2
-
-.PHONY: sysroot-pack
-sysroot-pack:
-	@tar cf - $(SYSROOT_DIR) -P | pv -s $[$(du -sk $(SYSROOT_DIR) | awk '{print $1}') * 1024] | pbzip2 > $(SYSROOT_ARCHIVE)
-
-.PHONY: sysroot-unpack
-sysroot-unpack:
-	@pv $(SYSROOT_ARCHIVE) | pbzip2 -cd | tar -xf -
-
-.PHONY: release-dry-run
-release-dry-run:
-	@docker run \
-		--rm \
-		-e CGO_ENABLED=1 \
-		-v /var/run/docker.sock:/var/run/docker.sock \
-		-v `pwd`:/go/src/$(PACKAGE_NAME) \
-		-v `pwd`/sysroot:/sysroot \
-		-w /go/src/$(PACKAGE_NAME) \
-		ast-metrics \
-		--clean --skip=validate --skip=publish
-
-.PHONY: release docker
-docker:
-	docker build -t ast-metrics .
-release:
-	@if [ ! -f ".release-env" ]; then \
-		echo "\033[91m.release-env is required for release\033[0m";\
-		exit 1;\
-	fi
-	docker run \
-		--rm \
-		-e CGO_ENABLED=1 \
-		--env-file .release-env \
-		-v /var/run/docker.sock:/var/run/docker.sock \
-		-v `pwd`:/go/src/$(PACKAGE_NAME) \
-		-v `pwd`/sysroot:/sysroot \
-		-w /go/src/$(PACKAGE_NAME) \
-		ast-metrics \
-		release --clean --snapshot

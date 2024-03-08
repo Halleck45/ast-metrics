@@ -13,22 +13,18 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      # Test suite for Go parser
       - name: Setup Go ${{ matrix.go-version }}
         uses: actions/setup-go@v4
         with:
           go-version: ${{ matrix.go-version }}
           cache-dependency-path: subdir/go.sum
 
-      - name: Install dependencies
+      - name: Install system dependencies
         run: |
           sudo apt install -y make cmake
           make install-build
 
-      - name: Display Go version
-        run: go version
-
-      - name: Install dependencies
+      - name: Install Go dependencies
         run: go get .
 
       - name: Test with the Go CLI
