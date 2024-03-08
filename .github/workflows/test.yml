@@ -58,7 +58,7 @@ jobs:
       # Zig (for C dependencies, like libgit)
       - uses: goto-bus-stop/setup-zig@v2
         with:
-          version: 0.10.1
+          version: 0.10.0
           
       - name: Set output
         id: macos_sdk
