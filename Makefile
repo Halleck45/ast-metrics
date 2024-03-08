@@ -50,7 +50,8 @@ install-libgit:
 	#cd build/libgit/libgit2-1.5.0/build/ && make 
 	#cd build/libgit/libgit2-1.5.0/build/ && sudo make install 
 	cd build/libgit/libgit2-1.5.0 && mkdir build && cd build && cmake -DTHREADSAFE=ON -DBUILD_CLAR=OFF -DCMAKE_BUILD_TYPE="RelWithDebInfo" .. && make && sudo make install
-	cd build/libgit/libgit2-1.5.0/build/ && sudo ldconfig
+	which ldconfig && (cd build/libgit/libgit2-1.5.0/build/ && sudo ldconfig) || echo ldconfig not found
+	which ldcoupdate_dyld_shared_cachenfig && (cd build/libgit/libgit2-1.5.0/build/ && sudo update_dyld_shared_cache) || echo update_dyld_shared_cache not found
 bindata-bindata:
 	@echo "\e[34m\033[1m-> Embedding libgit to current binary\033[0m\e[39m\n"
 	rm -Rf build/libgit2/build/src build/libgit2/build/tests
