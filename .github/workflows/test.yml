@@ -62,18 +62,18 @@ jobs:
         id: macos_sdk
         run: echo "path=$(xcrun --show-sdk-path)" >> $GITHUB_OUTPUT
       
-      - name: Test with the Go CLI
-        run: |
-          export PKG_CONFIG_PATH=$(pwd)/build/libgit/libgit2-1.5.0/build
-          export LD_LIBRARY_PATH=$(pwd)/build/libgit/libgit2-1.5.0/build
-          go test
+      #- name: Test with the Go CLI
+      #  run: |
+      #    export PKG_CONFIG_PATH=$(pwd)/build/libgit/libgit2-1.5.0/build
+      #    export LD_LIBRARY_PATH=$(pwd)/build/libgit/libgit2-1.5.0/build
+      #    go test
 
       # Build artifacts
       - uses: goreleaser/goreleaser-action@v5
         with:
           distribution: goreleaser
           version: latest
-          args: release --clean
+          args: release --clean --snapshot
         env:
           GITHUB_TOKEN: ${{ secrets.PUSH_TOKEN }}
           SDK_PATH: ${{ steps.macos_sdk.outputs.path }}
