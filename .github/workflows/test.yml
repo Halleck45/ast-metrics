@@ -56,8 +56,10 @@ jobs:
         run: go get .
 
       # Zig (for C dependencies, like libgit)
-      #- uses: goto-bus-stop/setup-zig@v2
-
+      - uses: goto-bus-stop/setup-zig@v2
+        with:
+          version: 0.10.1
+          
       - name: Set output
         id: macos_sdk
         run: echo "path=$(xcrun --show-sdk-path)" >> $GITHUB_OUTPUT
