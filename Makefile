@@ -42,8 +42,11 @@ build-deps-libgit:
 	mkdir -p build/libgit
 	cd build/libgit && curl -L https://github.com/libgit2/libgit2/archive/refs/tags/v1.5.0.tar.gz -o libgit2-1.5.0.tar.gz
 	cd build/libgit && tar -xzf libgit2-1.5.0.tar.gz
-	cd build/libgit/libgit2-1.5.0 && mkdir build && cd build && cmake .. -DBUILD_CLAR=OFF -DTHREADSAFE=ON -DBUILD_SHARED_LIBS=OFF -DCMAKE_BUILD_TYPE=Release
-	cd build/libgit/libgit2-1.5.0/build/ && make
+	#cd build/libgit/libgit2-1.5.0 && mkdir build && cd build && cmake .. -DBUILD_CLAR=OFF -DTHREADSAFE=ON -DBUILD_SHARED_LIBS=OFF -DCMAKE_BUILD_TYPE=Release
+	#cd build/libgit/libgit2-1.5.0/build/ && make 
+	#cd build/libgit/libgit2-1.5.0/build/ && sudo make install 
+	cd build/libgit/libgit2-1.5.0 && mkdir build && cd build && cmake -DTHREADSAFE=ON -DBUILD_CLAR=OFF -DCMAKE_BUILD_TYPE="RelWithDebInfo" .. && make && sudo make install
+	cd build/libgit/libgit2-1.5.0/build/ && sudo ldconfig
 build-deps-libgit-embed: # build-deps-libgit
 	@echo "\e[34m\033[1m-> Embedding libgit to current binary\033[0m\e[39m\n"
 	rm -Rf build/libgit2/build/src build/libgit2/build/tests

@@ -24,7 +24,6 @@ jobs:
         run: |
           sudo apt install -y make cmake
           make build-deps-libgit
-          sudo chmod 645 ./build/libgit/libgit2-1.5.0/build
 
       - name: Display Go version
         run: go version
@@ -34,10 +33,6 @@ jobs:
 
       - name: Test with the Go CLI
         run: |
-          ls ./build/libgit/libgit2-1.5.0/build
-          env
-          echo $PKG_CONFIG_PATH
+          export PKG_CONFIG_PATH=$(pwd)/build/libgit/libgit2-1.5.0/build
+          export LD_LIBRARY_PATH=$(pwd)/build/libgit/libgit2-1.5.0/build
           go test
-        env:
-          LD_LIBRARY_PATH: ./build/libgit/libgit2-1.5.0/build
-          PKG_CONFIG_PATH: ./build/libgit/libgit2-1.5.0/build
