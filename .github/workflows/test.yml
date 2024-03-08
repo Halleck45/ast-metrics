@@ -34,3 +34,5 @@ jobs:
 
       - name: Test with the Go CLI
         run: go test
+        env:
+          LD_LIBRARY_PATH: build/libgit/libgit2-1.5.0/build
