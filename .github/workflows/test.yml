@@ -32,7 +32,9 @@ jobs:
         run: go get .
 
       - name: Test with the Go CLI
-        run: go test
+        run: |
+          ls ./build/libgit/libgit2-1.5.0/build
+          go test
         env:
           LD_LIBRARY_PATH: ./build/libgit/libgit2-1.5.0/build
           PKG_CONFIG_PATH: ./build/libgit/libgit2-1.5.0/build
