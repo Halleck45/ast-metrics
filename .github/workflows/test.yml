@@ -49,7 +49,7 @@ jobs:
 
       - name: Install system dependencies
         run: |
-          sudo apt install -y make cmake
+          sudo brew install -y make cmake
           make install-build
 
       - name: Install Go dependencies
