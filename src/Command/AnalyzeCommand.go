@@ -110,5 +110,11 @@ func (v *AnalyzeCommand) Execute() error {
 	renderer := Cli.NewScreenHome(v.isInteractive, allResults, projectAggregated)
 	renderer.Render()
 
+	// Generate reports
+	if v.configuration.HtmlReportPath != "" {
+		spinnerAllExecution, _ := pterm.DefaultSpinner.WithWriter(v.outWriter).Start("Generating HTML report")
+		spinnerAllExecution.RemoveWhenDone = true
+	}
+
 	return nil
 }
