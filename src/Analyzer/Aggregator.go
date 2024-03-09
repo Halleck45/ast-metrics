@@ -15,6 +15,7 @@ type ProjectAggregated struct {
 }
 
 type Aggregated struct {
+	ConcernedFiles                       []*pb.File
 	NbFiles                              int
 	NbFunctions                          int
 	NbClasses                            int
@@ -63,6 +64,7 @@ func NewAggregator(files []*pb.File) *Aggregator {
 
 func newAggregated() Aggregated {
 	return Aggregated{
+		ConcernedFiles:                       make([]*pb.File, 0),
 		NbClasses:                            0,
 		NbClassesWithCode:                    0,
 		NbMethods:                            0,
@@ -123,6 +125,14 @@ func (r *Aggregator) Aggregates() ProjectAggregated {
 			r.projectAggregated.ByProgrammingLanguage[file.ProgrammingLanguage] = newAggregated()
 		}
 		byLanguage := r.projectAggregated.ByProgrammingLanguage[file.ProgrammingLanguage]
+
+		// files
+		r.projectAggregated.Combined.ConcernedFiles = append(r.projectAggregated.Combined.ConcernedFiles, file)
+		// by programming language
+		if byLanguage.ConcernedFiles == nil {
+			byLanguage.ConcernedFiles = make([]*pb.File, 0)
+		}
+		byLanguage.ConcernedFiles = append(byLanguage.ConcernedFiles, file)
 
 		// function included directly in file
 		r.calculate(file.Stmts, &r.projectAggregated.ByFile)
@@ -389,5 +399,15 @@ func (r *Aggregator) consolidate(aggregated *Aggregated) {
 		aggregated.AverageMI = aggregated.AverageMIPerMethod
 		aggregated.AverageMIwoc = aggregated.AverageMIwocPerMethod
 		aggregated.AverageMIcw = aggregated.AverageMIcwPerMethod
+	}
+
+	// Total locs: increment loc of each file
+	aggregated.Loc = 0
+	aggregated.Cloc = 0
+	aggregated.Lloc = 0
+	for _, file := range aggregated.ConcernedFiles {
+		aggregated.Loc += int(*&file.LinesOfCode.LinesOfCode)
+		aggregated.Cloc += int(*&file.LinesOfCode.CommentLinesOfCode)
+		aggregated.Lloc += int(*&file.LinesOfCode.LogicalLinesOfCode)
 	}
 }

@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <script src="https://cdn.tailwindcss.com"></script>
+  <title>{% block pageTitle %}{% endblock %}</title>
 </head>
 <body>
 
@@ -38,17 +39,18 @@
             </div>
         </aside>
 
-        <main class="col-span-6">
+        <main class="col-span-6 h-screen">
             <nav class="bg-white shadow dark:bg-gray-800">
                 <div class="container flex items-center justify-center p-6 mx-auto text-gray-600 capitalize dark:text-gray-300">
-                    Le titre
+                    {% block title %}{% endblock %}
                 </div>
             </nav>
+
+            <div class="bg-gray-100 py-8 px-8 h-screen">
+                {% block content %}{% endblock %}
+            </div>
         </main>
     
-    
-</div>
-
-    {% block content %}{% endblock %}
+    </div>
 </body>
 </html>
