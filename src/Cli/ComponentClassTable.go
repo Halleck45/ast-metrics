@@ -72,8 +72,8 @@ func (v *ComponentTableClass) Init() {
 		nbCommits := 0
 		nbCommitters := 0
 		if file.Commits != nil {
-			nbCommits = int(file.Commits.Count)
-			nbCommitters = int(file.Commits.Commiters)
+			nbCommits = int(file.Commits.CountCommits)
+			nbCommitters = int(file.Commits.CountCommitters)
 		}
 
 		for _, class := range file.Stmts.StmtClass {

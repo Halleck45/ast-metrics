@@ -77,3 +77,5 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.PUSH_TOKEN }}
           SDK_PATH: ${{ steps.macos_sdk.outputs.path }}
+          PKG_CONFIG_PATH: ${{ GITHUB_WORKSPACE }}/build/libgit/libgit2-1.5.0/build
+          LD_LIBRARY_PATH: ${{ GITHUB_WORKSPACE }}/build/libgit/libgit2-1.5.0/build

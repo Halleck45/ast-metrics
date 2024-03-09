@@ -3,6 +3,9 @@ syntax = "proto3";
 package NodeType;
 option go_package = "github.com/halleck45/ast-metrics/NodeType";
 
+import "google/protobuf/timestamp.proto";
+
+
 // ------------------------------------
 // -- Node Types and statements
 // ------------------------------------
@@ -209,6 +212,12 @@ message Maintainability {
 // -- SCM
 // ------------------------------------
 message Commits {
-  int32 count = 1;
-  int32 commiters = 2;
+  int32 countCommits = 1;
+  int32 countCommitters = 2;
+  repeated CommitsHistory committers = 3;
+}
+message CommitsHistory {
+  google.protobuf.Timestamp date = 1;
+  string email = 2;
+  string name = 3;
 }

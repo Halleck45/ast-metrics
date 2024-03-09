@@ -65,8 +65,8 @@ func (v *ComponentFileTable) Init() {
 		nbCommits := 0
 		nbCommiters := 0
 		if file.Commits != nil {
-			nbCommits = int(file.Commits.Count)
-			nbCommiters = int(file.Commits.Commiters)
+			nbCommits = int(file.Commits.CountCommits)
+			nbCommiters = int(file.Commits.CountCommitters)
 		}
 
 		rows = append(rows, table.Row{

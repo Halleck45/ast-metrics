@@ -12,7 +12,7 @@ install-protobuff:
 	rm protoc.zip || true
 	curl --silent -L "https://github.com/protocolbuffers/protobuf/releases/download/v$(PROTOC_VERSION)/protoc-$(PROTOC_VERSION)-$(ARCHITECTURE).zip" -o "protoc.zip"
 	unzip protoc.zip
-	rm -Rf protoc.zip include readme.txt || true
+	rm -Rf protoc.zip readme.txt || true
 	go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@latest
 	go install github.com/golang/protobuf/protoc-gen-go
 	@echo "\e[34m\033[1mDONE \033[0m\e[39m\n"
