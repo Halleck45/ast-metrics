@@ -7,6 +7,7 @@ import (
 	"github.com/halleck45/ast-metrics/src/Cli"
 	"github.com/halleck45/ast-metrics/src/Configuration"
 	"github.com/halleck45/ast-metrics/src/Engine"
+	Report "github.com/halleck45/ast-metrics/src/Report/Html"
 	"github.com/halleck45/ast-metrics/src/Storage"
 	"github.com/pterm/pterm"
 )
@@ -112,8 +113,16 @@ func (v *AnalyzeCommand) Execute() error {
 
 	// Generate reports
 	if v.configuration.HtmlReportPath != "" {
-		spinnerAllExecution, _ := pterm.DefaultSpinner.WithWriter(v.outWriter).Start("Generating HTML report")
+		spinnerAllExecution, _ := pterm.DefaultSpinner.WithWriter(v.outWriter).Start("Generating file reports")
 		spinnerAllExecution.RemoveWhenDone = true
+		htmlReportGenerator := Report.NewReportGenerator(v.configuration.HtmlReportPath)
+		err := htmlReportGenerator.Generate(allResults, projectAggregated)
+
+		if err != nil {
+			pterm.Error.Println(err.Error())
+			return err
+		}
+
 	}
 
 	return nil
