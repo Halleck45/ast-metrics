@@ -34,7 +34,8 @@ jobs:
   #         go test
 
   goreleaser:
-    runs-on: macos-latest
+    #runs-on: macos-latest
+    runs-on: ubuntu-latest
     steps:
 
       - uses: actions/checkout@v4
@@ -49,7 +50,8 @@ jobs:
 
       - name: Install system dependencies
         run: |
-          brew install make cmake 
+          (which brew && brew install make cmake || true)
+          (which apt && sudo apt install make cmake || true)
           make install-build
 
       - name: Install Go dependencies
@@ -60,7 +62,10 @@ jobs:
           
       - name: Set output
         id: macos_sdk
-        run: echo "path=$(xcrun --show-sdk-path)" >> $GITHUB_OUTPUT
+        run: |
+          if [[ "$OSTYPE" == "darwin"* ]]; then
+            echo "path=$(xcrun --show-sdk-path)" >> $GITHUB_ENV
+          fi
       
       #- name: Test with the Go CLI
       #  run: |
@@ -82,3 +87,4 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.PUSH_TOKEN }}
           SDK_PATH: ${{ steps.macos_sdk.outputs.path }}
+          LIBGIT2_SYS_USE_PKG_CONFIG: 1
