@@ -1,29 +1,29 @@
 builds:
   
 
-  - id: goreleaser-zig-cross-compilation-linux-macos
-    goos:
-    - darwin
-    goarch:
-    - amd64
-    - arm64
-    ldflags:
-    - -s -w
-    flags:
-    - -trimpath
-    - -buildmode=pie
-    env:
-    - CGO_ENABLED=1
-    - >-
-        {{- if eq .Os "darwin" }}
-          {{- if eq .Arch "amd64"}}CC=zig c -target x86_64-macos-none -F{{ .Env.SDK_PATH }}/System/Library/Frameworks{{- end }}
-          {{- if eq .Arch "arm64"}}CC=zig c -target aarch64-macos-none -F{{ .Env.SDK_PATH }}/System/Library/Frameworks{{- end }}
-        {{- end }}
-    - >-
-        {{- if eq .Os "darwin" }}
-          {{- if eq .Arch "amd64"}}CC=zig c++ -target x86_64-macos-none -F{{ .Env.SDK_PATH }}/System/Library/Frameworks{{- end }}
-          {{- if eq .Arch "arm64"}}CC=zig c++ -target aarch64-macos-none -F{{ .Env.SDK_PATH }}/System/Library/Frameworks{{- end }}
-        {{- end }}
+  # - id: goreleaser-zig-cross-compilation-linux-macos
+  #   goos:
+  #   - darwin
+  #   goarch:
+  #   - amd64
+  #   - arm64
+  #   ldflags:
+  #   - -s -w
+  #   flags:
+  #   - -trimpath
+  #   - -buildmode=pie
+  #   env:
+  #   - CGO_ENABLED=1
+  #   - >-
+  #       {{- if eq .Os "darwin" }}
+  #         {{- if eq .Arch "amd64"}}CC=zig c -target x86_64-macos-none -F{{ .Env.SDK_PATH }}/System/Library/Frameworks{{- end }}
+  #         {{- if eq .Arch "arm64"}}CC=zig c -target aarch64-macos-none -F{{ .Env.SDK_PATH }}/System/Library/Frameworks{{- end }}
+  #       {{- end }}
+  #   - >-
+  #       {{- if eq .Os "darwin" }}
+  #         {{- if eq .Arch "amd64"}}CC=zig c++ -target x86_64-macos-none -F{{ .Env.SDK_PATH }}/System/Library/Frameworks{{- end }}
+  #         {{- if eq .Arch "arm64"}}CC=zig c++ -target aarch64-macos-none -F{{ .Env.SDK_PATH }}/System/Library/Frameworks{{- end }}
+  #       {{- end }}
   
   - id: goreleaser-zig-cross-compilation-linux
     goos:
