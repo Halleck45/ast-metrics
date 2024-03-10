@@ -104,6 +104,27 @@ func (v *PhpVisitor) StmtTrait(node *ast.StmtTrait) {
 	v.currentStmts = class.Stmts
 }
 
+func (v *PhpVisitor) StmtEnum(node *ast.StmtEnum) {
+
+	name := "@anonymous"
+	if node.Name != nil {
+		name = string(node.Name.(*ast.Identifier).Value)
+
+	}
+
+	class := &pb.StmtClass{
+		Name: &pb.Name{
+			Short:     name,
+			Qualified: v.nameObject(name),
+		},
+	}
+	class.LinesOfCode = &pb.LinesOfCode{}
+	class.Stmts = Engine.FactoryStmts()
+	v.file.Stmts.StmtClass = append(v.file.Stmts.StmtClass, class)
+	v.currentClass = class
+	v.currentStmts = class.Stmts
+}
+
 // ----------------
 // Functions
 // ----------------

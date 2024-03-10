@@ -41,6 +41,7 @@ message File {
   LinesOfCode linesOfCode = 3;
   string programmingLanguage  = 4;
   Commits commits = 5;
+  repeated string errors = 6;
 }
 
 // Describe the location of statement in file.
@@ -186,6 +187,7 @@ message Analyze {
   Complexity complexity = 1;
   Volume volume = 2;
   Maintainability maintainability = 3;
+  Risk risk = 4;
 }
 message Complexity {
   optional int32 cyclomatic = 1;
@@ -220,4 +222,11 @@ message CommitsHistory {
   google.protobuf.Timestamp date = 1;
   string email = 2;
   string name = 3;
+}
+
+// ------------------------------------
+// -- Risk
+// ------------------------------------
+message Risk {
+  float score = 1; // score of risk. Lower is better
 }

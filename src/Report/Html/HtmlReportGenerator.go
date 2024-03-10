@@ -2,11 +2,14 @@ package Report
 
 import (
 	"fmt"
-	"log"
 	"os"
+	"sort"
+
+	log "github.com/sirupsen/logrus"
 
 	"github.com/flosch/pongo2/v5"
 	"github.com/halleck45/ast-metrics/src/Analyzer"
+	"github.com/halleck45/ast-metrics/src/Engine"
 	pb "github.com/halleck45/ast-metrics/src/NodeType"
 )
 
@@ -33,6 +36,9 @@ func (v *ReportGenerator) Generate(files []*pb.File, projectAggregated Analyzer.
 	loader := pongo2.MustNewLocalFileSystemLoader("src/Report/Html/templates")
 	pongo2.DefaultSet = pongo2.NewSet("src/Report/Html/templates", loader)
 
+	// Custom filters
+	v.RegisterFilters()
+
 	// Overview
 	v.GenerateLanguagePage("index.html", "All", projectAggregated.Combined, files, projectAggregated)
 	// by language overview
@@ -48,12 +54,12 @@ func (v *ReportGenerator) GenerateLanguagePage(template string, language string,
 	// Compile the index.html template
 	tpl, err := pongo2.DefaultSet.FromFile("index.html")
 	if err != nil {
-		log.Fatal(err)
+		log.Error(err)
 	}
 	// Render it, passing projectAggregated and files as context
 	out, err := tpl.Execute(pongo2.Context{"currentLanguage": language, "currentView": currentView, "projectAggregated": projectAggregated, "files": files})
 	if err != nil {
-		log.Fatal(err)
+		log.Error(err)
 	}
 
 	// Write the result to the file
@@ -63,7 +69,7 @@ func (v *ReportGenerator) GenerateLanguagePage(template string, language string,
 	}
 	file, err := os.Create(fmt.Sprintf("%s/index%s.html", v.ReportPath, pageSuffix))
 	if err != nil {
-		log.Fatal(err)
+		log.Error(err)
 	}
 	defer file.Close()
 	file.WriteString(out)
@@ -81,4 +87,111 @@ func (v *ReportGenerator) EnsureFolder(path string) error {
 		}
 	}
 	return nil
+}
+
+func (v *ReportGenerator) RegisterFilters() {
+
+	pongo2.RegisterFilter("sortMaintainabilityIndex", func(in *pongo2.Value, param *pongo2.Value) (out *pongo2.Value, err *pongo2.Error) {
+		// get the list to sort
+		// create new empty list
+		list := make([]*pb.StmtClass, 0)
+
+		// append to the list when file contians at lease one class
+		for _, file := range in.Interface().([]*pb.File) {
+			if len(file.Stmts.StmtClass) == 0 {
+				continue
+			}
+
+			classes := Engine.GetClassesInFile(file)
+
+			for _, class := range classes {
+				if class.Stmts.Analyze.Maintainability == nil {
+					continue
+				}
+
+				if *class.Stmts.Analyze.Maintainability.MaintainabilityIndex < 1 {
+					continue
+				}
+
+				if *class.Stmts.Analyze.Maintainability.MaintainabilityIndex > 65 {
+					continue
+				}
+
+				list = append(list, class)
+			}
+		}
+
+		// sort the list, manually
+		sort.Slice(list, func(i, j int) bool {
+			if list[i].Stmts.Analyze.Maintainability == nil {
+				return false
+			}
+			if list[j].Stmts.Analyze.Maintainability == nil {
+				return true
+			}
+
+			// get first class in file
+			class1 := list[i]
+			class2 := list[j]
+
+			return *class1.Stmts.Analyze.Maintainability.MaintainabilityIndex < *class2.Stmts.Analyze.Maintainability.MaintainabilityIndex
+		})
+
+		// keep only the first 10
+		if len(list) > 10 {
+			list = list[:10]
+		}
+
+		return pongo2.AsValue(list), nil
+	})
+
+	pongo2.RegisterFilter("sortRisk", func(in *pongo2.Value, param *pongo2.Value) (out *pongo2.Value, err *pongo2.Error) {
+		// get the list to sort
+		// create new empty list
+		list := make([]*pb.File, 0)
+
+		// append to the list when file contians at lease one class
+		for _, file := range in.Interface().([]*pb.File) {
+			if file.Stmts.StmtClass == nil {
+				continue
+			}
+
+			list = append(list, file)
+		}
+
+		// sort the list
+		sort.Slice(list, func(i, j int) bool {
+
+			if list[i].Stmts.Analyze.Risk == nil {
+				return false
+			}
+
+			if list[i].Stmts.StmtClass == nil {
+				return true
+			}
+
+			if list[j].Stmts.StmtClass == nil {
+				return true
+			}
+
+			class1 := list[i].Stmts.StmtClass[0]
+			class2 := list[j].Stmts.StmtClass[0]
+
+			if class1.Stmts.Analyze.Risk == nil {
+				return false
+			}
+			if class2.Stmts.Analyze.Risk == nil {
+				return true
+			}
+
+			return class1.Stmts.Analyze.Risk.Score > class2.Stmts.Analyze.Risk.Score
+		})
+
+		// keep only the first 10
+		if len(list) > 10 {
+			list = list[:10]
+		}
+
+		return pongo2.AsValue(list), nil
+	})
 }

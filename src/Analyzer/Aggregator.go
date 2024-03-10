@@ -230,6 +230,10 @@ func (r *Aggregator) Aggregates() ProjectAggregated {
 		r.projectAggregated.ByProgrammingLanguage[lng] = byLanguage
 	}
 
+	// Risks
+	riskAnalyzer := NewRiskAnalyzer()
+	riskAnalyzer.Analyze(r.projectAggregated)
+
 	return r.projectAggregated
 }
 
@@ -410,4 +414,6 @@ func (r *Aggregator) consolidate(aggregated *Aggregated) {
 		aggregated.Cloc += int(*&file.LinesOfCode.CommentLinesOfCode)
 		aggregated.Lloc += int(*&file.LinesOfCode.LogicalLinesOfCode)
 	}
+	// Risk of each file
+	// Churn = 1 - e^(-MI/10)
 }

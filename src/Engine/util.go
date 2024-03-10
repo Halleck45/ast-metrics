@@ -4,9 +4,10 @@ import (
 	"crypto/md5"
 	"encoding/hex"
 	"io"
-	"log"
 	"os"
 	"strings"
+
+	log "github.com/sirupsen/logrus"
 
 	pb "github.com/halleck45/ast-metrics/src/NodeType"
 	"google.golang.org/protobuf/proto"
@@ -65,18 +66,18 @@ func GetLocPositionFromSource(sourceCode []string, start int, end int) *pb.Lines
 func DumpProtobuf(file *pb.File, binPath string) {
 	out, err := proto.Marshal(file)
 	if err != nil {
-		log.Fatal(err)
+		log.Error(err)
 	}
 
 	f, err := os.Create(binPath)
 	if err != nil {
-		log.Fatal(err)
+		log.Error(err)
 	}
 	defer f.Close()
 
 	_, err = f.Write(out)
 	if err != nil {
-		log.Fatal(err)
+		log.Error(err)
 	}
 }
 
@@ -112,6 +113,14 @@ func GetFileHash(filePath string) (string, error) {
 
 func GetClassesInFile(file *pb.File) []*pb.StmtClass {
 	var classes []*pb.StmtClass
+	if file.Stmts == nil {
+		return classes
+	}
+
+	if file.Stmts.StmtNamespace == nil {
+		return file.Stmts.StmtClass
+	}
+
 	for _, namespace := range file.Stmts.StmtNamespace {
 		classes = append(classes, namespace.Stmts.StmtClass...)
 	}
@@ -121,6 +130,14 @@ func GetClassesInFile(file *pb.File) []*pb.StmtClass {
 
 func GetFunctionsInFile(file *pb.File) []*pb.StmtFunction {
 	var functions []*pb.StmtFunction
+	if file.Stmts == nil {
+		return functions
+	}
+
+	if file.Stmts.StmtNamespace == nil {
+		return file.Stmts.StmtFunction
+	}
+
 	for _, namespace := range file.Stmts.StmtNamespace {
 		functions = append(functions, namespace.Stmts.StmtFunction...)
 	}

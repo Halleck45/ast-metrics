@@ -21,7 +21,7 @@
             </svg>
 
             <span class="mx-1 text-sm sm:text-base">
-                All
+                All languages <span class="text-xs sm:text-sm">({{ projectAggregated.Combined.ConcernedFiles|length }} files)</span>
             </span>
         </a>
 
@@ -35,7 +35,7 @@
                 </svg>
     
                 <span class="mx-1 text-sm sm:text-base">
-                    {{ languageName }}
+                    {{ languageName }} <span class="text-xs sm:text-sm">({{ lang.ConcernedFiles|length }} files)
                 </span>
             </a>
             {% endfor %}
@@ -52,7 +52,7 @@
                     Lines of code
                 </a>
                 <p class="mt-2 text-sm text-gray-600 dark:text-gray-300">
-                    The total number of lines of code in the project.
+                    The total number of lines of code.
                 </p>
             </div>
             <div class="flex items-center justify-between mt-4">
@@ -83,7 +83,149 @@
                   </svg>
             </div>
         </div>
+
+        <div class="max-w-2xl px-8 py-4 bg-white rounded-lg shadow-md dark:bg-gray-800">
+            <div class="mt-2 h-32">
+                <a href="#" class="text-xl font-bold text-gray-700 dark:text-white" tabindex="0" role="link">
+                    Maintainability index
+                </a>
+                <p class="mt-2 text-sm text-gray-600 dark:text-gray-300">
+                    Based on the volume, the complexity of operators and the complexity of the code.
+                </p>
+                </a>
+                <p class="mt-2 text-sm text-gray-600 dark:text-gray-300">
+                    Ideally, should be higher than 85.
+                </p>
+            </div>
+            <div class="flex items-center justify-between mt-4">
+                <div class="flex items-center text-2xl text-black font-bold">
+                    {% set color="red" %}
+                    {% if currentView.AverageMI > 84 %}
+                        {% set color="green" %}
+                    {% elif currentView.AverageMI > 64 %}
+                        {% set color="yellow" %}
+                    {% endif %}
+                    <span class="text-white bg-{{ color }}-600 rounded px-3 py-1">{{ currentView.AverageMI | floatformat:0 }}</span>
+                </div>
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 15.75V18m-7.5-6.75h.008v.008H8.25v-.008Zm0 2.25h.008v.008H8.25V13.5Zm0 2.25h.008v.008H8.25v-.008Zm0 2.25h.008v.008H8.25V18Zm2.498-6.75h.007v.008h-.007v-.008Zm0 2.25h.007v.008h-.007V13.5Zm0 2.25h.007v.008h-.007v-.008Zm0 2.25h.007v.008h-.007V18Zm2.504-6.75h.008v.008h-.008v-.008Zm0 2.25h.008v.008h-.008V13.5Zm0 2.25h.008v.008h-.008v-.008Zm0 2.25h.008v.008h-.008V18Zm2.498-6.75h.008v.008h-.008v-.008Zm0 2.25h.008v.008h-.008V13.5ZM8.25 6h7.5v2.25h-7.5V6ZM12 2.25c-1.892 0-3.758.11-5.593.322C5.307 2.7 4.5 3.65 4.5 4.757V19.5a2.25 2.25 0 0 0 2.25 2.25h10.5a2.25 2.25 0 0 0 2.25-2.25V4.757c0-1.108-.806-2.057-1.907-2.185A48.507 48.507 0 0 0 12 2.25Z" />
+                  </svg>
+            </div>
+        </div>
+
+        <div class="max-w-2xl px-8 py-4 bg-white rounded-lg shadow-md dark:bg-gray-800">
+            <div class="mt-2 h-32">
+                <a href="#" class="text-xl font-bold text-gray-700 dark:text-white" tabindex="0" role="link">
+                    Average bugs per file
+                </a>
+                <p class="mt-2 text-sm text-gray-600 dark:text-gray-300">
+                    The estimated number of bugs per file, based on the volume, the complexity of operators and the complexity of the code.
+                </p>
+            </div>
+            <div class="flex items-center justify-between mt-4">
+                <div class="flex items-center text-2xl text-black font-bold">
+                    {{ currentView.AverageHalsteadBugs | floatformat:2 }}
+                </div>
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 15.75V18m-7.5-6.75h.008v.008H8.25v-.008Zm0 2.25h.008v.008H8.25V13.5Zm0 2.25h.008v.008H8.25v-.008Zm0 2.25h.008v.008H8.25V18Zm2.498-6.75h.007v.008h-.007v-.008Zm0 2.25h.007v.008h-.007V13.5Zm0 2.25h.007v.008h-.007v-.008Zm0 2.25h.007v.008h-.007V18Zm2.504-6.75h.008v.008h-.008v-.008Zm0 2.25h.008v.008h-.008V13.5Zm0 2.25h.008v.008h-.008v-.008Zm0 2.25h.008v.008h-.008V18Zm2.498-6.75h.008v.008h-.008v-.008Zm0 2.25h.008v.008h-.008V13.5ZM8.25 6h7.5v2.25h-7.5V6ZM12 2.25c-1.892 0-3.758.11-5.593.322C5.307 2.7 4.5 3.65 4.5 4.757V19.5a2.25 2.25 0 0 0 2.25 2.25h10.5a2.25 2.25 0 0 0 2.25-2.25V4.757c0-1.108-.806-2.057-1.907-2.185A48.507 48.507 0 0 0 12 2.25Z" />
+                  </svg>
+            </div>
+        </div>
     </div>
+    <!-- end: line of 4 cards -->
+
+     <!-- start: line of 2 cards -->
+     <div class="grid grid-cols-3 gap-4 mt-4">
+
+        <div class="max-w-2xl px-8 py-4 bg-white rounded-lg shadow-md dark:bg-gray-800">
+            <div class="mt-2 h-32">
+                <a href="#" class="text-xl font-bold text-gray-700 dark:text-white" tabindex="0" role="link">
+                    Average bugs per file
+                </a>
+                <p class="mt-2 text-sm text-gray-600 dark:text-gray-300">
+                    The estimated number of bugs per file, based on the volume, the complexity of operators and the complexity of the code.
+                </p>
+            </div>
+            <div class="flex items-center justify-between mt-4">
+                <div class="flex items-center text-2xl text-black font-bold">
+                    {{ currentView.AverageHalsteadBugs | floatformat:2 }}
+                </div>
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 15.75V18m-7.5-6.75h.008v.008H8.25v-.008Zm0 2.25h.008v.008H8.25V13.5Zm0 2.25h.008v.008H8.25v-.008Zm0 2.25h.008v.008H8.25V18Zm2.498-6.75h.007v.008h-.007v-.008Zm0 2.25h.007v.008h-.007V13.5Zm0 2.25h.007v.008h-.007v-.008Zm0 2.25h.007v.008h-.007V18Zm2.504-6.75h.008v.008h-.008v-.008Zm0 2.25h.008v.008h-.008V13.5Zm0 2.25h.008v.008h-.008v-.008Zm0 2.25h.008v.008h-.008V18Zm2.498-6.75h.008v.008h-.008v-.008Zm0 2.25h.008v.008h-.008V13.5ZM8.25 6h7.5v2.25h-7.5V6ZM12 2.25c-1.892 0-3.758.11-5.593.322C5.307 2.7 4.5 3.65 4.5 4.757V19.5a2.25 2.25 0 0 0 2.25 2.25h10.5a2.25 2.25 0 0 0 2.25-2.25V4.757c0-1.108-.806-2.057-1.907-2.185A48.507 48.507 0 0 0 12 2.25Z" />
+                  </svg>
+            </div>
+        </div>
+
+
+        <!-- start: card about files with low maintenability -->
+        <div class="px-8 py-4 bg-white rounded-lg shadow-md dark:bg-gray-800 col-span-2">
+            <div class="mt-2">
+                <a href="#" class="text-xl font-bold text-gray-700 dark:text-white" tabindex="0" role="link">
+                    Top candidates for refactoring
+                </a>
+                <p class="mt-2 text-sm text-gray-600 dark:text-gray-300">
+                    These components have a low maintainability index and have been recently modified. They are good candidates for refactoring.
+                </p>
+            </div>
+            <div>
+                <table class="w-full mt-2 min-w-full divide-y divide-gray-200 dark:divide-gray-700"">
+                    <thead class="bg-gray-50 dark:bg-gray-800">
+                        <tr>
+                            <th class="py-3.5 px-4 text-sm font-normal text-left rtl:text-right text-gray-500 dark:text-gray-400">Component</th>
+                            <th class="py-3.5 px-4 text-sm font-normal text-left rtl:text-right text-gray-500 dark:text-gray-400">Risk</th>
+                            <th class="py-3.5 px-4 text-sm font-normal text-left rtl:text-right text-gray-500 dark:text-gray-400">Maintainability</th>
+                            <th class="py-3.5 px-4 text-sm font-normal text-left rtl:text-right text-gray-500 dark:text-gray-400">Recent commits</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% set files = currentView.ConcernedFiles|sortRisk %}
+                        {% if files|length == 0 %}
+
+                        <tr>
+                            <td class="px-4 py-1 text-sm font-medium whitespace-nowrap" colspan="4">
+                                <span class="text-sm font-normal text-gray-600 dark:text-gray-400">
+                                    No component with high risk found
+                                </span>
+                            </td>
+                        </tr>
+                        {% endif %}
+
+                        {% for file in files %}
+                        {% for class in file.Stmts.StmtClass %}
+                        <tr>
+                            <td class="px-4 py-1 text-sm font-medium whitespace-nowrap">
+                                <span class="text-sm font-normal text-gray-600 dark:text-gray-400">
+                                    {{ class.Name.Qualified }}
+                                </span>
+                            </td>
+                            <td  class="px-4 py-1 text-sm font-medium whitespace-nowrap text-center"  width="60">
+                                <span class="text-sm font-normal text-gray-600 dark:text-gray-400">
+                                    {{ class.Stmts.Analyze.Risk.Score|floatformat:2 }}
+                                </span>
+                            </td>
+                            <td class="px-4 py-1 text-sm font-medium whitespace-nowrap text-center" width="60">
+                                <span class="text-sm font-normal text-gray-600 dark:text-gray-400">
+                                    {{ class.Stmts.Analyze.Maintainability.MaintainabilityIndex|floatformat:0 }}
+                                </span>
+                            </td>
+                            <td  class="px-4 py-1 text-sm font-medium whitespace-nowrap text-center"  width="60">
+                                <span class="text-sm font-normal text-gray-600 dark:text-gray-400">
+                                    {{ file.Commits.CountCommits }}
+                                </span>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                        {% endfor %}
+                    </tbody>
+            </div>
+        </div>
+        <!-- end: card about files with low maintenability -->
+
+
+        
+
+    </div>
+
 
 {% endblock %}
 

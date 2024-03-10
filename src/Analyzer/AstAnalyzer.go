@@ -2,9 +2,10 @@ package Analyzer
 
 import (
 	"io/ioutil"
-	"log"
 	"strconv"
 	"sync"
+
+	log "github.com/sirupsen/logrus"
 
 	Complexity "github.com/halleck45/ast-metrics/src/Analyzer/Complexity"
 	Component "github.com/halleck45/ast-metrics/src/Analyzer/Component"
@@ -60,22 +61,32 @@ func Start(progressbar *pterm.SpinnerPrinter) []*pb.File {
 
 func executeFileAnalysis(file string, channelResult chan<- *pb.File) error {
 
+	pbFile := &pb.File{}
+	if pbFile.Errors == nil {
+		pbFile.Errors = make([]string, 0)
+	}
+
 	// load AST via ProtoBuf (using NodeType package)
 	in, err := ioutil.ReadFile(file)
 	if err != nil {
-		log.Fatal("Error reading file: ", err)
+		pbFile.Errors = append(pbFile.Errors, "Error reading file: "+err.Error())
+		channelResult <- pbFile
+		log.Error("Error reading file: ", err)
 		return err
 	}
 
 	// if file is empty, return
 	if len(in) == 0 {
-		log.Fatal("File is empty: ", file)
+		pbFile.Errors = append(pbFile.Errors, "File is empty: "+file)
+		channelResult <- pbFile
+		log.Error("File is empty: ", file)
 		return err
 	}
 
-	pbFile := &pb.File{}
 	if err := proto.Unmarshal(in, pbFile); err != nil {
-		log.Fatalln("Failed to parse address pbFile ("+file+"):", err)
+		pbFile.Errors = append(pbFile.Errors, "Failed to parse address pbFile ("+file+"): "+err.Error())
+		channelResult <- pbFile
+		log.Error("Failed to parse address pbFile ("+file+"):", err)
 		return err
 	}
 

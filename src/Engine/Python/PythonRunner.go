@@ -6,7 +6,6 @@ import (
 	"strings"
 
 	"fmt"
-	"log"
 
 	"github.com/go-python/gpython/ast"
 	"github.com/go-python/gpython/parser"
@@ -14,6 +13,7 @@ import (
 	"github.com/halleck45/ast-metrics/src/Engine"
 	pb "github.com/halleck45/ast-metrics/src/NodeType"
 	"github.com/halleck45/ast-metrics/src/Storage"
+	log "github.com/sirupsen/logrus"
 
 	"github.com/halleck45/ast-metrics/src/Configuration"
 	"github.com/halleck45/ast-metrics/src/File"
@@ -64,7 +64,7 @@ func (r PythonRunner) DumpAST() {
 
 		hash, err := Engine.GetFileHash(filePath)
 		if err != nil {
-			log.Fatal(err)
+			log.Error(err)
 		}
 		binPath := Storage.OutputPath() + string(os.PathSeparator) + hash + ".bin"
 		// if file exists, skip it
