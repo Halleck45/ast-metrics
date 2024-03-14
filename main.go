@@ -20,6 +20,13 @@ func main() {
 
 	log.SetLevel(log.TraceLevel)
 
+	// Create a temporary directory
+	build, err := os.MkdirTemp("", "ast-metrics")
+	if err != nil {
+		log.Error(err)
+	}
+	defer os.RemoveAll(build)
+
 	// Prepare accepted languages
 	runnerPhp := Php.PhpRunner{}
 	runnerGolang := Golang.GolangRunner{}
@@ -49,6 +56,12 @@ func main() {
 						Aliases:  []string{"i"},
 						Usage:    "Disable interactive mode",
 						Category: "Global options",
+					},
+					// HTML report
+					&cli.StringFlag{
+						Name:     "report-html",
+						Usage:    "Generate an HTML report",
+						Category: "Report",
 					},
 				},
 				Action: func(cCtx *cli.Context) error {
@@ -101,6 +114,11 @@ func main() {
 						configuration.SetExcludePatterns(excludePatterns)
 					}
 
+					// Reports
+					if cCtx.String("report-html") != "" {
+						configuration.HtmlReportPath = cCtx.String("report-html")
+					}
+
 					// Run command
 					command := Command.NewAnalyzeCommand(configuration, outWriter, runners, isInteractive)
 					err = command.Execute()
@@ -132,6 +150,6 @@ func main() {
 	app.Suggest = true
 
 	if err := app.Run(os.Args); err != nil {
-		log.Fatal(err)
+		log.Error(err)
 	}
 }

@@ -2,9 +2,10 @@ package Analyzer
 
 import (
 	"io/ioutil"
-	"log"
 	"strconv"
 	"sync"
+
+	log "github.com/sirupsen/logrus"
 
 	Complexity "github.com/halleck45/ast-metrics/src/Analyzer/Complexity"
 	Component "github.com/halleck45/ast-metrics/src/Analyzer/Component"
@@ -16,7 +17,7 @@ import (
 	"google.golang.org/protobuf/proto"
 )
 
-func Start(progressbar *pterm.SpinnerPrinter) []pb.File {
+func Start(progressbar *pterm.SpinnerPrinter) []*pb.File {
 
 	workdir := Storage.Path()
 	// List all ASTs files (*.bin) in the workdir
@@ -31,7 +32,7 @@ func Start(progressbar *pterm.SpinnerPrinter) []pb.File {
 	// store results
 	// channel should have value
 	// https://stackoverflow.com/questions/58743038/why-does-this-goroutine-not-call-wg-done
-	channelResult := make(chan pb.File, len(astFiles))
+	channelResult := make(chan *pb.File, len(astFiles))
 
 	nbParsingFiles := 0
 	// in parallel, 8 process max, analyze each AST file running the runAnalysis function
@@ -50,33 +51,48 @@ func Start(progressbar *pterm.SpinnerPrinter) []pb.File {
 	wg.Wait()
 	progressbar.Info("AST Analysis finished")
 	// Convert it to slice of pb.File
-	allResults := make([]pb.File, 0, len(astFiles))
+	allResults := make([]*pb.File, 0, len(astFiles))
 	for i := 0; i < len(astFiles); i++ {
 		allResults = append(allResults, <-channelResult)
 	}
 	defer close(channelResult)
-
 	return allResults
 }
 
-func executeFileAnalysis(file string, channelResult chan<- pb.File) error {
+func executeFileAnalysis(file string, channelResult chan<- *pb.File) error {
+
+	pbFile := &pb.File{}
 
 	// load AST via ProtoBuf (using NodeType package)
 	in, err := ioutil.ReadFile(file)
 	if err != nil {
-		log.Fatal("Error reading file: ", err)
+		log.Error("Error reading file: ", err)
+		if pbFile.Errors == nil {
+			pbFile.Errors = make([]string, 0)
+		}
+		pbFile.Errors = append(pbFile.Errors, "Error reading file: "+err.Error())
+		channelResult <- pbFile
 		return err
 	}
 
 	// if file is empty, return
 	if len(in) == 0 {
-		log.Fatal("File is empty: ", file)
+		log.Error("File is empty: ", file)
+		if pbFile.Errors == nil {
+			pbFile.Errors = make([]string, 0)
+		}
+		pbFile.Errors = append(pbFile.Errors, "File is empty: "+file)
+		channelResult <- pbFile
 		return err
 	}
 
-	pbFile := &pb.File{}
 	if err := proto.Unmarshal(in, pbFile); err != nil {
-		log.Fatalln("Failed to parse address pbFile ("+file+"):", err)
+		log.Errorln("Failed to parse address pbFile ("+file+"):", err)
+		if pbFile.Errors == nil {
+			pbFile.Errors = make([]string, 0)
+		}
+		pbFile.Errors = append(pbFile.Errors, "Failed to parse address pbFile ("+file+"): "+err.Error())
+		channelResult <- pbFile
 		return err
 	}
 
@@ -97,7 +113,6 @@ func executeFileAnalysis(file string, channelResult chan<- pb.File) error {
 
 	// visit AST
 	root.Visit()
-
-	channelResult <- *pbFile
+	channelResult <- pbFile
 	return nil
 }

@@ -5,9 +5,10 @@ import (
 	"go/ast"
 	"go/parser"
 	"go/token"
-	"log"
 	"os"
 	"strings"
+
+	log "github.com/sirupsen/logrus"
 
 	"github.com/halleck45/ast-metrics/src/Configuration"
 	"github.com/halleck45/ast-metrics/src/Engine"
@@ -61,7 +62,7 @@ func (r GolangRunner) DumpAST() {
 
 		hash, err := Engine.GetFileHash(filePath)
 		if err != nil {
-			log.Fatal(err)
+			log.Error(err)
 		}
 		binPath := Storage.OutputPath() + string(os.PathSeparator) + hash + ".bin"
 		// if file exists, skip it
@@ -84,13 +85,13 @@ func parseGoFile(filePath string) *pb.File {
 	fset := token.NewFileSet()
 	f, err := parser.ParseFile(fset, filePath, nil, parser.ParseComments)
 	if err != nil {
-		log.Fatal(err)
+		log.Error(err)
 	}
 
 	// Read file content
 	fileContent, err := os.ReadFile(filePath)
 	if err != nil {
-		log.Fatal(err)
+		log.Error(err)
 	}
 	linesOfFileString := string(fileContent)
 	// make it slice of lines (one line per element)

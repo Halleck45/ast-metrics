@@ -6,7 +6,8 @@ import (
 	"strings"
 
 	"fmt"
-	"log"
+
+	log "github.com/sirupsen/logrus"
 
 	"github.com/go-python/gpython/ast"
 	"github.com/go-python/gpython/parser"
@@ -64,7 +65,7 @@ func (r PythonRunner) DumpAST() {
 
 		hash, err := Engine.GetFileHash(filePath)
 		if err != nil {
-			log.Fatal(err)
+			log.Error(err)
 		}
 		binPath := Storage.OutputPath() + string(os.PathSeparator) + hash + ".bin"
 		// if file exists, skip it

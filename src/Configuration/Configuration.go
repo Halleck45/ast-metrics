@@ -11,6 +11,9 @@ type Configuration struct {
 
 	// Exclude patterns (list of regular expressions. When a file matches one of these patterns, it is not analyzed)
 	ExcludePatterns []string
+
+	// Reports
+	HtmlReportPath string
 }
 
 func NewConfiguration() *Configuration {
