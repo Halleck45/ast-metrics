@@ -49,11 +49,19 @@ type Aggregated struct {
 	AverageMIwocPerMethod                float64
 	AverageMIcwPerMethod                 float64
 	CommitCountForPeriod                 int
+	BusFactor                            int
+	TopCommitters                        []TopCommitter
 }
 
 type Aggregator struct {
 	files             []*pb.File
 	projectAggregated ProjectAggregated
+	analyzers         []AggregateAnalyzer
+}
+
+type TopCommitter struct {
+	Name  string
+	Count int
 }
 
 func NewAggregator(files []*pb.File) *Aggregator {
@@ -61,6 +69,10 @@ func NewAggregator(files []*pb.File) *Aggregator {
 		files:             files,
 		projectAggregated: ProjectAggregated{},
 	}
+}
+
+type AggregateAnalyzer interface {
+	Calculate(aggregate *Aggregated)
 }
 
 func newAggregated() Aggregated {
@@ -443,4 +455,12 @@ func (r *Aggregator) consolidate(aggregated *Aggregated) {
 		}
 	}
 
+	// Bus factor and other metrics based on aggregated data
+	for _, analyzer := range r.analyzers {
+		analyzer.Calculate(aggregated)
+	}
+}
+
+func (r *Aggregator) WithAggregateAnalyzer(analyzer AggregateAnalyzer) {
+	r.analyzers = append(r.analyzers, analyzer)
 }

@@ -4,6 +4,7 @@ import (
 	"bufio"
 
 	"github.com/halleck45/ast-metrics/src/Analyzer"
+	Activity "github.com/halleck45/ast-metrics/src/Analyzer/Activity"
 	"github.com/halleck45/ast-metrics/src/Cli"
 	"github.com/halleck45/ast-metrics/src/Configuration"
 	"github.com/halleck45/ast-metrics/src/Engine"
@@ -100,6 +101,7 @@ func (v *AnalyzeCommand) Execute() error {
 
 	// Start aggregating results
 	aggregator := Analyzer.NewAggregator(allResults)
+	aggregator.WithAggregateAnalyzer(Activity.NewBusFactor())
 	spinnerAllExecution.UpdateTitle("Aggregating...")
 	projectAggregated := aggregator.Aggregates()
 

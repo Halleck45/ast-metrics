@@ -35,6 +35,10 @@ func findGitRoot(filePath string) (string, error) {
 }
 
 func (gitAnalyzer *GitAnalyzer) Start(files []*pb.File) {
+	gitAnalyzer.CalculateCount(files)
+}
+
+func (gitAnalyzer *GitAnalyzer) CalculateCount(files []*pb.File) {
 
 	// Map of files by git repository
 	filesByGitRepo := make(map[string][]*pb.File)
@@ -100,7 +104,7 @@ func (gitAnalyzer *GitAnalyzer) Start(files []*pb.File) {
 		commits := strings.Split(string(out), "\n")
 		for _, commit := range commits {
 			// list modified, added, deleted files
-			cmd = exec.Command("git", "log", "--pretty=format:%ce|%ct", "--name-only", "-n", "1", commit)
+			cmd = exec.Command("git", "log", "--pretty=format:%ae|%ct", "--name-only", "-n", "1", commit)
 			cmd.Dir = repoRoot
 			out, err := cmd.Output()
 			if err != nil {
@@ -133,8 +137,9 @@ func (gitAnalyzer *GitAnalyzer) Start(files []*pb.File) {
 				// increment commit count
 				filesByPath[file].Commits.Count++
 				commit := &pb.Commit{
-					Hash: commit,
-					Date: int64(timestamp),
+					Hash:   commit,
+					Date:   int64(timestamp),
+					Author: authorEmail,
 				}
 				if filesByPath[file].Commits.Commits == nil {
 					filesByPath[file].Commits.Commits = make([]*pb.Commit, 0)
