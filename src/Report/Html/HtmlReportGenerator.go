@@ -1,6 +1,7 @@
 package Report
 
 import (
+	"embed"
 	"fmt"
 	"os"
 	"sort"
@@ -12,6 +13,11 @@ import (
 	"github.com/halleck45/ast-metrics/src/Cli"
 	"github.com/halleck45/ast-metrics/src/Engine"
 	pb "github.com/halleck45/ast-metrics/src/NodeType"
+)
+
+var (
+	//go:embed templates/*
+	content embed.FS
 )
 
 type ReportGenerator struct {
@@ -33,9 +39,30 @@ func (v *ReportGenerator) Generate(files []*pb.File, projectAggregated Analyzer.
 		return err
 	}
 
+	// copy the templates from embed, to temporary folder
+	templateDir := fmt.Sprintf("%s/templates", os.TempDir())
+	err = os.MkdirAll(templateDir, os.ModePerm)
+	if err != nil {
+		return err
+	}
+
+	for _, file := range []string{"index.html", "layout.html"} {
+		// read the file
+		content, err := content.ReadFile(fmt.Sprintf("templates/%s", file))
+		if err != nil {
+			return err
+		}
+
+		// write the file to temporary folder (/tmp)
+		err = os.WriteFile(fmt.Sprintf("%s/%s", templateDir, file), content, 0644)
+		if err != nil {
+			return err
+		}
+	}
+
 	// Define loader in order to retrieve templates in the Report/Html/templates folder
-	loader := pongo2.MustNewLocalFileSystemLoader("src/Report/Html/templates")
-	pongo2.DefaultSet = pongo2.NewSet("src/Report/Html/templates", loader)
+	loader := pongo2.MustNewLocalFileSystemLoader(templateDir)
+	pongo2.DefaultSet = pongo2.NewSet(templateDir, loader)
 
 	// Custom filters
 	v.RegisterFilters()
@@ -45,6 +72,12 @@ func (v *ReportGenerator) Generate(files []*pb.File, projectAggregated Analyzer.
 	// by language overview
 	for language, currentView := range projectAggregated.ByProgrammingLanguage {
 		v.GenerateLanguagePage("index.html", language, currentView, files, projectAggregated)
+	}
+
+	// cleanup temporary folder
+	err = os.RemoveAll(templateDir)
+	if err != nil {
+		return err
 	}
 
 	return nil
