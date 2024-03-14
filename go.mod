@@ -20,7 +20,7 @@ require (
 	github.com/urfave/cli/v2 v2.25.7
 	github.com/yargevad/filepathx v1.0.0
 	golang.org/x/term v0.14.0
-	google.golang.org/protobuf v1.31.0
+	google.golang.org/protobuf v1.33.0
 )
 
 require (
