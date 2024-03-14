@@ -27,7 +27,6 @@ You can also analyze more than one directory:
 ```bash
 ast-metrics analyze <path1> <path2> <path3>
 ```
-
 ## Requirements
 
 AST Metrics is a standalone package. It does not require any other software to be installed.
@@ -49,7 +48,30 @@ Or download the latest version of AST Metrics from the [releases page](https://g
 
 ## Supported languages
 
-For the moment PHP, Python Golang are supported. But we are working on adding more languages.
++ ✅ **PHP**
++ ✅ **Python**
++ ✅ **Golang**
+
+
+We are working on adding more languages.
+
+## Options
+
+File selection:
+
++ **Exclude** (`--exclude=<regex>`): Exclude files or directories from the analysis. You can use regular expressions.
+
+Reports:
+
+- **Markdown** (`--report-markdown=<filename>`): A report in markdown format.
+- **HTML** (`--report-html=<dir>`): A report in HTML format.
+
+Global options:
+
+- **Verbose** (`--verbose`): Show debug information.
+- **Interactive mode** (`--non-interactive`): Disable interactive mode.
+
+
 
 ## Contributing
 

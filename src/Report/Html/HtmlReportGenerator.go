@@ -20,18 +20,23 @@ var (
 	content embed.FS
 )
 
-type ReportGenerator struct {
+type HtmlReportGenerator struct {
 	// The path where the report will be generated
 	ReportPath string
 }
 
-func NewReportGenerator(reportPath string) *ReportGenerator {
-	return &ReportGenerator{
+func NewHtmlReportGenerator(reportPath string) *HtmlReportGenerator {
+	return &HtmlReportGenerator{
 		ReportPath: reportPath,
 	}
 }
 
-func (v *ReportGenerator) Generate(files []*pb.File, projectAggregated Analyzer.ProjectAggregated) error {
+func (v *HtmlReportGenerator) Generate(files []*pb.File, projectAggregated Analyzer.ProjectAggregated) error {
+
+	// Ensure report is required
+	if v.ReportPath == "" {
+		return nil
+	}
 
 	// Ensure destination folder exists
 	err := v.EnsureFolder(v.ReportPath)
@@ -83,7 +88,7 @@ func (v *ReportGenerator) Generate(files []*pb.File, projectAggregated Analyzer.
 	return nil
 }
 
-func (v *ReportGenerator) GenerateLanguagePage(template string, language string, currentView Analyzer.Aggregated, files []*pb.File, projectAggregated Analyzer.ProjectAggregated) error {
+func (v *HtmlReportGenerator) GenerateLanguagePage(template string, language string, currentView Analyzer.Aggregated, files []*pb.File, projectAggregated Analyzer.ProjectAggregated) error {
 
 	// Compile the index.html template
 	tpl, err := pongo2.DefaultSet.FromFile("index.html")
@@ -111,7 +116,7 @@ func (v *ReportGenerator) GenerateLanguagePage(template string, language string,
 	return nil
 }
 
-func (v *ReportGenerator) EnsureFolder(path string) error {
+func (v *HtmlReportGenerator) EnsureFolder(path string) error {
 	// check if the folder exists
 	if _, err := os.Stat(path); os.IsNotExist(err) {
 		// create it
@@ -123,7 +128,7 @@ func (v *ReportGenerator) EnsureFolder(path string) error {
 	return nil
 }
 
-func (v *ReportGenerator) RegisterFilters() {
+func (v *HtmlReportGenerator) RegisterFilters() {
 
 	pongo2.RegisterFilter("sortMaintainabilityIndex", func(in *pongo2.Value, param *pongo2.Value) (out *pongo2.Value, err *pongo2.Error) {
 		// get the list to sort
@@ -230,19 +235,21 @@ func (v *ReportGenerator) RegisterFilters() {
 	})
 
 	// filter to format number. Ex: 1234 -> 1 K
-	pongo2.RegisterFilter("stringifyNumber", func(in *pongo2.Value, param *pongo2.Value) (out *pongo2.Value, err *pongo2.Error) {
-		// get the number to format
-		number := in.Integer()
+	if !pongo2.FilterExists("stringifyNumber") {
+		pongo2.RegisterFilter("stringifyNumber", func(in *pongo2.Value, param *pongo2.Value) (out *pongo2.Value, err *pongo2.Error) {
+			// get the number to format
+			number := in.Integer()
 
-		// format it
-		if number > 1000000 {
-			return pongo2.AsValue(fmt.Sprintf("%.1f M", float64(number)/1000000)), nil
-		} else if number > 1000 {
-			return pongo2.AsValue(fmt.Sprintf("%.1f K", float64(number)/1000)), nil
-		}
+			// format it
+			if number > 1000000 {
+				return pongo2.AsValue(fmt.Sprintf("%.1f M", float64(number)/1000000)), nil
+			} else if number > 1000 {
+				return pongo2.AsValue(fmt.Sprintf("%.1f K", float64(number)/1000)), nil
+			}
 
-		return pongo2.AsValue(number), nil
-	})
+			return pongo2.AsValue(number), nil
+		})
+	}
 
 	// filter that Return new Cli.NewComponentBarchartCyclomaticByMethodRepartition(aggregated, files)
 	pongo2.RegisterFilter("barchartCyclomaticByMethodRepartition", func(in *pongo2.Value, param *pongo2.Value) (out *pongo2.Value, err *pongo2.Error) {
