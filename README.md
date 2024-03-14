@@ -2,9 +2,11 @@
 
 [![Go](https://github.com/Halleck45/ast-metrics/actions/workflows/test.yml/badge.svg)](https://github.com/Halleck45/ast-metrics/actions/workflows/test.yml)
 
-![AST Metrics is a language-agnostic static code analyzer.](./docs/preview.gif)
+| Terminal application | HTML report |
+| --- | ---------- |
+| ![AST Metrics is a language-agnostic static code analyzer.](./docs/preview.gif) |![HTML report](./docs/preview-html-report.png) |
 
-AST Metrics is a language-agnostic static code analyzer.
+**AST Metrics is a language-agnostic static code analyzer.** It helps you to understand the structure of your code and to identify potential issues.
 
 [Twitter](https://twitter.com/Halleck45) | [Contributing](.github/CONTRIBUTING.md)
 
@@ -12,6 +14,18 @@ AST Metrics is a language-agnostic static code analyzer.
 
 ```bash
 ast-metrics analyze <path>
+```
+
+Or generate HTML report:
+
+```bash
+ast-metrics analyze --report-html=<dir> <path>
+```
+
+You can also analyze more than one directory:
+
+```bash
+ast-metrics analyze <path1> <path2> <path3>
 ```
 
 ## Requirements
