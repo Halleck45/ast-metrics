@@ -9,3 +9,4 @@ dist/
 build
 bindata.go
 include
+coverage.txt
