@@ -266,9 +266,11 @@
                                 {% for class in file.Stmts.StmtClass %}
                                 <tr class="odd:bg-white odd:dark:bg-gray-900 even:bg-gray-50 even:dark:bg-gray-800 border-b dark:border-gray-700">
                                     <td class="px-4 py-1 text-xs font-medium whitespace-nowrap">
-                                        <span class="text-xs font-bold text-gray-600 dark:text-gray-400">
-                                            {{ class.Name.Qualified }}
-                                        </span>
+                                        <div class="truncate w-72">
+                                            <acronym title="{{ class.Name.Qualified }}" class="text-xs font-bold text-gray-600 dark:text-gray-400">
+                                                {{ class.Name.Qualified }}
+                                            </acronym>
+                                        </div>
                                     </td>
                                     <td  class="px-4 py-1 text-xs font-medium whitespace-nowrap text-center"  width="60">
                                         <span class="text-sm font-normal text-gray-600 dark:text-gray-400">
