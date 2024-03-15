@@ -56,8 +56,8 @@ func (c *ComponentBarchartMaintainabilityIndexRepartition) GetData() *orderedmap
 		classes := Engine.GetClassesInFile(file)
 
 		if classes == nil || len(classes) == 0 {
-			miForFile := file.Stmts.Analyze.Maintainability.MaintainabilityIndex
-			if miForFile != nil {
+			if file.Stmts != nil && file.Stmts.Analyze != nil && file.Stmts.Analyze.Maintainability != nil && file.Stmts.Analyze.Maintainability.MaintainabilityIndex != nil {
+				miForFile := file.Stmts.Analyze.Maintainability.MaintainabilityIndex
 				for i, r := range rangeOfValues {
 					if *miForFile < r {
 						value, _ := data.Get(rangeOfLabels[i])

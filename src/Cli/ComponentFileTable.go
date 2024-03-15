@@ -69,12 +69,17 @@ func (v *ComponentFileTable) Init() {
 			nbCommiters = int(file.Commits.CountCommiters)
 		}
 
+		cyclo := 0
+		if file.Stmts != nil && file.Stmts.Analyze != nil && file.Stmts.Analyze.Complexity != nil {
+			cyclo = int(*file.Stmts.Analyze.Complexity.Cyclomatic)
+		}
+
 		rows = append(rows, table.Row{
 			file.Path,
 			strconv.Itoa(nbCommits),
 			strconv.Itoa(nbCommiters),
 			strconv.Itoa(int(file.LinesOfCode.GetLinesOfCode())),
-			strconv.Itoa(int(*file.Stmts.Analyze.Complexity.Cyclomatic)),
+			strconv.Itoa(int(cyclo)),
 		})
 	}
 

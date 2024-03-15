@@ -104,7 +104,7 @@ func (gitAnalyzer *GitAnalyzer) CalculateCount(files []*pb.File) {
 		commits := strings.Split(string(out), "\n")
 		for _, commit := range commits {
 			// list modified, added, deleted files
-			cmd = exec.Command("git", "log", "--pretty=format:%ae|%ct", "--name-only", "-n", "1", commit)
+			cmd = exec.Command("git", "log", "--pretty=format:%an|%ct", "--name-only", "-n", "1", commit)
 			cmd.Dir = repoRoot
 			out, err := cmd.Output()
 			if err != nil {
