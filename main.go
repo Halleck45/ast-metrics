@@ -63,6 +63,12 @@ func main() {
 						Usage:    "Generate an HTML report",
 						Category: "Report",
 					},
+					// Markdown report
+					&cli.StringFlag{
+						Name:     "report-markdown",
+						Usage:    "Generate an Markdown report file",
+						Category: "Report",
+					},
 				},
 				Action: func(cCtx *cli.Context) error {
 
@@ -117,6 +123,9 @@ func main() {
 					// Reports
 					if cCtx.String("report-html") != "" {
 						configuration.HtmlReportPath = cCtx.String("report-html")
+					}
+					if cCtx.String("report-markdown") != "" {
+						configuration.MarkdownReportPath = cCtx.String("report-markdown")
 					}
 
 					// Run command

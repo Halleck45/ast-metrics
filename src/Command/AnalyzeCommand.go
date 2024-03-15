@@ -9,6 +9,7 @@ import (
 	"github.com/halleck45/ast-metrics/src/Configuration"
 	"github.com/halleck45/ast-metrics/src/Engine"
 	Report "github.com/halleck45/ast-metrics/src/Report/Html"
+	Markdown "github.com/halleck45/ast-metrics/src/Report/Markdown"
 	"github.com/halleck45/ast-metrics/src/Storage"
 	"github.com/pterm/pterm"
 )
@@ -106,17 +107,18 @@ func (v *AnalyzeCommand) Execute() error {
 	projectAggregated := aggregator.Aggregates()
 
 	// Generate reports
-	if v.configuration.HtmlReportPath != "" {
-		spinnerAllExecution.UpdateTitle("Generating reports...")
-		spinnerAllExecution.Increment()
-		htmlReportGenerator := Report.NewReportGenerator(v.configuration.HtmlReportPath)
-		err := htmlReportGenerator.Generate(allResults, projectAggregated)
-
-		if err != nil {
-			pterm.Error.Println(err.Error())
-			return err
-		}
+	spinnerAllExecution.UpdateTitle("Generating reports...")
+	spinnerAllExecution.Increment()
+	// report: html
+	htmlReportGenerator := Report.NewHtmlReportGenerator(v.configuration.HtmlReportPath)
+	err := htmlReportGenerator.Generate(allResults, projectAggregated)
+	if err != nil {
+		pterm.Error.Println(err.Error())
+		return err
 	}
+	// report: markdown
+	markdownReportGenerator := Markdown.NewMarkdownReportGenerator(v.configuration.MarkdownReportPath)
+	err = markdownReportGenerator.Generate(allResults, projectAggregated)
 
 	spinnerAllExecution.UpdateTitle("")
 	spinnerAllExecution.Stop()

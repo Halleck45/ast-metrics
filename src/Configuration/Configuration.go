@@ -14,6 +14,7 @@ type Configuration struct {
 
 	// Reports
 	HtmlReportPath string
+	MarkdownReportPath string
 }
 
 func NewConfiguration() *Configuration {
