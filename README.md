@@ -27,11 +27,9 @@ You can also analyze more than one directory:
 ```bash
 ast-metrics analyze <path1> <path2> <path3>
 ```
-## Requirements
+## Installation
 
 AST Metrics is a standalone package. It does not require any other software to be installed.
-
-## Installation
 
 | Platform | Architecture | Binary |
 | -------- | ------------ | ------ |
@@ -46,7 +44,7 @@ AST Metrics is a standalone package. It does not require any other software to b
 
 Or download the latest version of AST Metrics from the [releases page](https://github.com/Halleck45/ast-metrics/releases/latest).
 
-## Supported languages
+## ⭐ Supported languages
 
 + ✅ **PHP**
 + ✅ **Python**
@@ -55,7 +53,7 @@ Or download the latest version of AST Metrics from the [releases page](https://g
 
 We are working on adding more languages.
 
-## Options
+## 📝 Options
 
 File selection:
 
@@ -70,6 +68,25 @@ Global options:
 
 - **Verbose** (`--verbose`): Show debug information.
 - **Interactive mode** (`--non-interactive`): Disable interactive mode.
+
+## 🚀 Continuous integration
+
+You can easily integrate AST Metrics into your CI/CD pipeline.
+
+a [Github Action](https://github.com/marketplace/actions/ast-metrics-analysis) is available.
+
+Create a `.github/workflows/ast-metrics.yml` file with the following content:
+
+```yaml
+name: AST Metrics
+on: [push]
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+        - name: AST Metrics
+          uses: halleck45/action-ast-metrics@v1.0.2
+```
 
 
 
