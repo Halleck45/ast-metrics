@@ -112,20 +112,23 @@ func TestCalculate(t *testing.T) {
 			},
 		},
 	}
+	file := pb.File{
+		Stmts: &stmts,
+	}
 	aggregated := Aggregated{}
-
-	aggregator.calculate(&stmts, &aggregated)
+	aggregator.calculateSums(&file, &aggregated)
+	aggregator.consolidate(&aggregated)
 
 	if aggregated.NbMethods != 2 {
 		t.Errorf("Expected 2, got %d", aggregated.NbMethods)
 	}
 
 	if aggregated.NbClasses != 3 {
-		t.Errorf("Expected 3, got %d", aggregated.NbClasses)
+		t.Errorf("Expected 3 classes, got %d", aggregated.NbClasses)
 	}
 
-	if aggregated.AverageCyclomaticComplexityPerMethod != 30 {
-		t.Errorf("Expected 30, got %f", aggregated.AverageCyclomaticComplexityPerMethod)
+	if aggregated.AverageCyclomaticComplexityPerMethod != 15 {
+		t.Errorf("Expected AverageCyclomaticComplexityPerMethod, got %f", aggregated.AverageCyclomaticComplexityPerMethod)
 	}
 
 	if aggregated.Loc != 100 {
@@ -138,5 +141,376 @@ func TestCalculate(t *testing.T) {
 
 	if aggregated.Lloc != 300 {
 		t.Errorf("Expected 300, got %d", aggregated.Lloc)
+	}
+}
+
+func TestAggregates(t *testing.T) {
+	// Create a new Aggregator with some dummy data
+	aggregator := Aggregator{
+		files: []*pb.File{
+			// file 1
+			{
+				ProgrammingLanguage: "Go",
+				Stmts: &pb.Stmts{
+					StmtFunction: []*pb.StmtFunction{
+						{
+							Stmts: &pb.Stmts{
+								Analyze: &pb.Analyze{
+									Complexity: &pb.Complexity{
+										Cyclomatic: proto.Int32(10),
+									},
+								},
+							},
+						},
+					},
+					StmtClass: []*pb.StmtClass{
+						// class
+						{
+							Stmts: &pb.Stmts{
+								Analyze: &pb.Analyze{
+									Maintainability: &pb.Maintainability{
+										MaintainabilityIndex:                proto.Float32(120),
+										MaintainabilityIndexWithoutComments: proto.Float32(48),
+										CommentWeight:                       proto.Float32(40),
+									},
+								},
+							},
+						},
+						// class
+						{
+							Stmts: &pb.Stmts{
+								Analyze: &pb.Analyze{
+									Maintainability: &pb.Maintainability{
+										MaintainabilityIndex:                proto.Float32(85),
+										MaintainabilityIndexWithoutComments: proto.Float32(48),
+										CommentWeight:                       proto.Float32(40),
+									},
+								},
+							},
+						},
+						// class
+						{
+							Stmts: &pb.Stmts{
+								Analyze: &pb.Analyze{
+									Maintainability: &pb.Maintainability{
+										MaintainabilityIndex:                proto.Float32(65),
+										MaintainabilityIndexWithoutComments: proto.Float32(48),
+										CommentWeight:                       proto.Float32(40),
+									},
+								},
+							},
+						},
+						// class
+						{
+							Stmts: &pb.Stmts{
+								Analyze: &pb.Analyze{
+									Maintainability: &pb.Maintainability{
+										MaintainabilityIndex:                proto.Float32(100),
+										MaintainabilityIndexWithoutComments: proto.Float32(48),
+										CommentWeight:                       proto.Float32(40),
+									},
+								},
+							},
+						},
+					},
+					StmtNamespace: []*pb.StmtNamespace{
+						{
+							Stmts: &pb.Stmts{
+								StmtFunction: []*pb.StmtFunction{
+									{
+										Stmts: &pb.Stmts{
+											Analyze: &pb.Analyze{
+												Complexity: &pb.Complexity{
+													Cyclomatic: proto.Int32(20),
+												},
+											},
+										},
+									},
+								},
+								StmtClass: []*pb.StmtClass{
+									// class
+									{
+										Stmts: &pb.Stmts{
+											Analyze: &pb.Analyze{
+												Maintainability: &pb.Maintainability{
+													MaintainabilityIndex:                proto.Float32(70),
+													MaintainabilityIndexWithoutComments: proto.Float32(48),
+													CommentWeight:                       proto.Float32(40),
+												},
+											},
+										},
+									},
+									// class
+									{
+										Stmts: &pb.Stmts{
+											Analyze: &pb.Analyze{
+												Maintainability: &pb.Maintainability{
+													MaintainabilityIndex:                proto.Float32(100),
+													MaintainabilityIndexWithoutComments: proto.Float32(48),
+													CommentWeight:                       proto.Float32(40),
+												},
+											},
+										},
+									},
+								},
+							},
+						},
+					},
+					Analyze: &pb.Analyze{
+						Volume: &pb.Volume{
+							Loc:  proto.Int32(100),
+							Cloc: proto.Int32(200),
+							Lloc: proto.Int32(50),
+						},
+					},
+				},
+			},
+			// file 2
+			{
+				ProgrammingLanguage: "Go",
+				Stmts: &pb.Stmts{
+					StmtFunction: []*pb.StmtFunction{
+						{
+							Stmts: &pb.Stmts{
+								Analyze: &pb.Analyze{
+									Complexity: &pb.Complexity{
+										Cyclomatic: proto.Int32(60),
+									},
+								},
+							},
+						},
+					},
+					StmtClass: []*pb.StmtClass{
+						// class
+						{
+							Stmts: &pb.Stmts{
+								Analyze: &pb.Analyze{
+									Maintainability: &pb.Maintainability{
+										MaintainabilityIndex:                proto.Float32(75),
+										MaintainabilityIndexWithoutComments: proto.Float32(48),
+										CommentWeight:                       proto.Float32(40),
+									},
+								},
+							},
+						},
+						// class
+						{
+							Stmts: &pb.Stmts{
+								Analyze: &pb.Analyze{
+									Maintainability: &pb.Maintainability{
+										MaintainabilityIndex:                proto.Float32(120),
+										MaintainabilityIndexWithoutComments: proto.Float32(48),
+										CommentWeight:                       proto.Float32(40),
+									},
+								},
+							},
+						},
+					},
+					StmtNamespace: []*pb.StmtNamespace{
+						{
+							Stmts: &pb.Stmts{
+								StmtFunction: []*pb.StmtFunction{
+									{
+										Stmts: &pb.Stmts{
+											Analyze: &pb.Analyze{
+												Complexity: &pb.Complexity{
+													Cyclomatic: proto.Int32(30),
+												},
+											},
+										},
+									},
+								},
+								StmtClass: []*pb.StmtClass{
+									// class
+									{
+										Stmts: &pb.Stmts{
+											Analyze: &pb.Analyze{
+												Maintainability: &pb.Maintainability{
+													MaintainabilityIndex:                proto.Float32(90),
+													MaintainabilityIndexWithoutComments: proto.Float32(48),
+													CommentWeight:                       proto.Float32(40),
+												},
+											},
+										},
+									},
+								},
+							},
+						},
+					},
+					Analyze: &pb.Analyze{
+						Volume: &pb.Volume{
+							Loc:  proto.Int32(200),
+							Cloc: proto.Int32(300),
+							Lloc: proto.Int32(150),
+						},
+					},
+				},
+			},
+			// file 3
+			{
+				ProgrammingLanguage: "Php",
+				Stmts: &pb.Stmts{
+					StmtNamespace: []*pb.StmtNamespace{
+						{
+							Stmts: &pb.Stmts{
+								StmtFunction: []*pb.StmtFunction{
+									{
+										Stmts: &pb.Stmts{
+											Analyze: &pb.Analyze{
+												Complexity: &pb.Complexity{
+													Cyclomatic: proto.Int32(30),
+												},
+											},
+										},
+									},
+								},
+								StmtClass: []*pb.StmtClass{
+									// class
+									{
+										Stmts: &pb.Stmts{
+											Analyze: &pb.Analyze{
+												Maintainability: &pb.Maintainability{
+													MaintainabilityIndex:                proto.Float32(120),
+													MaintainabilityIndexWithoutComments: proto.Float32(48),
+													CommentWeight:                       proto.Float32(40),
+												},
+											},
+										},
+									},
+								},
+							},
+						},
+					},
+					Analyze: &pb.Analyze{
+						Volume: &pb.Volume{
+							Loc:  proto.Int32(600),
+							Cloc: proto.Int32(100),
+							Lloc: proto.Int32(400),
+						},
+					},
+				},
+			},
+		},
+	}
+
+	// Call the Aggregates method
+	projectAggregated := aggregator.Aggregates()
+
+	// Check that the returned ProjectAggregated struct has the expected values
+	if projectAggregated.ByFile.NbFiles != 3 {
+		t.Errorf("Expected 3 files, got %d", projectAggregated.ByFile.NbFiles)
+	}
+
+	// Checks on Combined aggregate
+	if projectAggregated.ByClass.NbClasses != 10 {
+		t.Errorf("Expected 10 classes, got %d", projectAggregated.ByClass.NbClasses)
+	}
+
+	if projectAggregated.Combined.NbClasses != 10 {
+		t.Errorf("Expected 10 classes, got %d", projectAggregated.ByClass.NbClasses)
+	}
+
+	if projectAggregated.Combined.NbMethods != 5 {
+		t.Errorf("Expected 5 methods, got %d", projectAggregated.Combined.NbMethods)
+	}
+
+	if projectAggregated.Combined.AverageCyclomaticComplexityPerMethod != 30 {
+		t.Errorf("Expected AverageCyclomaticComplexityPerMethod 30, got %f", projectAggregated.Combined.AverageCyclomaticComplexityPerMethod)
+	}
+
+	if int(projectAggregated.Combined.AverageMI) != 94 {
+		t.Errorf("Expected MI of 94 for all files, got %v", int(projectAggregated.Combined.AverageMI))
+	}
+
+	// Check on Go aggregate
+	if projectAggregated.ByProgrammingLanguage["Go"].NbClasses != 9 {
+		t.Errorf("Expected 9 classes, got %d", projectAggregated.ByProgrammingLanguage["Go"].NbClasses)
+	}
+
+	if projectAggregated.ByProgrammingLanguage["Go"].NbMethods != 4 {
+		t.Errorf("Expected 4 methods in Go, got %d", projectAggregated.ByProgrammingLanguage["Go"].NbMethods)
+	}
+
+	if projectAggregated.ByProgrammingLanguage["Go"].NbFiles != 2 {
+		t.Errorf("Expected 2 Go files, got %d", projectAggregated.ByProgrammingLanguage["Go"].NbFiles)
+	}
+
+	if int(projectAggregated.ByProgrammingLanguage["Go"].AverageMI) != 91 {
+		t.Errorf("Expected MI of 91 for Go files, got %v", int(projectAggregated.ByProgrammingLanguage["Go"].AverageMI))
+	}
+
+	// Check on Php aggregate
+	if projectAggregated.ByProgrammingLanguage["Php"].NbClasses != 1 {
+		t.Errorf("Expected 1 class, got %d", projectAggregated.ByProgrammingLanguage["Php"].NbClasses)
+	}
+
+	if projectAggregated.ByProgrammingLanguage["Php"].NbMethods != 1 {
+		t.Errorf("Expected 1 methods in PHP, got %d", projectAggregated.ByProgrammingLanguage["Php"].NbMethods)
+	}
+
+	if projectAggregated.ByProgrammingLanguage["Php"].NbFiles != 1 {
+		t.Errorf("Expected 1 PHP files, got %d", projectAggregated.ByProgrammingLanguage["Go"].NbFiles)
+	}
+
+	if projectAggregated.ByProgrammingLanguage["Php"].AverageMI != 120 {
+		t.Errorf("Expected MI of 120 for PHP files, got %f", projectAggregated.ByProgrammingLanguage["Php"].AverageMI)
+	}
+
+	if int(projectAggregated.ByProgrammingLanguage["Php"].AverageMI) != 120 {
+		t.Errorf("Expected MI of 120 for PHP files, got %v", int(projectAggregated.ByProgrammingLanguage["Go"].AverageMI))
+	}
+
+}
+
+func TestCalculateMaintainabilityIndex(t *testing.T) {
+	aggregator := Aggregator{}
+	file := pb.File{
+		Stmts: &pb.Stmts{
+			StmtFunction: []*pb.StmtFunction{
+				{
+					Stmts: &pb.Stmts{
+						Analyze: &pb.Analyze{
+							Maintainability: &pb.Maintainability{
+								MaintainabilityIndex:                proto.Float32(15),
+								MaintainabilityIndexWithoutComments: proto.Float32(20),
+								CommentWeight:                       proto.Float32(25),
+							},
+						},
+					},
+				},
+				{
+					Stmts: &pb.Stmts{
+						Analyze: &pb.Analyze{
+							Maintainability: &pb.Maintainability{
+								MaintainabilityIndex:                proto.Float32(30),
+								MaintainabilityIndexWithoutComments: proto.Float32(35),
+								CommentWeight:                       proto.Float32(40),
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+	aggregated := Aggregated{}
+
+	aggregator.calculateSums(&file, &aggregated)
+	aggregator.consolidate(&aggregated)
+
+	if aggregated.AverageMI != 22.5 {
+		t.Errorf("Expected 22.5, got %f", aggregated.AverageMI)
+	}
+
+	if aggregated.AverageMIwoc != 27.5 {
+		t.Errorf("Expected 27.5, got %f", aggregated.AverageMIwoc)
+	}
+
+	if aggregated.AverageMIcw != 32.5 {
+		t.Errorf("Expected 32.5, got %f", aggregated.AverageMIcw)
+	}
+
+	// Average per method
+	if aggregated.AverageMIPerMethod != 22.5 {
+		t.Errorf("Expected AverageMIPerMethod, got %f", aggregated.AverageMIPerMethod)
 	}
 }

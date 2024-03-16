@@ -115,5 +115,150 @@ class calculatrice {
 	assert.Equal(t, int32(12), func2.LinesOfCode.LinesOfCode, "Expected LOC")
 	assert.Equal(t, int32(7), func2.LinesOfCode.LogicalLinesOfCode, "Expected LLOC")
 	assert.Equal(t, int32(3), func2.LinesOfCode.CommentLinesOfCode, "Expected CLOC")
+}
 
+func TestPhpLoops(t *testing.T) {
+	phpSource := `
+<?php
+
+function test() {
+	for ($i = 0; $i < 10; $i++) {
+		echo $i;
+	}
+
+	foreach ($array as $value) {
+		echo $value;
+	}
+
+	while ($i < 10) {
+		echo $i;
+		$i++;
+	}
+
+	do {
+		echo $i;
+		$i++;
+	} while ($i < 10);
+	}
+`
+	// Create a temporary file
+	tmpFile := t.TempDir() + "/test.php"
+	if _, err := os.Create(tmpFile); err != nil {
+		t.Error(err)
+	}
+	if err := os.WriteFile(tmpFile, []byte(phpSource), 0644); err != nil {
+		t.Error(err)
+	}
+
+	result, err := parsePhpFile(tmpFile)
+
+	// Ensure no error
+	assert.Nil(t, err, "Expected no error, got %s", err)
+
+	// 1 function should be found
+	assert.Equal(t, 1, len(result.Stmts.StmtFunction), "Incorrect number of functions")
+
+	// 4 loops should be found
+	func1 := result.Stmts.StmtFunction[0]
+	assert.Equal(t, 4, len(func1.Stmts.StmtLoop), "Incorrect number of loops")
+}
+
+func TestEnumWithoutNamespace(t *testing.T) {
+	phpSource := `
+<?php
+
+enum Values {
+	case A;
+	case B;
+	case C;
+
+	public function __toString() {
+		return match($this) {
+			Values::A => 'A',
+			Values::B => 'B',
+			Values::C => 'C',
+		};
+	}
+}
+`
+	// Create a temporary file
+	tmpFile := t.TempDir() + "/test.php"
+	if _, err := os.Create(tmpFile); err != nil {
+		t.Error(err)
+	}
+	if err := os.WriteFile(tmpFile, []byte(phpSource), 0644); err != nil {
+		t.Error(err)
+	}
+
+	result, err := parsePhpFile(tmpFile)
+
+	// Ensure no error
+	assert.Nil(t, err, "Expected no error, got %s", err)
+
+	// Ensure path
+	assert.Equal(t, tmpFile, result.Path, "Expected path to be %s, got %s", tmpFile, result.Path)
+
+	// a class (enum) should be found
+	assert.Equal(t, 1, len(result.Stmts.StmtClass), "Incorrect number of classes")
+	class1 := result.Stmts.StmtClass[0]
+	assert.Equal(t, "Values", class1.Name.Short, "Expected class name to be 'Values', got %s", class1.Name)
+	assert.Equal(t, "Values", class1.Name.Qualified, "Expected class name to be 'Values', got %s", class1.Name.Qualified)
+
+	// one method should be found
+	assert.Equal(t, 1, len(class1.Stmts.StmtFunction), "Incorrect number of functions in class")
+	func1 := class1.Stmts.StmtFunction[0]
+	assert.Equal(t, "__toString", func1.Name.Short, "Expected function name to be '__toString', got %s", func1.Name)
+}
+
+func TestPhpOperators(t *testing.T) {
+	phpSource := `
+<?php
+
+function test() {
+	$a = 1 + 2;
+	$b = 1 - 2;
+	$c = 1 * 2;
+	$d = 1 / 2;
+	$e = 1 % 2;
+	$f = 1 ** 2;
+	$g = 1 . 2;
+	$h = 1 << 2;
+	$i = 1 >> 2;
+	$j = 1 & 2;
+	$k = 1 | 2;
+	$l = 1 ^ 2;
+	$m = 1 && 2;
+	$n = 1 || 2;
+	$o = 1 ?? 2;
+	$p = 1 == 2;
+	$q = 1 === 2;
+	$r = 1 != 2;
+	$s = 1 !== 2;
+	$t = 1 < 2;
+	$u = 1 <= 2;
+	$v = 1 > 2;
+	$w = 1 >= 2;
+	$x = 1 <=> 2;
+}
+`
+	// Create a temporary file
+	tmpFile := t.TempDir() + "/test.php"
+	if _, err := os.Create(tmpFile); err != nil {
+		t.Error(err)
+	}
+	if err := os.WriteFile(tmpFile, []byte(phpSource), 0644); err != nil {
+		t.Error(err)
+	}
+
+	result, err := parsePhpFile(tmpFile)
+
+	// Ensure no error
+	assert.Nil(t, err, "Expected no error, got %s", err)
+
+	// 1 function should be found
+	assert.Equal(t, 1, len(result.Stmts.StmtFunction), "Incorrect number of functions")
+
+	// operators should be found
+	func1 := result.Stmts.StmtFunction[0]
+	assert.Equal(t, 23, len(func1.Operators), "Incorrect number of operators")
 }

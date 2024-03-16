@@ -57,6 +57,10 @@ func (v *RiskAnalyzer) Analyze(project ProjectAggregated) {
 		// OOP file
 		for _, class := range Engine.GetClassesInFile(file) {
 
+			if class.Stmts == nil || class.Stmts.Analyze == nil || class.Stmts.Analyze.Maintainability == nil {
+				continue
+			}
+
 			// Calculate the horizontal and vertical distance from the "top right" corner.
 			horizontalDistance := maxCommits - float64(nbCommits)
 			verticalDistance := maxComplexity - float64(128-*class.Stmts.Analyze.Maintainability.MaintainabilityIndex)

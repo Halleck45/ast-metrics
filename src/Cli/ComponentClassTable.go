@@ -9,6 +9,7 @@ import (
 	"github.com/charmbracelet/bubbles/table"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
+	"github.com/halleck45/ast-metrics/src/Engine"
 	pb "github.com/halleck45/ast-metrics/src/NodeType"
 )
 
@@ -76,7 +77,12 @@ func (v *ComponentTableClass) Init() {
 			nbCommitters = int(file.Commits.CountCommiters)
 		}
 
-		for _, class := range file.Stmts.StmtClass {
+		classes := Engine.GetClassesInFile(file)
+		if classes == nil {
+			continue
+		}
+
+		for _, class := range classes {
 
 			if class == nil {
 				continue
