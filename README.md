@@ -31,18 +31,15 @@ ast-metrics analyze <path1> <path2> <path3>
 
 AST Metrics is a standalone package. It does not require any other software to be installed.
 
-| Platform | Architecture | Binary |
-| -------- | ------------ | ------ |
-| ![](./docs/emoji-tux.png) Linux    | arm64        | [Download](https://github.com/Halleck45/ast-metrics/releases/download/v0.0.6-alpha/ast-metrics_Linux_arm64)
-| ![](./docs/emoji-tux.png) Linux    | i386         | [Download](https://github.com/Halleck45/ast-metrics/releases/download/v0.0.6-alpha/ast-metrics_Linux_i386)
-| ![](./docs/emoji-tux.png) Linux    | x86_64       | [Download](https://github.com/Halleck45/ast-metrics/releases/download/v0.0.6-alpha/ast-metrics_Linux_x86_64)
-| ![](./docs/emoji-apple.png) macOS    | arm64        | [Download](https://github.com/Halleck45/ast-metrics/releases/download/v0.0.6-alpha/ast-metrics_Darwin_arm64)
-| ![](./docs/emoji-apple.png) macOS    | x86_64       | [Download](https://github.com/Halleck45/ast-metrics/releases/download/v0.0.6-alpha/ast-metrics_Darwin_x86_64)
-| ![](./docs/emoji-windows.png) Windows  | arm64        | [Download](https://github.com/Halleck45/ast-metrics/releases/download/v0.0.6-alpha/ast-metrics_Windows_arm64.exe)
-| ![](./docs/emoji-windows.png) Windows  | i386         | [Download](https://github.com/Halleck45/ast-metrics/releases/download/v0.0.6-alpha/ast-metrics_Windows_i386.exe)
-| ![](./docs/emoji-windows.png) Windows  | x86_64       | [Download](https://github.com/Halleck45/ast-metrics/releases/download/v0.0.6-alpha/ast-metrics_Windows_x86_64.exe)
+| Platform |  i386 | amd64 | arm64 |
+| -------- |  ------ | ------ | ------ |
+| ![](./docs/emoji-tux.png) Linux    | [Download](https://github.com/Halleck45/ast-metrics/releases/download/v0.0.6-beta/ast-metrics_Linux_i386) | [Download](https://github.com/Halleck45/ast-metrics/releases/download/v0.0.6-beta/ast-metrics_Linux_x86_64) | [Download](https://github.com/Halleck45/ast-metrics/releases/download/v0.0.6-beta/ast-metrics_Linux_arm64)
+| ![](./docs/emoji-apple.png) macOS    | - | [Download](https://github.com/Halleck45/ast-metrics/releases/download/v0.0.6-beta/ast-metrics_Darwin_arm64) | [Download](https://github.com/Halleck45/ast-metrics/releases/download/v0.0.6-beta/ast-metrics_Darwin_x86_64)
+| ![](./docs/emoji-windows.png) Windows  | [Download](https://github.com/Halleck45/ast-metrics/releases/download/v0.0.6-beta/ast-metrics_Windows_i386.exe) | [Download](https://github.com/Halleck45/ast-metrics/releases/download/v0.0.6-beta/ast-metrics_Windows_x86_64.exe) | [Download](https://github.com/Halleck45/ast-metrics/releases/download/v0.0.6-beta/ast-metrics_Windows_arm64.exe)
 
 Or download the latest version of AST Metrics from the [releases page](https://github.com/Halleck45/ast-metrics/releases/latest).
+
+> You don't know what is your platform? Run `uname -m` in your terminal.
 
 ## ⭐ Supported languages
 
@@ -51,7 +48,7 @@ Or download the latest version of AST Metrics from the [releases page](https://g
 + ✅ **Golang**
 
 
-We are working on adding more languages.
+We are working on adding more languages. If you want to help, please see [CONTRIBUTING](.github/CONTRIBUTING.md).
 
 ## 📝 Options
 
