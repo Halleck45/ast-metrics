@@ -210,6 +210,40 @@ enum Values {
 	assert.Equal(t, "__toString", func1.Name.Short, "Expected function name to be '__toString', got %s", func1.Name)
 }
 
+func TestPhpInterface(t *testing.T) {
+	phpSource := `
+<?php
+
+namespace Truc;
+
+interface Foo {
+	public function bar();
+}
+`
+	// Create a temporary file
+	tmpFile := t.TempDir() + "/test.php"
+	if _, err := os.Create(tmpFile); err != nil {
+		t.Error(err)
+	}
+	if err := os.WriteFile(tmpFile, []byte(phpSource), 0644); err != nil {
+		t.Error(err)
+	}
+
+	result, err := parsePhpFile(tmpFile)
+
+	// Ensure no error
+	assert.Nil(t, err, "Expected no error, got %s", err)
+
+	// Check that a namespace is found
+	assert.Equal(t, 1, len(result.Stmts.StmtNamespace), "Incorrect number of namespaces")
+
+	// one interface should be found
+	assert.Equal(t, 1, len(result.Stmts.StmtInterface), "Incorrect number of interfaces")
+	class1 := result.Stmts.StmtInterface[0]
+	assert.Equal(t, "Foo", class1.Name.Short, "Expected class name to be 'Foo', got %s", class1.Name)
+	assert.Equal(t, "Truc\\Foo", class1.Name.Qualified, "Expected class name to be 'Truc\\Foo', got %s", class1.Name.Qualified)
+}
+
 func TestPhpOperators(t *testing.T) {
 	phpSource := `
 <?php
@@ -239,6 +273,20 @@ function test() {
 	$v = 1 > 2;
 	$w = 1 >= 2;
 	$x = 1 <=> 2;
+	// bitwise operators
+	$ab = $a &= $b;
+	$ab = $a |= $b;
+	$ab = $a ^= $b;
+	$ab = $a ??= $b;
+	$ab = $a .= $b;
+	$ab = $a /= $b;
+	$ab = $a -= $b;
+	$ab = $a %= $b;
+	$ab = $a *= $b;
+	$ab = $a += $b;
+	$ab = $a **= $b;
+	$ab = $a <<= $b;
+	$ab = $a >>= $b;
 }
 `
 	// Create a temporary file
@@ -260,5 +308,66 @@ function test() {
 
 	// operators should be found
 	func1 := result.Stmts.StmtFunction[0]
-	assert.Equal(t, 23, len(func1.Operators), "Incorrect number of operators")
+	assert.Equal(t, 36, len(func1.Operators), "Incorrect number of operators")
+}
+
+func TestPhpIfCases(t *testing.T) {
+	phpSource := `
+<?php
+function foo() {
+	if ($a == 1) {
+		echo "a";
+	} elseif ($a == 2) {
+		echo "b";
+	} else {
+		echo "c";
+	}
+
+	if ($a == 1) {
+		echo "a";
+	} else {
+		echo "b";
+	}
+
+	if ($a == 1) {
+		echo "a";
+	}
+}
+
+function bar() {
+	if ($a == 1) {
+		if ($b == 2) {
+			echo "a";
+		} elseif ($b == 3) {
+			echo "b";
+		}
+	} elseif ($a == 2) {
+		echo "c";
+	}
+}
+`
+	// Create a temporary file
+	tmpFile := t.TempDir() + "/test.php"
+	if _, err := os.Create(tmpFile); err != nil {
+		t.Error(err)
+	}
+	if err := os.WriteFile(tmpFile, []byte(phpSource), 0644); err != nil {
+		t.Error(err)
+	}
+
+	result, err := parsePhpFile(tmpFile)
+
+	// Ensure no error
+	assert.Nil(t, err, "Expected no error, got %s", err)
+
+	// Ensure functions
+	assert.Equal(t, 2, len(result.Stmts.StmtFunction), "Incorrect number of functions")
+
+	// Function 1
+	func1 := result.Stmts.StmtFunction[0]
+	assert.Equal(t, 4, len(func1.Stmts.StmtDecisionIf), "Incorrect number of if statements")
+
+	// Function 2
+	func2 := result.Stmts.StmtFunction[1]
+	assert.Equal(t, 4, len(func2.Stmts.StmtDecisionIf), "Incorrect number of if statements")
 }

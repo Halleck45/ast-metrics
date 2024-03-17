@@ -44,12 +44,19 @@ func Start(progressbar *pterm.SpinnerPrinter) []*pb.File {
 			executeFileAnalysis(file, channelResult)
 			// details is the number of files processed / total number of files
 			details := strconv.Itoa(nbParsingFiles) + "/" + strconv.Itoa(len(astFiles))
-			progressbar.UpdateText("Analyzing (" + details + ")")
+
+			if progressbar != nil {
+				progressbar.UpdateText("Analyzing (" + details + ")")
+			}
+
 		}(file)
 	}
 
 	wg.Wait()
-	progressbar.Info("AST Analysis finished")
+	if progressbar != nil {
+		progressbar.Info("AST Analysis finished")
+	}
+
 	// Convert it to slice of pb.File
 	allResults := make([]*pb.File, 0, len(astFiles))
 	for i := 0; i < len(astFiles); i++ {

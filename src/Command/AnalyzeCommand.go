@@ -19,6 +19,8 @@ type AnalyzeCommand struct {
 	outWriter     *bufio.Writer
 	runners       []Engine.Engine
 	isInteractive bool
+	spinner       *pterm.ProgressbarPrinter
+	multi         *pterm.MultiPrinter
 }
 
 func NewAnalyzeCommand(configuration *Configuration.Configuration, outWriter *bufio.Writer, runners []Engine.Engine, isInteractive bool) *AnalyzeCommand {
@@ -36,14 +38,16 @@ func (v *AnalyzeCommand) Execute() error {
 	Storage.Purge()
 	Storage.Ensure()
 
-	// Prepare progress bars
-	multi := pterm.DefaultMultiPrinter.WithWriter(v.outWriter)
-	spinnerAllExecution, _ := pterm.DefaultProgressbar.WithTotal(7).WithWriter(multi.NewWriter()).WithTitle("Analyzing").Start()
-	spinnerAllExecution.RemoveWhenDone = true
-	defer spinnerAllExecution.Stop()
+	if v.isInteractive {
+		// Prepare progress bars
+		v.multi = pterm.DefaultMultiPrinter.WithWriter(v.outWriter)
+		v.spinner, _ = pterm.DefaultProgressbar.WithTotal(7).WithWriter(v.multi.NewWriter()).WithTitle("Analyzing").Start()
+		v.spinner.RemoveWhenDone = true
+		defer v.spinner.Stop()
 
-	// Start progress bars
-	multi.Start()
+		// Start progress bars
+		v.multi.Start()
+	}
 
 	for _, runner := range v.runners {
 
@@ -51,11 +55,14 @@ func (v *AnalyzeCommand) Execute() error {
 
 		if runner.IsRequired() {
 
-			progressBarSpecificForEngine, _ := pterm.DefaultSpinner.WithWriter(multi.NewWriter()).Start("...")
+			progressBarSpecificForEngine, _ := pterm.DefaultSpinner.WithWriter(v.multi.NewWriter()).Start("...")
 			progressBarSpecificForEngine.RemoveWhenDone = true
 			runner.SetProgressbar(progressBarSpecificForEngine)
 
-			spinnerAllExecution.Increment()
+			if v.spinner != nil {
+				v.spinner.Increment()
+			}
+
 			err := runner.Ensure()
 			if err != nil {
 				pterm.Error.Println(err.Error())
@@ -63,8 +70,11 @@ func (v *AnalyzeCommand) Execute() error {
 			}
 
 			// Dump ASTs (in parallel)
-			spinnerAllExecution.UpdateTitle("Dumping AST code...")
-			spinnerAllExecution.Increment()
+			if v.spinner != nil {
+				v.spinner.UpdateTitle("Dumping AST code...")
+				v.spinner.Increment()
+			}
+
 			done := make(chan struct{})
 			go func() {
 				runner.DumpAST()
@@ -85,30 +95,47 @@ func (v *AnalyzeCommand) Execute() error {
 	v.outWriter.Flush()
 
 	// Now we start the analysis of each AST file
-	progressBarAnalysis, _ := pterm.DefaultSpinner.WithWriter(multi.NewWriter()).Start("Main analysis")
-	progressBarAnalysis.RemoveWhenDone = true
-	spinnerAllExecution.UpdateTitle("Analyzing...")
-	spinnerAllExecution.Increment()
+	var progressBarAnalysis *pterm.SpinnerPrinter
+	progressBarAnalysis = nil
+	if v.spinner != nil {
+		progressBarAnalysis, _ := pterm.DefaultSpinner.WithWriter(v.multi.NewWriter()).Start("Main analysis")
+		progressBarAnalysis.RemoveWhenDone = true
+		v.spinner.UpdateTitle("Analyzing...")
+		v.spinner.Increment()
+	}
+
 	allResults := Analyzer.Start(progressBarAnalysis)
-	progressBarAnalysis.Stop()
+	if progressBarAnalysis != nil {
+		progressBarAnalysis.Stop()
+	}
 
 	// Git analysis
-	spinnerAllExecution.UpdateTitle("Git analysis...")
-	spinnerAllExecution.Increment()
+	if v.spinner != nil {
+		v.spinner.UpdateTitle("Git analysis...")
+		v.spinner.Increment()
+	}
 	gitAnalyzer := Analyzer.NewGitAnalyzer()
 	gitAnalyzer.Start(allResults)
-	progressBarAnalysis.Stop()
-	v.outWriter.Flush()
+	if progressBarAnalysis != nil {
+		progressBarAnalysis.Stop()
+		v.outWriter.Flush()
+	}
 
 	// Start aggregating results
 	aggregator := Analyzer.NewAggregator(allResults)
 	aggregator.WithAggregateAnalyzer(Activity.NewBusFactor())
-	spinnerAllExecution.UpdateTitle("Aggregating...")
+	if v.spinner != nil {
+		v.spinner.UpdateTitle("Aggregating...")
+		//v.spinner.Increment()
+	}
 	projectAggregated := aggregator.Aggregates()
 
 	// Generate reports
-	spinnerAllExecution.UpdateTitle("Generating reports...")
-	spinnerAllExecution.Increment()
+	if v.spinner != nil {
+		v.spinner.UpdateTitle("Generating reports...")
+		v.spinner.Increment()
+	}
+
 	// report: html
 	htmlReportGenerator := Report.NewHtmlReportGenerator(v.configuration.HtmlReportPath)
 	err := htmlReportGenerator.Generate(allResults, projectAggregated)
@@ -119,10 +146,15 @@ func (v *AnalyzeCommand) Execute() error {
 	// report: markdown
 	markdownReportGenerator := Markdown.NewMarkdownReportGenerator(v.configuration.MarkdownReportPath)
 	err = markdownReportGenerator.Generate(allResults, projectAggregated)
+	if err != nil {
+		pterm.Error.Println(err.Error())
+	}
 
-	spinnerAllExecution.UpdateTitle("")
-	spinnerAllExecution.Stop()
-	multi.Stop()
+	if v.spinner != nil {
+		v.spinner.UpdateTitle("")
+		v.spinner.Stop()
+		v.multi.Stop()
+	}
 
 	// Display results
 	renderer := Cli.NewScreenHome(v.isInteractive, allResults, projectAggregated)
