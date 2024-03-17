@@ -141,6 +141,10 @@ func GetFunctionsInFile(file *pb.File) []*pb.StmtFunction {
 	}
 	classes := GetClassesInFile(file)
 	for _, class := range classes {
+		if class.Stmts == nil {
+			continue
+		}
+
 		functions = append(functions, class.Stmts.StmtFunction...)
 	}
 	functions = append(functions, file.Stmts.StmtFunction...)
