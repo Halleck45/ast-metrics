@@ -5,6 +5,10 @@ import (
 	"os"
 	"testing"
 
+	"github.com/golang/protobuf/proto"
+	"github.com/halleck45/ast-metrics/src/Configuration"
+	pb "github.com/halleck45/ast-metrics/src/NodeType"
+	"github.com/halleck45/ast-metrics/src/Storage"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -124,4 +128,67 @@ func TestGoLangStructureExtraction(t *testing.T) {
 	// Loops
 	loops := testedFunction.Stmts.StmtLoop
 	assert.Equal(t, 2, len(loops), "Expected loops")
+}
+
+func TestParsingGoFiles(t *testing.T) {
+	goFile := `
+	
+	package mymath
+
+	import "fmt"
+	
+	func foo(a int, b int) int {
+		if a == 0 {
+			
+		}
+
+		myrange := make([]int, 5)
+		for i, v := range myrange {
+			fmt.Println(i, v)
+		}
+	}`
+
+	// Create a temporary file
+	sourceDirectory := t.TempDir()
+	tmpFile := sourceDirectory + string(os.PathSeparator) + "test.go"
+	defer os.Remove(tmpFile)
+	if _, err := os.Create(tmpFile); err != nil {
+		t.Error(err)
+	}
+	if err := os.WriteFile(tmpFile, []byte(goFile), 0644); err != nil {
+		t.Error(err)
+	}
+
+	// Configure the runner
+	configuration := Configuration.NewConfiguration()
+	configuration.SetSourcesToAnalyzePath([]string{sourceDirectory})
+	runner := GolangRunner{}
+	runner.SetConfiguration(configuration)
+	runner.DumpAST()
+
+	// bin should be created
+	Storage.Ensure()
+	workdir := Storage.Path() + string(os.PathSeparator) + "output"
+	// list files
+	files, err := os.ReadDir(workdir)
+	if err != nil {
+		t.Error(err)
+	}
+	// check if bin file exists
+	assert.Equal(t, 1, len(files), "Expected 1 file in %s, got %d", workdir, len(files))
+
+	// read the file, and deserialize it to check if it's a protobuf
+	file := files[0]
+	binPath := workdir + string(os.PathSeparator) + file.Name()
+	in, err := os.ReadFile(binPath)
+	if err != nil {
+		t.Error(err)
+	}
+	pbFile := &pb.File{}
+	if err := proto.Unmarshal(in, pbFile); err != nil {
+		t.Error(err)
+	}
+
+	// Ensure path
+	assert.Contains(t, pbFile.Path, "test.go", "Expected path to contain 'test.go', got %s", pbFile.Path)
 }
