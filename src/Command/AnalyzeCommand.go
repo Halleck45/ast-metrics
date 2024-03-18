@@ -55,9 +55,12 @@ func (v *AnalyzeCommand) Execute() error {
 
 		if runner.IsRequired() {
 
-			progressBarSpecificForEngine, _ := pterm.DefaultSpinner.WithWriter(v.multi.NewWriter()).Start("...")
-			progressBarSpecificForEngine.RemoveWhenDone = true
-			runner.SetProgressbar(progressBarSpecificForEngine)
+			var progressBarSpecificForEngine *pterm.ProgressbarPrinter = nil
+			if v.isInteractive {
+				progressBarSpecificForEngine, _ := pterm.DefaultSpinner.WithWriter(v.multi.NewWriter()).Start("...")
+				progressBarSpecificForEngine.RemoveWhenDone = true
+				runner.SetProgressbar(progressBarSpecificForEngine)
+			}
 
 			if v.spinner != nil {
 				v.spinner.Increment()
@@ -84,7 +87,9 @@ func (v *AnalyzeCommand) Execute() error {
 
 			// Cleaning up
 			err = runner.Finish()
-			progressBarSpecificForEngine.Stop()
+			if v.isInteractive && progressBarSpecificForEngine != nil {
+				progressBarSpecificForEngine.Stop()
+			}
 			if err != nil {
 				pterm.Error.Println(err.Error())
 				// pass
@@ -104,7 +109,8 @@ func (v *AnalyzeCommand) Execute() error {
 		v.spinner.Increment()
 	}
 
-	allResults := Analyzer.Start(progressBarAnalysis)
+	workdir := Storage.Path()
+	allResults := Analyzer.Start(workdir, progressBarAnalysis)
 	if progressBarAnalysis != nil {
 		progressBarAnalysis.Stop()
 	}

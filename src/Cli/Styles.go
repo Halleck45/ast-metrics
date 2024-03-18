@@ -100,7 +100,8 @@ func StyleNumberBox(number string, label string, sublabel string) lipgloss.Style
 func DecorateMaintainabilityIndex(mi int, analyze *pb.Analyze) string {
 
 	min := int32(1)
-	if analyze != nil && *analyze.Volume.Lloc < min {
+
+	if analyze != nil && analyze.Volume != nil && analyze.Volume.Lloc != nil && *analyze.Volume.Lloc < min {
 		return "-"
 	}
 
@@ -108,7 +109,7 @@ func DecorateMaintainabilityIndex(mi int, analyze *pb.Analyze) string {
 		return "🔴 " + strconv.Itoa(mi)
 	}
 	if mi < 85 {
-            return "🟡 " + strconv.Itoa(mi)
+		return "🟡 " + strconv.Itoa(mi)
 	}
 
 	return "🟢 " + strconv.Itoa(mi)

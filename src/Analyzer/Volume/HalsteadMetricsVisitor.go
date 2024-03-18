@@ -133,8 +133,8 @@ func (v *HalsteadMetricsVisitor) LeaveNode(stmts *pb.Stmts) {
 				continue
 			}
 
-			var n int32
-			var N int32
+			var n int32 = 0
+			var N int32 = 0
 			var hatN float64
 			var V float64
 			var D float64
@@ -184,8 +184,11 @@ func (v *HalsteadMetricsVisitor) LeaveNode(stmts *pb.Stmts) {
 			// Assign to result
 			if stmt.Stmts.Analyze == nil {
 				stmt.Stmts.Analyze = &pb.Analyze{}
+			}
+			if stmt.Stmts.Analyze.Volume == nil {
 				stmt.Stmts.Analyze.Volume = &pb.Volume{}
 			}
+
 			stmt.Stmts.Analyze.Volume.HalsteadVocabulary = &n
 			stmt.Stmts.Analyze.Volume.HalsteadLength = &N
 			stmt.Stmts.Analyze.Volume.HalsteadEstimatedLength = &hatN32
