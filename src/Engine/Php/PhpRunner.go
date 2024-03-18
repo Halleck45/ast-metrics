@@ -51,7 +51,9 @@ func (r *PhpRunner) Ensure() error {
 
 // Finish cleans up the workspace
 func (r PhpRunner) Finish() error {
-	r.progressbar.Stop()
+	if r.progressbar != nil {
+		r.progressbar.Stop()
+	}
 	return nil
 }
 
@@ -62,14 +64,18 @@ func (r PhpRunner) DumpAST() {
 	cnt := 0
 	for _, filePath := range r.getFileList().Files {
 		cnt++
-		r.progressbar.UpdateText("Dumping AST of PHP files (" + fmt.Sprintf("%d", cnt) + "/" + fmt.Sprintf("%d", len(r.getFileList().Files)) + ")")
+		if r.progressbar != nil {
+			r.progressbar.UpdateText("Dumping AST of PHP files (" + fmt.Sprintf("%d", cnt) + "/" + fmt.Sprintf("%d", len(r.getFileList().Files)) + ")")
+		}
 		wg.Add(1)
 		go r.dumpOneAst(&wg, filePath)
 	}
 
 	wg.Wait()
 
-	r.progressbar.Info("PHP code dumped")
+	if r.progressbar != nil {
+		r.progressbar.Info("PHP code dumped")
+	}
 }
 
 func (r PhpRunner) dumpOneAst(wg *sync.WaitGroup, filePath string) {

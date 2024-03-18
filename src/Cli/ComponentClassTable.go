@@ -20,6 +20,19 @@ type ComponentTableClass struct {
 	table           table.Model
 }
 
+// index of cols
+var cols = map[string]int{
+	"Name":              0,
+	"Commits":           1,
+	"Authors":           2,
+	"Methods":           3,
+	"LLoc":              4,
+	"Cyclomatic":        5,
+	"Halstead Length":   6,
+	"Halstead Volume":   7,
+	"Maintainability":   8,
+}
+
 func NewComponentTableClass(isInteractive bool, files []*pb.File) *ComponentTableClass {
 	v := &ComponentTableClass{
 		isInteractive:   isInteractive,
@@ -64,7 +77,7 @@ func (v *ComponentTableClass) Init() {
 		{Title: "Cyclomatic", Width: 9},
 		{Title: "H. Length", Width: 9},
 		{Title: "H. Volume", Width: 9},
-		{Title: "H. Index", Width: 9},
+		{Title: "Maint.", Width: 9},
 	}
 
 	rows := []table.Row{}
@@ -95,11 +108,16 @@ func (v *ComponentTableClass) Init() {
 				continue
 			}
 
+			nbFunctions := 0
+			if class.Stmts.StmtFunction != nil {
+				nbFunctions = len(class.Stmts.StmtFunction)
+			}
+
 			rows = append(rows, table.Row{
 				class.Name.Qualified,
 				strconv.Itoa(nbCommits),
 				strconv.Itoa(nbCommitters),
-				strconv.Itoa(len(class.Stmts.StmtFunction)),
+				strconv.Itoa(nbFunctions),
 				strconv.Itoa(int(*class.Stmts.Analyze.Volume.Loc)),
 				strconv.Itoa(int(*class.Stmts.Analyze.Complexity.Cyclomatic)),
 				strconv.Itoa(int(*class.Stmts.Analyze.Volume.HalsteadLength)),
@@ -162,11 +180,12 @@ func (v *ComponentTableClass) Sort(sortColumnIndex int) {
 	// Sort rows by second column (Loc)
 	rows := v.table.Rows()
 	sort.Slice(rows, func(i, j int) bool {
+
 		if sortColumnIndex == 0 {
 			return rows[i][sortColumnIndex] < rows[j][sortColumnIndex]
 		}
 
-		if sortColumnIndex == 6 {
+		if sortColumnIndex == cols["Maintainability"] {
 			// replace emoji
 			a := strings.Replace(rows[i][sortColumnIndex], "🔴 ", "", 1)
 			a = strings.Replace(a, "🟡 ", "", 1)
@@ -182,6 +201,7 @@ func (v *ComponentTableClass) Sort(sortColumnIndex int) {
 
 		a, _ := strconv.Atoi(rows[i][sortColumnIndex])
 		b, _ := strconv.Atoi(rows[j][sortColumnIndex])
+
 		return a > b
 	})
 
@@ -190,23 +210,23 @@ func (v *ComponentTableClass) Sort(sortColumnIndex int) {
 }
 
 func (v *ComponentTableClass) SortByName() {
-	v.Sort(0)
+	v.Sort(cols["Name"])
 }
 
 func (v *ComponentTableClass) SortByLloc() {
-	v.Sort(2)
+	v.Sort(cols["LLOC"])
 }
 
 func (v *ComponentTableClass) SortByNumberOfMethods() {
-	v.Sort(3)
+	v.Sort(cols["Methods"])
 }
 
 func (v *ComponentTableClass) SortByMaintainabilityIndex() {
-	v.Sort(6)
+	v.Sort(cols["Maintainability"])
 }
 
 func (v *ComponentTableClass) SortByCyclomaticComplexity() {
-	v.Sort(3)
+	v.Sort(cols["Cyclomatic"])
 }
 
 func (v *ComponentTableClass) Update(msg tea.Msg) {

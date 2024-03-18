@@ -210,6 +210,40 @@ enum Values {
 	assert.Equal(t, "__toString", func1.Name.Short, "Expected function name to be '__toString', got %s", func1.Name)
 }
 
+func TestTrait(t *testing.T) {
+	phpSource := `
+<?php
+
+trait MonTrait1 {
+	public function foo() {
+	}
+}
+`
+	// Create a temporary file
+	tmpFile := t.TempDir() + "/test.php"
+	if _, err := os.Create(tmpFile); err != nil {
+		t.Error(err)
+	}
+	if err := os.WriteFile(tmpFile, []byte(phpSource), 0644); err != nil {
+		t.Error(err)
+	}
+
+	result, err := parsePhpFile(tmpFile)
+
+	// Ensure no error
+	assert.Nil(t, err, "Expected no error, got %s", err)
+
+	// a class (trait) should be found
+	assert.Equal(t, 1, len(result.Stmts.StmtClass), "Incorrect number of classes")
+	class1 := result.Stmts.StmtClass[0]
+	assert.Equal(t, "MonTrait1", class1.Name.Short, "Expected class name to be 'Values', got %s", class1.Name)
+
+	// one method should be found
+	assert.Equal(t, 1, len(class1.Stmts.StmtFunction), "Incorrect number of functions in class")
+	func1 := class1.Stmts.StmtFunction[0]
+	assert.Equal(t, "foo", func1.Name.Short, "Expected function name to be 'foo', got %s", func1.Name)
+}
+
 func TestPhpInterface(t *testing.T) {
 	phpSource := `
 <?php
