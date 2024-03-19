@@ -33,38 +33,14 @@ AST Metrics is a standalone package. It does not require any other software to b
 
 | Platform |  i386 | amd64 | arm64 |
 | -------- |  ------ | ------ | ------ |
-| ![](./docs/emoji-tux.png) Linux    | [Download](https://github.com/Halleck45/ast-metrics/releases/download/v0.0.6-beta/ast-metrics_Linux_i386) | [Download](https://github.com/Halleck45/ast-metrics/releases/download/v0.0.6-beta/ast-metrics_Linux_x86_64) | [Download](https://github.com/Halleck45/ast-metrics/releases/download/v0.0.6-beta/ast-metrics_Linux_arm64)
-| ![](./docs/emoji-apple.png) macOS    | - | [Download](https://github.com/Halleck45/ast-metrics/releases/download/v0.0.6-beta/ast-metrics_Darwin_arm64) | [Download](https://github.com/Halleck45/ast-metrics/releases/download/v0.0.6-beta/ast-metrics_Darwin_x86_64)
-| ![](./docs/emoji-windows.png) Windows  | [Download](https://github.com/Halleck45/ast-metrics/releases/download/v0.0.6-beta/ast-metrics_Windows_i386.exe) | [Download](https://github.com/Halleck45/ast-metrics/releases/download/v0.0.6-beta/ast-metrics_Windows_x86_64.exe) | [Download](https://github.com/Halleck45/ast-metrics/releases/download/v0.0.6-beta/ast-metrics_Windows_arm64.exe)
+| ![](./docs/emoji-tux.png) Linux    | [Download](https://github.com/Halleck45/ast-metrics/releases/download/v0.0.7-alpha/ast-metrics_Linux_i386) | [Download](https://github.com/Halleck45/ast-metrics/releases/download/v0.0.7-alpha/ast-metrics_Linux_x86_64) | [Download](https://github.com/Halleck45/ast-metrics/releases/download/v0.0.7-alpha/ast-metrics_Linux_arm64)
+| ![](./docs/emoji-apple.png) macOS    | - | [Download](https://github.com/Halleck45/ast-metrics/releases/download/v0.0.7-alpha/ast-metrics_Darwin_arm64) | [Download](https://github.com/Halleck45/ast-metrics/releases/download/v0.0.7-alpha/ast-metrics_Darwin_x86_64)
+| ![](./docs/emoji-windows.png) Windows  | [Download](https://github.com/Halleck45/ast-metrics/releases/download/v0.0.7-alpha/ast-metrics_Windows_i386.exe) | [Download](https://github.com/Halleck45/ast-metrics/releases/download/v0.0.7-alpha/ast-metrics_Windows_x86_64.exe) | [Download](https://github.com/Halleck45/ast-metrics/releases/download/v0.0.7-alpha/ast-metrics_Windows_arm64.exe)
 
 Or download the latest version of AST Metrics from the [releases page](https://github.com/Halleck45/ast-metrics/releases/latest).
 
-> You don't know what is your platform? Run `uname -m` in your terminal.
+> 💡 You don't know what is your platform? Run `uname -m` in your terminal.
 
-## ⭐ Supported languages
-
-+ ✅ **PHP**
-+ ✅ **Python**
-+ ✅ **Golang**
-
-
-We are working on adding more languages. If you want to help, please see [CONTRIBUTING](.github/CONTRIBUTING.md).
-
-## 📝 Options
-
-File selection:
-
-+ **Exclude** (`--exclude=<regex>`): Exclude files or directories from the analysis. You can use regular expressions.
-
-Reports:
-
-- **Markdown** (`--report-markdown=<filename>`): A report in markdown format.
-- **HTML** (`--report-html=<dir>`): A report in HTML format.
-
-Global options:
-
-- **Verbose** (`--verbose`): Show debug information.
-- **Interactive mode** (`--non-interactive`): Disable interactive mode.
 
 ## 🚀 Continuous integration
 
@@ -86,6 +62,30 @@ jobs:
 ```
 
 
+## Supported languages
+
++ ✅ **PHP**
++ ✅ **Python**
++ ✅ **Golang**
+
+
+We are working on adding more languages. If you want to help, please see [CONTRIBUTING](.github/CONTRIBUTING.md).
+
+## Options
+
+File selection:
+
++ **Exclude** (`--exclude=<regex>`): Exclude files or directories from the analysis. You can use regular expressions.
+
+Reports:
+
+- **Markdown** (`--report-markdown=<filename>`): A report in markdown format.
+- **HTML** (`--report-html=<dir>`): A report in HTML format.
+
+Global options:
+
+- **Verbose** (`--verbose`): Show debug information.
+- **Interactive mode** (`--non-interactive`): Disable interactive mode.
 
 ## Contributing
 
