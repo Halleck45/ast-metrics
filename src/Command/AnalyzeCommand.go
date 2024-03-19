@@ -121,14 +121,14 @@ func (v *AnalyzeCommand) Execute() error {
 		v.spinner.Increment()
 	}
 	gitAnalyzer := Analyzer.NewGitAnalyzer()
-	gitAnalyzer.Start(allResults)
+	gitSummaries := gitAnalyzer.Start(allResults)
 	if progressBarAnalysis != nil {
 		progressBarAnalysis.Stop()
 		v.outWriter.Flush()
 	}
 
 	// Start aggregating results
-	aggregator := Analyzer.NewAggregator(allResults)
+	aggregator := Analyzer.NewAggregator(allResults, gitSummaries)
 	aggregator.WithAggregateAnalyzer(Activity.NewBusFactor())
 	if v.spinner != nil {
 		v.spinner.UpdateTitle("Aggregating...")

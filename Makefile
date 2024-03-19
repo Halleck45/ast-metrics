@@ -39,5 +39,7 @@ build: install build-protobuff build-release
 test: test-go
 test-go:
 	@echo "\e[34m\033[1m-> Running tests\033[0m\e[39m\n"
+	go clean -testcache
+	find . -type d  -iname ".ast-metrics-cache" -exec rm -rf "{}" \; || true
 	go test ./...
 	@echo "\e[34m\033[1mDONE \033[0m\e[39m\n"

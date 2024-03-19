@@ -159,16 +159,17 @@ func TestParsingGoFiles(t *testing.T) {
 		t.Error(err)
 	}
 
+	// Configure destination
+	Storage.Ensure()
+	workdir := Storage.Path() + string(os.PathSeparator) + "output"
+
 	// Configure the runner
 	configuration := Configuration.NewConfiguration()
 	configuration.SetSourcesToAnalyzePath([]string{sourceDirectory})
 	runner := GolangRunner{}
 	runner.SetConfiguration(configuration)
 	runner.DumpAST()
-
-	// bin should be created
-	Storage.Ensure()
-	workdir := Storage.Path() + string(os.PathSeparator) + "output"
+	
 	// list files
 	files, err := os.ReadDir(workdir)
 	if err != nil {

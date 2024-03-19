@@ -145,20 +145,81 @@
          <!-- start: card -->
          <div class="max-w-2xl px-8 py-4 bg-white rounded-lg shadow-md dark:bg-gray-800">
             <div class="mt-2">
-                <div>
-                    <h5 class="leading-none text-3xl font-bold text-gray-900 dark:text-white pb-2">
-                        {{ currentView.CommitCountForPeriod | stringifyNumber }}
-                    </h5>
-                    <p class="text-base font-normal text-gray-500 dark:text-gray-400">
-                        Commits
+                {% if currentView.ResultOfGitAnalysis != nil %}
+                    <div>
+                        <h5 class="leading-none text-3xl font-bold text-gray-900 dark:text-white pb-2">
+                            {{ currentView.CommitCountForPeriod | stringifyNumber }}
+                        </h5>
+                        <p class="text-base font-normal text-gray-500 dark:text-gray-400">
+                            Commits on analyzed code
+                        </p>
+                    </div>
+                    <div class="card-graph">
+                        {{ currentView|lineChartGitActivity}}
+                    </div>
+                    <table class="w-full mt-2 min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                        <thead class="uppercase bg-gray-50 dark:bg-gray-800">
+                            <tr>
+                                <th class="py-2 px-2 text-sm font-normal text-left rtl:text-right text-gray-500 dark:text-gray-400"></th>
+                                <th class="py-2 px-2 text-sm font-normal text-left rtl:text-right text-gray-500 dark:text-gray-400">Total</th>
+                                <th class="py-2 px-2 text-sm font-normal text-left rtl:text-right text-gray-500 dark:text-gray-400">
+                                    <acronym title="Commits on analyzed files">
+                                        Impacting
+                                    </acronym>
+                                </th>
+                                <th class="py-2 px-2 text-sm font-normal text-left rtl:text-right text-gray-500 dark:text-gray-400">
+                                    <acronym title="Commits on files ignored by the analysis, or merge commits">
+                                        Ignored
+                                    </acronym>
+                                </th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for commitAnalysis in currentView.ResultOfGitAnalysis %}
+                                <tr class="text-sm odd:bg-white odd:dark:bg-gray-900 even:bg-gray-50 even:dark:bg-gray-800 border-b dark:border-gray-700">
+                                    <td class="px-2 py-1 text-sm font-medium whitespace-nowrap">
+                                        <acronym
+                                        class="cursor-help"
+                                            title="{{ commitAnalysis.ReportRootDir }}">
+                                            <svg 
+                                                title="{{ commitAnalysis.ReportRootDir }}"
+                                                xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6">
+                                                <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 12.75V12A2.25 2.25 0 0 1 4.5 9.75h15A2.25 2.25 0 0 1 21.75 12v.75m-8.69-6.44-2.12-2.12a1.5 1.5 0 0 0-1.061-.44H4.5A2.25 2.25 0 0 0 2.25 6v12a2.25 2.25 0 0 0 2.25 2.25h15A2.25 2.25 0 0 0 21.75 18V9a2.25 2.25 0 0 0-2.25-2.25h-5.379a1.5 1.5 0 0 1-1.06-.44Z" />
+                                          </svg>
+                                        </acronym>
+                                    </td>
+                                    <td class="px-2 py-1 text-sm whitespace-nowrap">
+                                        {{ commitAnalysis.CountCommits }}
+                                    </td>
+                                    <td class="px-2 py-1 text-sm f whitespace-nowrap">
+                                        {{ commitAnalysis.CountCommitsForLanguage }}
+                                    </td>
+                                    <td class="px-2 py-1 text-sm  whitespace-nowrap">
+                                        {{ commitAnalysis.CountCommitsIgnored }}
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                    <p class="border-t border-gray-200 mt-2 italic text-sm text-gray-400 pt-4 text-justify">
+                        The number of commits over the last 12 months. Only commits on current programming language are counted.
                     </p>
-                </div>
-                <div class="card-graph">
-                    {{ currentView|lineChartGitActivity}}
-                </div>
-                <p class="border-t border-gray-200 mt-2 italic text-sm text-gray-400 pt-4 text-justify">
-                    The number of commits over the last 12 months. Only commits on current programming language are counted.
-                </p>
+                {% else %}
+                    <div>
+                        <h5 class="leading-none text-3xl font-bold text-gray-900 dark:text-white pb-2">
+                            {{ currentView.CommitCountForPeriod | stringifyNumber }}
+                        </h5>
+                        <p class="text-base font-normal text-gray-500 dark:text-gray-400">
+                            Commits
+                        </p>
+                    </div>
+                    <div class="card-graph">
+                        {{ currentView|lineChartGitActivity}}
+                    </div>
+                    <p class="border-t border-gray-200 mt-2 italic text-sm text-gray-400 pt-4 text-justify">
+                        The number of commits over the last 12 months. Only commits on current programming language are counted.
+                    </p>
+                {% endif %}
             </div>
         </div>
         <!-- end: card -->
@@ -179,7 +240,7 @@
                     <table class="w-full mt-2 divide-y divide-gray-200 dark:divide-gray-700">
                         <thead class="uppercase bg-gray-50 dark:bg-gray-800">
                             <tr>
-                                <th class="py-3.5 px-4 text-sm font-normal text-left rtl:text-right text-gray-500 dark:text-gray-400">
+                                <th class="py-2 px-4 text-sm font-normal text-left rtl:text-right text-gray-500 dark:text-gray-400">
                                     Top committers
                                 </td>
                             </tr>
@@ -219,10 +280,10 @@
                 <table class="w-full mt-2 min-w-full divide-y divide-gray-200 dark:divide-gray-700">
                     <thead class="uppercase bg-gray-50 dark:bg-gray-800">
                         <tr>
-                            <th class="py-3.5 px-4 text-sm font-normal text-left rtl:text-right text-gray-500 dark:text-gray-400">Component</th>
-                            <th class="py-3.5 px-4 text-sm font-normal text-left rtl:text-right text-gray-500 dark:text-gray-400">Risk</th>
-                            <th class="py-3.5 px-4 text-sm font-normal text-left rtl:text-right text-gray-500 dark:text-gray-400">Maint.</th>
-                            <th class="py-3.5 px-4 text-sm font-normal text-left rtl:text-right text-gray-500 dark:text-gray-400">Recent commits</th>
+                            <th class="py-2 px-4 text-sm font-normal text-left rtl:text-right text-gray-500 dark:text-gray-400">Component</th>
+                            <th class="py-2 px-4 text-sm font-normal text-left rtl:text-right text-gray-500 dark:text-gray-400">Risk</th>
+                            <th class="py-2 px-4 text-sm font-normal text-left rtl:text-right text-gray-500 dark:text-gray-400">Maint.</th>
+                            <th class="py-2 px-4 text-sm font-normal text-left rtl:text-right text-gray-500 dark:text-gray-400">Recent commits</th>
                         </tr>
                     </thead>
                     <tbody>

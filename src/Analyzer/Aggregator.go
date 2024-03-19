@@ -49,14 +49,17 @@ type Aggregated struct {
 	AverageMIwocPerMethod                float64
 	AverageMIcwPerMethod                 float64
 	CommitCountForPeriod                 int
+	CommittedFilesCountForPeriod         int // for example if one commit concerns 10 files, it will be 10
 	BusFactor                            int
 	TopCommitters                        []TopCommitter
+	ResultOfGitAnalysis                  []ResultOfGitAnalysis
 }
 
 type Aggregator struct {
 	files             []*pb.File
 	projectAggregated ProjectAggregated
 	analyzers         []AggregateAnalyzer
+	gitSummaries      []ResultOfGitAnalysis
 }
 
 type TopCommitter struct {
@@ -64,10 +67,20 @@ type TopCommitter struct {
 	Count int
 }
 
-func NewAggregator(files []*pb.File) *Aggregator {
+type ResultOfGitAnalysis struct {
+	ProgrammingLanguage     string
+	ReportRootDir           string
+	CountCommits            int
+	CountCommiters          int
+	CountCommitsForLanguage int
+	CountCommitsIgnored     int
+}
+
+func NewAggregator(files []*pb.File, gitSummaries []ResultOfGitAnalysis) *Aggregator {
 	return &Aggregator{
 		files:             files,
 		projectAggregated: ProjectAggregated{},
+		gitSummaries:      gitSummaries,
 	}
 }
 
@@ -109,6 +122,7 @@ func newAggregated() Aggregated {
 		AverageMIwocPerMethod:                0,
 		AverageMIcwPerMethod:                 0,
 		CommitCountForPeriod:                 0,
+		ResultOfGitAnalysis:                  nil,
 	}
 }
 
@@ -138,6 +152,7 @@ func (r *Aggregator) Aggregates() ProjectAggregated {
 		}
 		if _, ok := r.projectAggregated.ByProgrammingLanguage[file.ProgrammingLanguage]; !ok {
 			r.projectAggregated.ByProgrammingLanguage[file.ProgrammingLanguage] = newAggregated()
+
 		}
 		byLanguage := r.projectAggregated.ByProgrammingLanguage[file.ProgrammingLanguage]
 		byLanguage.NbFiles++
@@ -154,6 +169,7 @@ func (r *Aggregator) Aggregates() ProjectAggregated {
 	r.consolidate(&r.projectAggregated.ByFile)
 	r.consolidate(&r.projectAggregated.ByClass)
 	r.consolidate(&r.projectAggregated.Combined)
+
 	// by language
 	for lng, byLanguage := range r.projectAggregated.ByProgrammingLanguage {
 		r.consolidate(&byLanguage)
@@ -221,11 +237,6 @@ func (r *Aggregator) consolidate(aggregated *Aggregated) {
 		aggregated.Cloc += int(file.LinesOfCode.CommentLinesOfCode)
 		aggregated.Lloc += int(file.LinesOfCode.LogicalLinesOfCode)
 
-		// count of commits
-		if file.Commits != nil {
-			aggregated.CommitCountForPeriod += int(file.Commits.Count)
-		}
-
 		// Calculate alternate MI using average MI per method when file has no class
 		if file.Stmts.StmtClass == nil || len(file.Stmts.StmtClass) == 0 {
 			if file.Stmts.Analyze.Maintainability == nil {
@@ -245,6 +256,14 @@ func (r *Aggregator) consolidate(aggregated *Aggregated) {
 			}
 			averageForFile = averageForFile / float32(len(methods))
 			file.Stmts.Analyze.Maintainability.MaintainabilityIndex = &averageForFile
+		}
+	}
+
+	// Count commits
+	aggregated.ResultOfGitAnalysis = r.gitSummaries
+	if aggregated.ResultOfGitAnalysis != nil {
+		for _, result := range aggregated.ResultOfGitAnalysis {
+			aggregated.CommitCountForPeriod += result.CountCommitsForLanguage
 		}
 	}
 
