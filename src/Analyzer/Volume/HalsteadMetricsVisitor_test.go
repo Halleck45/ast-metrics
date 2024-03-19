@@ -5,6 +5,7 @@ import (
 
 	pb "github.com/halleck45/ast-metrics/src/NodeType"
 	"google.golang.org/protobuf/encoding/protojson"
+	"google.golang.org/protobuf/proto"
 )
 
 func TestHalsteadMetricsVisitor(t *testing.T) {
@@ -101,5 +102,80 @@ func TestHalsteadMetricsVisitor(t *testing.T) {
 
 	if *pbFile.Stmts.StmtFunction[0].Stmts.Analyze.Volume.HalsteadDifficulty != float32(1.5) {
 		t.Errorf("Expected 1.5, got %f", *pbFile.Stmts.StmtFunction[0].Stmts.Analyze.Volume.HalsteadDifficulty)
+	}
+}
+
+func TestHalsteadMetricsVisitor_LeaveNode(t *testing.T) {
+	visitor := HalsteadMetricsVisitor{}
+
+	stmts := &pb.Stmts{
+		StmtClass: []*pb.StmtClass{
+			{
+				Stmts: &pb.Stmts{
+					StmtFunction: []*pb.StmtFunction{
+						{
+							Stmts: &pb.Stmts{
+								Analyze: &pb.Analyze{
+									Volume: &pb.Volume{
+										HalsteadVocabulary:      proto.Int32(2),
+										HalsteadLength:          proto.Int32(2),
+										HalsteadEstimatedLength: proto.Float32(2.5),
+										HalsteadVolume:          proto.Float32(2.5),
+										HalsteadDifficulty:      proto.Float32(2.5),
+										HalsteadEffort:          proto.Float32(2.5),
+										HalsteadTime:            proto.Float32(2.5),
+									},
+								},
+							},
+						},
+						{
+							Stmts: &pb.Stmts{
+								Analyze: &pb.Analyze{
+									Volume: &pb.Volume{
+										HalsteadVocabulary:      proto.Int32(4),
+										HalsteadLength:          proto.Int32(4),
+										HalsteadEstimatedLength: proto.Float32(4.5),
+										HalsteadVolume:          proto.Float32(4.5),
+										HalsteadDifficulty:      proto.Float32(4.5),
+										HalsteadEffort:          proto.Float32(4.5),
+										HalsteadTime:            proto.Float32(4.5),
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+
+	visitor.LeaveNode(stmts)
+
+	if *stmts.StmtClass[0].Stmts.Analyze.Volume.HalsteadVocabulary != int32(3) {
+		t.Errorf("Expected 3, got %d", *stmts.StmtClass[0].Stmts.Analyze.Volume.HalsteadVocabulary)
+	}
+
+	if *stmts.StmtClass[0].Stmts.Analyze.Volume.HalsteadLength != int32(3) {
+		t.Errorf("Expected 3, got %d", *stmts.StmtClass[0].Stmts.Analyze.Volume.HalsteadLength)
+	}
+
+	if *stmts.StmtClass[0].Stmts.Analyze.Volume.HalsteadEstimatedLength != float32(3.5) {
+		t.Errorf("Expected 3.5, got %f", *stmts.StmtClass[0].Stmts.Analyze.Volume.HalsteadEstimatedLength)
+	}
+
+	if *stmts.StmtClass[0].Stmts.Analyze.Volume.HalsteadVolume != float32(3.5) {
+		t.Errorf("Expected 3.5, got %f", *stmts.StmtClass[0].Stmts.Analyze.Volume.HalsteadVolume)
+	}
+
+	if *stmts.StmtClass[0].Stmts.Analyze.Volume.HalsteadDifficulty != float32(3.5) {
+		t.Errorf("Expected 3.5, got %f", *stmts.StmtClass[0].Stmts.Analyze.Volume.HalsteadDifficulty)
+	}
+
+	if *stmts.StmtClass[0].Stmts.Analyze.Volume.HalsteadEffort != float32(3.5) {
+		t.Errorf("Expected 3.5, got %f", *stmts.StmtClass[0].Stmts.Analyze.Volume.HalsteadEffort)
+	}
+
+	if *stmts.StmtClass[0].Stmts.Analyze.Volume.HalsteadTime != float32(3.5) {
+		t.Errorf("Expected 3.5, got %f", *stmts.StmtClass[0].Stmts.Analyze.Volume.HalsteadTime)
 	}
 }

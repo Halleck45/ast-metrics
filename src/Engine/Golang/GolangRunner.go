@@ -47,7 +47,9 @@ func (r *GolangRunner) Ensure() error {
 
 // Finish cleans up the workspace
 func (r GolangRunner) Finish() error {
-	r.progressbar.Stop()
+	if r.progressbar != nil {
+		r.progressbar.Stop()
+	}
 	return nil
 }
 
@@ -58,7 +60,9 @@ func (r GolangRunner) DumpAST() {
 	for _, filePath := range r.getFileList().Files {
 
 		cnt++
-		r.progressbar.UpdateText("🦫 Dumping AST of Go files (" + fmt.Sprintf("%d", cnt) + "/" + fmt.Sprintf("%d", len(r.getFileList().Files)) + ")")
+		if r.progressbar != nil {
+			r.progressbar.UpdateText("🦫 Dumping AST of Go files (" + fmt.Sprintf("%d", cnt) + "/" + fmt.Sprintf("%d", len(r.getFileList().Files)) + ")")
+		}
 
 		hash, err := Engine.GetFileHash(filePath)
 		if err != nil {
@@ -77,7 +81,9 @@ func (r GolangRunner) DumpAST() {
 		Engine.DumpProtobuf(protoFile, binPath)
 	}
 
-	r.progressbar.Info("🦫 Golang code dumped")
+	if r.progressbar != nil {
+		r.progressbar.Info("🦫 Golang code dumped")
+	}
 
 }
 
@@ -173,18 +179,7 @@ func parseGoFile(filePath string) *pb.File {
 	return file
 }
 
-func countComments(n ast.Node) int {
-	var count int
-	ast.Inspect(n, func(n ast.Node) bool {
-		switch n.(type) {
-		case *ast.CommentGroup:
-		case *ast.Comment:
-			count++
-		}
-		return true
-	})
-	return count
-}
+
 
 // getFileList returns the list of PHP files to analyze, and caches it in memory
 func (r *GolangRunner) getFileList() File.FileList {

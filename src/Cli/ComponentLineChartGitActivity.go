@@ -41,7 +41,7 @@ func (c *ComponentLineChartGitActivity) Render() string {
 // Render Html
 func (c *ComponentLineChartGitActivity) RenderHTML() string {
 	data := c.GetData()
-	return Engine.HtmlChartArea(data, "Number of files", "chart-git")
+	return Engine.HtmlChartArea(data, "Number of commits", "chart-git")
 }
 
 func (c *ComponentLineChartGitActivity) GetData() *orderedmap.OrderedMap[string, float64] {
@@ -52,10 +52,12 @@ func (c *ComponentLineChartGitActivity) GetData() *orderedmap.OrderedMap[string,
 	oneYearAgo := time.Now().AddDate(-1, 0, 0)
 
 	// generate 12 months of labels
-	for i := 0; i < 12; i++ {
+	for i := 1; i < 12; i++ {
 		month := oneYearAgo.AddDate(0, i, 0)
 		data.Set(month.Format("Jan"), 0)
 	}
+	// add current month
+	data.Set(time.Now().Format("Jan"), 0)
 
 	// count the number of files per month
 	for _, file := range c.files {

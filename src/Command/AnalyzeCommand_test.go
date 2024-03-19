@@ -50,10 +50,12 @@ func TestAnalyzeCommand_Execute(t *testing.T) {
 			t.Errorf("AnalyzeCommand.Execute() = %s; want it to be nil", err.Error())
 		}
 
+		workdir := t.TempDir()
+
 		// fake pterm *pterm.SpinnerPrinter
 		spinner := pterm.DefaultSpinner
 		// Check if the analysis was done
-		allResults := Analyzer.Start(&spinner)
+		allResults := Analyzer.Start(workdir, &spinner)
 		if allResults == nil {
 			t.Errorf("Analyzer.Start() = nil; want it to not be nil")
 		}
