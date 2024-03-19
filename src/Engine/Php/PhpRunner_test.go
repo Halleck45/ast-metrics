@@ -236,7 +236,7 @@ trait MonTrait1 {
 	// a class (trait) should be found
 	assert.Equal(t, 1, len(result.Stmts.StmtClass), "Incorrect number of classes")
 	class1 := result.Stmts.StmtClass[0]
-	assert.Equal(t, "MonTrait1", class1.Name.Short, "Expected class name to be 'Values', got %s", class1.Name)
+	assert.Equal(t, "MonTrait1", class1.Name.Short, "Expected class name to be 'MonTrait1', got %s", class1.Name)
 
 	// one method should be found
 	assert.Equal(t, 1, len(class1.Stmts.StmtFunction), "Incorrect number of functions in class")
