@@ -259,7 +259,7 @@ func (r *Aggregator) consolidate(aggregated *Aggregated) {
 		}
 	}
 
-	// Count commits
+	// Count commits for the period based on `ResultOfGitAnalysis` data
 	aggregated.ResultOfGitAnalysis = r.gitSummaries
 	if aggregated.ResultOfGitAnalysis != nil {
 		for _, result := range aggregated.ResultOfGitAnalysis {
