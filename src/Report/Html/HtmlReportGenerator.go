@@ -51,7 +51,7 @@ func (v *HtmlReportGenerator) Generate(files []*pb.File, projectAggregated Analy
 		return err
 	}
 
-	for _, file := range []string{"index.html", "layout.html"} {
+	for _, file := range []string{"index.html", "layout.html", "risks.html", "componentTableRisks.html"} {
 		// read the file
 		content, err := content.ReadFile(fmt.Sprintf("templates/%s", file))
 		if err != nil {
@@ -79,6 +79,13 @@ func (v *HtmlReportGenerator) Generate(files []*pb.File, projectAggregated Analy
 		v.GenerateLanguagePage("index.html", language, currentView, files, projectAggregated)
 	}
 
+	// Risks
+	v.GenerateLanguagePage("risks.html", "All", projectAggregated.Combined, files, projectAggregated)
+	// by language overview
+	for language, currentView := range projectAggregated.ByProgrammingLanguage {
+		v.GenerateLanguagePage("risks.html", language, currentView, files, projectAggregated)
+	}
+
 	// cleanup temporary folder
 	err = os.RemoveAll(templateDir)
 	if err != nil {
@@ -91,12 +98,12 @@ func (v *HtmlReportGenerator) Generate(files []*pb.File, projectAggregated Analy
 func (v *HtmlReportGenerator) GenerateLanguagePage(template string, language string, currentView Analyzer.Aggregated, files []*pb.File, projectAggregated Analyzer.ProjectAggregated) error {
 
 	// Compile the index.html template
-	tpl, err := pongo2.DefaultSet.FromFile("index.html")
+	tpl, err := pongo2.DefaultSet.FromFile(template)
 	if err != nil {
 		log.Error(err)
 	}
 	// Render it, passing projectAggregated and files as context
-	out, err := tpl.Execute(pongo2.Context{"currentLanguage": language, "currentView": currentView, "projectAggregated": projectAggregated, "files": files})
+	out, err := tpl.Execute(pongo2.Context{"page": template, "currentLanguage": language, "currentView": currentView, "projectAggregated": projectAggregated, "files": files})
 	if err != nil {
 		log.Error(err)
 	}
@@ -106,7 +113,9 @@ func (v *HtmlReportGenerator) GenerateLanguagePage(template string, language str
 	if language != "All" {
 		pageSuffix = fmt.Sprintf("_%s", language)
 	}
-	file, err := os.Create(fmt.Sprintf("%s/index%s.html", v.ReportPath, pageSuffix))
+	// prefix is template without the .html part
+	pagePrefix := template[:len(template)-5]
+	file, err := os.Create(fmt.Sprintf("%s/%s%s.html", v.ReportPath, pagePrefix, pageSuffix))
 	if err != nil {
 		log.Error(err)
 	}
@@ -189,6 +198,11 @@ func (v *HtmlReportGenerator) RegisterFilters() {
 		// create new empty list
 		list := make([]*pb.File, 0)
 
+		rowsToKeep := 10
+		if param.Integer() > 0 {
+			rowsToKeep = param.Integer()
+		}
+
 		// append to the list when file contains at lease one class
 		for _, file := range in.Interface().([]*pb.File) {
 			if file.Stmts.StmtClass == nil {
@@ -227,8 +241,8 @@ func (v *HtmlReportGenerator) RegisterFilters() {
 		})
 
 		// keep only the first 10
-		if len(list) > 10 {
-			list = list[:10]
+		if len(list) > rowsToKeep {
+			list = list[:rowsToKeep]
 		}
 
 		return pongo2.AsValue(list), nil
