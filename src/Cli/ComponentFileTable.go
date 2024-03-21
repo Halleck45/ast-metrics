@@ -52,7 +52,7 @@ func (v *ComponentFileTable) Render() string {
 func (v *ComponentFileTable) Init() {
 
 	columns := []table.Column{
-		{Title: "File", Width: 75},
+		{Title: "File", Width: 70},
 		{Title: "Commits", Width: 9},
 		{Title: "Authors", Width: 9},
 		{Title: "LOC", Width: 9},

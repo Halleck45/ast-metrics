@@ -22,15 +22,15 @@ type ComponentTableClass struct {
 
 // index of cols
 var cols = map[string]int{
-	"Name":              0,
-	"Commits":           1,
-	"Authors":           2,
-	"Methods":           3,
-	"LLoc":              4,
-	"Cyclomatic":        5,
-	"Halstead Length":   6,
-	"Halstead Volume":   7,
-	"Maintainability":   8,
+	"Name":            0,
+	"Commits":         1,
+	"Authors":         2,
+	"Methods":         3,
+	"LLoc":            4,
+	"Cyclomatic":      5,
+	"Halstead Length": 6,
+	"Halstead Volume": 7,
+	"Maintainability": 8,
 }
 
 func NewComponentTableClass(isInteractive bool, files []*pb.File) *ComponentTableClass {
@@ -245,6 +245,10 @@ func (v *ComponentTableClass) Update(msg tea.Msg) {
 		case "n":
 			v.SortByName()
 		}
+	case DoRefreshModel:
+		// refresh the model
+		v.files = msg.files
+		v.Init()
 	}
 
 	v.table, _ = v.table.Update(msg)

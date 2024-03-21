@@ -3,6 +3,8 @@ package Storage
 import (
 	"os"
 	"path/filepath"
+
+	"github.com/halleck45/ast-metrics/src/Engine"
 )
 
 func Path() string {
@@ -38,4 +40,45 @@ func Ensure() {
 func Purge() {
 	workDir := Path()
 	os.RemoveAll(workDir)
+}
+
+func DeleteCache(filePath string) {
+	// realpath filePath
+	//filePath, err := filepath.Abs(filePath)
+	//if err != nil {
+	//	return
+	//}
+
+	// If hash has not changed, we can delete the file directly
+	hash, err := Engine.GetFileHash(filePath)
+	if err == nil {
+		binPath := OutputPath() + string(os.PathSeparator) + hash + ".bin"
+		if _, err := os.Stat(binPath); err == nil {
+			os.Remove(binPath)
+			return
+		}
+	}
+
+	// If hash has  changed, we iterate over all files in order to retrieve it via the Path attribute
+	files, err := os.ReadDir(OutputPath())
+	if err != nil {
+		return
+	}
+
+	for _, file := range files {
+		// load the file via protobuf
+		// if the path is the same, we remove it
+		binPath := OutputPath() + string(os.PathSeparator) + file.Name()
+		pbFile, err := Engine.UnmarshalProtobuf(binPath)
+
+		if err != nil {
+			continue
+		}
+
+		if pbFile.Path == filePath {
+			os.Remove(binPath)
+			return
+		}
+	}
+
 }

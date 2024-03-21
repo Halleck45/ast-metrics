@@ -15,12 +15,14 @@ type Configuration struct {
 	// Reports
 	HtmlReportPath string
 	MarkdownReportPath string
+	Watching bool
 }
 
 func NewConfiguration() *Configuration {
 	return &Configuration{
 		SourcesToAnalyzePath: []string{},
 		ExcludePatterns:      []string{"/vendor/", "/node_modules/", "/.git/", "/.idea/", "/tests/", "/Tests/", "/test/", "/Test/", "/spec/", "/Spec/"},
+		Watching: false,
 	}
 }
 
