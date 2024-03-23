@@ -17,6 +17,16 @@ type ComponentFileTable struct {
 	table           table.Model
 }
 
+// index of cols
+var colsRisks = map[string]int{
+	"Name":       0,
+	"Risk":       1,
+	"Commits":    2,
+	"Authors":    3,
+	"LOC":        4,
+	"Cyclomatic": 5,
+}
+
 func NewComponentFileTable(isInteractive bool, files []*pb.File) *ComponentFileTable {
 	v := &ComponentFileTable{
 		isInteractive:   isInteractive,
@@ -43,7 +53,8 @@ func (v *ComponentFileTable) Render() string {
 	return StyleHelp(`
 		Use arrows to navigate and esc to quit.
 		Press following keys to sort by column:
-		   (n) by name     (l) by LOC		(c) by cyclomatic complexity (g) by commits
+		   (n) by name     (l) by LOC		(r) by risk
+		   (c) by cyclomatic complexity (g) by commits
 
 	   `).Render() + "\n" +
 		baseStyle.Render(v.table.View())
@@ -52,7 +63,8 @@ func (v *ComponentFileTable) Render() string {
 func (v *ComponentFileTable) Init() {
 
 	columns := []table.Column{
-		{Title: "File", Width: 70},
+		{Title: "File", Width: 60},
+		{Title: "Risk", Width: 9},
 		{Title: "Commits", Width: 9},
 		{Title: "Authors", Width: 9},
 		{Title: "LOC", Width: 9},
@@ -74,8 +86,14 @@ func (v *ComponentFileTable) Init() {
 			cyclo = int(*file.Stmts.Analyze.Complexity.Cyclomatic)
 		}
 
+		risk := float32(0.0)
+		if file.Stmts != nil && file.Stmts.Analyze != nil && file.Stmts.Analyze.Risk != nil {
+			risk = float32(file.Stmts.Analyze.Risk.Score)
+		}
+
 		rows = append(rows, table.Row{
 			file.Path,
+			strconv.FormatFloat(float64(risk), 'f', 2, 32),
 			strconv.Itoa(nbCommits),
 			strconv.Itoa(nbCommiters),
 			strconv.Itoa(int(file.LinesOfCode.GetLinesOfCode())),
@@ -118,29 +136,41 @@ func (v *ComponentFileTable) Sort(sortColumnIndex int) {
 			return rows[i][sortColumnIndex] < rows[j][sortColumnIndex]
 		}
 
-		a, _ := strconv.Atoi(rows[i][sortColumnIndex])
-		b, _ := strconv.Atoi(rows[j][sortColumnIndex])
-		return a > b
+		// for floats
+		a, _ := strconv.ParseFloat(rows[i][sortColumnIndex], 32)
+		b, _ := strconv.ParseFloat(rows[j][sortColumnIndex], 32)
+		if a != b {
+			return a > b
+		}
+
+		// for integers
+		aInt, _ := strconv.Atoi(rows[i][sortColumnIndex])
+		bInt, _ := strconv.Atoi(rows[j][sortColumnIndex])
+		return aInt > bInt
 	})
 
-	v.sortColumnIndex = 0
+	v.sortColumnIndex = sortColumnIndex
 	v.table.SetRows(rows)
 }
 
 func (v *ComponentFileTable) SortByName() {
-	v.Sort(0)
+	v.Sort(colsRisks["Name"])
 }
 
 func (v *ComponentFileTable) SortByLoc() {
-	v.Sort(2)
+	v.Sort(colsRisks["LOC"])
 }
 
 func (v *ComponentFileTable) SortByCommits() {
-	v.Sort(1)
+	v.Sort(colsRisks["Commits"])
 }
 
 func (v *ComponentFileTable) SortByCyclomaticComplexity() {
-	v.Sort(3)
+	v.Sort(colsRisks["Cyclomatic"])
+}
+
+func (v *ComponentFileTable) SortByRisk() {
+	v.Sort(colsRisks["Risk"])
 }
 
 func (v *ComponentFileTable) Update(msg tea.Msg) {
@@ -156,6 +186,8 @@ func (v *ComponentFileTable) Update(msg tea.Msg) {
 			v.SortByCyclomaticComplexity()
 		case "n":
 			v.SortByName()
+		case "r":
+			v.SortByRisk()
 		}
 	}
 
