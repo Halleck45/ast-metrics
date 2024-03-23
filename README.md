@@ -33,9 +33,9 @@ AST Metrics is a standalone package. It does not require any other software to b
 
 | Platform |  i386 | amd64 | arm64 |
 | -------- |  ------ | ------ | ------ |
-| ![](./docs/emoji-tux.png) Linux    | [Download](https://github.com/Halleck45/ast-metrics/releases/download/v0.0.7-alpha/ast-metrics_Linux_i386) | [Download](https://github.com/Halleck45/ast-metrics/releases/download/v0.0.7-alpha/ast-metrics_Linux_x86_64) | [Download](https://github.com/Halleck45/ast-metrics/releases/download/v0.0.7-alpha/ast-metrics_Linux_arm64)
-| ![](./docs/emoji-apple.png) macOS    | - | [Download](https://github.com/Halleck45/ast-metrics/releases/download/v0.0.7-alpha/ast-metrics_Darwin_arm64) | [Download](https://github.com/Halleck45/ast-metrics/releases/download/v0.0.7-alpha/ast-metrics_Darwin_x86_64)
-| ![](./docs/emoji-windows.png) Windows  | [Download](https://github.com/Halleck45/ast-metrics/releases/download/v0.0.7-alpha/ast-metrics_Windows_i386.exe) | [Download](https://github.com/Halleck45/ast-metrics/releases/download/v0.0.7-alpha/ast-metrics_Windows_x86_64.exe) | [Download](https://github.com/Halleck45/ast-metrics/releases/download/v0.0.7-alpha/ast-metrics_Windows_arm64.exe)
+| ![](./docs/emoji-tux.png) Linux    | [Download](https://github.com/Halleck45/ast-metrics/releases/download/v0.0.9-alpha/ast-metrics_Linux_i386) | [Download](https://github.com/Halleck45/ast-metrics/releases/download/v0.0.9-alpha/ast-metrics_Linux_x86_64) | [Download](https://github.com/Halleck45/ast-metrics/releases/download/v0.0.9-alpha/ast-metrics_Linux_arm64)
+| ![](./docs/emoji-apple.png) macOS    | - | [Download](https://github.com/Halleck45/ast-metrics/releases/download/v0.0.9-alpha/ast-metrics_Darwin_arm64) | [Download](https://github.com/Halleck45/ast-metrics/releases/download/v0.0.9-alpha/ast-metrics_Darwin_x86_64)
+| ![](./docs/emoji-windows.png) Windows  | [Download](https://github.com/Halleck45/ast-metrics/releases/download/v0.0.9-alpha/ast-metrics_Windows_i386.exe) | [Download](https://github.com/Halleck45/ast-metrics/releases/download/v0.0.9-alpha/ast-metrics_Windows_x86_64.exe) | [Download](https://github.com/Halleck45/ast-metrics/releases/download/v0.0.9-alpha/ast-metrics_Windows_arm64.exe)
 
 Or download the latest version of AST Metrics from the [releases page](https://github.com/Halleck45/ast-metrics/releases/latest).
 
@@ -64,9 +64,13 @@ jobs:
 
 ## Supported languages
 
-+ ✅ **PHP**
-+ ✅ **Python**
-+ ✅ **Golang**
++ ✅ **PHP** (full)
++ 👷 **Python** (partial)
++ 👷 **Golang** (partial)
++ 🕛 **Dart**
++ 🕛 **Flutter**
++ 🕛 **TypeScript**
++ 🕛 **Java**
 
 
 We are working on adding more languages. If you want to help, please see [CONTRIBUTING](.github/CONTRIBUTING.md).
@@ -86,6 +90,7 @@ Global options:
 
 - **Verbose** (`--verbose`): Show debug information.
 - **Interactive mode** (`--non-interactive`): Disable interactive mode.
+- **Watch mode** (`--watch`): Watch files for changes and re-run the analysis.
 
 ## Contributing
 
