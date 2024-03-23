@@ -20,6 +20,11 @@ func (busFactor *BusFactor) Calculate(aggregate *Analyzer.Aggregated) {
 	files := aggregate.ConcernedFiles
 	commits := make(map[string]int)
 	for _, file := range files {
+
+		if file.Commits == nil {
+			continue
+		}
+		
 		for _, commit := range file.Commits.Commits {
 
 			// Exclude commits with no author or from noreply@github.com

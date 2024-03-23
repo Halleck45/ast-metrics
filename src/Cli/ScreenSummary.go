@@ -43,6 +43,11 @@ func (m modelScreenSummary) Init() tea.Cmd {
 	return nil
 }
 
+func (m *ScreenSummary) Reset(files []*pb.File, projectAggregated Analyzer.ProjectAggregated) {
+	m.files = files
+	m.projectAggregated = projectAggregated
+}
+
 func (m modelScreenSummary) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
@@ -50,6 +55,11 @@ func (m modelScreenSummary) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case "q", "ctrl+c", "esc":
 			return NewScreenHome(true, m.files, m.projectAggregated).GetModel(), tea.ClearScreen
 		}
+	case DoRefreshModel:
+		// refresh the model
+		m.files = msg.files
+		m.projectAggregated = msg.projectAggregated
+		return m, nil
 	}
 	return m, nil
 }

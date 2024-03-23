@@ -5,6 +5,7 @@ import (
 	"os"
 
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/fsnotify/fsnotify"
 	"github.com/halleck45/ast-metrics/src/Analyzer"
 	pb "github.com/halleck45/ast-metrics/src/NodeType"
 	"github.com/muesli/termenv"
@@ -20,6 +21,13 @@ type ScreenHome struct {
 	isInteractive     bool
 	files             []*pb.File
 	projectAggregated Analyzer.ProjectAggregated
+	// program
+	tea *tea.Program
+	// modelChoices
+	modelChoices modelChoices
+	// watchers
+	FileWatcher  *fsnotify.Watcher
+	currentModel tea.Model
 }
 
 // modelChoices is the model for the home view
@@ -30,6 +38,14 @@ type modelChoices struct {
 
 	// array of screens
 	screens []Screen
+
+	// Watcher
+	FileWatcher *fsnotify.Watcher
+}
+
+type DoRefreshModel struct {
+	files             []*pb.File
+	projectAggregated Analyzer.ProjectAggregated
 }
 
 // NewScreenHome creates a new ScreenHome
@@ -42,23 +58,53 @@ func NewScreenHome(isInteractive bool, files []*pb.File, projectAggregated Analy
 }
 
 // Render renders the home view and runs the Tea program
-func (r ScreenHome) Render() {
+func (r *ScreenHome) Render() {
+
+	if r.tea != nil {
+		// If already running, just return
+		// send an update msg
+		//r.tea.Send(DoRefreshModel{files: r.files, projectAggregated: r.projectAggregated})
+		return
+	}
 
 	// Prepare list of accepted screens
-	m := modelChoices{files: r.files, projectAggregated: r.projectAggregated}
+	m := modelChoices{files: r.files, projectAggregated: r.projectAggregated, FileWatcher: r.FileWatcher}
 	fillInScreens(&m)
+	r.currentModel = m
 
 	if !r.isInteractive {
 		// If not interactive
-		fmt.Println("No interactive mode detected. Please use the reports options (--report-html=<path>) to visualize the results.")
+		fmt.Println("No interactive mode detected.")
 		return
 	}
 
 	options := tea.WithAltScreen()
-	if _, err := tea.NewProgram(m, options).Run(); err != nil {
+	r.tea = tea.NewProgram(m, options)
+	if _, err := r.tea.Run(); err != nil {
 		fmt.Println("Error running program:", err)
+		r.tea.RestoreTerminal()
 		os.Exit(1)
 	}
+}
+
+func (r *ScreenHome) Reset(files []*pb.File, projectAggregated Analyzer.ProjectAggregated) {
+
+	r.files = files
+	r.projectAggregated = projectAggregated
+
+	// Update all screens
+	for _, s := range r.modelChoices.screens {
+		s.Reset(files, projectAggregated)
+	}
+
+	if r.tea == nil {
+		return
+	}
+
+	// Send update command to tea application
+	// @todo : traiter sur tous les écrans
+	r.tea.Send(DoRefreshModel{files: files, projectAggregated: projectAggregated})
+	r.currentModel.Update(DoRefreshModel{files: files, projectAggregated: projectAggregated})
 }
 
 // Get Tea model
@@ -75,7 +121,8 @@ func (r ScreenHome) GetModel() modelChoices {
 func fillInScreens(modelChoices *modelChoices) {
 
 	if len(modelChoices.screens) > 0 {
-		return
+		// we need to refresh screen only when --watch is set
+		// return
 	}
 
 	// Create the table screen
@@ -86,8 +133,8 @@ func fillInScreens(modelChoices *modelChoices) {
 
 	// Create the screen list
 	modelChoices.screens = []Screen{
-		summaryScreen,
-		viewTableClass,
+		&summaryScreen,
+		&viewTableClass,
 	}
 
 	// Append one screen per programming language
@@ -98,7 +145,7 @@ func fillInScreens(modelChoices *modelChoices) {
 		viewByProgrammingLanguage.files = modelChoices.files
 		viewByProgrammingLanguage.projectAggregated = modelChoices.projectAggregated
 
-		modelChoices.screens = append(modelChoices.screens, viewByProgrammingLanguage)
+		modelChoices.screens = append(modelChoices.screens, &viewByProgrammingLanguage)
 	}
 }
 
@@ -139,6 +186,12 @@ func (m modelChoices) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	if msg, ok := msg.(tea.KeyMsg); ok {
 		k := msg.String()
 		if k == "q" || k == "esc" || k == "ctrl+c" {
+
+			// Check if we have a file watcher
+			if m.FileWatcher != nil {
+				m.FileWatcher.Close()
+			}
+
 			return m, tea.Quit
 		}
 	}
@@ -147,6 +200,14 @@ func (m modelChoices) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	fillInScreens(&m)
 
 	switch msg := msg.(type) {
+	case DoRefreshModel:
+		// refresh the model, and the models of the sub screens
+		m.files = msg.files
+		m.projectAggregated = msg.projectAggregated
+		for _, s := range m.screens {
+			s.GetModel().Update(msg)
+		}
+
 	case tea.KeyMsg:
 		switch msg.String() {
 		case "j", "down":

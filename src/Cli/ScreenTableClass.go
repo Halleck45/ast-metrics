@@ -37,6 +37,10 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case "q", "ctrl+c", "esc":
 			return NewScreenHome(true, m.files, m.projectAggregated).GetModel(), tea.ClearScreen
 		}
+	case DoRefreshModel:
+		// refresh the model
+		m.files = msg.files
+		m.projectAggregated = msg.projectAggregated
 	}
 
 	m.table.Update(msg)
@@ -50,6 +54,11 @@ func (m model) View() string {
 
 func (v ScreenTableClass) GetScreenName() string {
 	return "Classes and object oriented statistics"
+}
+
+func (v *ScreenTableClass) Reset(files []*pb.File, projectAggregated Analyzer.ProjectAggregated) {
+	v.files = files
+	v.projectAggregated = projectAggregated
 }
 
 func (v ScreenTableClass) GetModel() tea.Model {

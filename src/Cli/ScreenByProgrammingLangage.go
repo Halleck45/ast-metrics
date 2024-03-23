@@ -35,6 +35,10 @@ func (m modelByProgrammingLanguage) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case "q", "ctrl+c", "esc":
 			return NewScreenHome(true, m.files, m.projectAggregated).GetModel(), tea.ClearScreen
 		}
+	case DoRefreshModel:
+		// refresh the model
+		m.files = msg.files
+		m.projectAggregated = msg.projectAggregated
 	}
 
 	m.componentTableClass.Update(msg)
@@ -51,6 +55,11 @@ func (m modelByProgrammingLanguage) View() string {
 	return StyleScreen(StyleTitle(m.programmingLangageName+" overview").Render() +
 		header.Render() +
 		"\n\n" + m.componentTableClass.Render()).Render()
+}
+
+func (v *ScreenByProgrammingLanguage) Reset(files []*pb.File, projectAggregated Analyzer.ProjectAggregated) {
+	v.files = files
+	v.projectAggregated = projectAggregated
 }
 
 func (v ScreenByProgrammingLanguage) GetScreenName() string {

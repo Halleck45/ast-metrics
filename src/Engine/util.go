@@ -3,6 +3,7 @@ package Engine
 import (
 	"crypto/md5"
 	"encoding/hex"
+	"errors"
 	"fmt"
 	"io"
 	"os"
@@ -82,6 +83,27 @@ func DumpProtobuf(file *pb.File, binPath string) {
 	if err != nil {
 		log.Error(err)
 	}
+}
+
+func UnmarshalProtobuf(file string) (*pb.File, error) {
+	pbFile := &pb.File{}
+
+	// load AST via ProtoBuf (using NodeType package)
+	in, err := os.ReadFile(file)
+	if err != nil {
+		return nil, err
+	}
+
+	// if file is empty, return
+	if len(in) == 0 {
+		return nil, errors.New("File is empty: " + file)
+	}
+
+	if err := proto.Unmarshal(in, pbFile); err != nil {
+		return nil, err
+	}
+
+	return pbFile, nil
 }
 
 // FactoryStmts returns a new instance of Stmts

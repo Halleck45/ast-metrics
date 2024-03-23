@@ -11,6 +11,7 @@ import (
 	"github.com/halleck45/ast-metrics/src/Engine/Golang"
 	"github.com/halleck45/ast-metrics/src/Engine/Php"
 	"github.com/halleck45/ast-metrics/src/Engine/Python"
+	"github.com/halleck45/ast-metrics/src/Watcher"
 	"github.com/pterm/pterm"
 	log "github.com/sirupsen/logrus"
 	"github.com/urfave/cli/v2"
@@ -68,6 +69,12 @@ func main() {
 						Name:     "report-markdown",
 						Usage:    "Generate an Markdown report file",
 						Category: "Report",
+					},
+					// Watch mode
+					&cli.BoolFlag{
+						Name:     "watch",
+						Usage:    "Re-run the analysis when files change",
+						Category: "Global options",
 					},
 				},
 				Action: func(cCtx *cli.Context) error {
@@ -130,6 +137,15 @@ func main() {
 
 					// Run command
 					command := Command.NewAnalyzeCommand(configuration, outWriter, runners, isInteractive)
+
+					// Watch mode
+					configuration.Watching = cCtx.Bool("watch")
+					err = Watcher.NewCommandWatcher(configuration).Start(command)
+					if err != nil {
+						pterm.Error.Println("Cannot watch files: " + err.Error())
+					}
+
+					// Execute command
 					err = command.Execute()
 					if err != nil {
 						pterm.Error.Println(err.Error())
