@@ -43,7 +43,7 @@ func TestGolangRunner(t *testing.T) {
 		t.Error(err)
 	}
 
-	result := parseGoFile(tmpFile)
+	result := ParseGoFile(tmpFile)
 
 	// Ensure path
 	assert.Equal(t, tmpFile, result.Path, "Expected path to be %s, got %s", tmpFile, result.Path)
@@ -118,7 +118,7 @@ func TestGoLangStructureExtraction(t *testing.T) {
 		t.Error(err)
 	}
 
-	result := parseGoFile(tmpFile)
+	result := ParseGoFile(tmpFile)
 	testedFunction := result.Stmts.StmtFunction[0]
 
 	// Ifs
