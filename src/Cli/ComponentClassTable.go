@@ -18,6 +18,7 @@ type ComponentTableClass struct {
 	files           []*pb.File
 	sortColumnIndex int
 	table           table.Model
+	search          ComponentSearch
 }
 
 // index of cols
@@ -46,27 +47,47 @@ func NewComponentTableClass(isInteractive bool, files []*pb.File) *ComponentTabl
 
 func (v *ComponentTableClass) Render() string {
 
-	if len(v.table.Rows()) == 0 {
-		return "No class found.\n" + StyleHelp(`
-			Press q or esc to quit.
-		`).Render()
-	}
-
 	var baseStyle = lipgloss.NewStyle().
 		BorderStyle(lipgloss.NormalBorder()).
 		BorderForeground(lipgloss.Color("240"))
 
-	return StyleHelp(`
+	text := StyleHelp(`
 		Use arrows to navigate and esc to quit.
 		Press following keys to sort by column:
 		   (n) by name     (l) by LLOC		(c) by cyclomatic complexity
 		   (m) by methods  (i) by maintainability index
+		Press (ctrl+F) to search
+	   `).Render() + "\n"
 
-	   `).Render() + "\n" +
-		baseStyle.Render(v.table.View())
+	// search box
+	text += v.search.Render()
+
+	// Results
+	// The results
+	if len(v.table.Rows()) == 0 {
+
+		if v.search.HasSearch() {
+			text += "No class found with the search: " + v.search.Expression + ".\n" + StyleHelp(`
+				Press Ctrl+C or Esc to quit.
+			`).Render()
+		} else {
+			text += "No class found.\n" + StyleHelp(`
+				Press Ctrl+C or Esc to quit.
+			`).Render()
+		}
+	} else {
+		text = text + baseStyle.Render(v.table.View())
+	}
+
+	return text
 }
 
 func (v *ComponentTableClass) Init() {
+
+	// search
+	if &v.search == nil {
+		v.search = ComponentSearch{Expression: ""}
+	}
 
 	columns := []table.Column{
 		{Title: "Class", Width: 35},
@@ -99,6 +120,14 @@ func (v *ComponentTableClass) Init() {
 
 			if class == nil {
 				continue
+			}
+
+			// Search
+			if v.search.HasSearch() {
+				// search by file name
+				if !v.search.Match(class.Name.Qualified) {
+					continue
+				}
 			}
 
 			if class.Stmts == nil {
@@ -231,6 +260,15 @@ func (v *ComponentTableClass) SortByCyclomaticComplexity() {
 
 func (v *ComponentTableClass) Update(msg tea.Msg) {
 
+	v.search.Update(msg)
+	if v.search.IsEnabled() {
+		// Stop here, and make search do its job
+		// Apply search
+		v.Init()
+		v.table, _ = v.table.Update(msg)
+		return
+	}
+
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
 		switch msg.String() {
@@ -244,6 +282,8 @@ func (v *ComponentTableClass) Update(msg tea.Msg) {
 			v.SortByNumberOfMethods()
 		case "n":
 			v.SortByName()
+		case "ctrl+f":
+			v.search.Toggle("")
 		}
 	case DoRefreshModel:
 		// refresh the model

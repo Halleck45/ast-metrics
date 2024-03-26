@@ -52,7 +52,7 @@ func (m modelScreenSummary) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
 		switch msg.String() {
-		case "q", "ctrl+c", "esc":
+		case "ctrl+c", "esc":
 			return NewScreenHome(true, m.files, m.projectAggregated).GetModel(), tea.ClearScreen
 		}
 	case DoRefreshModel:

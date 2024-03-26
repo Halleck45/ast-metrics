@@ -102,7 +102,6 @@ func (r *ScreenHome) Reset(files []*pb.File, projectAggregated Analyzer.ProjectA
 	}
 
 	// Send update command to tea application
-	// @todo : traiter sur tous les écrans
 	r.tea.Send(DoRefreshModel{files: files, projectAggregated: projectAggregated})
 	r.currentModel.Update(DoRefreshModel{files: files, projectAggregated: projectAggregated})
 }
@@ -131,10 +130,14 @@ func fillInScreens(modelChoices *modelChoices) {
 	// Create the table screen
 	summaryScreen := NewScreenSummary(true, modelChoices.files, modelChoices.projectAggregated)
 
+	// Create the Risk screen
+	viewRisks := NewScreenRisks(true, modelChoices.files, modelChoices.projectAggregated)
+
 	// Create the screen list
 	modelChoices.screens = []Screen{
 		&summaryScreen,
 		&viewTableClass,
+		&viewRisks,
 	}
 
 	// Append one screen per programming language
