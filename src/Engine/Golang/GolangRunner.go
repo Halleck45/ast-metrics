@@ -75,7 +75,7 @@ func (r GolangRunner) DumpAST() {
 		}
 
 		// Create protobuf object
-		protoFile := parseGoFile(filePath)
+		protoFile := ParseGoFile(filePath)
 
 		// Dump protobuf object to destination
 		Engine.DumpProtobuf(protoFile, binPath)
@@ -87,7 +87,7 @@ func (r GolangRunner) DumpAST() {
 
 }
 
-func parseGoFile(filePath string) *pb.File {
+func ParseGoFile(filePath string) *pb.File {
 	fset := token.NewFileSet()
 	f, err := parser.ParseFile(fset, filePath, nil, parser.ParseComments)
 	if err != nil {

@@ -1,8 +1,10 @@
 package Analyzer
 
 import (
+	"os"
 	"testing"
 
+	"github.com/halleck45/ast-metrics/src/Engine/Golang"
 	pb "github.com/halleck45/ast-metrics/src/NodeType"
 	"google.golang.org/protobuf/encoding/protojson"
 )
@@ -256,5 +258,45 @@ func TestItCalculateCyclomaticComplexity(t *testing.T) {
 	// complexity should be 11
 	if ccn != 11 {
 		t.Error("Expected 11, got ", ccn)
+	}
+}
+
+func TestItCalculateCyclomaticComplexityForNotObjectOrientedLanguages(t *testing.T) {
+
+	visitor := CyclomaticComplexityVisitor{}
+
+	fileContent := `
+    package main
+
+    import "fmt"
+
+    func example() {
+        if true {
+            if true {
+                fmt.Println("Hello")
+            }
+        } else if true {
+            fmt.Println("Hello")
+        } else {
+            fmt.Println("Hello")
+        }
+    }
+    `
+
+	// Create a temporary file
+	tmpFile := t.TempDir() + "/test.php"
+	if _, err := os.Create(tmpFile); err != nil {
+		t.Error(err)
+	}
+	if err := os.WriteFile(tmpFile, []byte(fileContent), 0644); err != nil {
+		t.Error(err)
+	}
+
+	pbFile := Golang.ParseGoFile(tmpFile)
+
+	ccn := visitor.Calculate(pbFile.Stmts)
+
+	if ccn != 3 {
+		t.Error("Expected 3, got ", ccn)
 	}
 }

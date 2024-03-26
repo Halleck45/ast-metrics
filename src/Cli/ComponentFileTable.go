@@ -126,7 +126,7 @@ func (v *ComponentFileTable) Init() {
 		if len(filename) > 60 {
 			filename = "..." + filename[len(filename)-57:]
 			// remove the extension
-			
+
 		}
 
 		rows = append(rows, table.Row{

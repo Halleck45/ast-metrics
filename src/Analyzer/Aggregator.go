@@ -257,6 +257,23 @@ func (r *Aggregator) consolidate(aggregated *Aggregated) {
 			averageForFile = averageForFile / float32(len(methods))
 			file.Stmts.Analyze.Maintainability.MaintainabilityIndex = &averageForFile
 		}
+
+		// File analysis should be the sum of all methods and classes in the file
+		// That's useful when we navigate over the files instead of the classes
+		functions := Engine.GetFunctionsInFile(file)
+		zero := int32(0)
+		if file.Stmts.Analyze.Complexity.Cyclomatic == nil {
+			file.Stmts.Analyze.Complexity.Cyclomatic = &zero
+		}
+		for _, function := range functions {
+			if function.Stmts.Analyze == nil || function.Stmts.Analyze.Complexity == nil {
+				continue
+			}
+			if function.Stmts.Analyze.Complexity != nil {
+
+				*file.Stmts.Analyze.Complexity.Cyclomatic += *function.Stmts.Analyze.Complexity.Cyclomatic
+			}
+		}
 	}
 
 	// Count commits for the period based on `ResultOfGitAnalysis` data
