@@ -1,0 +1,37 @@
+# Project information
+site_name: AST Metris documentation
+site_author: Jean-François Lépine
+site_description: >-
+  Understand your code, any language
+edit_uri: edit/documentation/docs/
+
+theme:
+  name: material
+  features:
+    - navigation.footer
+    - content.action.edit 
+
+markdown_extensions:
+  - pymdownx.superfences
+  - pymdownx.tabbed:
+      alternate_style: true
+  - attr_list
+  - pymdownx.emoji:
+      emoji_index: !!python/name:material.extensions.emoji.twemoji
+      emoji_generator: !!python/name:material.extensions.emoji.to_svg
+      
+extra_javascript:
+  - javascripts/extra.js
+  
+nav:
+  - Home: index.md
+  - Getting started:
+    - Installation: getting-started/install.md
+
+
+# Repository
+repo_name: Halleck45/ast-metrics
+repo_url: https://github.com/Halleck45/ast-metrics
+
+
+ 
