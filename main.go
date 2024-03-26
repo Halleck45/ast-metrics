@@ -17,6 +17,14 @@ import (
 	"github.com/urfave/cli/v2"
 )
 
+var (
+	// Current version. Managed by goreleaser during build
+	// @see https://goreleaser.com/cookbooks/using-main.version/
+	version = "dev"
+	commit  = "none"
+	date    = "unknown"
+)
+
 func main() {
 
 	log.SetLevel(log.TraceLevel)
@@ -35,6 +43,8 @@ func main() {
 	runners := []Engine.Engine{&runnerPhp, &runnerGolang, &runnerPython}
 
 	app := &cli.App{
+		Name:  "ast-metrics",
+		Usage: "Static code analysis tool",
 		Commands: []*cli.Command{
 			{
 				Name:    "analyze",
@@ -162,6 +172,36 @@ func main() {
 				Action: func(cCtx *cli.Context) error {
 					// Run command
 					command := Command.NewCleanCommand()
+					err := command.Execute()
+					if err != nil {
+						pterm.Error.Println(err.Error())
+						return err
+					}
+					return nil
+				},
+			},
+			{
+				Name:    "self-update",
+				Aliases: []string{"u"},
+				Usage:   "Update current binary",
+				Action: func(cCtx *cli.Context) error {
+					// Run command
+					command := Command.NewSelfUpdateCommand(version)
+					err := command.Execute()
+					if err != nil {
+						pterm.Error.Println(err.Error())
+						return err
+					}
+					return nil
+				},
+			},
+			{
+				Name:    "version",
+				Aliases: []string{"v"},
+				Usage:   "Print version information",
+				Action: func(cCtx *cli.Context) error {
+					// Run command
+					command := Command.NewVersionCommand(version)
 					err := command.Execute()
 					if err != nil {
 						pterm.Error.Println(err.Error())

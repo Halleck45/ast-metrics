@@ -41,7 +41,6 @@ Or download the latest version of AST Metrics from the [releases page](https://g
 
 > 💡 You don't know what is your platform? Run `uname -m` in your terminal.
 
-
 ## 🚀 Continuous integration
 
 You can easily integrate AST Metrics into your CI/CD pipeline.
