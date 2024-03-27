@@ -11,6 +11,7 @@ theme:
   features:
     - navigation.footer
     - content.action.edit 
+  custom_dir: docs/overrides
 
 markdown_extensions:
   - pymdownx.superfences
@@ -27,6 +28,7 @@ extra_javascript:
 nav:
   - Home: index.md
   - Getting started:
+    - Why?: getting-started/index.md
     - Installation: getting-started/install.md
 
 
