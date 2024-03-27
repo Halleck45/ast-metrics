@@ -10,7 +10,8 @@ theme:
   name: material
   features:
     - navigation.footer
-    - content.action.edit 
+    - content.action.edit
+    - content.code.copy
   custom_dir: docs/overrides
 
 markdown_extensions:
@@ -21,15 +22,23 @@ markdown_extensions:
   - pymdownx.emoji:
       emoji_index: !!python/name:material.extensions.emoji.twemoji
       emoji_generator: !!python/name:material.extensions.emoji.to_svg
-      
+  - md_in_html
 extra_javascript:
   - javascripts/extra.js
-  
+
 nav:
   - Home: index.md
   - Getting started:
     - Why?: getting-started/index.md
     - Installation: getting-started/install.md
+    - First execution: getting-started/first-execution.md
+    - Understanding the output: getting-started/understand.md
+    - Generating a report: getting-started/generate-reports.md
+  - Continuous integration:
+    - GitHub Actions: ci/github-actions.md
+  - Advanced usage:
+    - Watching a directory: advanced-usage/watch-directory.md
+    - Updating binaries: advanced-usage/update-binaries.md
 
 
 # Repository
