@@ -57,9 +57,12 @@ You don't need anything, simply download the correct binary for your platform.
 
 === ":simple-docker: inside containers (Docker)"
 
-    If you don't know what is your image architecture, the simplest way: inside the container type:
+    If you don't know what is your image architecture, the simplest way consists in running the following command in your container:
 
     ```bash
+    # run this command in your container. 
+    # For example, execute `docker exec -it my-container bash` to open a shell in your container
+
     echo "OS: $(uname -s), Arch: $(uname -m)"
     ```
 
