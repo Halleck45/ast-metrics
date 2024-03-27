@@ -55,6 +55,18 @@ You don't need anything, simply download the correct binary for your platform.
     + [i386](https://github.com/Halleck45/ast-metrics/releases/download/--latest_version--/ast-metrics_Windows_i386.exe) (for old 32-bit systems)
 
 
+=== ":simple-docker: inside containers (Docker)"
+
+    If you don't know what is your image architecture, the simplest way: inside the container type:
+
+    ```bash
+    echo "OS: $(uname -s), Arch: $(uname -m)"
+    ```
+
+    It will show you the OS and architecture of the container. 
+
+    For example, if the output is `OS: Linux, Arch: x86_64`, you should download the `amd64` binary for Linux.
+
 ## Verify Installation
 
 Verify that the installation worked by opening a new terminal session and listing AST Metrics's available subcommands.
