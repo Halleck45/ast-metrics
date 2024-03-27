@@ -405,3 +405,41 @@ function bar() {
 	func2 := result.Stmts.StmtFunction[1]
 	assert.Equal(t, 4, len(func2.Stmts.StmtDecisionIf), "Incorrect number of if statements")
 }
+
+func TestNamesapceWithoutName(t *testing.T) {
+	phpSource := `
+<?php
+
+namespace {
+    class Foo
+    {
+        public function __construct()
+        {
+            echo 'Foo::__construct()';
+        }
+    }
+}
+`
+	// Create a temporary file
+	tmpFile := t.TempDir() + "/test.php"
+	if _, err := os.Create(tmpFile); err != nil {
+		t.Error(err)
+	}
+	if err := os.WriteFile(tmpFile, []byte(phpSource), 0644); err != nil {
+		t.Error(err)
+	}
+
+	result, err := parsePhpFile(tmpFile)
+
+	// Ensure no error
+	assert.Nil(t, err, "Expected no error, got %s", err)
+
+	// Ensure path
+	assert.Equal(t, tmpFile, result.Path, "Expected path to be %s, got %s", tmpFile, result.Path)
+
+	// Ensure classes
+	assert.Equal(t, 1, len(result.Stmts.StmtClass), "Incorrect number of classes")
+	class1 := result.Stmts.StmtClass[0]
+	assert.Equal(t, "Foo", class1.Name.Short, "Expected class name to be 'Foo', got %s", class1.Name)
+
+}

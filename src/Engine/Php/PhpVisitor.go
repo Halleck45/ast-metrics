@@ -229,10 +229,14 @@ func (v *PhpVisitor) StmtFunction(node *ast.StmtFunction) {
 }
 
 func (v *PhpVisitor) StmtNamespace(node *ast.StmtNamespace) {
-	parts := node.Name.(*ast.Name).Parts
+
 	name := ""
-	for _, part := range parts {
-		name += string(part.(*ast.NamePart).Value) + "\\"
+	if node.Name != nil {
+		// if namespace has no name, it is global namespace
+		parts := node.Name.(*ast.Name).Parts
+		for _, part := range parts {
+			name += string(part.(*ast.NamePart).Value) + "\\"
+		}
 	}
 
 	namespace := &pb.StmtNamespace{
