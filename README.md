@@ -1,35 +1,27 @@
-# AST Metrics
+# AST Metrics [![CI](https://github.com/Halleck45/ast-metrics/actions/workflows/test.yml/badge.svg)](https://github.com/Halleck45/ast-metrics/actions/workflows/test.yml) [![Release](https://github.com/Halleck45/ast-metrics/actions/workflows/release.yml/badge.svg)](https://github.com/Halleck45/ast-metrics/actions/workflows/release.yml) [![CodeQL](https://github.com/Halleck45/ast-metrics/actions/workflows/github-code-scanning/codeql/badge.svg)](https://github.com/Halleck45/ast-metrics/actions/workflows/github-code-scanning/codeql)
 
-[![Go](https://github.com/Halleck45/ast-metrics/actions/workflows/test.yml/badge.svg)](https://github.com/Halleck45/ast-metrics/actions/workflows/test.yml)
 
 | Terminal application | HTML report |
 | --- | ---------- |
 | ![AST Metrics is a language-agnostic static code analyzer.](./docs/preview.gif) |![HTML report](./docs/preview-html-report.png) |
 
-**AST Metrics is a language-agnostic static code analyzer.** It helps you to understand the structure of your code and to identify potential issues.
+**AST Metrics is a blazing-fast static code analyzer that works across programming languages..** It empowers you to gain deep insights into your code structure, identify potential problems early on, and improve code quality.  Leveraging the efficiency of Go, AST Metrics delivers exceptional performance for large codebases.
 
 [Twitter](https://twitter.com/Halleck45) | [Contributing](.github/CONTRIBUTING.md)
 
-## Usage
+## Quick start
+
+Open your terminal and run the following command:
 
 ```bash
-ast-metrics analyze <path>
+ast-metrics analyze --report-html=<directory> /path/to/your/code
 ```
 
-Or generate HTML report:
-
-```bash
-ast-metrics analyze --report-html=<dir> <path>
-```
-
-You can also analyze more than one directory:
-
-```bash
-ast-metrics analyze <path1> <path2> <path3>
-```
 ## Installation
 
 AST Metrics is a standalone package. It does not require any other software to be installed.
+
+**Follow the [installation instructions](https://halleck45.github.io/ast-metrics/getting-started/install/)**, or download directly the correct binary for your platform:
 
 | Platform |  i386 | amd64 | arm64 |
 | -------- |  ------ | ------ | ------ |
@@ -37,31 +29,16 @@ AST Metrics is a standalone package. It does not require any other software to b
 | ![](./docs/emoji-apple.png) macOS    | - | [Download](https://github.com/Halleck45/ast-metrics/releases/download/v0.0.11-beta/ast-metrics_Darwin_x86_64) | [Download](https://github.com/Halleck45/ast-metrics/releases/download/v0.0.11-beta/ast-metrics_Darwin_arm64)
 | ![](./docs/emoji-windows.png) Windows  | [Download](https://github.com/Halleck45/ast-metrics/releases/download/v0.0.11-beta/ast-metrics_Windows_i386.exe) | [Download](https://github.com/Halleck45/ast-metrics/releases/download/v0.0.11-beta/ast-metrics_Windows_x86_64.exe) | [Download](https://github.com/Halleck45/ast-metrics/releases/download/v0.0.11-beta/ast-metrics_Windows_arm64.exe)
 
-Or download the latest version of AST Metrics from the [releases page](https://github.com/Halleck45/ast-metrics/releases/latest).
 
-> 💡 You don't know what is your platform? Run `uname -m` in your terminal.
+## Contributing
 
-## 🚀 Continuous integration
+AST Metrics is experimental and actively developed. We welcome contributions.
 
-You can easily integrate AST Metrics into your CI/CD pipeline.
+**Feel free to [open a discussion](https://github.com/Halleck45/ast-metrics/discussions)**. We love suggestions, ideas, bug reports, and other contributions. 
 
-a [Github Action](https://github.com/marketplace/actions/ast-metrics-analysis) is available.
+If you want to contribute code, please read the [contributing guidelines](.github/CONTRIBUTING.md) to get started.
 
-Create a `.github/workflows/ast-metrics.yml` file with the following content:
-
-```yaml
-name: AST Metrics
-on: [push]
-jobs:
-  build:
-    runs-on: ubuntu-latest
-    steps:
-        - name: AST Metrics
-          uses: halleck45/action-ast-metrics@v1.0.2
-```
-
-
-## Supported languages
+We are looking for help to support new programming languages, stabilize the tool, and enrich it. Here is the list of supported languages:
 
 + ✅ **PHP** (full)
 + 👷 **Python** (partial)
@@ -71,32 +48,6 @@ jobs:
 + 🕛 **TypeScript**
 + 🕛 **Java**
 
-
-We are working on adding more languages. If you want to help, please see [CONTRIBUTING](.github/CONTRIBUTING.md).
-
-## Options
-
-File selection:
-
-+ **Exclude** (`--exclude=<regex>`): Exclude files or directories from the analysis. You can use regular expressions.
-
-Reports:
-
-- **Markdown** (`--report-markdown=<filename>`): A report in markdown format.
-- **HTML** (`--report-html=<dir>`): A report in HTML format.
-
-Global options:
-
-- **Verbose** (`--verbose`): Show debug information.
-- **Interactive mode** (`--non-interactive`): Disable interactive mode.
-- **Watch mode** (`--watch`): Watch files for changes and re-run the analysis.
-
-## Contributing
-
-AST Metrics is experimental and actively developed. We welcome contributions.
-
-See [CONTRIBUTING](.github/CONTRIBUTING.md).
-
 ## License
 
-See [LICENSE](LICENSE).
+AST Metrics is open-source software [licensed under the MIT license](LICENSE)
