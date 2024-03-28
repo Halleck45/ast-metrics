@@ -11,8 +11,6 @@ import (
 
 	"github.com/elliotchance/orderedmap/v2"
 
-	log "github.com/sirupsen/logrus"
-
 	pb "github.com/halleck45/ast-metrics/src/NodeType"
 	"google.golang.org/protobuf/proto"
 )
@@ -67,22 +65,24 @@ func GetLocPositionFromSource(sourceCode []string, start int, end int) *pb.Lines
 	return &linesOfCode
 }
 
-func DumpProtobuf(file *pb.File, binPath string) {
+func DumpProtobuf(file *pb.File, binPath string) error {
 	out, err := proto.Marshal(file)
 	if err != nil {
-		log.Error(err)
+		return err
 	}
 
 	f, err := os.Create(binPath)
 	if err != nil {
-		log.Error(err)
+		return err
 	}
 	defer f.Close()
 
 	_, err = f.Write(out)
 	if err != nil {
-		log.Error(err)
+		return err
 	}
+
+	return nil
 }
 
 func UnmarshalProtobuf(file string) (*pb.File, error) {

@@ -443,3 +443,71 @@ namespace {
 	assert.Equal(t, "Foo", class1.Name.Short, "Expected class name to be 'Foo', got %s", class1.Name)
 
 }
+
+func TestNonValidFile(t *testing.T) {
+
+	phpSource := `
+<?php
+
+class Foo 
+{
+{
+	public function foo()
+	{
+	}
+}
+`
+
+	// Create a temporary file
+	tmpFile := t.TempDir() + "/test.php"
+	if _, err := os.Create(tmpFile); err != nil {
+		t.Error(err)
+	}
+	if err := os.WriteFile(tmpFile, []byte(phpSource), 0644); err != nil {
+		t.Error(err)
+	}
+
+	result, _ := parsePhpFile(tmpFile)
+
+	// Ensure errors
+	assert.NotEmpty(t, result.Errors)
+}
+
+func TestNonUtf8Classnames(t *testing.T) {
+
+	// create a non-utf8 classname
+	classname := []byte{0x80, 0x80, 0x80, 0x80, 0x80}
+
+	phpSource := `
+<?php
+
+class ` + string(classname) + `
+{
+	public function foo()
+	{
+	}
+}
+`
+
+	// Create a temporary file
+	tmpFile := t.TempDir() + "/test.php"
+	if _, err := os.Create(tmpFile); err != nil {
+		t.Error(err)
+	}
+	if err := os.WriteFile(tmpFile, []byte(phpSource), 0644); err != nil {
+		t.Error(err)
+	}
+
+	result, err := parsePhpFile(tmpFile)
+
+	// Ensure no error
+	assert.Nil(t, err, "Expected no error, got %s", err)
+
+	// Ensure errors
+	assert.Empty(t, result.Errors)
+
+	// Ensure classes
+	assert.Equal(t, 1, len(result.Stmts.StmtClass), "Incorrect number of classes")
+	class1 := result.Stmts.StmtClass[0]
+	assert.Equal(t, "@non-utf8", class1.Name.Short, "Expected class name to be '@non-utf8', got %s", class1.Name)
+}

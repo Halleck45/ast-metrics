@@ -12,6 +12,7 @@ type ProjectAggregated struct {
 	ByClass               Aggregated
 	Combined              Aggregated
 	ByProgrammingLanguage map[string]Aggregated
+	ErroredFiles          []*pb.File
 }
 
 type Aggregated struct {
@@ -127,7 +128,6 @@ func newAggregated() Aggregated {
 }
 
 func (r *Aggregator) Aggregates() ProjectAggregated {
-	files := r.files
 
 	// We create a new aggregated object for each type of aggregation
 	// ByFile, ByClass, Combined
@@ -136,11 +136,19 @@ func (r *Aggregator) Aggregates() ProjectAggregated {
 	r.projectAggregated.Combined = newAggregated()
 
 	// Count files
-	r.projectAggregated.ByClass.NbFiles = len(files)
-	r.projectAggregated.ByFile.NbFiles = len(files)
-	r.projectAggregated.Combined.NbFiles = len(files)
+	r.projectAggregated.ByClass.NbFiles = len(r.files)
+	r.projectAggregated.ByFile.NbFiles = len(r.files)
+	r.projectAggregated.Combined.NbFiles = len(r.files)
 
-	for _, file := range files {
+	// Prepare errors
+	r.projectAggregated.ErroredFiles = make([]*pb.File, 0)
+
+	for _, file := range r.files {
+
+		// Files with errors
+		if file.Errors != nil && len(file.Errors) > 0 {
+			r.projectAggregated.ErroredFiles = append(r.projectAggregated.ErroredFiles, file)
+		}
 
 		if file.Stmts == nil {
 			continue
