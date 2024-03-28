@@ -82,7 +82,7 @@ func (r PhpRunner) dumpOneAst(wg *sync.WaitGroup, filePath string) {
 	defer wg.Done()
 	hash, err := Engine.GetFileHash(filePath)
 	if err != nil {
-		log.Error(err)
+		log.Error("Error while hashing file " + filePath + ": " + err.Error())
 	}
 	binPath := Storage.OutputPath() + string(os.PathSeparator) + hash + ".bin"
 	// if file exists, skip it
@@ -94,7 +94,10 @@ func (r PhpRunner) dumpOneAst(wg *sync.WaitGroup, filePath string) {
 	protoFile, _ := parsePhpFile(filePath)
 
 	// Dump protobuf object to destination
-	Engine.DumpProtobuf(protoFile, binPath)
+	err = Engine.DumpProtobuf(protoFile, binPath)
+	if err != nil {
+		log.Error("Error while dumping file " + filePath + ": " + err.Error())
+	}
 }
 
 func parsePhpFile(filename string) (*pb.File, error) {
@@ -129,12 +132,12 @@ func parsePhpFile(filename string) (*pb.File, error) {
 	})
 
 	if err != nil {
-		log.Error("Error:" + err.Error())
+		parserErrors = append(parserErrors, errors.NewError(err.Error(), nil))
 	}
 
 	if len(parserErrors) > 0 {
 		for _, e := range parserErrors {
-			log.Println(e.String())
+			file.Errors = append(file.Errors, e.Msg)
 		}
 	}
 

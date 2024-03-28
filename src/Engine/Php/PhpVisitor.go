@@ -2,6 +2,7 @@ package Php
 
 import (
 	"strings"
+	"unicode/utf8"
 
 	"github.com/VKCOM/php-parser/pkg/ast"
 	"github.com/VKCOM/php-parser/pkg/visitor"
@@ -29,6 +30,20 @@ func (v *PhpVisitor) nameObject(name string) string {
 	return qualified + name
 }
 
+func (v *PhpVisitor) FixName(name *pb.Name) *pb.Name {
+
+	// in PHP classname can be a non UTF-8 string
+	// @see https://github.com/symfony/symfony/discussions/46477
+	if !utf8.ValidString(name.Qualified) {
+		name.Qualified = "@non-utf8"
+		if !utf8.ValidString(name.Short) {
+			name.Short = "@non-utf8"
+		}
+	}
+
+	return name
+}
+
 func (v *PhpVisitor) nameMethod(name string) string {
 	qualifiedName := name
 	if v.currentClass != nil {
@@ -53,6 +68,9 @@ func (v *PhpVisitor) StmtClass(node *ast.StmtClass) {
 			Qualified: v.nameObject(name),
 		},
 	}
+
+	class.Name = v.FixName(class.Name)
+
 	class.Stmts = Engine.FactoryStmts()
 	class.LinesOfCode = &pb.LinesOfCode{}
 	v.file.Stmts.StmtClass = append(v.file.Stmts.StmtClass, class)
@@ -77,6 +95,9 @@ func (v *PhpVisitor) StmtInterface(node *ast.StmtInterface) {
 			Qualified: v.nameObject(name),
 		},
 	}
+
+	class.Name = v.FixName(class.Name)
+
 	class.Stmts = Engine.FactoryStmts()
 	v.file.Stmts.StmtInterface = append(v.file.Stmts.StmtInterface, class)
 	v.currentInterface = class
@@ -97,6 +118,8 @@ func (v *PhpVisitor) StmtTrait(node *ast.StmtTrait) {
 			Qualified: v.nameObject(name),
 		},
 	}
+
+	class.Name = v.FixName(class.Name)
 	class.LinesOfCode = &pb.LinesOfCode{}
 	class.Stmts = Engine.FactoryStmts()
 	v.file.Stmts.StmtClass = append(v.file.Stmts.StmtClass, class)
@@ -118,6 +141,8 @@ func (v *PhpVisitor) StmtEnum(node *ast.StmtEnum) {
 			Qualified: v.nameObject(name),
 		},
 	}
+
+	class.Name = v.FixName(class.Name)
 	class.LinesOfCode = &pb.LinesOfCode{}
 	class.Stmts = Engine.FactoryStmts()
 	v.file.Stmts.StmtClass = append(v.file.Stmts.StmtClass, class)

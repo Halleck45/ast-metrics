@@ -14,6 +14,7 @@ import (
 	"github.com/halleck45/ast-metrics/src/Storage"
 	"github.com/inancgumus/screen"
 	"github.com/pterm/pterm"
+	log "github.com/sirupsen/logrus"
 )
 
 type AnalyzeCommand struct {
@@ -196,6 +197,19 @@ func (v *AnalyzeCommand) Execute() error {
 	} else {
 		screen.MoveTopLeft()
 		v.currentPage.Reset(allResults, projectAggregated)
+	}
+
+	// Details errors
+	if len(projectAggregated.ErroredFiles) > 0 {
+		pterm.Info.Printf("%d files could not be analyzed. Use the --verbose option to get details\n", len(projectAggregated.ErroredFiles))
+		if log.GetLevel() == log.DebugLevel {
+			for _, file := range projectAggregated.ErroredFiles {
+				pterm.Error.Println("File " + file.Path)
+				for _, err := range file.Errors {
+					pterm.Error.Println("    " + err)
+				}
+			}
+		}
 	}
 
 	// Link to file wartcher (in order to close it when app is closed)
