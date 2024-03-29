@@ -511,3 +511,179 @@ class ` + string(classname) + `
 	class1 := result.Stmts.StmtClass[0]
 	assert.Equal(t, "@non-utf8", class1.Name.Short, "Expected class name to be '@non-utf8', got %s", class1.Name)
 }
+
+func TestExternalCallsInNamespace(t *testing.T) {
+
+	phpSource := `
+<?php
+
+namespace My\Namespace;
+
+use External\Class1;
+use External\Class2 as ClassAliased;
+use External\Class3 as StaticClassAliased;
+use stdClass;
+
+class TestedClass
+{
+	private \FullNamespace\Class1   $a1; // Type hinted
+	private string   $a2;
+	private $b1;
+	var $c1;
+
+	public function foo1(LocalClass2 $a)
+	{
+		// Type hinted + New instance
+		$o = new LocalClass5;
+		$o = new ClassAliased();
+		throw new \InvalidArgumentException('Division by zero.');
+		return $o->bar();
+	}
+
+	public function foo2(stdClass $a, $b) : LocalClass1
+	{
+		// return type hinted + Static call
+		LocalClass4::externalMethod();
+		StaticClassAliased::anotherMethod();
+		$x = LocalClass5::$ATTRIBUTE1;
+		$y = \Fully\Qualified1\Class1::CONSTANT1;
+		$ya = \Fully\Qualified1\Class2::$ATTRIBUTE1;
+		$z = \Fully\Qualified1\Class3::method1();
+
+		$this->foo1();
+	}
+}
+`
+	// Create a temporary file
+	tmpFile := t.TempDir() + "/test.php"
+	if _, err := os.Create(tmpFile); err != nil {
+		t.Error(err)
+	}
+	if err := os.WriteFile(tmpFile, []byte(phpSource), 0644); err != nil {
+		t.Error(err)
+	}
+
+	result, err := parsePhpFile(tmpFile)
+
+	// Ensure no error
+	assert.Nil(t, err, "Expected no error, got %s", err)
+	assert.Empty(t, result.Errors)
+
+	// Ensure classes
+	assert.Equal(t, 1, len(result.Stmts.StmtClass), "Incorrect number of classes")
+	class1 := result.Stmts.StmtClass[0]
+	assert.Equal(t, "TestedClass", class1.Name.Short, "Expected class name to be 'TestedClass', got %s", class1.Name)
+
+	// Ensure external calls
+	dependencies := class1.Stmts.StmtExternalDependencies
+	expected := []string{
+		"FullNamespace\\Class1",
+		"My\\Namespace\\LocalClass2",
+		"External\\Class2",
+		"My\\Namespace\\LocalClass5",
+		"External\\Class3",
+		"InvalidArgumentException",
+		"stdClass",
+		"My\\Namespace\\LocalClass1",
+		"My\\Namespace\\LocalClass4",
+		"My\\Namespace\\LocalClass5",
+		"Fully\\Qualified1\\Class1",
+		"Fully\\Qualified1\\Class2",
+		"Fully\\Qualified1\\Class3",
+	}
+
+	found := []string{}
+	for _, dep := range dependencies {
+		found = append(found, dep.ClassName)
+	}
+
+	// Compare the list
+	assert.ElementsMatch(t, expected, found, "Incorrect external dependencies")
+}
+
+func TestExternalCallsInRootNamespace(t *testing.T) {
+
+	phpSource := `
+<?php
+
+use External\Class1;
+use External\Class2 as ClassAliased;
+use External\Class3 as StaticClassAliased;
+use stdClass;
+
+class TestedClass
+{
+	private \FullNamespace\Class1   $a1; // Type hinted
+	private string   $a2;
+	private $b1;
+	var $c1;
+
+	public function foo1(LocalClass2 $a)
+	{
+		// Type hinted + New instance
+		$o = new LocalClass5;
+		$o = new ClassAliased();
+		throw new \InvalidArgumentException('Division by zero.');
+		return $o->bar();
+	}
+
+	public function foo2(stdClass $a, $b) : LocalClass1
+	{
+		// return type hinted + Static call
+		LocalClass4::externalMethod();
+		StaticClassAliased::anotherMethod();
+		$x = LocalClass5::$ATTRIBUTE1;
+		$y = \Fully\Qualified1\Class1::CONSTANT1;
+		$ya = \Fully\Qualified1\Class2::$ATTRIBUTE1;
+		$z = \Fully\Qualified1\Class3::method1();
+
+		$this->foo1();
+	}
+}
+`
+	// Create a temporary file
+	tmpFile := t.TempDir() + "/test.php"
+	if _, err := os.Create(tmpFile); err != nil {
+		t.Error(err)
+	}
+	if err := os.WriteFile(tmpFile, []byte(phpSource), 0644); err != nil {
+		t.Error(err)
+	}
+
+	result, err := parsePhpFile(tmpFile)
+
+	// Ensure no error
+	assert.Nil(t, err, "Expected no error, got %s", err)
+	assert.Empty(t, result.Errors)
+
+	// Ensure classes
+	assert.Equal(t, 1, len(result.Stmts.StmtClass), "Incorrect number of classes")
+	class1 := result.Stmts.StmtClass[0]
+	assert.Equal(t, "TestedClass", class1.Name.Short, "Expected class name to be 'TestedClass', got %s", class1.Name)
+
+	// Ensure external calls
+	dependencies := class1.Stmts.StmtExternalDependencies
+	expected := []string{
+		"FullNamespace\\Class1",
+		"LocalClass2",
+		"External\\Class2",
+		"LocalClass5",
+		"External\\Class3",
+		"InvalidArgumentException",
+		"stdClass",
+		"LocalClass1",
+		"LocalClass4",
+		"LocalClass5",
+		"Fully\\Qualified1\\Class1",
+		"Fully\\Qualified1\\Class2",
+		"Fully\\Qualified1\\Class3",
+	}
+
+	found := []string{}
+	for _, dep := range dependencies {
+		found = append(found, dep.ClassName)
+	}
+
+	// Compare the list
+	assert.ElementsMatch(t, expected, found, "Incorrect external dependencies")
+}

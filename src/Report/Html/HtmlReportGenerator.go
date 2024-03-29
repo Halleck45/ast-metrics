@@ -194,58 +194,33 @@ func (v *HtmlReportGenerator) RegisterFilters() {
 	})
 
 	pongo2.RegisterFilter("sortRisk", func(in *pongo2.Value, param *pongo2.Value) (out *pongo2.Value, err *pongo2.Error) {
-		// get the list to sort
-		// create new empty list
-		list := make([]*pb.File, 0)
 
 		rowsToKeep := 10
 		if param.Integer() > 0 {
 			rowsToKeep = param.Integer()
 		}
 
-		// append to the list when file contains at lease one class
-		for _, file := range in.Interface().([]*pb.File) {
-			if file.Stmts.StmtClass == nil {
-				continue
-			}
+		// Sort by risk of file
+		files := in.Interface().([]*pb.File)
+		sort.Slice(files, func(i, j int) bool {
 
-			list = append(list, file)
-		}
-
-		// sort the list
-		sort.Slice(list, func(i, j int) bool {
-
-			if list[i].Stmts.Analyze.Risk == nil {
+			if files[i].Stmts.Analyze.Risk == nil {
 				return false
 			}
 
-			if list[i].Stmts.StmtClass == nil {
+			if files[j].Stmts.Analyze.Risk == nil {
 				return true
 			}
 
-			if list[j].Stmts.StmtClass == nil {
-				return true
-			}
-
-			class1 := list[i].Stmts.StmtClass[0]
-			class2 := list[j].Stmts.StmtClass[0]
-
-			if class1.Stmts.Analyze.Risk == nil {
-				return false
-			}
-			if class2.Stmts.Analyze.Risk == nil {
-				return true
-			}
-
-			return class1.Stmts.Analyze.Risk.Score > class2.Stmts.Analyze.Risk.Score
+			return files[i].Stmts.Analyze.Risk.Score > files[j].Stmts.Analyze.Risk.Score
 		})
 
-		// keep only the first 10
-		if len(list) > rowsToKeep {
-			list = list[:rowsToKeep]
+		// keep only the first n
+		if len(files) > rowsToKeep {
+			files = files[:rowsToKeep]
 		}
 
-		return pongo2.AsValue(list), nil
+		return pongo2.AsValue(files), nil
 	})
 
 	// filter to format number. Ex: 1234 -> 1 K
@@ -318,5 +293,11 @@ func (v *HtmlReportGenerator) RegisterFilters() {
 		// create the component
 		comp := Cli.NewComponentLineChartGitActivity(aggregated, files)
 		return pongo2.AsSafeValue(comp.RenderHTML()), nil
+	})
+
+	// filter convertOneFileToCollection
+	pongo2.RegisterFilter("convertOneFileToCollection", func(in *pongo2.Value, param *pongo2.Value) (out *pongo2.Value, err *pongo2.Error) {
+		file := in.Interface().(*pb.File)
+		return pongo2.AsValue([]*pb.File{file}), nil
 	})
 }
