@@ -47,15 +47,15 @@ func TestHalsteadMetricsVisitor(t *testing.T) {
                 "parameters": [
                     {
                         "name": "a",
-                        "type": {}
+                        "type": ""
                     },
                     {
                         "name": "b",
-                        "type": {}
+                        "type": ""
                     },
                     {
                         "name": "c",
-                        "type": {}
+                        "type": ""
                     }
                 ],
                 "linesOfCode": {

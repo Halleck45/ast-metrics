@@ -78,7 +78,10 @@ func (r GolangRunner) DumpAST() {
 		protoFile := ParseGoFile(filePath)
 
 		// Dump protobuf object to destination
-		Engine.DumpProtobuf(protoFile, binPath)
+		err = Engine.DumpProtobuf(protoFile, binPath)
+		if err != nil {
+			log.Error(err)
+		}
 	}
 
 	if r.progressbar != nil {
@@ -178,8 +181,6 @@ func ParseGoFile(filePath string) *pb.File {
 
 	return file
 }
-
-
 
 // getFileList returns the list of PHP files to analyze, and caches it in memory
 func (r *GolangRunner) getFileList() File.FileList {

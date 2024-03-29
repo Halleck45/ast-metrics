@@ -5,8 +5,6 @@ import (
 	"strconv"
 	"sync"
 
-	log "github.com/sirupsen/logrus"
-
 	Complexity "github.com/halleck45/ast-metrics/src/Analyzer/Complexity"
 	Component "github.com/halleck45/ast-metrics/src/Analyzer/Component"
 	Volume "github.com/halleck45/ast-metrics/src/Analyzer/Volume"
@@ -71,7 +69,6 @@ func executeFileAnalysis(file string, channelResult chan<- *pb.File) error {
 	// load AST via ProtoBuf (using NodeType package)
 	in, err := ioutil.ReadFile(file)
 	if err != nil {
-		log.Error("Error reading file: ", err)
 		if pbFile.Errors == nil {
 			pbFile.Errors = make([]string, 0)
 		}
@@ -82,7 +79,6 @@ func executeFileAnalysis(file string, channelResult chan<- *pb.File) error {
 
 	// if file is empty, return
 	if len(in) == 0 {
-		log.Error("File is empty: ", file)
 		if pbFile.Errors == nil {
 			pbFile.Errors = make([]string, 0)
 		}
@@ -92,7 +88,6 @@ func executeFileAnalysis(file string, channelResult chan<- *pb.File) error {
 	}
 
 	if err := proto.Unmarshal(in, pbFile); err != nil {
-		log.Errorln("Failed to parse address pbFile ("+file+"):", err)
 		if pbFile.Errors == nil {
 			pbFile.Errors = make([]string, 0)
 		}

@@ -29,6 +29,7 @@ message Stmts {
   repeated StmtDecisionCase stmtDecisionCase = 11;
   repeated StmtLoop stmtLoop = 12;
   repeated StmtDecisionSwitch stmtDecisionSwitch = 13;
+  repeated StmtExternalDependency stmtExternalDependencies = 14;
 }
 
 // Represents a file
@@ -92,9 +93,16 @@ message StmtFunction {
   LinesOfCode linesOfCode = 9;
 }
 
+// Represents a Parameter node (for function)
 message StmtParameter {
   string name = 1;
-  Name type = 2;
+  string type = 2;
+}
+
+// Represents a external dependency node. Used when code call new X() or X::method() for example
+message StmtExternalDependency {
+  string className = 1;
+  string functionName = 2;
 }
 
 // Represents a Interface node.

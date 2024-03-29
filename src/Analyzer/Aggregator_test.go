@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	pb "github.com/halleck45/ast-metrics/src/NodeType"
+	"github.com/stretchr/testify/assert"
 	"google.golang.org/protobuf/proto"
 )
 
@@ -513,4 +514,21 @@ func TestCalculateMaintainabilityIndex(t *testing.T) {
 	if aggregated.AverageMIPerMethod != 22.5 {
 		t.Errorf("Expected AverageMIPerMethod, got %f", aggregated.AverageMIPerMethod)
 	}
+}
+
+func TestFIlesWithErrorAreDetected(t *testing.T) {
+	aggregator := Aggregator{}
+	files := []*pb.File{
+		&pb.File{
+			Stmts: &pb.Stmts{},
+		},
+		&pb.File{
+			Errors: []string{"Error1", "Error2"},
+		},
+	}
+	aggregator.files = files
+	aggregated := aggregator.Aggregates()
+
+	assert.Equal(t, 2, aggregated.ByFile.NbFiles)
+	assert.Equal(t, 1, len(aggregated.ErroredFiles))
 }
