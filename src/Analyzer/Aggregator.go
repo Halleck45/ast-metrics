@@ -16,7 +16,9 @@ type ProjectAggregated struct {
 }
 
 type Aggregated struct {
-	ConcernedFiles                       []*pb.File
+	ConcernedFiles []*pb.File
+	// hashmap of classes, just with the qualified name, used for afferent coupling calculation
+	ClassesAfferentCoupling              map[string]int
 	NbFiles                              int
 	NbFunctions                          int
 	NbClasses                            int
@@ -92,6 +94,7 @@ type AggregateAnalyzer interface {
 func newAggregated() Aggregated {
 	return Aggregated{
 		ConcernedFiles:                       make([]*pb.File, 0),
+		ClassesAfferentCoupling:              make(map[string]int),
 		NbClasses:                            0,
 		NbClassesWithCode:                    0,
 		NbMethods:                            0,
@@ -282,6 +285,38 @@ func (r *Aggregator) consolidate(aggregated *Aggregated) {
 				*file.Stmts.Analyze.Complexity.Cyclomatic += *function.Stmts.Analyze.Complexity.Cyclomatic
 			}
 		}
+
+		// Coupling
+		classes := Engine.GetClassesInFile(file)
+		for _, class := range classes {
+			if class.Stmts == nil || class.Stmts.Analyze == nil {
+				continue
+			}
+			if class.Stmts.Analyze.Coupling == nil {
+				class.Stmts.Analyze.Coupling = &pb.Coupling{
+					Efferent: 0,
+					Afferent: 0,
+				}
+			}
+			class.Stmts.Analyze.Coupling.Afferent = 0
+
+			if class.Name == nil {
+				// avoid nil pointer during tests
+				continue
+			}
+
+			// if in hashmap
+			if _, ok := aggregated.ClassesAfferentCoupling[class.Name.Qualified]; ok {
+				class.Stmts.Analyze.Coupling.Afferent = int32(aggregated.ClassesAfferentCoupling[class.Name.Qualified])
+			}
+
+			// instability
+			if class.Stmts.Analyze.Coupling.Afferent > 0 || class.Stmts.Analyze.Coupling.Efferent > 0 {
+				// Ce / (Ce + Ca)
+				instability := float32(class.Stmts.Analyze.Coupling.Efferent) / float32(class.Stmts.Analyze.Coupling.Efferent+class.Stmts.Analyze.Coupling.Afferent)
+				class.Stmts.Analyze.Coupling.Instability = instability
+			}
+		}
 	}
 
 	// Count commits for the period based on `ResultOfGitAnalysis` data
@@ -436,5 +471,31 @@ func (r *Aggregator) calculateSums(file *pb.File, specificAggregation *Aggregate
 				specificAggregation.SumHalsteadTime += float64(*class.Stmts.Analyze.Volume.HalsteadTime)
 			}
 		}
+
+		// Coupling
+		if class.Stmts.Analyze.Coupling == nil {
+			class.Stmts.Analyze.Coupling = &pb.Coupling{
+				Efferent: 0,
+				Afferent: 0,
+			}
+		}
+		class.Stmts.Analyze.Coupling.Efferent = 0
+		uniqueDependencies := make(map[string]bool)
+		for _, dependency := range class.Stmts.StmtExternalDependencies {
+			dependencyName := dependency.ClassName
+
+			// check if dependency is already in hashmap
+			if _, ok := specificAggregation.ClassesAfferentCoupling[dependencyName]; !ok {
+				specificAggregation.ClassesAfferentCoupling[dependencyName] = 0
+			}
+			specificAggregation.ClassesAfferentCoupling[dependencyName]++
+
+			// check if dependency is unique
+			if _, ok := uniqueDependencies[dependencyName]; !ok {
+				uniqueDependencies[dependencyName] = true
+			}
+		}
+
+		class.Stmts.Analyze.Coupling.Efferent = int32(len(uniqueDependencies))
 	}
 }

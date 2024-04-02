@@ -193,6 +193,7 @@ message Analyze {
   Volume volume = 2;
   Maintainability maintainability = 3;
   Risk risk = 4;
+  Coupling coupling = 5;
 }
 message Complexity {
   optional int32 cyclomatic = 1;
@@ -234,4 +235,13 @@ message Commit {
 // ------------------------------------
 message Risk {
   float score = 1; // score of risk. Lower is better
+}
+
+// ------------------------------------
+// -- Coupling
+// ------------------------------------
+message Coupling {
+  int32 afferent = 1; // number of classes that depends on this class
+  int32 efferent = 2; // number of classes that this class depends on
+  float instability = 3; // instability of the class
 }
