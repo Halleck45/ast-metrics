@@ -1,0 +1,231 @@
+<div id="chart_bar_{{ chart_name }}" style="overflow:hidden"></div>
+<script type="text/javascript">
+
+    // avoid blinking
+    var element = document.getElementById("chart_bar_{{ chart_name }}");
+    if (element){
+        var elementWidth = document.getElementById("chart_bar_{{ chart_name }}").clientWidth;
+        element.style.height = elementWidth + "px";
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+        let json = document.getElementById("{{ chart_datasource_dom_element_identifier }}").textContent;
+        const domElement = document.getElementById("chart_bar_{{ chart_name }}");
+        json = json.replace(/},]/g, '}]'); // remove },]
+        let data = JSON.parse(json);
+
+        // find parent .chart-container element
+        const parent = domElement.closest(".chart-container");
+
+        const width = parent.clientWidth;
+        const padding = 0;
+        const height = width;
+        const innerRadius = 50;
+        const outerRadius = Math.min(width, height) * 0.40;
+
+        domElement.innerHTML = "";
+        domElement.style.width = (width + padding) + "px";
+        domElement.style.height = (height + padding) + "px";
+
+        // Create series from the data. Not stacked
+        const series = d3.stack()
+            .keys(["{{ chart_variable_name }}"])
+            .offset(d3.stackOffsetNone)
+            (data);
+
+        const arc = d3.arc()
+            .innerRadius(d => y(d[0]))
+            .outerRadius(d => y(d[1]))
+            .startAngle(d => x(d.data.name))
+            .endAngle(d => x(d.data.name) + x.bandwidth())
+            .padAngle(0.01)
+            .padRadius(innerRadius);
+
+        // Place bars all around a circle
+        const numBars = data.length;
+        const desiredBandwidth = numBars / (2 * Math.PI) ;
+        const x = d3.scaleBand()
+            .domain(data.map(d => d.name))
+            .range([0, desiredBandwidth])
+            .align(0);
+
+        // A radial y-scale maintains area proportionality of radial bars
+        const y = d3.scaleRadial()
+            .domain([0, d3.max(series, d => d3.max(d, d => d[1]))])
+            .range([innerRadius, outerRadius]);
+
+
+        const color = d3.scaleOrdinal()
+            .domain(series.map(d => d.key))
+            .range(d3.schemeCategory10);
+
+        // use only #1A56DB
+        color.range(["#1A56DB"]);
+
+        // A function to format the value in the tooltip
+        const formatValue = x => isNaN(x) ? "N/A" : x.toLocaleString("en")
+
+        const svg = d3.create("svg")
+            .attr("width", width )
+            .attr("height", height)
+            .attr("viewBox", [-(width + padding)/ 2, -height * 0.40, width, height])
+            .attr("style", "width: 100%; height: auto; font: 10px sans-serif;");
+
+        // A rect for each element in the series
+        svg.append("g")
+            .selectAll("g")
+            .data(series)
+            .join("g")
+            .attr("fill", d => color(d.key))
+            // animate on hover
+            .selectAll("path")
+            .data(d => d)
+            .join("path")
+            .attr("d", arc)
+            .append("title")
+            .text(function(d) {
+                return `${d.data.name}\n{{ chart_variable_label }}: ${formatValue(d.data.{{ chart_variable_name }})}`;
+            });
+
+        // animate on hover
+        svg.selectAll("path")
+            .on("mouseover", function(e, d) {
+
+                {% if chart_help_dom_element_identifier != nil && chart_help_dom_element_identifier != "" %}
+                // add help
+                const help = document.getElementById("{{ chart_help_dom_element_identifier }}");
+                help.innerHTML = `<b>${d.data.name}</b><br>{{ chart_variable_label }}: ${formatValue(d.data.{{ chart_variable_name }})}`;
+                {% endif %}
+
+                d3.select(this)
+                    .transition()
+                    .duration(100)
+                    .attr("fill", "#0ea5e9");
+            })
+            .on("mouseout", function() {
+
+                {% if chart_help_dom_element_identifier != nil && chart_help_dom_element_identifier != "" %}
+                // clean help
+                const help = document.getElementById("{{ chart_help_dom_element_identifier }}");
+                help.innerHTML = "";
+                {% endif %}
+
+                d3.select(this)
+                    .transition()
+                    .duration(100)
+                    .attr("fill", color);
+            });
+
+
+        // x axis
+        // only if we have less than 500 elements
+        if (data.length < 300) {
+            svg.append("g")
+                .attr("text-anchor", "middle")
+                // width and height
+                .attr("width", width)
+                .attr("height", height)
+                .selectAll()
+                .data(x.domain())
+                .join("g")
+                .attr("transform", d => `
+                rotate(${((x(d) + x.bandwidth() / 2) * 180 / Math.PI - 90)})
+                translate(${innerRadius},0)
+              `)
+                .call(g => g.append("line")
+                    .attr("x2", -5)
+                    .attr("stroke", "#000"))
+        }
+
+        // y axis
+        svg.append("g")
+            .attr("text-anchor", "end")
+            .call(g => g.selectAll("g")
+                .data(y.ticks(10).slice(1))
+                .join("g")
+                .attr("fill", "none")
+                .call(g => g.append("circle")
+                    .attr("stroke", "#CCC")
+                    .attr("stroke-opacity", 0.5)
+                    .attr("r", y))
+                .call(g => g.append("text")
+                    .attr("x", -6)
+                    .attr("y", d => -y(d))
+                    .attr("dy", "0.35em")
+                    .attr("stroke", "#fff")
+                    .attr("stroke-width", 5)
+                    .text(y.tickFormat(10, "s"))
+                    .clone(true)
+                    .attr("fill", "#000")
+                    .attr("stroke", "none")));
+
+        // color legend
+        svg.append("g")
+            .selectAll()
+            .data(color.domain())
+            .join("g")
+            .attr("transform", (d, i, nodes) => `translate(-40,${(nodes.length / 2 - i - 1) * 20})`)
+            .call(g => g.append("rect")
+                .attr("width", 18)
+                .attr("height", 18)
+                .attr("fill", color))
+            .call(g => g.append("text")
+                .attr("x", 24)
+                .attr("y", 9)
+                .attr("dy", "0.35em")
+                // .text(d => d));
+                .text("{{ chart_variable_label }}"));
+
+        // Click to zoom
+        let currentScale = 1;
+        const zoom = d3.zoom()
+            .scaleExtent([1, 8], [width, height])
+            .on("zoom", function(event) {
+                svg.attr("transform", event.transform);
+            });
+        svg.on("mousedown", function(event) {
+
+            // detect right click
+            if (event.button === 2) {
+                currentScale--;
+                if (currentScale < 1) {
+                    currentScale = 1;
+                }
+            } else {
+                currentScale++;
+            }
+
+            // detect position of the mouse
+            const [x, y] = d3.pointer(event);
+            svg.transition()
+                .duration(750)
+                .call(zoom.scaleTo, currentScale, [x, y]);
+        });
+
+        // zoom out on scroll
+        svg.on("wheel", function(event) {
+
+            // only if currentScale is greater than 1 and if we are zooming out
+            if (currentScale === 1 && event.deltaY < 0) {
+                return;
+            }
+
+            event.preventDefault();
+            const [x, y] = d3.pointer(event);
+            currentScale--;
+            if (currentScale < 1) {
+                currentScale = 1;
+            }
+            svg.transition()
+                .duration(750)
+                .call(zoom.scaleTo, currentScale, [x, y]);
+        });
+
+        // add magnifier cursor
+        svg.style("cursor", "zoom-in");
+
+        const n = svg.node();
+        domElement.appendChild(n);
+    });
+
+</script>

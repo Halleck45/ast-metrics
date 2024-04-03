@@ -51,6 +51,9 @@ type Aggregated struct {
 	AverageMIPerMethod                   float64
 	AverageMIwocPerMethod                float64
 	AverageMIcwPerMethod                 float64
+	AverageAfferentCoupling              float64
+	AverageEfferentCoupling              float64
+	AverageInstability                   float64
 	CommitCountForPeriod                 int
 	CommittedFilesCountForPeriod         int // for example if one commit concerns 10 files, it will be 10
 	BusFactor                            int
@@ -124,6 +127,9 @@ func newAggregated() Aggregated {
 		AverageMIcw:                          0,
 		AverageMIPerMethod:                   0,
 		AverageMIwocPerMethod:                0,
+		AverageAfferentCoupling:              0,
+        AverageEfferentCoupling:              0,
+        AverageInstability:                   0,
 		AverageMIcwPerMethod:                 0,
 		CommitCountForPeriod:                 0,
 		ResultOfGitAnalysis:                  nil,
@@ -211,6 +217,11 @@ func (r *Aggregator) consolidate(aggregated *Aggregated) {
 		aggregated.AverageMIcw = aggregated.AverageMIcw / float64(aggregated.NbClasses)
 	}
 
+	if aggregated.AverageInstability > 0 {
+		aggregated.AverageEfferentCoupling = aggregated.AverageEfferentCoupling / float64(aggregated.NbClasses)
+		aggregated.AverageAfferentCoupling = aggregated.AverageAfferentCoupling / float64(aggregated.NbClasses)
+	}
+
 	if aggregated.NbMethods > 0 {
 		aggregated.AverageLocPerMethod = aggregated.AverageLocPerMethod / float64(aggregated.NbMethods)
 		aggregated.AverageClocPerMethod = aggregated.AverageClocPerMethod / float64(aggregated.NbMethods)
@@ -231,6 +242,9 @@ func (r *Aggregator) consolidate(aggregated *Aggregated) {
 		aggregated.AverageMI = aggregated.AverageMIPerMethod
 		aggregated.AverageMIwoc = aggregated.AverageMIwocPerMethod
 		aggregated.AverageMIcw = aggregated.AverageMIcwPerMethod
+		aggregated.AverageInstability = 0
+        aggregated.AverageEfferentCoupling = 0
+        aggregated.AverageAfferentCoupling = 0
 	}
 
 	// Total locs: increment loc of each file
@@ -315,9 +329,16 @@ func (r *Aggregator) consolidate(aggregated *Aggregated) {
 				// Ce / (Ce + Ca)
 				instability := float32(class.Stmts.Analyze.Coupling.Efferent) / float32(class.Stmts.Analyze.Coupling.Efferent+class.Stmts.Analyze.Coupling.Afferent)
 				class.Stmts.Analyze.Coupling.Instability = instability
+
+				// to consolidate
+				aggregated.AverageInstability += float64(instability)
 			}
 		}
 	}
+
+	// Consolidate
+    aggregated.AverageInstability = aggregated.AverageInstability / float64(aggregated.NbClasses)
+
 
 	// Count commits for the period based on `ResultOfGitAnalysis` data
 	aggregated.ResultOfGitAnalysis = r.gitSummaries
@@ -406,7 +427,6 @@ func (r *Aggregator) calculateSums(file *pb.File, specificAggregation *Aggregate
 				specificAggregation.AverageMIcwPerMethod += float64(*function.Stmts.Analyze.Maintainability.CommentWeight)
 			}
 		}
-
 		// average lines of code per method
 		if function.Stmts.Analyze.Volume != nil {
 			if function.Stmts.Analyze.Volume.Loc != nil {
@@ -439,6 +459,13 @@ func (r *Aggregator) calculateSums(file *pb.File, specificAggregation *Aggregate
 				specificAggregation.AverageMIwoc += float64(*class.Stmts.Analyze.Maintainability.MaintainabilityIndexWithoutComments)
 				specificAggregation.AverageMIcw += float64(*class.Stmts.Analyze.Maintainability.CommentWeight)
 			}
+		}
+
+		// Coupling
+		if class.Stmts.Analyze.Coupling != nil {
+            specificAggregation.AverageInstability += float64(class.Stmts.Analyze.Coupling.Instability)
+            specificAggregation.AverageEfferentCoupling += float64(class.Stmts.Analyze.Coupling.Efferent)
+            specificAggregation.AverageAfferentCoupling += float64(class.Stmts.Analyze.Coupling.Afferent)
 		}
 
 		// cyclomatic complexity per class
