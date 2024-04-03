@@ -1,0 +1,22 @@
+<script id="chart_loc_data" type="application/json">
+    [
+        {%- set files = currentView.ConcernedFiles -%}
+        {%- for file in files -%}
+        {%- if len(file.Stmts.StmtClass) == 0 -%}
+        {% set elements = file|convertOneFileToCollection -%}
+        {% set name = file.Path %}
+        {%- else %}
+        {% set elements = file.Stmts.StmtClass -%}
+        {% set name = "" -%}
+        {%- endif -%}
+        {%- for class in elements -%}
+        {
+            "name": "{{ name|default:class.Name.Qualified|addslashes }}",
+            "loc": {{ class.Stmts.Analyze.Volume.Loc|floatformat:0 }}
+    },
+        {%- endfor -%}
+        {%- endfor -%}
+    ]
+</script>
+
+{% include "componentChartRadiusBar.html" with chart_name="loc" chart_variable_name="loc" chart_variable_label="Lines of code" chart_datasource_dom_element_identifier="chart_loc_data" %}

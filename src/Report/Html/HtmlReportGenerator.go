@@ -51,7 +51,19 @@ func (v *HtmlReportGenerator) Generate(files []*pb.File, projectAggregated Analy
 		return err
 	}
 
-	for _, file := range []string{"index.html", "layout.html", "risks.html", "componentTableRisks.html"} {
+	for _, file := range []string{
+		"index.html",
+		"layout.html",
+		"risks.html",
+		"componentChartRadiusBar.html",
+		"componentTableRisks.html",
+		"componentChartRadiusBarMaintainability.html",
+		"componentChartRadiusBarLoc.html",
+		"componentChartRadiusBarComplexity.html",
+		"componentChartRadiusBarInstability.html",
+		"componentChartRadiusBarEfferent.html",
+		"componentChartRadiusBarAfferent.html",
+	} {
 		// read the file
 		content, err := content.ReadFile(fmt.Sprintf("templates/%s", file))
 		if err != nil {

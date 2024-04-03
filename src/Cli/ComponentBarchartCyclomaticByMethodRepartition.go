@@ -71,7 +71,7 @@ func (c *ComponentBarchartCyclomaticByMethodRepartition) GetData() *orderedmap.O
 // render as HTML
 func (c *ComponentBarchartCyclomaticByMethodRepartition) RenderHTML() string {
 	data := c.GetData()
-	return Engine.HtmlChartLine(data, "Cyclomatic complexity by method repartition", "chart-loc")
+	return Engine.HtmlChartLine(data, "Number of files", "chart-loc")
 }
 
 // Update is the method to update the component

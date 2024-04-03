@@ -44,6 +44,7 @@
     </div>
     <!-- end: language tabs-->
 
+
     <!-- start: line of 4 cards -->
     <div class="grid grid-cols-4 gap-4 mt-4">
 
@@ -58,7 +59,9 @@
                         Lines of code
                     </p>
                 </div>
-                <div class="card-graph"></div>
+                <div class="mt-4 chart-container" >
+                    {% include "componentChartRadiusBarLoc.html" %}
+                </div>
                 <p class="border-t border-gray-200 mt-2 italic text-sm text-gray-400 pt-4 text-justify">
                     The total number of lines of code.
                 </p>
@@ -238,7 +241,7 @@
                         Bus factor
                     </p>
                 </div>
-                <div class="card-graph">
+                <div class="card-graph h-48">
                     <table class="w-full mt-2 divide-y divide-gray-200 dark:divide-gray-700">
                         <thead class="uppercase bg-gray-50 dark:bg-gray-800">
                             <tr>
@@ -286,5 +289,63 @@
         </div>
         <!-- end: card about files with low maintenability -->
     </div>
+    <!-- end: line -->
+
+<!-- start: line  -->
+<div class="grid grid-cols-4 gap-4 mt-4">
+
+    <!-- start: card -->
+    <div class="col-span-1 px-8 py-4 bg-white rounded-lg shadow-md dark:bg-gray-800">
+        <div class="mt-2">
+            <div>
+                <h5 class="leading-none text-3xl font-bold text-gray-900 dark:text-white pb-2">
+                    {{ currentView.MaxCyclomaticComplexity }}
+                </h5>
+                <p class="text-base font-normal text-gray-500 dark:text-gray-400">
+                    Complexity max
+                </p>
+            </div>
+            <div class="mt-4 chart-container" >
+                {% include "componentChartRadiusBarComplexity.html" %}
+            </div>
+        </div>
+    </div>
+    <!-- end: card -->
+
+    <!-- start: card -->
+    <div class="col-span-2 px-8 py-4 bg-white rounded-lg shadow-md dark:bg-gray-800">
+        <div class="mt-2">
+            <div>
+                <h5 class="leading-none text-3xl font-bold text-gray-900 dark:text-white pb-2">
+                    {{ currentView.AverageInstability | floatformat:2 }}
+                </h5>
+                <p class="text-base font-normal text-gray-500 dark:text-gray-400">
+                    Average <acronym title="The higher the number, the more difficult the refactoring becomes because it impacts other components that depend on it.">
+                         Instability
+                    </acronym>
+                </p>
+            </div>
+            <div class="grid grid-cols-2 gap-8 w-full">
+                <div class="mt-4 chart-container" >
+                    {% include "componentChartRadiusBarAfferent.html" %}
+                    <p class="border-t border-gray-200 mt-2 italic text-sm text-gray-400 pt-4 text-justify">
+                        Number of times the component is used by other components. If high, the component is difficult to refactor.
+                    </p>
+                </div>
+                <div class="mt-4 chart-container" >
+                    {% include "componentChartRadiusBarEfferent.html" %}
+                    <p class="border-t border-gray-200 mt-2 italic text-sm text-gray-400 pt-4 text-justify">
+                        Number of external dependencies.
+                    </p>
+                </div>
+            </div>
+            
+        </div>
+    </div>
+    <!-- end: card -->
+</div>
+<!-- end: line -->
+
+
     
 {% endblock %}
