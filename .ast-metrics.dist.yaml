@@ -1,0 +1,17 @@
+sources: 
+  - ./src
+exclude: []
+
+reports:
+  html: ./build/report
+  markdown: ./build/report.md
+
+requirements:
+  rules:
+    cyclomatic_complexity:
+      max: 10
+      excludes: []
+
+    lines_of_code:
+      max: 100
+      excludes: []

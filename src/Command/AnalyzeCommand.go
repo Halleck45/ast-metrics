@@ -167,14 +167,14 @@ func (v *AnalyzeCommand) Execute() error {
 	}
 
 	// report: html
-	htmlReportGenerator := Report.NewHtmlReportGenerator(v.configuration.HtmlReportPath)
+	htmlReportGenerator := Report.NewHtmlReportGenerator(v.configuration.Reports.Html)
 	err := htmlReportGenerator.Generate(allResults, projectAggregated)
 	if err != nil {
 		pterm.Error.Println("Cannot generate html report: " + err.Error())
 		return err
 	}
 	// report: markdown
-	markdownReportGenerator := Markdown.NewMarkdownReportGenerator(v.configuration.MarkdownReportPath)
+	markdownReportGenerator := Markdown.NewMarkdownReportGenerator(v.configuration.Reports.Markdown)
 	err = markdownReportGenerator.Generate(allResults, projectAggregated)
 	if err != nil {
 		pterm.Error.Println("Cannot generate markdown report: " + err.Error())

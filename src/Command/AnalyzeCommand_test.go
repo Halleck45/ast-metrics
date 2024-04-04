@@ -33,8 +33,10 @@ func TestAnalyzeCommand_Execute(t *testing.T) {
 		// Configuration
 		configuration := &Configuration.Configuration{
 			SourcesToAnalyzePath: sourcesToAnalyze,
-			HtmlReportPath:       tmpReportHtmlDir,
-			MarkdownReportPath:   tmpReportMarkdownDir,
+			Reports: Configuration.ConfigurationReport{
+				Html:     tmpReportHtmlDir,
+				Markdown: tmpReportMarkdownDir,
+			},
 		}
 		// Create a new AnalyzeCommand
 

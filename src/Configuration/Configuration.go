@@ -7,22 +7,42 @@ import (
 
 type Configuration struct {
 	// The path to the sources to analyze
-	SourcesToAnalyzePath []string
+	SourcesToAnalyzePath []string `yaml:"sources"`
 
 	// Exclude patterns (list of regular expressions. When a file matches one of these patterns, it is not analyzed)
-	ExcludePatterns []string
+	ExcludePatterns []string `yaml:"exclude"`
 
 	// Reports
-	HtmlReportPath string
-	MarkdownReportPath string
+	Reports ConfigurationReport `yaml:"reports"`
+
+	// Requirements
+	Requirements ConfigurationRequirements `yaml:"requirements"`
+
 	Watching bool
+}
+
+type ConfigurationReport struct {
+	Html     string `yaml:"html"`
+	Markdown string `yaml:"markdown"`
+}
+
+type ConfigurationRequirements struct {
+	Rules struct {
+		CyclomaticComplexity ConfigurationDefaultRule `yaml:"cyclomatic_complexity"`
+		Loc                  ConfigurationDefaultRule `yaml:"loc"`
+	} `yaml:"rules"`
+}
+
+type ConfigurationDefaultRule struct {
+	Max             int      `yaml:"max"`
+	ExcludePatterns []string `yaml:"exclude"`
 }
 
 func NewConfiguration() *Configuration {
 	return &Configuration{
 		SourcesToAnalyzePath: []string{},
 		ExcludePatterns:      []string{"/vendor/", "/node_modules/", "/.git/", "/.idea/", "/tests/", "/Tests/", "/test/", "/Test/", "/spec/", "/Spec/"},
-		Watching: false,
+		Watching:             false,
 	}
 }
 
