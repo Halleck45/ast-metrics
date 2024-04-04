@@ -168,23 +168,39 @@ func (v *PhpVisitor) extractParams(params []ast.Vertex) []*pb.StmtParameter {
 				// usage of fully qualified name, like new \DateTime()
 				parts = param.(*ast.Parameter).Type.(*ast.NameFullyQualified).Parts
 				parts = append([]ast.Vertex{&ast.NamePart{Value: []byte("\\")}}, parts...)
+			case *ast.Nullable:
+				// usage of fully nullable name, like new ?\DateTime()
+				expr := param.(*ast.Parameter).Type.(*ast.Nullable).Expr
+				switch expr.(type) {
+				case *ast.Name:
+					// usage of name, like new DateTime()
+					parts = expr.(*ast.Name).Parts
+				case *ast.NameFullyQualified:
+					// usage of fully qualified name, like new \DateTime()
+					parts = expr.(*ast.NameFullyQualified).Parts
+					parts = append([]ast.Vertex{&ast.NamePart{Value: []byte("\\")}}, parts...)
+				case *ast.Identifier:
+					// usage of name, like new DateTime()
+					parts = []ast.Vertex{&ast.NamePart{Value: []byte(expr.(*ast.Identifier).Value)}}
+				}
 			default:
 				// Handle unexpected types
 			}
 
 			dependency := v.nameDependencyFromParts(parts)
-
-			if v.currentMethod.Stmts.StmtExternalDependencies == nil {
-				v.currentMethod.Stmts.StmtExternalDependencies = make([]*pb.StmtExternalDependency, 0)
-			}
-			v.currentMethod.Stmts.StmtExternalDependencies = append(v.currentMethod.Stmts.StmtExternalDependencies, dependency)
-
-			// Add it also to the class dependencies
-			if v.currentClass != nil {
-				if v.currentClass.Stmts.StmtExternalDependencies == nil {
-					v.currentClass.Stmts.StmtExternalDependencies = make([]*pb.StmtExternalDependency, 0)
+			if dependency != nil {
+				if v.currentMethod.Stmts.StmtExternalDependencies == nil {
+					v.currentMethod.Stmts.StmtExternalDependencies = make([]*pb.StmtExternalDependency, 0)
 				}
-				v.currentClass.Stmts.StmtExternalDependencies = append(v.currentClass.Stmts.StmtExternalDependencies, dependency)
+				v.currentMethod.Stmts.StmtExternalDependencies = append(v.currentMethod.Stmts.StmtExternalDependencies, dependency)
+
+				// Add it also to the class dependencies
+				if v.currentClass != nil {
+					if v.currentClass.Stmts.StmtExternalDependencies == nil {
+						v.currentClass.Stmts.StmtExternalDependencies = make([]*pb.StmtExternalDependency, 0)
+					}
+					v.currentClass.Stmts.StmtExternalDependencies = append(v.currentClass.Stmts.StmtExternalDependencies, dependency)
+				}
 			}
 
 			// Add to the parameter list
@@ -252,23 +268,38 @@ func (v *PhpVisitor) StmtClassMethod(node *ast.StmtClassMethod) {
 		case *ast.NameFullyQualified:
 			parts = node.ReturnType.(*ast.NameFullyQualified).Parts
 			parts = append([]ast.Vertex{&ast.NamePart{Value: []byte("\\")}}, parts...)
+		case *ast.Nullable:
+			// usage of fully nullable name, like new ?\DateTime()
+			expr := node.ReturnType.(*ast.Nullable).Expr
+			switch expr.(type) {
+			case *ast.Name:
+				// usage of name, like new DateTime()
+				parts = expr.(*ast.Name).Parts
+			case *ast.NameFullyQualified:
+				// usage of fully qualified name, like new \DateTime()
+				parts = expr.(*ast.NameFullyQualified).Parts
+				parts = append([]ast.Vertex{&ast.NamePart{Value: []byte("\\")}}, parts...)
+			case *ast.Identifier:
+				// usage of name, like new DateTime()
+				parts = []ast.Vertex{&ast.NamePart{Value: []byte(expr.(*ast.Identifier).Value)}}
+			}
 		default:
-
 		}
 
 		dependency := v.nameDependencyFromParts(parts)
-
-		if v.currentMethod.Stmts.StmtExternalDependencies == nil {
-			v.currentMethod.Stmts.StmtExternalDependencies = make([]*pb.StmtExternalDependency, 0)
-		}
-		v.currentMethod.Stmts.StmtExternalDependencies = append(v.currentMethod.Stmts.StmtExternalDependencies, dependency)
-
-		// Add it also to the class dependencies
-		if v.currentClass != nil {
-			if v.currentClass.Stmts.StmtExternalDependencies == nil {
-				v.currentClass.Stmts.StmtExternalDependencies = make([]*pb.StmtExternalDependency, 0)
+		if dependency != nil {
+			if v.currentMethod.Stmts.StmtExternalDependencies == nil {
+				v.currentMethod.Stmts.StmtExternalDependencies = make([]*pb.StmtExternalDependency, 0)
 			}
-			v.currentClass.Stmts.StmtExternalDependencies = append(v.currentClass.Stmts.StmtExternalDependencies, dependency)
+			v.currentMethod.Stmts.StmtExternalDependencies = append(v.currentMethod.Stmts.StmtExternalDependencies, dependency)
+
+			// Add it also to the class dependencies
+			if v.currentClass != nil {
+				if v.currentClass.Stmts.StmtExternalDependencies == nil {
+					v.currentClass.Stmts.StmtExternalDependencies = make([]*pb.StmtExternalDependency, 0)
+				}
+				v.currentClass.Stmts.StmtExternalDependencies = append(v.currentClass.Stmts.StmtExternalDependencies, dependency)
+			}
 		}
 	}
 
@@ -804,12 +835,11 @@ func (v *PhpVisitor) nameDependencyFromParts(parts []ast.Vertex) *pb.StmtExterna
 	dependency := &pb.StmtExternalDependency{
 		ClassName: className,
 	}
-	// // if first part is a \, return it
-	// if len(parts) > 0 {
-	// 	if string(parts[0].(*ast.NamePart).Value) == "\\" {
-	// 		return dependency
-	// 	}
-	// }
+
+	// if is reserved keyword, return nil
+	if v.IsReservedKeyword(dependency.ClassName) {
+		return nil
+	}
 
 	dependency = v.unalias(dependency)
 	dependency.ClassName = strings.TrimPrefix(dependency.ClassName, "\\")
@@ -841,7 +871,9 @@ func (v *PhpVisitor) StmtUse(node *ast.StmtUseList) {
 
 		// If alias is empty, use the short name as alias
 		if alias == "" {
-			alias = name
+			// Get the last part of the name
+			lastPart := parts[len(parts)-1].(*ast.NamePart).Value
+			alias = string(lastPart)
 		}
 
 		// trim leading slash
@@ -878,6 +910,9 @@ func (v *PhpVisitor) ExprNew(node *ast.ExprNew) {
 	}
 
 	dependency := v.nameDependencyFromParts(parts)
+	if dependency == nil {
+		return
+	}
 
 	// Add dependency to method
 	if v.currentMethod != nil {
@@ -918,6 +953,9 @@ func (v *PhpVisitor) ExprStaticCall(node *ast.ExprStaticCall) {
 	}
 
 	dependency := v.nameDependencyFromParts(parts)
+	if dependency == nil {
+		return
+	}
 	dependency.FunctionName = calledFunctionName
 
 	// Add dependency to method
@@ -949,6 +987,9 @@ func (v *PhpVisitor) ExprStaticPropertyFetch(node *ast.ExprStaticPropertyFetch) 
 	}
 
 	dependency := v.nameDependencyFromParts(parts)
+	if dependency == nil {
+		return
+	}
 
 	// Add dependency to method
 	if v.currentMethod != nil {
@@ -979,6 +1020,9 @@ func (v *PhpVisitor) ExprClassConstFetch(node *ast.ExprClassConstFetch) {
 	}
 
 	dependency := v.nameDependencyFromParts(parts)
+	if dependency == nil {
+		return
+	}
 
 	// Add dependency to method
 	if v.currentMethod != nil {
@@ -1044,16 +1088,14 @@ func (v *PhpVisitor) StmtProperty(node *ast.StmtProperty) {
 
 	classname := raw[endPos:startPos]
 	classname = strings.TrimSpace(classname)
+	classname = strings.Trim(classname, "?")
 	if classname == "" {
 		return
 	}
 
 	// if classname is a reserved word (like int, string, etc), do not add it as dependency
-	reserved := []string{"public", "private", "protected", "var", "int", "string", "float", "bool", "array", "object", "callable", "iterable", "void", "static", "self", "parent"}
-	for _, r := range reserved {
-		if r == classname {
-			return
-		}
+	if v.IsReservedKeyword(classname) {
+		return
 	}
 
 	dependency := &pb.StmtExternalDependency{
@@ -1063,4 +1105,16 @@ func (v *PhpVisitor) StmtProperty(node *ast.StmtProperty) {
 
 	// Add dependency to class
 	v.currentClass.Stmts.StmtExternalDependencies = append(v.currentClass.Stmts.StmtExternalDependencies, dependency)
+}
+
+func (v *PhpVisitor) IsReservedKeyword(expression string) bool {
+
+	reserved := []string{"public", "private", "protected", "var", "int", "string", "float", "bool", "array", "object", "callable", "iterable", "void", "static", "self", "parent"}
+	for _, r := range reserved {
+		if r == expression {
+			return true
+		}
+	}
+
+	return false
 }

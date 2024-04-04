@@ -104,6 +104,42 @@ func (r *RequirementsEvaluator) Evaluate(files []*pb.File, projectAggregated Pro
 		}
 	}
 
+	// Coupling and dependencies
+	if r.Requirements.Rules.Coupling != nil && r.Requirements.Rules.Coupling.Forbidden != nil {
+
+		for _, file := range files {
+
+			if file.Stmts.StmtExternalDependencies == nil {
+				continue
+			}
+			hasError := false
+
+			for _, forbidden := range r.Requirements.Rules.Coupling.Forbidden {
+
+				// Should match "from" expression
+				if !regexp.MustCompile(forbidden.From).MatchString(file.Path) {
+					continue
+				}
+
+				dependencies := file.Stmts.StmtExternalDependencies
+
+				for _, dependency := range dependencies {
+
+					// Should match "to" expression
+					if regexp.MustCompile(forbidden.To).MatchString(dependency.ClassName) {
+						evaluation.Errors = append(evaluation.Errors, fmt.Sprintf("Forbidden coupling between %s and %s", file.Path, dependency.ClassName))
+						hasError = true
+						break
+					}
+				}
+			}
+
+			if !hasError {
+				evaluation.Successes = append(evaluation.Successes, "Coupling OK in file "+file.Path)
+			}
+		}
+	}
+
 	if len(evaluation.Errors) > 0 {
 		evaluation.Succeeded = false
 	}

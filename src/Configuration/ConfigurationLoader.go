@@ -90,6 +90,14 @@ requirements:
 	loc:
 	  max: 100
 	  exclude: []
+
+	# Coupling between components
+	coupling:
+	  forbidden: 
+	  	# Fails if a Model is used in a Controller
+		# Regular expression is used
+	    - from: "Model"
+		  to: "Controller"
 `)
 
 	if err != nil {

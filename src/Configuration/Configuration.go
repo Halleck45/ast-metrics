@@ -30,6 +30,12 @@ type ConfigurationRequirements struct {
 	Rules *struct {
 		CyclomaticComplexity *ConfigurationDefaultRule `yaml:"cyclomatic_complexity"`
 		Loc                  *ConfigurationDefaultRule `yaml:"loc"`
+		Coupling             *struct {
+			Forbidden []struct {
+				From string `yaml:"from"`
+				To   string `yaml:"to"`
+			} `yaml:"forbidden"`
+		} `yaml:"coupling"`
 	} `yaml:"rules"`
 
 	FailOnError bool `yaml:"fail_on_error"`

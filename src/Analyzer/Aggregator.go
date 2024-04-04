@@ -524,5 +524,27 @@ func (r *Aggregator) calculateSums(file *pb.File, specificAggregation *Aggregate
 		}
 
 		class.Stmts.Analyze.Coupling.Efferent = int32(len(uniqueDependencies))
+
+		// Add dependencies to file
+		if file.Stmts.Analyze.Coupling == nil {
+			file.Stmts.Analyze.Coupling = &pb.Coupling{
+				Efferent: 0,
+				Afferent: 0,
+			}
+		}
+		if file.Stmts.StmtExternalDependencies == nil {
+			file.Stmts.StmtExternalDependencies = make([]*pb.StmtExternalDependency, 0)
+		}
+
+		file.Stmts.Analyze.Coupling.Efferent += class.Stmts.Analyze.Coupling.Efferent
+		file.Stmts.Analyze.Coupling.Afferent += class.Stmts.Analyze.Coupling.Afferent
+		file.Stmts.StmtExternalDependencies = append(file.Stmts.StmtExternalDependencies, class.Stmts.StmtExternalDependencies...)
 	}
+
+	// consolidate coupling for file
+	if file.Stmts.Analyze.Coupling != nil && len(classes) > 0 {
+		file.Stmts.Analyze.Coupling.Efferent = file.Stmts.Analyze.Coupling.Efferent / int32(len(classes))
+		file.Stmts.Analyze.Coupling.Afferent = file.Stmts.Analyze.Coupling.Afferent / int32(len(classes))
+	}
+
 }

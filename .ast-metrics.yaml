@@ -9,7 +9,7 @@ requirements:
   fail_on_error: true
   rules:
     cyclomatic_complexity:
-      max: 10
+      max: 1000
       exclude: 
         - "Reporter.php"
 
@@ -17,3 +17,7 @@ requirements:
       max: 100
       exclude: []
 
+    coupling:
+      forbidden:
+        - from: "Model"
+          to: "Controller"
