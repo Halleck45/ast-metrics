@@ -1,0 +1,19 @@
+sources:
+  - .
+
+reports:
+  html: ./build/report
+  markdown: ./build/report.md
+
+requirements:
+  fail_on_error: true
+  rules:
+    cyclomatic_complexity:
+      max: 10
+      exclude: 
+        - "Reporter.php"
+
+    loc:
+      max: 100
+      exclude: []
+

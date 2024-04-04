@@ -13,6 +13,7 @@ type ProjectAggregated struct {
 	Combined              Aggregated
 	ByProgrammingLanguage map[string]Aggregated
 	ErroredFiles          []*pb.File
+	Evaluation            *EvaluationResult
 }
 
 type Aggregated struct {
@@ -128,8 +129,8 @@ func newAggregated() Aggregated {
 		AverageMIPerMethod:                   0,
 		AverageMIwocPerMethod:                0,
 		AverageAfferentCoupling:              0,
-        AverageEfferentCoupling:              0,
-        AverageInstability:                   0,
+		AverageEfferentCoupling:              0,
+		AverageInstability:                   0,
 		AverageMIcwPerMethod:                 0,
 		CommitCountForPeriod:                 0,
 		ResultOfGitAnalysis:                  nil,
@@ -243,8 +244,8 @@ func (r *Aggregator) consolidate(aggregated *Aggregated) {
 		aggregated.AverageMIwoc = aggregated.AverageMIwocPerMethod
 		aggregated.AverageMIcw = aggregated.AverageMIcwPerMethod
 		aggregated.AverageInstability = 0
-        aggregated.AverageEfferentCoupling = 0
-        aggregated.AverageAfferentCoupling = 0
+		aggregated.AverageEfferentCoupling = 0
+		aggregated.AverageAfferentCoupling = 0
 	}
 
 	// Total locs: increment loc of each file
@@ -337,8 +338,7 @@ func (r *Aggregator) consolidate(aggregated *Aggregated) {
 	}
 
 	// Consolidate
-    aggregated.AverageInstability = aggregated.AverageInstability / float64(aggregated.NbClasses)
-
+	aggregated.AverageInstability = aggregated.AverageInstability / float64(aggregated.NbClasses)
 
 	// Count commits for the period based on `ResultOfGitAnalysis` data
 	aggregated.ResultOfGitAnalysis = r.gitSummaries
@@ -463,9 +463,9 @@ func (r *Aggregator) calculateSums(file *pb.File, specificAggregation *Aggregate
 
 		// Coupling
 		if class.Stmts.Analyze.Coupling != nil {
-            specificAggregation.AverageInstability += float64(class.Stmts.Analyze.Coupling.Instability)
-            specificAggregation.AverageEfferentCoupling += float64(class.Stmts.Analyze.Coupling.Efferent)
-            specificAggregation.AverageAfferentCoupling += float64(class.Stmts.Analyze.Coupling.Afferent)
+			specificAggregation.AverageInstability += float64(class.Stmts.Analyze.Coupling.Instability)
+			specificAggregation.AverageEfferentCoupling += float64(class.Stmts.Analyze.Coupling.Efferent)
+			specificAggregation.AverageAfferentCoupling += float64(class.Stmts.Analyze.Coupling.Afferent)
 		}
 
 		// cyclomatic complexity per class

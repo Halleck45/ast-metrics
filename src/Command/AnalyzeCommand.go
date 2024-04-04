@@ -2,6 +2,7 @@ package Command
 
 import (
 	"bufio"
+	"os"
 
 	"github.com/fsnotify/fsnotify"
 	"github.com/halleck45/ast-metrics/src/Analyzer"
@@ -180,6 +181,25 @@ func (v *AnalyzeCommand) Execute() error {
 		pterm.Error.Println("Cannot generate markdown report: " + err.Error())
 	}
 
+	// Evaluate requirements
+	shouldFail := false
+	if v.configuration.Requirements != nil {
+		requirementsEvaluator := Analyzer.NewRequirementsEvaluator(*v.configuration.Requirements)
+		evaluation := requirementsEvaluator.Evaluate(allResults, projectAggregated)
+		projectAggregated.Evaluation = &evaluation
+
+		if evaluation.Succeeded {
+			pterm.Success.Println("Requirements are met")
+		} else {
+			pterm.Error.Printf("Requirements are not met. Found %d violation(s)\n", len(evaluation.Errors))
+			for _, err := range evaluation.Errors {
+				pterm.Error.Println("    " + err)
+			}
+
+			shouldFail = v.configuration.Requirements.FailOnError
+		}
+	}
+
 	if v.spinner != nil {
 		v.spinner.UpdateTitle("")
 		v.spinner.Stop()
@@ -219,6 +239,10 @@ func (v *AnalyzeCommand) Execute() error {
 
 	// Store state of the command
 	v.alreadyExecuted = true
+
+	if shouldFail {
+		os.Exit(1)
+	}
 
 	return nil
 }

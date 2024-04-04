@@ -79,6 +79,7 @@ reports:
 # Requirements. If a file does not meet these requirements, it will be reported
 requirements:
   rules:
+  	fail_on_error: true
 
 	# Complexity of the code
     cyclomatic_complexity:

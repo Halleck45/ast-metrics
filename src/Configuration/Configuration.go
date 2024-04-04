@@ -16,7 +16,7 @@ type Configuration struct {
 	Reports ConfigurationReport `yaml:"reports"`
 
 	// Requirements
-	Requirements ConfigurationRequirements `yaml:"requirements"`
+	Requirements *ConfigurationRequirements `yaml:"requirements"`
 
 	Watching bool
 }
@@ -27,10 +27,12 @@ type ConfigurationReport struct {
 }
 
 type ConfigurationRequirements struct {
-	Rules struct {
-		CyclomaticComplexity ConfigurationDefaultRule `yaml:"cyclomatic_complexity"`
-		Loc                  ConfigurationDefaultRule `yaml:"loc"`
+	Rules *struct {
+		CyclomaticComplexity *ConfigurationDefaultRule `yaml:"cyclomatic_complexity"`
+		Loc                  *ConfigurationDefaultRule `yaml:"loc"`
 	} `yaml:"rules"`
+
+	FailOnError bool `yaml:"fail_on_error"`
 }
 
 type ConfigurationDefaultRule struct {
