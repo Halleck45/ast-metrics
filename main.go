@@ -86,6 +86,12 @@ func main() {
 						Usage:    "Re-run the analysis when files change",
 						Category: "Global options",
 					},
+					// Configuration
+					&cli.StringFlag{
+						Name:     "config",
+						Usage:    "Load configuration from file",
+						Category: "Configuration",
+					},
 				},
 				Action: func(cCtx *cli.Context) error {
 
@@ -108,41 +114,58 @@ func main() {
 					// Prepare configuration object
 					configuration := Configuration.NewConfiguration()
 
-					// Validate path selection
+					// Load configuration file
+					loader := Configuration.NewConfigurationLoader()
+					if cCtx.String("config") != "" {
+						loader.FilenameToChecks = []string{cCtx.String("config")}
+					}
+
+					configuration, err = loader.Loads(configuration)
+					if err != nil {
+						pterm.Error.Println("Cannot load configuration file: " + err.Error())
+					}
+
+					// If no configuration file is found, we ask the user to select a file or take it from arguments
+
+					// If paths are provided in arguments, we use them
 					paths := cCtx.Args()
 					pathsSlice := make([]string, paths.Len())
 					for i := 0; i < paths.Len(); i++ {
 						pathsSlice[i] = paths.Get(i)
 					}
 					if cCtx.Args().Len() == 0 {
-						if isInteractive {
-							// we try to ask the user to select a file
-							pathsSlice = Cli.AskUserToSelectFile()
+						if configuration.SourcesToAnalyzePath == nil || len(configuration.SourcesToAnalyzePath) == 0 {
+							if isInteractive {
+								// we try to ask the user to select a file
+								pathsSlice = Cli.AskUserToSelectFile()
+							}
+						}
+					} else {
+						if len(pathsSlice) == 0 && (configuration.SourcesToAnalyzePath == nil || len(configuration.SourcesToAnalyzePath) == 0) {
+							pterm.Error.Println("Please provide a path to analyze")
+							return nil
+						}
+						err := configuration.SetSourcesToAnalyzePath(pathsSlice)
+						if err != nil {
+							pterm.Error.Println(err.Error())
+							return err
 						}
 					}
 
-					if len(pathsSlice) == 0 {
-						pterm.Error.Println("Please provide a path to analyze")
-						return nil
-					}
-					err := configuration.SetSourcesToAnalyzePath(pathsSlice)
-					if err != nil {
-						pterm.Error.Println(err.Error())
-						return err
-					}
-
 					// Exclude patterns
-					excludePatterns := cCtx.StringSlice("exclude")
-					if excludePatterns != nil && len(excludePatterns) > 0 {
-						configuration.SetExcludePatterns(excludePatterns)
+					if configuration.ExcludePatterns == nil {
+						excludePatterns := cCtx.StringSlice("exclude")
+						if excludePatterns != nil && len(excludePatterns) > 0 {
+							configuration.SetExcludePatterns(excludePatterns)
+						}
 					}
 
 					// Reports
 					if cCtx.String("report-html") != "" {
-						configuration.HtmlReportPath = cCtx.String("report-html")
+						configuration.Reports.Html = cCtx.String("report-html")
 					}
 					if cCtx.String("report-markdown") != "" {
-						configuration.MarkdownReportPath = cCtx.String("report-markdown")
+						configuration.Reports.Markdown = cCtx.String("report-markdown")
 					}
 
 					// Run command
@@ -202,6 +225,21 @@ func main() {
 				Action: func(cCtx *cli.Context) error {
 					// Run command
 					command := Command.NewVersionCommand(version)
+					err := command.Execute()
+					if err != nil {
+						pterm.Error.Println(err.Error())
+						return err
+					}
+					return nil
+				},
+			},
+			{
+				Name:    "init",
+				Aliases: []string{"i"},
+				Usage:   "Create a default configuration file",
+				Action: func(cCtx *cli.Context) error {
+					// Run command
+					command := Command.NewInitConfigurationCommand()
 					err := command.Execute()
 					if err != nil {
 						pterm.Error.Println(err.Error())

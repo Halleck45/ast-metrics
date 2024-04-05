@@ -526,12 +526,13 @@ use stdClass;
 
 class TestedClass
 {
-	private \FullNamespace\Class1   $a1; // Type hinted
+	private ?\FullNamespace\Class1   $a1; // Type hinted
 	private string   $a2;
+	private ?string   $a2;
 	private $b1;
 	var $c1;
 
-	public function foo1(LocalClass2 $a)
+	public function foo1(?LocalClass2 $a) : ?LocalClass3
 	{
 		// Type hinted + New instance
 		$o = new LocalClass5;
@@ -579,6 +580,7 @@ class TestedClass
 	expected := []string{
 		"FullNamespace\\Class1",
 		"My\\Namespace\\LocalClass2",
+		"My\\Namespace\\LocalClass3",
 		"External\\Class2",
 		"My\\Namespace\\LocalClass5",
 		"External\\Class3",

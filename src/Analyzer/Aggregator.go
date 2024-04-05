@@ -13,6 +13,7 @@ type ProjectAggregated struct {
 	Combined              Aggregated
 	ByProgrammingLanguage map[string]Aggregated
 	ErroredFiles          []*pb.File
+	Evaluation            *EvaluationResult
 }
 
 type Aggregated struct {
@@ -128,8 +129,8 @@ func newAggregated() Aggregated {
 		AverageMIPerMethod:                   0,
 		AverageMIwocPerMethod:                0,
 		AverageAfferentCoupling:              0,
-        AverageEfferentCoupling:              0,
-        AverageInstability:                   0,
+		AverageEfferentCoupling:              0,
+		AverageInstability:                   0,
 		AverageMIcwPerMethod:                 0,
 		CommitCountForPeriod:                 0,
 		ResultOfGitAnalysis:                  nil,
@@ -243,8 +244,8 @@ func (r *Aggregator) consolidate(aggregated *Aggregated) {
 		aggregated.AverageMIwoc = aggregated.AverageMIwocPerMethod
 		aggregated.AverageMIcw = aggregated.AverageMIcwPerMethod
 		aggregated.AverageInstability = 0
-        aggregated.AverageEfferentCoupling = 0
-        aggregated.AverageAfferentCoupling = 0
+		aggregated.AverageEfferentCoupling = 0
+		aggregated.AverageAfferentCoupling = 0
 	}
 
 	// Total locs: increment loc of each file
@@ -337,8 +338,7 @@ func (r *Aggregator) consolidate(aggregated *Aggregated) {
 	}
 
 	// Consolidate
-    aggregated.AverageInstability = aggregated.AverageInstability / float64(aggregated.NbClasses)
-
+	aggregated.AverageInstability = aggregated.AverageInstability / float64(aggregated.NbClasses)
 
 	// Count commits for the period based on `ResultOfGitAnalysis` data
 	aggregated.ResultOfGitAnalysis = r.gitSummaries
@@ -463,9 +463,9 @@ func (r *Aggregator) calculateSums(file *pb.File, specificAggregation *Aggregate
 
 		// Coupling
 		if class.Stmts.Analyze.Coupling != nil {
-            specificAggregation.AverageInstability += float64(class.Stmts.Analyze.Coupling.Instability)
-            specificAggregation.AverageEfferentCoupling += float64(class.Stmts.Analyze.Coupling.Efferent)
-            specificAggregation.AverageAfferentCoupling += float64(class.Stmts.Analyze.Coupling.Afferent)
+			specificAggregation.AverageInstability += float64(class.Stmts.Analyze.Coupling.Instability)
+			specificAggregation.AverageEfferentCoupling += float64(class.Stmts.Analyze.Coupling.Efferent)
+			specificAggregation.AverageAfferentCoupling += float64(class.Stmts.Analyze.Coupling.Afferent)
 		}
 
 		// cyclomatic complexity per class
@@ -524,5 +524,27 @@ func (r *Aggregator) calculateSums(file *pb.File, specificAggregation *Aggregate
 		}
 
 		class.Stmts.Analyze.Coupling.Efferent = int32(len(uniqueDependencies))
+
+		// Add dependencies to file
+		if file.Stmts.Analyze.Coupling == nil {
+			file.Stmts.Analyze.Coupling = &pb.Coupling{
+				Efferent: 0,
+				Afferent: 0,
+			}
+		}
+		if file.Stmts.StmtExternalDependencies == nil {
+			file.Stmts.StmtExternalDependencies = make([]*pb.StmtExternalDependency, 0)
+		}
+
+		file.Stmts.Analyze.Coupling.Efferent += class.Stmts.Analyze.Coupling.Efferent
+		file.Stmts.Analyze.Coupling.Afferent += class.Stmts.Analyze.Coupling.Afferent
+		file.Stmts.StmtExternalDependencies = append(file.Stmts.StmtExternalDependencies, class.Stmts.StmtExternalDependencies...)
 	}
+
+	// consolidate coupling for file
+	if file.Stmts.Analyze.Coupling != nil && len(classes) > 0 {
+		file.Stmts.Analyze.Coupling.Efferent = file.Stmts.Analyze.Coupling.Efferent / int32(len(classes))
+		file.Stmts.Analyze.Coupling.Afferent = file.Stmts.Analyze.Coupling.Afferent / int32(len(classes))
+	}
+
 }
