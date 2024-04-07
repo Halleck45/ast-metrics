@@ -2,6 +2,7 @@ package Analyzer
 
 import (
 	"math"
+	"regexp"
 
 	"github.com/halleck45/ast-metrics/src/Engine"
 	pb "github.com/halleck45/ast-metrics/src/NodeType"
@@ -60,6 +61,7 @@ type Aggregated struct {
 	BusFactor                            int
 	TopCommitters                        []TopCommitter
 	ResultOfGitAnalysis                  []ResultOfGitAnalysis
+	PackageRelations                     map[string]map[string]int // counter of dependencies. Ex: A -> B -> 2
 }
 
 type Aggregator struct {
@@ -134,6 +136,7 @@ func newAggregated() Aggregated {
 		AverageMIcwPerMethod:                 0,
 		CommitCountForPeriod:                 0,
 		ResultOfGitAnalysis:                  nil,
+		PackageRelations:                     make(map[string]map[string]int),
 	}
 }
 
@@ -302,6 +305,7 @@ func (r *Aggregator) consolidate(aggregated *Aggregated) {
 		}
 
 		// Coupling
+		// Store relations, with counter
 		classes := Engine.GetClassesInFile(file)
 		for _, class := range classes {
 			if class.Stmts == nil || class.Stmts.Analyze == nil {
@@ -333,6 +337,50 @@ func (r *Aggregator) consolidate(aggregated *Aggregated) {
 
 				// to consolidate
 				aggregated.AverageInstability += float64(instability)
+			}
+
+			dependencies := class.Stmts.StmtExternalDependencies
+			if dependencies != nil {
+				// get the namespace
+				namespaceFrom := class.Name.Qualified
+				for _, dependency := range dependencies {
+					namespaceTo := dependency.Namespace
+
+					// Keep only 2 levels in namespace
+					reg := regexp.MustCompile("[^A-Za-z0-9]+")
+					separator := reg.FindString(namespaceFrom)
+					parts := reg.Split(namespaceTo, -1)
+					if len(parts) > 2 {
+						namespaceTo = parts[0] + separator + parts[1]
+					}
+
+					parts = reg.Split(namespaceFrom, -1)
+					if len(parts) > 2 {
+						namespaceFrom = parts[0] + separator + parts[1]
+					}
+
+					// if same, continue
+					if namespaceFrom == namespaceTo {
+						continue
+					}
+
+					// if root namespace, continue
+					if namespaceFrom == "" || namespaceTo == "" {
+						continue
+					}
+
+					// create the map if not exists
+					if _, ok := aggregated.PackageRelations[namespaceFrom]; !ok {
+						aggregated.PackageRelations[namespaceFrom] = make(map[string]int)
+					}
+
+					if _, ok := aggregated.PackageRelations[namespaceFrom][namespaceTo]; !ok {
+						aggregated.PackageRelations[namespaceFrom][namespaceTo] = 0
+					}
+
+					// increment the counter
+					aggregated.PackageRelations[namespaceFrom][namespaceTo]++
+				}
 			}
 		}
 	}
