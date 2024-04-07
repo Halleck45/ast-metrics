@@ -92,7 +92,7 @@ func (r *RequirementsEvaluator) Evaluate(files []*pb.File, projectAggregated Pro
 				continue
 			}
 
-			if file.Stmts.Analyze.Volume.Loc == nil {
+			if file.Stmts.Analyze == nil || file.Stmts.Analyze.Volume.Loc == nil {
 				continue
 			}
 

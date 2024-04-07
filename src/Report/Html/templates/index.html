@@ -295,18 +295,18 @@
 <div class="grid grid-cols-4 gap-4 mt-4">
 
     <!-- start: card -->
-    <div class="col-span-1 px-8 py-4 bg-white rounded-lg shadow-md dark:bg-gray-800">
+    <div class="col-span-2 px-8 py-4 bg-white rounded-lg shadow-md dark:bg-gray-800">
         <div class="mt-2">
             <div>
                 <h5 class="leading-none text-3xl font-bold text-gray-900 dark:text-white pb-2">
-                    {{ currentView.MaxCyclomaticComplexity }}
+                    Packages
                 </h5>
                 <p class="text-base font-normal text-gray-500 dark:text-gray-400">
-                    Complexity max
+                    Relations between packages
                 </p>
             </div>
             <div class="mt-4 chart-container" >
-                {% include "componentChartRadiusBarComplexity.html" %}
+                {% include "componentDependencyDiagram.html" %}
             </div>
         </div>
     </div>
@@ -343,6 +343,27 @@
         </div>
     </div>
     <!-- end: card -->
+
+
+     <!-- start: card -->
+     <div class="col-span-1 px-8 py-4 bg-white rounded-lg shadow-md dark:bg-gray-800">
+        <div class="mt-2">
+            <div>
+                <h5 class="leading-none text-3xl font-bold text-gray-900 dark:text-white pb-2">
+                    {{ currentView.MaxCyclomaticComplexity }}
+                </h5>
+                <p class="text-base font-normal text-gray-500 dark:text-gray-400">
+                    Complexity max
+                </p>
+            </div>
+            <div class="mt-4 chart-container" >
+                {% include "componentChartRadiusBarComplexity.html" %}
+            </div>
+        </div>
+    </div>
+    <!-- end: card -->
+
+
 </div>
 <!-- end: line -->
 

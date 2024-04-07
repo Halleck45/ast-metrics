@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"sort"
+	"strings"
 
 	log "github.com/sirupsen/logrus"
 
@@ -63,6 +64,7 @@ func (v *HtmlReportGenerator) Generate(files []*pb.File, projectAggregated Analy
 		"componentChartRadiusBarInstability.html",
 		"componentChartRadiusBarEfferent.html",
 		"componentChartRadiusBarAfferent.html",
+		"componentDependencyDiagram.html",
 	} {
 		// read the file
 		content, err := content.ReadFile(fmt.Sprintf("templates/%s", file))
@@ -203,6 +205,28 @@ func (v *HtmlReportGenerator) RegisterFilters() {
 		}
 
 		return pongo2.AsValue(list), nil
+	})
+
+	pongo2.RegisterFilter("jsonForChartDependency", func(in *pongo2.Value, param *pongo2.Value) (out *pongo2.Value, err *pongo2.Error) {
+		// create json for chart dependency, like:
+		// [ { "source": "A", "target": "B", "value": 1 }, { "source": "A", "target": "C", "value": 1 } ]
+
+		// receive map[string]map[string]int in input
+		relations := in.Interface().(map[string]map[string]int)
+		json := "["
+		for source, targets := range relations {
+			for target, value := range targets {
+				json += fmt.Sprintf(
+					"{ \"source\": \"%s\", \"target\": \"%s\", \"value\": %d },",
+					strings.ReplaceAll(source, "\\", "\\\\"),
+					strings.ReplaceAll(target, "\\", "\\\\"),
+					value,
+				)
+			}
+		}
+		json = json[:len(json)-1] + "]"
+
+		return pongo2.AsSafeValue(json), nil
 	})
 
 	pongo2.RegisterFilter("sortRisk", func(in *pongo2.Value, param *pongo2.Value) (out *pongo2.Value, err *pongo2.Error) {

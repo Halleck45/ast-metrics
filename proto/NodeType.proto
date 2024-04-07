@@ -11,6 +11,7 @@ message Name {
   string short = 1;
   string qualified = 2; // fully qualified name (with namespace)
   string describer = 3; // internal description of statement (e.g. for function: return type + name + parameters)
+  string package = 4; // package name
 }
 
 // Represents a list of statements.
@@ -103,6 +104,7 @@ message StmtParameter {
 message StmtExternalDependency {
   string className = 1;
   string functionName = 2;
+  string namespace = 3;
 }
 
 // Represents a Interface node.

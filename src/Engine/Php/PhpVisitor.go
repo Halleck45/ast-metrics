@@ -42,6 +42,9 @@ func (v *PhpVisitor) FixName(name *pb.Name) *pb.Name {
 		}
 	}
 
+	// package (namespace)
+	name.Package = v.namespaceFromQualified(name.Qualified)
+
 	return name
 }
 
@@ -54,6 +57,15 @@ func (v *PhpVisitor) nameMethod(name string) string {
 	}
 
 	return qualifiedName
+}
+
+func (v *PhpVisitor) namespaceFromQualified(name string) string {
+	splitted := strings.Split(name, "\\")
+	if len(splitted) > 1 {
+		return strings.Join(splitted[:len(splitted)-1], "\\")
+	}
+
+	return ""
 }
 
 func (v *PhpVisitor) StmtClass(node *ast.StmtClass) {
@@ -69,7 +81,6 @@ func (v *PhpVisitor) StmtClass(node *ast.StmtClass) {
 			Qualified: v.nameObject(name),
 		},
 	}
-
 	class.Name = v.FixName(class.Name)
 
 	class.Stmts = Engine.FactoryStmts()
@@ -843,6 +854,7 @@ func (v *PhpVisitor) nameDependencyFromParts(parts []ast.Vertex) *pb.StmtExterna
 
 	dependency = v.unalias(dependency)
 	dependency.ClassName = strings.TrimPrefix(dependency.ClassName, "\\")
+	dependency.Namespace = v.namespaceFromQualified(dependency.ClassName)
 
 	return dependency
 }
