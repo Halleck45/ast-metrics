@@ -43,7 +43,8 @@ func TestGolangRunner(t *testing.T) {
 		t.Error(err)
 	}
 
-	result := ParseGoFile(tmpFile)
+	parser := GolangRunner{}
+	result := parser.ParseGoFile(tmpFile)
 
 	// Ensure path
 	assert.Equal(t, tmpFile, result.Path, "Expected path to be %s, got %s", tmpFile, result.Path)
@@ -118,7 +119,8 @@ func TestGoLangStructureExtraction(t *testing.T) {
 		t.Error(err)
 	}
 
-	result := ParseGoFile(tmpFile)
+	parser := GolangRunner{}
+	result := parser.ParseGoFile(tmpFile)
 	testedFunction := result.Stmts.StmtFunction[0]
 
 	// Ifs
@@ -169,7 +171,7 @@ func TestParsingGoFiles(t *testing.T) {
 	runner := GolangRunner{}
 	runner.SetConfiguration(configuration)
 	runner.DumpAST()
-	
+
 	// list files
 	files, err := os.ReadDir(workdir)
 	if err != nil {
@@ -192,4 +194,64 @@ func TestParsingGoFiles(t *testing.T) {
 
 	// Ensure path
 	assert.Contains(t, pbFile.Path, "test.go", "Expected path to contain 'test.go', got %s", pbFile.Path)
+}
+
+func TestSearchModfile(t *testing.T) {
+	runner := GolangRunner{}
+
+	// Test when go.mod file exists in the given path
+	t.Run("go.mod exists in path", func(t *testing.T) {
+		tmpDir := t.TempDir()
+		goModPath := tmpDir + "/go.mod"
+		_, err := os.Create(goModPath)
+		if err != nil {
+			t.Error(err)
+		}
+
+		_, err = runner.SearchModfile(tmpDir)
+		if err != nil {
+			t.Error(err)
+		}
+
+		if runner.currentGoModPath != tmpDir {
+			t.Errorf("Expected currentGoModPath to be %s, got %s", tmpDir, runner.currentGoModPath)
+		}
+	})
+
+	// Test when go.mod file does not exist in the given path, but exists in the parent directory
+	t.Run("go.mod exists in parent directory", func(t *testing.T) {
+		tmpDir := t.TempDir()
+		goModPath := tmpDir + "/go.mod"
+		_, err := os.Create(goModPath)
+		if err != nil {
+			t.Error(err)
+		}
+
+		subDir := tmpDir + "/subdir"
+		os.Mkdir(subDir, 0755)
+
+		_, err = runner.SearchModfile(subDir)
+		if err != nil {
+			t.Error(err)
+		}
+
+		if runner.currentGoModPath != tmpDir {
+			t.Errorf("Expected currentGoModPath to be %s, got %s", tmpDir, runner.currentGoModPath)
+		}
+	})
+
+	// Test when go.mod file does not exist in the given path or any of its parent directories
+	t.Run("go.mod does not exist", func(t *testing.T) {
+		tmpDir := t.TempDir()
+
+		_, err := runner.SearchModfile(tmpDir)
+		if err == nil {
+			t.Error("Expected error, got nil")
+		}
+
+		expectedError := "go.mod file not found"
+		if err.Error() != expectedError {
+			t.Errorf("Expected error to be '%s', got '%s'", expectedError, err.Error())
+		}
+	})
 }

@@ -16,12 +16,15 @@ import (
 	pb "github.com/halleck45/ast-metrics/src/NodeType"
 	"github.com/halleck45/ast-metrics/src/Storage"
 	"github.com/pterm/pterm"
+	"golang.org/x/mod/modfile"
 )
 
 type GolangRunner struct {
-	progressbar   *pterm.SpinnerPrinter
-	configuration *Configuration.Configuration
-	foundFiles    File.FileList
+	progressbar      *pterm.SpinnerPrinter
+	configuration    *Configuration.Configuration
+	foundFiles       File.FileList
+	currentGoModFile *modfile.File
+	currentGoModPath string
 }
 
 // IsRequired returns true if at least one Go file is found
@@ -74,8 +77,14 @@ func (r GolangRunner) DumpAST() {
 			continue
 		}
 
+		// Find the mod file sible to the file
+		r.currentGoModFile, err = r.SearchModfile(filePath)
+		if err != nil {
+			log.Error(err)
+		}
+
 		// Create protobuf object
-		protoFile := ParseGoFile(filePath)
+		protoFile := r.ParseGoFile(filePath)
 
 		// Dump protobuf object to destination
 		err = Engine.DumpProtobuf(protoFile, binPath)
@@ -87,10 +96,48 @@ func (r GolangRunner) DumpAST() {
 	if r.progressbar != nil {
 		r.progressbar.Info("🦫 Golang code dumped")
 	}
-
 }
 
-func ParseGoFile(filePath string) *pb.File {
+func (r *GolangRunner) SearchModfile(path string) (*modfile.File, error) {
+
+	// Avoid duplicate search
+	if r.currentGoModFile != nil {
+		// if directory is a subdirectory of the current mod file, return it
+		if strings.Contains(path, r.currentGoModPath) {
+			return r.currentGoModFile, nil
+		}
+	}
+
+	goModFile := path + string(os.PathSeparator) + "go.mod"
+
+	if _, err := os.Stat(goModFile); err == nil {
+
+		fileBytes, err := os.ReadFile(goModFile)
+		if err != nil {
+			return nil, err
+		}
+		f, err := modfile.Parse("go.mod", fileBytes, nil)
+		if err != nil {
+			return nil, err
+		}
+
+		r.currentGoModFile = f
+		r.currentGoModPath = path
+
+		return f, nil
+	}
+
+	// Search in parent directory
+	parts := strings.Split(path, string(os.PathSeparator))
+	if len(parts) <= 2 {
+		return nil, fmt.Errorf("go.mod file not found")
+	}
+	parts = parts[:len(parts)-1]
+	parentDirectory := strings.Join(parts, string(os.PathSeparator))
+	return r.SearchModfile(parentDirectory)
+}
+
+func (r GolangRunner) ParseGoFile(filePath string) *pb.File {
 	fset := token.NewFileSet()
 	f, err := parser.ParseFile(fset, filePath, nil, parser.ParseComments)
 	if err != nil {
@@ -107,9 +154,79 @@ func ParseGoFile(filePath string) *pb.File {
 	linesOfFile := strings.Split(linesOfFileString, "\n")
 
 	var funcs []*pb.StmtFunction
+	importedPackages := make(map[string]string)
+	currentPackage := ""
+	if r.currentGoModFile != nil {
+		currentPackage = r.currentGoModFile.Module.Mod.Path
+	}
+
+	stmts := pb.Stmts{}
+	file := &pb.File{
+		Path:                filePath,
+		ProgrammingLanguage: "Golang",
+		Stmts:               &stmts,
+		LinesOfCode: &pb.LinesOfCode{
+			LinesOfCode: int32(len(linesOfFile)),
+		},
+	}
 
 	ast.Inspect(f, func(n ast.Node) bool {
 		switch x := n.(type) {
+
+		case *ast.ImportSpec:
+			importedPackage := x.Path.Value
+			alias := ""
+			if x.Name != nil {
+				alias = x.Name.Name
+			}
+
+			// Remove quotes
+			importedPackage = importedPackage[1 : len(importedPackage)-1]
+
+			// if alias is empty, it means the package is imported with its default name
+			if alias == "" {
+				alias = importedPackage[strings.LastIndex(importedPackage, "/")+1:]
+			}
+
+			// Add to imported packages
+			importedPackages[alias] = importedPackage
+
+			// Skip system packages
+			if !strings.Contains(importedPackage, "github.com") {
+				return true
+			}
+
+			if file.Stmts.StmtExternalDependencies == nil {
+				file.Stmts.StmtExternalDependencies = []*pb.StmtExternalDependency{}
+			}
+			dependency := &pb.StmtExternalDependency{
+				ClassName: alias,
+				Namespace: importedPackage,
+			}
+
+			if currentPackage != "" {
+				dependency.From = currentPackage
+			}
+
+			file.Stmts.StmtExternalDependencies = append(file.Stmts.StmtExternalDependencies, dependency)
+
+		case *ast.File:
+			// Get the full package name
+			// File declaration
+			currentPackage += x.Name.Name
+
+		case *ast.Package:
+			currentPackage += x.Name
+			if file.Stmts.StmtNamespace == nil {
+				file.Stmts.StmtNamespace = []*pb.StmtNamespace{}
+			}
+			file.Stmts.StmtNamespace = append(file.Stmts.StmtNamespace, &pb.StmtNamespace{
+				Name: &pb.Name{
+					Short:     x.Name,
+					Qualified: x.Name,
+				},
+			})
+
 		case *ast.FuncDecl:
 			// Function declaration
 			funcNode := &pb.StmtFunction{}
@@ -124,7 +241,9 @@ func ParseGoFile(filePath string) *pb.File {
 			funcNode.Stmts.StmtDecisionIf = []*pb.StmtDecisionIf{}
 			funcNode.Stmts.StmtDecisionSwitch = []*pb.StmtDecisionSwitch{}
 			funcNode.Stmts.StmtDecisionCase = []*pb.StmtDecisionCase{}
+			funcNode.Stmts.StmtNamespace = []*pb.StmtNamespace{}
 			funcNode.Stmts.StmtLoop = []*pb.StmtLoop{}
+			funcNode.Stmts.StmtExternalDependencies = []*pb.StmtExternalDependency{}
 
 			funcs = append(funcs, funcNode)
 
@@ -143,6 +262,16 @@ func ParseGoFile(filePath string) *pb.File {
 					funcNode.Operators = append(funcNode.Operators, &pb.StmtOperator{Name: y.Op.String()})
 				case *ast.Ident:
 					funcNode.Operands = append(funcNode.Operands, &pb.StmtOperand{Name: y.Name})
+					// Vérifier si l'identifiant fait référence à un autre paquet
+					for _, imported := range importedPackages {
+						if y.Name == imported {
+							funcNode.Stmts.StmtExternalDependencies = append(funcNode.Stmts.StmtExternalDependencies, &pb.StmtExternalDependency{
+								ClassName: imported,
+								Namespace: imported,
+								From:      currentPackage,
+							})
+						}
+					}
 				case *ast.IfStmt:
 					funcNode.Stmts.StmtDecisionIf = append(funcNode.Stmts.StmtDecisionIf, &pb.StmtDecisionIf{})
 				case *ast.SwitchStmt:
@@ -153,7 +282,13 @@ func ParseGoFile(filePath string) *pb.File {
 					funcNode.Stmts.StmtLoop = append(funcNode.Stmts.StmtLoop, &pb.StmtLoop{})
 				case *ast.RangeStmt:
 					funcNode.Stmts.StmtLoop = append(funcNode.Stmts.StmtLoop, &pb.StmtLoop{})
-
+				case *ast.Package:
+					namespace := &pb.StmtNamespace{}
+					namespace.Name = &pb.Name{
+						Short:     y.Name,
+						Qualified: y.Name,
+					}
+					funcNode.Stmts.StmtNamespace = append(funcNode.Stmts.StmtNamespace, namespace)
 				}
 				return true
 			})
@@ -167,17 +302,7 @@ func ParseGoFile(filePath string) *pb.File {
 		return true
 	})
 
-	stmts := pb.Stmts{}
-	stmts.StmtFunction = funcs
-
-	file := &pb.File{
-		Path:                filePath,
-		ProgrammingLanguage: "Golang",
-		Stmts:               &stmts,
-		LinesOfCode: &pb.LinesOfCode{
-			LinesOfCode: int32(len(linesOfFile)),
-		},
-	}
+	file.Stmts.StmtFunction = funcs
 
 	return file
 }
