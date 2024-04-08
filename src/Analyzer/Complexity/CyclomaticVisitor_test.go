@@ -292,7 +292,8 @@ func TestItCalculateCyclomaticComplexityForNotObjectOrientedLanguages(t *testing
 		t.Error(err)
 	}
 
-	pbFile := Golang.ParseGoFile(tmpFile)
+	parser := Golang.GolangRunner{}
+	pbFile := parser.ParseGoFile(tmpFile)
 
 	ccn := visitor.Calculate(pbFile.Stmts)
 

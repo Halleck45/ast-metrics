@@ -68,6 +68,19 @@ func (v *PhpVisitor) namespaceFromQualified(name string) string {
 	return ""
 }
 
+func (v *PhpVisitor) appendDependencyToFile(dependency *pb.StmtExternalDependency) string {
+	if v.file.Stmts.StmtExternalDependencies == nil {
+		v.file.Stmts.StmtExternalDependencies = make([]*pb.StmtExternalDependency, 0)
+	}
+
+	if v.currentNamespace != nil {
+		dependency.From = v.currentNamespace.Name.Qualified
+	}
+
+	v.file.Stmts.StmtExternalDependencies = append(v.file.Stmts.StmtExternalDependencies, dependency)
+	return ""
+}
+
 func (v *PhpVisitor) StmtClass(node *ast.StmtClass) {
 
 	name := "@anonymous"
@@ -212,6 +225,9 @@ func (v *PhpVisitor) extractParams(params []ast.Vertex) []*pb.StmtParameter {
 					}
 					v.currentClass.Stmts.StmtExternalDependencies = append(v.currentClass.Stmts.StmtExternalDependencies, dependency)
 				}
+
+				// Add it also to the file dependencies
+				v.appendDependencyToFile(dependency)
 			}
 
 			// Add to the parameter list
@@ -311,6 +327,9 @@ func (v *PhpVisitor) StmtClassMethod(node *ast.StmtClassMethod) {
 				}
 				v.currentClass.Stmts.StmtExternalDependencies = append(v.currentClass.Stmts.StmtExternalDependencies, dependency)
 			}
+
+			// Add it also to the file dependencies
+			v.appendDependencyToFile(dependency)
 		}
 	}
 
@@ -935,6 +954,9 @@ func (v *PhpVisitor) ExprNew(node *ast.ExprNew) {
 	if v.currentClass != nil {
 		v.currentClass.Stmts.StmtExternalDependencies = append(v.currentClass.Stmts.StmtExternalDependencies, dependency)
 	}
+
+	// Add it also to the file dependencies
+	v.appendDependencyToFile(dependency)
 }
 
 // When a method is called, store the dependency
@@ -979,6 +1001,9 @@ func (v *PhpVisitor) ExprStaticCall(node *ast.ExprStaticCall) {
 	if v.currentClass != nil {
 		v.currentClass.Stmts.StmtExternalDependencies = append(v.currentClass.Stmts.StmtExternalDependencies, dependency)
 	}
+
+	// Add it also to the file dependencies
+	v.appendDependencyToFile(dependency)
 }
 
 // When a method is called, store the dependency
@@ -1012,6 +1037,9 @@ func (v *PhpVisitor) ExprStaticPropertyFetch(node *ast.ExprStaticPropertyFetch) 
 	if v.currentClass != nil {
 		v.currentClass.Stmts.StmtExternalDependencies = append(v.currentClass.Stmts.StmtExternalDependencies, dependency)
 	}
+
+	// Add it also to the file dependencies
+	v.appendDependencyToFile(dependency)
 }
 
 // When class constant is called, store the dependency
@@ -1045,6 +1073,9 @@ func (v *PhpVisitor) ExprClassConstFetch(node *ast.ExprClassConstFetch) {
 	if v.currentClass != nil {
 		v.currentClass.Stmts.StmtExternalDependencies = append(v.currentClass.Stmts.StmtExternalDependencies, dependency)
 	}
+
+	// Add it also to the file dependencies
+	v.appendDependencyToFile(dependency)
 }
 
 // When property is typed, store the dependency
@@ -1117,6 +1148,8 @@ func (v *PhpVisitor) StmtProperty(node *ast.StmtProperty) {
 
 	// Add dependency to class
 	v.currentClass.Stmts.StmtExternalDependencies = append(v.currentClass.Stmts.StmtExternalDependencies, dependency)
+	// Add it also to the file dependencies
+	v.appendDependencyToFile(dependency)
 }
 
 func (v *PhpVisitor) IsReservedKeyword(expression string) bool {

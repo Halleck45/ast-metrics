@@ -105,6 +105,7 @@ message StmtExternalDependency {
   string className = 1;
   string functionName = 2;
   string namespace = 3;
+  string from = 4;
 }
 
 // Represents a Interface node.

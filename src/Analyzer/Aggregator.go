@@ -338,49 +338,49 @@ func (r *Aggregator) consolidate(aggregated *Aggregated) {
 				// to consolidate
 				aggregated.AverageInstability += float64(instability)
 			}
+		}
 
-			dependencies := class.Stmts.StmtExternalDependencies
-			if dependencies != nil {
-				// get the namespace
-				namespaceFrom := class.Name.Qualified
-				for _, dependency := range dependencies {
-					namespaceTo := dependency.Namespace
+		dependencies := file.Stmts.StmtExternalDependencies
 
-					// Keep only 2 levels in namespace
-					reg := regexp.MustCompile("[^A-Za-z0-9]+")
-					separator := reg.FindString(namespaceFrom)
-					parts := reg.Split(namespaceTo, -1)
-					if len(parts) > 2 {
-						namespaceTo = parts[0] + separator + parts[1]
-					}
+		if dependencies != nil {
+			for _, dependency := range dependencies {
+				namespaceTo := dependency.Namespace
+				namespaceFrom := dependency.From
 
-					parts = reg.Split(namespaceFrom, -1)
-					if len(parts) > 2 {
-						namespaceFrom = parts[0] + separator + parts[1]
-					}
-
-					// if same, continue
-					if namespaceFrom == namespaceTo {
-						continue
-					}
-
-					// if root namespace, continue
-					if namespaceFrom == "" || namespaceTo == "" {
-						continue
-					}
-
-					// create the map if not exists
-					if _, ok := aggregated.PackageRelations[namespaceFrom]; !ok {
-						aggregated.PackageRelations[namespaceFrom] = make(map[string]int)
-					}
-
-					if _, ok := aggregated.PackageRelations[namespaceFrom][namespaceTo]; !ok {
-						aggregated.PackageRelations[namespaceFrom][namespaceTo] = 0
-					}
-
-					// increment the counter
-					aggregated.PackageRelations[namespaceFrom][namespaceTo]++
+				// Keep only 2 levels in namespace
+				reg := regexp.MustCompile("[^A-Za-z0-9.]+")
+				separator := reg.FindString(namespaceFrom)
+				parts := reg.Split(namespaceTo, -1)
+				if len(parts) > 2 {
+					namespaceTo = parts[0] + separator + parts[1]
 				}
+
+				parts = reg.Split(namespaceFrom, -1)
+				if len(parts) > 2 {
+					namespaceFrom = parts[0] + separator + parts[1]
+				}
+
+				// if same, continue
+				if namespaceFrom == namespaceTo {
+					continue
+				}
+
+				// if root namespace, continue
+				if namespaceFrom == "" || namespaceTo == "" {
+					continue
+				}
+
+				// create the map if not exists
+				if _, ok := aggregated.PackageRelations[namespaceFrom]; !ok {
+					aggregated.PackageRelations[namespaceFrom] = make(map[string]int)
+				}
+
+				if _, ok := aggregated.PackageRelations[namespaceFrom][namespaceTo]; !ok {
+					aggregated.PackageRelations[namespaceFrom][namespaceTo] = 0
+				}
+
+				// increment the counter
+				aggregated.PackageRelations[namespaceFrom][namespaceTo]++
 			}
 		}
 	}
