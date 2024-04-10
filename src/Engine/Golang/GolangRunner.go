@@ -6,6 +6,7 @@ import (
 	"go/parser"
 	"go/token"
 	"os"
+	"path/filepath"
 	"strings"
 
 	log "github.com/sirupsen/logrus"
@@ -78,9 +79,13 @@ func (r GolangRunner) DumpAST() {
 		}
 
 		// Find the mod file sible to the file
-		r.currentGoModFile, err = r.SearchModfile(filePath)
-		if err != nil {
-			log.Error(err)
+		// make it realpath
+		realPath, err := filepath.Abs(filePath)
+		if err == nil {
+			r.currentGoModFile, err = r.SearchModfile(realPath)
+			if err != nil {
+				log.Error(err)
+			}
 		}
 
 		// Create protobuf object
