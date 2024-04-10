@@ -1,0 +1,2 @@
+serve:
+	mkdocs serve

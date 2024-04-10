@@ -6,18 +6,21 @@ AST Metrics is built in Golang, and distributed as binary.
 
 You don't need anything, simply download the correct binary for your platform.
 
-=== ":simple-linux: Linux"
 
-    **Automatically:**
+=== ":magic_wand: Automatically"
 
-    Run the following command to download and install the latest version of AST Metrics:
+
+    Run the following command to download the latest version of AST Metrics:
 
     ```bash
-    curl -L https://github.com/Halleck45/ast-metrics/releases/download/--latest_version--/ast-metrics_Linux_$(uname -m) -o ~/.local/bin/ast-metrics
-    chmod +x ~/.local/bin/ast-metrics
+    curl -s https://raw.githubusercontent.com/Halleck45/ast-metrics/main/scripts/download.sh|bash
     ```
 
-    **Manually:**
+    > Be careful when running scripts from the internet. Always check the content of the script before running it.
+
+
+=== ":simple-linux: Linux"
+
 
     Download the binary for your platform (run `uname -m` in your terminal to get your architecture):
 
@@ -27,17 +30,6 @@ You don't need anything, simply download the correct binary for your platform.
 
 === ":simple-apple: MacOS"
 
-    **Automatically:**
-
-    Run the following command to download and install the latest version of AST Metrics:
-    
-    ```bash
-    curl -L https://github.com/Halleck45/ast-metrics/releases/download/--latest_version--/ast-metrics_Darwin_$(uname -m) -o ~/.local/bin/ast-metrics
-    chmod +x ~/.local/bin/ast-metrics
-    ```
-
-    **Manually:**
-
     Download the binary for your platform (run `uname -m` in your terminal to get your architecture):
     
     + [arm64](https://github.com/Halleck45/ast-metrics/releases/download/--latest_version--/ast-metrics_Darwin_arm64) (for Apple Silicon)
@@ -45,8 +37,6 @@ You don't need anything, simply download the correct binary for your platform.
 
 
 === ":simple-windows10: Windows"
-
-    **Manually:**
 
     Download the binary for your platform (run `uname -m` in your terminal to get your architecture):
 
