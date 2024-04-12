@@ -1,9 +1,8 @@
-package Cli
+package Ui
 
 import (
 	"time"
 
-	tea "github.com/charmbracelet/bubbletea"
 	"github.com/elliotchance/orderedmap/v2"
 	"github.com/halleck45/ast-metrics/src/Analyzer"
 	"github.com/halleck45/ast-metrics/src/Engine"
@@ -12,34 +11,26 @@ import (
 
 // ComponentLineChartGitActivity is the barchart component for the loc repartition
 type ComponentLineChartGitActivity struct {
-	aggregated Analyzer.Aggregated
-	files      []*pb.File
-}
-
-// NewComponentLineChartGitActivity is the constructor for the ComponentLineChartGitActivity
-func NewComponentLineChartGitActivity(aggregated Analyzer.Aggregated, files []*pb.File) *ComponentLineChartGitActivity {
-	return &ComponentLineChartGitActivity{
-		aggregated: aggregated,
-		files:      files,
-	}
+	Aggregated Analyzer.Aggregated
+	Files      []*pb.File
 }
 
 // Render is the method to render the component
-func (c *ComponentLineChartGitActivity) Render() string {
+func (c *ComponentLineChartGitActivity) AsTerminalElement() string {
 	dataOrdered := c.GetData()
 	data := make(map[string]float64)
 	for _, k := range dataOrdered.Keys() {
 		value, _ := dataOrdered.Get(k)
 		data[k] = value
 	}
-	graph := NewComponentBarchart(data)
+	graph := ComponentBarchart{data: data}
 	graph.height = 5
 	graph.barWidth = 6
-	return graph.Render()
+	return graph.AsTerminalElement()
 }
 
 // Render Html
-func (c *ComponentLineChartGitActivity) RenderHTML() string {
+func (c *ComponentLineChartGitActivity) AsHtml() string {
 	data := c.GetData()
 	return Engine.HtmlChartArea(data, "Number of commits", "chart-git")
 }
@@ -60,7 +51,7 @@ func (c *ComponentLineChartGitActivity) GetData() *orderedmap.OrderedMap[string,
 	data.Set(time.Now().Format("Jan"), 0)
 
 	// count the number of files per month
-	for _, file := range c.files {
+	for _, file := range c.Files {
 		if file.Commits == nil {
 			continue
 		}
@@ -78,8 +69,4 @@ func (c *ComponentLineChartGitActivity) GetData() *orderedmap.OrderedMap[string,
 	}
 
 	return data
-}
-
-// Update is the method to update the component
-func (c *ComponentLineChartGitActivity) Update(msg tea.Msg) {
 }

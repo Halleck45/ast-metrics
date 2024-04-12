@@ -1,29 +1,18 @@
-package Cli
+package Ui
 
 import (
-	tea "github.com/charmbracelet/bubbletea"
 	"github.com/elliotchance/orderedmap/v2"
 	"github.com/halleck45/ast-metrics/src/Analyzer"
 	"github.com/halleck45/ast-metrics/src/Engine"
 	pb "github.com/halleck45/ast-metrics/src/NodeType"
 )
 
-// ComponentBarchartCyclomaticByMethodRepartition is the barchart component for the loc repartition
 type ComponentBarchartCyclomaticByMethodRepartition struct {
-	aggregated Analyzer.Aggregated
-	files      []*pb.File
+	Aggregated Analyzer.Aggregated
+	Files      []*pb.File
 }
 
-// NewComponentBarchartCyclomaticByMethodRepartition is the constructor for the ComponentBarchartCyclomaticByMethodRepartition
-func NewComponentBarchartCyclomaticByMethodRepartition(aggregated Analyzer.Aggregated, files []*pb.File) *ComponentBarchartCyclomaticByMethodRepartition {
-	return &ComponentBarchartCyclomaticByMethodRepartition{
-		aggregated: aggregated,
-		files:      files,
-	}
-}
-
-// Render is the method to render the component
-func (c *ComponentBarchartCyclomaticByMethodRepartition) Render() string {
+func (c *ComponentBarchartCyclomaticByMethodRepartition) AsTerminalElement() string {
 
 	dataOrdered := c.GetData()
 	data := make(map[string]float64)
@@ -32,10 +21,10 @@ func (c *ComponentBarchartCyclomaticByMethodRepartition) Render() string {
 		data[k] = value
 	}
 
-	graph := NewComponentBarchart(data)
+	graph := ComponentBarchart{data: data}
 	graph.height = 5
 	graph.barWidth = 8
-	return graph.Render()
+	return graph.AsTerminalElement()
 }
 
 func (c *ComponentBarchartCyclomaticByMethodRepartition) GetData() *orderedmap.OrderedMap[string, float64] {
@@ -48,7 +37,7 @@ func (c *ComponentBarchartCyclomaticByMethodRepartition) GetData() *orderedmap.O
 	}
 
 	// repartition of classes by cyclomatic complexity
-	for _, file := range c.files {
+	for _, file := range c.Files {
 		classes := Engine.GetClassesInFile(file)
 		for _, class := range classes {
 			if class.Stmts.Analyze == nil {
@@ -69,11 +58,7 @@ func (c *ComponentBarchartCyclomaticByMethodRepartition) GetData() *orderedmap.O
 }
 
 // render as HTML
-func (c *ComponentBarchartCyclomaticByMethodRepartition) RenderHTML() string {
+func (c *ComponentBarchartCyclomaticByMethodRepartition) AsHtml() string {
 	data := c.GetData()
 	return Engine.HtmlChartLine(data, "Number of files", "chart-loc")
-}
-
-// Update is the method to update the component
-func (c *ComponentBarchartCyclomaticByMethodRepartition) Update(msg tea.Msg) {
 }

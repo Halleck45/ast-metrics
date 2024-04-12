@@ -1,7 +1,6 @@
-package Cli
+package Ui
 
 import (
-	tea "github.com/charmbracelet/bubbletea"
 	"github.com/elliotchance/orderedmap/v2"
 	"github.com/halleck45/ast-metrics/src/Analyzer"
 	"github.com/halleck45/ast-metrics/src/Engine"
@@ -10,34 +9,26 @@ import (
 
 // ComponentBarchartLocByMethodRepartition is the barchart component for the loc repartition
 type ComponentBarchartLocByMethodRepartition struct {
-	aggregated Analyzer.Aggregated
-	files      []*pb.File
-}
-
-// NewComponentBarchartLocByMethodRepartition is the constructor for the ComponentBarchartLocByMethodRepartition
-func NewComponentBarchartLocByMethodRepartition(aggregated Analyzer.Aggregated, files []*pb.File) *ComponentBarchartLocByMethodRepartition {
-	return &ComponentBarchartLocByMethodRepartition{
-		aggregated: aggregated,
-		files:      files,
-	}
+	Aggregated Analyzer.Aggregated
+	Files      []*pb.File
 }
 
 // Render is the method to render the component
-func (c *ComponentBarchartLocByMethodRepartition) Render() string {
+func (c *ComponentBarchartLocByMethodRepartition) AsTerminalElement() string {
 	dataOrdered := c.GetData()
 	data := make(map[string]float64)
 	for _, k := range dataOrdered.Keys() {
 		value, _ := dataOrdered.Get(k)
 		data[k] = value
 	}
-	graph := NewComponentBarchart(data)
+	graph := ComponentBarchart{data: data}
 	graph.height = 5
 	graph.barWidth = 6
-	return graph.Render()
+	return graph.AsTerminalElement()
 }
 
 // Render Html
-func (c *ComponentBarchartLocByMethodRepartition) RenderHTML() string {
+func (c *ComponentBarchartLocByMethodRepartition) AsHtml() string {
 	data := c.GetData()
 	return Engine.HtmlChartLine(data, "Number of files", "chart-loc-by-method")
 }
@@ -52,7 +43,7 @@ func (c *ComponentBarchartLocByMethodRepartition) GetData() *orderedmap.OrderedM
 	}
 
 	// repartition of files by LOC
-	for _, file := range c.files {
+	for _, file := range c.Files {
 		functions := Engine.GetFunctionsInFile(file)
 		for _, funct := range functions {
 			if funct.Stmts.Analyze == nil {
@@ -70,8 +61,4 @@ func (c *ComponentBarchartLocByMethodRepartition) GetData() *orderedmap.OrderedM
 	}
 
 	return data
-}
-
-// Update is the method to update the component
-func (c *ComponentBarchartLocByMethodRepartition) Update(msg tea.Msg) {
 }

@@ -1,7 +1,6 @@
-package Cli
+package Ui
 
 import (
-	tea "github.com/charmbracelet/bubbletea"
 	"github.com/elliotchance/orderedmap/v2"
 	"github.com/halleck45/ast-metrics/src/Analyzer"
 	"github.com/halleck45/ast-metrics/src/Engine"
@@ -10,35 +9,27 @@ import (
 
 // ComponentBarchartMaintainabilityIndexRepartition is the barchart component for the loc repartition
 type ComponentBarchartMaintainabilityIndexRepartition struct {
-	aggregated Analyzer.Aggregated
-	files      []*pb.File
-}
-
-// NewComponentBarchartMaintainabilityIndexRepartition is the constructor for the ComponentBarchartMaintainabilityIndexRepartition
-func NewComponentBarchartMaintainabilityIndexRepartition(aggregated Analyzer.Aggregated, files []*pb.File) *ComponentBarchartMaintainabilityIndexRepartition {
-	return &ComponentBarchartMaintainabilityIndexRepartition{
-		aggregated: aggregated,
-		files:      files,
-	}
+	Aggregated Analyzer.Aggregated
+	Files      []*pb.File
 }
 
 // render as HTML
-func (c *ComponentBarchartMaintainabilityIndexRepartition) RenderHTML() string {
+func (c *ComponentBarchartMaintainabilityIndexRepartition) AsHtml() string {
 	data := c.GetData()
 	return Engine.HtmlChartLine(data, "Number of files", "chart-mi")
 }
 
 // Render is the method to render the component
-func (c *ComponentBarchartMaintainabilityIndexRepartition) Render() string {
+func (c *ComponentBarchartMaintainabilityIndexRepartition) AsTerminalElement() string {
 	dataOrdered := c.GetData()
 	data := make(map[string]float64)
 	for _, k := range dataOrdered.Keys() {
 		value, _ := dataOrdered.Get(k)
 		data[k] = value
 	}
-	graph := NewComponentBarchart(data)
+	graph := ComponentBarchart{data: data}
 	graph.height = 5
-	return graph.Render()
+	return graph.AsTerminalElement()
 }
 
 // GetData returns the data for the barchart
@@ -52,7 +43,7 @@ func (c *ComponentBarchartMaintainabilityIndexRepartition) GetData() *orderedmap
 	}
 
 	// repartition of files by LOC
-	for _, file := range c.files {
+	for _, file := range c.Files {
 		classes := Engine.GetClassesInFile(file)
 
 		if classes == nil || len(classes) == 0 {
@@ -84,8 +75,4 @@ func (c *ComponentBarchartMaintainabilityIndexRepartition) GetData() *orderedmap
 	}
 
 	return data
-}
-
-// Update is the method to update the component
-func (c *ComponentBarchartMaintainabilityIndexRepartition) Update(msg tea.Msg) {
 }
