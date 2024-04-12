@@ -76,8 +76,6 @@ func (m modelScreenSummary) View() string {
 
 	in := `## Complexity
 
-   ### Cyclomatic complexity
-
    *Cyclomatic Complexity is a measure of the number of linearly independent paths through a program's source code.
    More you have paths, more your code is complex.*
 
@@ -88,25 +86,6 @@ func (m modelScreenSummary) View() string {
 		` | ` + strconv.Itoa(combined.MaxCyclomaticComplexity) +
 		` | ` + fmt.Sprintf("%.2f", combined.AverageCyclomaticComplexityPerClass) +
 		` | ` + fmt.Sprintf("%.2f", combined.AverageCyclomaticComplexityPerMethod) +
-		` |
-
-   ### Halstead metrics
-
-   *Halstead metrics are software metrics introduced to empirically determine the complexity of a program.*
-
-   | | Difficulty | Effort | Volume | Time |
-   | --- | --- | --- | --- | --- |
-    ` +
-		` | Total` +
-		` | ` + fmt.Sprintf("%.2f", aggregatedByClass.SumHalsteadDifficulty) +
-		` | ` + fmt.Sprintf("%.2f", aggregatedByClass.SumHalsteadEffort) +
-		` | ` + fmt.Sprintf("%.2f", aggregatedByClass.SumHalsteadVolume) +
-		` | ` + fmt.Sprintf("%.2f", aggregatedByClass.SumHalsteadTime) +
-		"\n | Average per class" +
-		` | ` + fmt.Sprintf("%.2f", aggregatedByClass.AverageHalsteadDifficulty) +
-		` | ` + fmt.Sprintf("%.2f", aggregatedByClass.AverageHalsteadEffort) +
-		` | ` + fmt.Sprintf("%.2f", aggregatedByClass.AverageHalsteadVolume) +
-		` | ` + fmt.Sprintf("%.2f", aggregatedByClass.AverageHalsteadTime) +
 		` |
 
    ### Classes and methods
@@ -131,9 +110,10 @@ func (m modelScreenSummary) View() string {
 	out, _ := glamour.Render(in, "dark")
 
 	// tempporary disabled
-	out = ""
+	// out = ""
 
 	return StyleScreen(StyleTitle("Results overview").Render() +
 		"\n" + row1 +
+		StyleHowToQuit("").Render() +
 		"\n" + out).Render()
 }

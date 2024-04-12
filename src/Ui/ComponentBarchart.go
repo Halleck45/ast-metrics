@@ -1,26 +1,16 @@
-package Cli
+package Ui
 
 import (
-	tea "github.com/charmbracelet/bubbletea"
 	"github.com/evandro-slv/go-cli-charts/bar"
 )
 
-// ComponentBarchart is the barchart component
 type ComponentBarchart struct {
 	data     map[string]float64
 	height   int
 	barWidth int
 }
 
-// NewComponentBarchart is the constructor for the ComponentBarchart
-func NewComponentBarchart(data map[string]float64) *ComponentBarchart {
-	return &ComponentBarchart{
-		data: data,
-	}
-}
-
-// Render is the method to render the component
-func (c *ComponentBarchart) Render() string {
+func (c *ComponentBarchart) AsTerminalElement() string {
 
 	if c.height == 0 {
 		c.height = 3
@@ -48,8 +38,4 @@ func (c *ComponentBarchart) Render() string {
 		},
 	})
 	return graph
-}
-
-// Update is the method to update the component
-func (c *ComponentBarchart) Update(msg tea.Msg) {
 }

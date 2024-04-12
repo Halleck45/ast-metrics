@@ -11,9 +11,9 @@ import (
 
 	"github.com/flosch/pongo2/v5"
 	"github.com/halleck45/ast-metrics/src/Analyzer"
-	"github.com/halleck45/ast-metrics/src/Cli"
 	"github.com/halleck45/ast-metrics/src/Engine"
 	pb "github.com/halleck45/ast-metrics/src/NodeType"
+	"github.com/halleck45/ast-metrics/src/Ui"
 )
 
 var (
@@ -283,8 +283,11 @@ func (v *HtmlReportGenerator) RegisterFilters() {
 		files := aggregated.ConcernedFiles
 
 		// create the component
-		comp := Cli.NewComponentBarchartCyclomaticByMethodRepartition(aggregated, files)
-		return pongo2.AsSafeValue(comp.RenderHTML()), nil
+		comp := Ui.ComponentBarchartCyclomaticByMethodRepartition{
+			Aggregated: aggregated,
+			Files:      files,
+		}
+		return pongo2.AsSafeValue(comp.AsHtml()), nil
 	})
 
 	// filter barchartCyclomaticByMethodRepartition
@@ -294,8 +297,11 @@ func (v *HtmlReportGenerator) RegisterFilters() {
 		files := aggregated.ConcernedFiles
 
 		// create the component
-		comp := Cli.NewComponentBarchartCyclomaticByMethodRepartition(aggregated, files)
-		return pongo2.AsSafeValue(comp.RenderHTML()), nil
+		comp := Ui.ComponentBarchartCyclomaticByMethodRepartition{
+			Aggregated: aggregated,
+			Files:      files,
+		}
+		return pongo2.AsSafeValue(comp.AsHtml()), nil
 	})
 
 	// filter barchartMaintainabilityIndexRepartition
@@ -305,8 +311,11 @@ func (v *HtmlReportGenerator) RegisterFilters() {
 		files := aggregated.ConcernedFiles
 
 		// create the component
-		comp := Cli.NewComponentBarchartMaintainabilityIndexRepartition(aggregated, files)
-		return pongo2.AsSafeValue(comp.RenderHTML()), nil
+		comp := Ui.ComponentBarchartMaintainabilityIndexRepartition{
+			Aggregated: aggregated,
+			Files:      files,
+		}
+		return pongo2.AsSafeValue(comp.AsHtml()), nil
 	})
 
 	// filter barchartLocPerMethodRepartition
@@ -316,8 +325,11 @@ func (v *HtmlReportGenerator) RegisterFilters() {
 		files := aggregated.ConcernedFiles
 
 		// create the component
-		comp := Cli.NewComponentBarchartLocByMethodRepartition(aggregated, files)
-		return pongo2.AsSafeValue(comp.RenderHTML()), nil
+		comp := Ui.ComponentBarchartLocByMethodRepartition{
+			Aggregated: aggregated,
+			Files:      files,
+		}
+		return pongo2.AsSafeValue(comp.AsHtml()), nil
 	})
 
 	// filter lineChartGitActivity
@@ -327,8 +339,11 @@ func (v *HtmlReportGenerator) RegisterFilters() {
 		files := aggregated.ConcernedFiles
 
 		// create the component
-		comp := Cli.NewComponentLineChartGitActivity(aggregated, files)
-		return pongo2.AsSafeValue(comp.RenderHTML()), nil
+		comp := Ui.ComponentLineChartGitActivity{
+			Aggregated: aggregated,
+			Files:      files,
+		}
+		return pongo2.AsSafeValue(comp.AsHtml()), nil
 	})
 
 	// filter convertOneFileToCollection

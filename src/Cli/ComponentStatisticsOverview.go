@@ -7,6 +7,7 @@ import (
 	"github.com/charmbracelet/lipgloss"
 	"github.com/halleck45/ast-metrics/src/Analyzer"
 	pb "github.com/halleck45/ast-metrics/src/NodeType"
+	"github.com/halleck45/ast-metrics/src/Ui"
 )
 
 type ComponentStatisticsOverview struct {
@@ -24,26 +25,37 @@ func NewComponentStatisticsOverview(files []*pb.File, aggregated Analyzer.Aggreg
 
 func (v *ComponentStatisticsOverview) Render() string {
 
-	// Screen is composed from differents boxes
-	chartRepartitionCyclomatic := NewComponentBarchartCyclomaticByMethodRepartition(v.aggregated, v.files)
+	// Cyclomatic complexity repartition
+	chartRepartitionCyclomatic := Ui.ComponentBarchartCyclomaticByMethodRepartition{
+		Aggregated: v.aggregated,
+		Files:      v.files,
+	}
 	boxCcn := StyleNumberBox(
 		fmt.Sprintf("%.2f", v.aggregated.AverageCyclomaticComplexityPerMethod),
 		"Cycl. complexity per method",
-		chartRepartitionCyclomatic.Render()+"     ",
+		chartRepartitionCyclomatic.AsTerminalElement(),
 	)
-	chartRepartitionLocByMethod := NewComponentBarchartLocByMethodRepartition(v.aggregated, v.files)
+
+	// LOC repartition
+	chartRepartitionLocByMethod := Ui.ComponentBarchartLocByMethodRepartition{
+		Aggregated: v.aggregated,
+		Files:      v.files,
+	}
 	boxMethods := StyleNumberBox(
 		fmt.Sprintf("%.2f", v.aggregated.AverageLocPerMethod),
 		"Average LOC per method",
-		chartRepartitionLocByMethod.Render()+"     ",
+		chartRepartitionLocByMethod.AsTerminalElement()+"     ",
 	)
 
 	// MI repartition
-	chartRepartitionMI := NewComponentBarchartMaintainabilityIndexRepartition(v.aggregated, v.files)
+	chartRepartitionMI := Ui.ComponentBarchartMaintainabilityIndexRepartition{
+		Aggregated: v.aggregated,
+		Files:      v.files,
+	}
 	boxMaintainability := StyleNumberBox(
 		DecorateMaintainabilityIndex(int(v.aggregated.AverageMI), nil),
 		"Maintainability index",
-		chartRepartitionMI.Render(),
+		chartRepartitionMI.AsTerminalElement(),
 	)
 
 	row1 := lipgloss.JoinHorizontal(lipgloss.Top, boxCcn.Render(), boxMethods.Render(), boxMaintainability.Render())

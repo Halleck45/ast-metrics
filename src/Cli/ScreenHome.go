@@ -133,9 +133,13 @@ func fillInScreens(modelChoices *modelChoices) {
 	// Create the Risk screen
 	viewRisks := NewScreenRisks(true, modelChoices.files, modelChoices.projectAggregated)
 
+	// Create the html report screen
+	viewHtmlReport := NewScreenHtmlReport(true, modelChoices.files, modelChoices.projectAggregated)
+
 	// Create the screen list
 	modelChoices.screens = []Screen{
 		&summaryScreen,
+		&viewHtmlReport,
 		&viewTableClass,
 		&viewRisks,
 	}
