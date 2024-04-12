@@ -42,6 +42,16 @@ func StyleTitle(text string) lipgloss.Style {
 	return titleStyle.Width(windowWidth()).SetString(text)
 }
 
+func StyleHowToQuit(text string) lipgloss.Style {
+	if text == "" {
+		text = "Press 'Ctrl + C' to quit"
+	}
+	return lipgloss.NewStyle().
+		Width(windowWidth()).
+		SetString(text).
+		MarginTop(2).Align(lipgloss.Center)
+}
+
 func StyleSubTitle(text string) lipgloss.Style {
 	return subtitleStyle.Width(windowWidth()).SetString(text)
 }

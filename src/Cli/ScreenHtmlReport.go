@@ -91,7 +91,5 @@ func (m modelScreenHtmlReport) View() string {
 	return StyleScreen(
 		StyleTitle("HTML report").Render() +
 			box.Render("Report generated at: "+destination) +
-			"\n\nPress 'Ctrl + C' to go back to the main screen.").
-		Align(lipgloss.Center).
-		Render()
+			StyleHowToQuit("").Render()).Render()
 }
