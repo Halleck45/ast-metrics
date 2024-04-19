@@ -1,64 +1,75 @@
 package Configuration
 
 import (
-	"errors"
-	"os"
+    "errors"
+    "os"
 
-	"gopkg.in/yaml.v3"
+    "gopkg.in/yaml.v3"
 )
 
 type ConfigurationLoader struct {
-	FilenameToChecks []string
+    FilenameToChecks []string
 }
 
 func NewConfigurationLoader() *ConfigurationLoader {
-	return &ConfigurationLoader{
-		FilenameToChecks: []string{
-			".ast-metrics.yaml",
-			".ast-metrics.dist.yaml",
-		},
-	}
+    return &ConfigurationLoader{
+        FilenameToChecks: []string{
+            ".ast-metrics.yaml",
+            ".ast-metrics.dist.yaml",
+        },
+    }
 }
 
 func (c *ConfigurationLoader) Loads(cfg *Configuration) (*Configuration, error) {
-	// Load configuration file
-	for _, filename := range c.FilenameToChecks {
+    // Load configuration file
+    for _, filename := range c.FilenameToChecks {
 
-		if _, err := os.Stat(filename); err == nil {
+        if _, err := os.Stat(filename); err == nil {
 
-			// Load configuration
-			f, err := os.Open(filename)
-			if err != nil {
-				return cfg, err
-			}
-			defer f.Close()
+            // Load configuration
+            f, err := os.Open(filename)
+            if err != nil {
+                return cfg, err
+            }
+            defer f.Close()
 
-			decoder := yaml.NewDecoder(f)
-			err = decoder.Decode(&cfg)
-			if err != nil {
-				return cfg, err
-			}
+            decoder := yaml.NewDecoder(f)
+            err = decoder.Decode(&cfg)
+            if err != nil {
+                return cfg, err
+            }
 
-			return cfg, nil
-		}
-	}
+            return cfg, nil
+        }
+    }
 
-	return cfg, nil
+    return cfg, nil
+}
+
+func (c *ConfigurationLoader) Import(yamlString string) (*Configuration, error) {
+    // Load YAML string into configuration
+    cfg := &Configuration{}
+    err := yaml.Unmarshal([]byte(yamlString), cfg)
+    if err != nil {
+        return cfg, err
+    }
+
+    return cfg, nil
 }
 
 func (c *ConfigurationLoader) CreateDefaultFile() error {
-	if len(c.FilenameToChecks) == 0 {
-		return errors.New("No filename to check")
-	}
-	filename := c.FilenameToChecks[0]
+    if len(c.FilenameToChecks) == 0 {
+        return errors.New("No filename to check")
+    }
+    filename := c.FilenameToChecks[0]
 
-	// Create default configuration file
-	f, err := os.Create(filename)
-	if err != nil {
-		return err
-	}
+    // Create default configuration file
+    f, err := os.Create(filename)
+    if err != nil {
+        return err
+    }
 
-	_, err = f.WriteString(`# AST Metrics configuration file
+    _, err = f.WriteString(`# AST Metrics configuration file
 # This file is used to configure AST Metrics
 # You can find more information at https://github.com/Halleck45/ast-metrics/
 
@@ -79,30 +90,34 @@ reports:
 # Requirements. If a file does not meet these requirements, it will be reported
 requirements:
   rules:
-  	fail_on_error: true
+    fail_on_error: true
 
-	# Complexity of the code
+    # Maintainability of the code
+    maintainability:
+      min: 85
+
+    # Complexity of the code
     cyclomatic_complexity:
-	  max: 10
-	  exclude: []
+      max: 10
+      exclude: []
 
-	# Number of lines of code
-	loc:
-	  max: 100
-	  exclude: []
+    # Number of lines of code
+    loc:
+      max: 100
+      exclude: []
 
-	# Coupling between components
-	coupling:
-	  forbidden: 
-	  	# Fails if a Model is used in a Controller
-		# Regular expression is used
-	    - from: "Model"
-		  to: "Controller"
+    # Coupling between components
+    coupling:
+      forbidden: 
+          # Fails if a Model is used in a Controller
+        # Regular expression is used
+        - from: "Model"
+          to: "Controller"
 `)
 
-	if err != nil {
-		return err
-	}
+    if err != nil {
+        return err
+    }
 
-	return nil
+    return nil
 }

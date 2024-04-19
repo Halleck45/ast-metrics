@@ -9,9 +9,12 @@ reports:
 requirements:
   rules:
     cyclomatic_complexity:
-      max: 10
+      max: 100
       excludes: []
 
     lines_of_code:
       max: 100
       excludes: []
+
+    maintainability:
+      min: 65

@@ -25,6 +25,7 @@ reports:
 
 requirements:
   rules:
+    # with comment
     cyclomatic_complexity:
       max: 10
       excludes: []
@@ -89,12 +90,15 @@ func TestCreateDefaultFile(t *testing.T) {
 	loader := NewConfigurationLoader()
 
 	err := loader.CreateDefaultFile()
+	defer os.Remove(".ast-metrics.yaml")
 	assert.NoError(t, err)
 
 	// Check if the file was created
 	_, err = os.Stat(".ast-metrics.yaml")
 	assert.NoError(t, err)
 
-	// Clean up
-	os.Remove(".ast-metrics.yaml")
+	// Check if the file is parsable
+	cfg, err := loader.Loads(&Configuration{})
+	assert.NoError(t, err)
+	assert.NotNil(t, cfg)
 }

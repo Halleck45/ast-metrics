@@ -30,6 +30,7 @@ type ConfigurationRequirements struct {
 	Rules *struct {
 		CyclomaticComplexity *ConfigurationDefaultRule `yaml:"cyclomatic_complexity"`
 		Loc                  *ConfigurationDefaultRule `yaml:"loc"`
+		Maintainability      *ConfigurationDefaultRule `yaml:"maintainability"`
 		Coupling             *struct {
 			Forbidden []struct {
 				From string `yaml:"from"`
@@ -43,6 +44,7 @@ type ConfigurationRequirements struct {
 
 type ConfigurationDefaultRule struct {
 	Max             int      `yaml:"max"`
+	Min             int      `yaml:"min"`
 	ExcludePatterns []string `yaml:"exclude"`
 }
 

@@ -102,6 +102,11 @@ func (v *MaintainabilityIndexVisitor) Calculate(stmts *pb.Stmts) {
 		stmts.Analyze.Maintainability = &pb.Maintainability{}
 	}
 
+	if loc == 0 {
+		// when class has no code
+		MI32 = float32(171)
+	}
+
 	stmts.Analyze.Maintainability.MaintainabilityIndex = &MI32
 	stmts.Analyze.Maintainability.MaintainabilityIndexWithoutComments = &MIwoC32
 	stmts.Analyze.Maintainability.CommentWeight = &commentWeight32
