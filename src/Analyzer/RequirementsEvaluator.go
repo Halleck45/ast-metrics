@@ -24,6 +24,13 @@ func NewRequirementsEvaluator(requirements Configuration.ConfigurationRequiremen
 	return &RequirementsEvaluator{Requirements: requirements}
 }
 
+// Rules with boundaries, to evaluate
+type BoundariesRule struct {
+	Name  string
+	Rule  *Configuration.ConfigurationDefaultRule
+	Label string
+}
+
 func (r *RequirementsEvaluator) Evaluate(files []*pb.File, projectAggregated ProjectAggregated) EvaluationResult {
 	evaluation := EvaluationResult{
 		Files:             files,
@@ -37,54 +44,31 @@ func (r *RequirementsEvaluator) Evaluate(files []*pb.File, projectAggregated Pro
 		return evaluation
 	}
 
-	// Cyclomatic
-	if r.Requirements.Rules.CyclomaticComplexity != nil {
-		cyclomatic := r.Requirements.Rules.CyclomaticComplexity
-		excludedFiles := cyclomatic.ExcludePatterns
-		for _, file := range files {
-
-			// if the file is excluded, we skip it (use regular expression)
-			excluded := false
-			if excludedFiles != nil {
-				for _, pattern := range excludedFiles {
-					if regexp.MustCompile(pattern).MatchString(file.Path) {
-						excluded = true
-						break
-					}
-				}
-			}
-
-			if excluded {
-				continue
-			}
-
-			if file.Stmts.Analyze.Complexity == nil {
-				continue
-			}
-
-			if int(*file.Stmts.Analyze.Complexity.Cyclomatic) > cyclomatic.Max {
-				evaluation.Errors = append(evaluation.Errors, fmt.Sprintf("Cyclomatic complexity too high in file %s: got %d (max: %d)", file.Path, *file.Stmts.Analyze.Complexity.Cyclomatic, cyclomatic.Max))
-			} else {
-				evaluation.Successes = append(evaluation.Successes, "Cyclomatic complexity OK in file "+file.Path)
-			}
-		}
+	rulesToCheck := []BoundariesRule{
+		{Name: "cyclomatic", Rule: r.Requirements.Rules.CyclomaticComplexity, Label: "Cyclomatic complexity"},
+		{Name: "loc", Rule: r.Requirements.Rules.Loc, Label: "Lines of code"},
+		{Name: "maintainability", Rule: r.Requirements.Rules.Maintainability, Label: "Maintainability"},
 	}
 
-	// Lines of code
-	if r.Requirements.Rules.Loc != nil {
-		loc := r.Requirements.Rules.Loc
-		excludedFiles := loc.ExcludePatterns
+	for _, rule := range rulesToCheck {
+
+		if rule.Rule == nil {
+			continue
+		}
+
+		excludedFiles := []string{}
+		if rule.Rule.ExcludePatterns != nil {
+			excludedFiles = rule.Rule.ExcludePatterns
+		}
 
 		for _, file := range files {
 
 			// if the file is excluded, we skip it (use regular expression)
 			excluded := false
-			if excludedFiles != nil {
-				for _, pattern := range excludedFiles {
-					if regexp.MustCompile(pattern).MatchString(file.Path) {
-						excluded = true
-						break
-					}
+			for _, pattern := range excludedFiles {
+				if regexp.MustCompile(pattern).MatchString(file.Path) {
+					excluded = true
+					break
 				}
 			}
 
@@ -92,15 +76,30 @@ func (r *RequirementsEvaluator) Evaluate(files []*pb.File, projectAggregated Pro
 				continue
 			}
 
-			if file.Stmts.Analyze == nil || file.Stmts.Analyze.Volume.Loc == nil {
-				continue
+			valueOfMetric := 0
+			switch rule.Name {
+			case "cyclomatic":
+				if file.Stmts.Analyze.Complexity == nil || file.Stmts.Analyze.Complexity.Cyclomatic == nil {
+					continue
+				}
+				valueOfMetric = int(*file.Stmts.Analyze.Complexity.Cyclomatic)
+				r.EvaluateRule(rule, valueOfMetric, file, &evaluation)
+			case "loc":
+				if file.Stmts.Analyze.Volume == nil || file.Stmts.Analyze.Volume.Loc == nil {
+					continue
+				}
+				valueOfMetric = int(*file.Stmts.Analyze.Volume.Loc)
+				r.EvaluateRule(rule, valueOfMetric, file, &evaluation)
+			case "maintainability":
+				for _, class := range file.Stmts.StmtClass {
+					if class.Stmts.Analyze.Maintainability == nil || class.Stmts.Analyze.Maintainability.MaintainabilityIndex == nil {
+						continue
+					}
+					valueOfMetric = int(*class.Stmts.Analyze.Maintainability.MaintainabilityIndex)
+					r.EvaluateRule(rule, valueOfMetric, file, &evaluation)
+				}
 			}
 
-			if int(*file.Stmts.Analyze.Volume.Loc) > loc.Max {
-				evaluation.Errors = append(evaluation.Errors, fmt.Sprintf("Lines of code too high in file %s: got %d (max: %d)", file.Path, *file.Stmts.Analyze.Volume.Loc, loc.Max))
-			} else {
-				evaluation.Successes = append(evaluation.Successes, "Lines of code OK in file "+file.Path)
-			}
 		}
 	}
 
@@ -145,4 +144,22 @@ func (r *RequirementsEvaluator) Evaluate(files []*pb.File, projectAggregated Pro
 	}
 
 	return evaluation
+}
+
+func (r *RequirementsEvaluator) EvaluateRule(rule BoundariesRule, valueOfMetric int, file *pb.File, evaluation *EvaluationResult) {
+
+	maxExpected := rule.Rule.Max
+	minExpected := rule.Rule.Min
+
+	if maxExpected > 0 && valueOfMetric > maxExpected {
+		evaluation.Errors = append(evaluation.Errors, fmt.Sprintf("%s too high in file %s: got %d (max: %d)", rule.Label, file.Path, valueOfMetric, maxExpected))
+		return
+	}
+
+	if minExpected > 0 && valueOfMetric < minExpected {
+		evaluation.Errors = append(evaluation.Errors, fmt.Sprintf("%s too low in file %s: got %d (min: %d)", rule.Label, file.Path, valueOfMetric, minExpected))
+		return
+	}
+
+	evaluation.Successes = append(evaluation.Successes, fmt.Sprintf("%s OK in file %s", rule.Label, file.Path))
 }
