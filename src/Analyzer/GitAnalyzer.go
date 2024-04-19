@@ -92,21 +92,10 @@ func (gitAnalyzer *GitAnalyzer) CalculateCount(files []*pb.File) []ResultOfGitAn
 		committersOnRepository := make(map[string]bool)
 
 		// Map of files, by relative path
-		filesByRelativePathInRepository := make(map[string]*pb.File)
+		filesByPathInRepository := make(map[string]*pb.File)
 
 		// Map of committers by file
 		committersByFile := make(map[string]map[string]bool)
-
-		for _, file := range filesByGitRepo[repoRoot] {
-			// Add file to filesByRelativePathInRepository map
-			relativePath := file.Path[len(repoRoot)+1:]
-			if _, ok := filesByRelativePathInRepository[relativePath]; !ok {
-				filesByRelativePathInRepository[relativePath] = file
-			}
-
-			// Add file to committersByFile map
-			committersByFile[relativePath] = make(map[string]bool)
-		}
 
 		// Check if repo is a git repository, using the shell command "git rev-parse --is-inside-work-tree"
 		// If not, continue to the next repository
@@ -118,10 +107,34 @@ func (gitAnalyzer *GitAnalyzer) CalculateCount(files []*pb.File) []ResultOfGitAn
 			continue
 		}
 
+		// Get the git root absolute dir
+		cmd = exec.Command("git", "rev-parse", "--show-toplevel")
+		cmd.Dir = repoRoot
+		out, err := cmd.Output()
+		if err != nil {
+			log.Error("Error: ", err)
+			continue
+		}
+		repoRootAbsolute := strings.TrimSpace(string(out))
+
+		for _, file := range filesByGitRepo[repoRoot] {
+			// Add file to filesByPathInRepository map
+			absolutePath := file.Path
+			if !filepath.IsAbs(file.Path) {
+				absolutePath = filepath.Join(repoRootAbsolute, file.Path)
+			}
+
+			if _, ok := filesByPathInRepository[absolutePath]; !ok {
+				filesByPathInRepository[absolutePath] = file
+			}
+			// Add file to committersByFile map
+			committersByFile[absolutePath] = make(map[string]bool)
+		}
+
 		// Get all commits since one year (only sha1)
 		cmd = exec.Command("git", "--no-pager", "log", "--pretty=format:%H", "--since=1.year")
 		cmd.Dir = repoRoot
-		out, err := cmd.Output()
+		out, err = cmd.Output()
 		if err != nil {
 			log.Error("Error: ", err)
 			continue
@@ -187,8 +200,10 @@ func (gitAnalyzer *GitAnalyzer) CalculateCount(files []*pb.File) []ResultOfGitAn
 
 			for _, file := range impactedFiles {
 
+				file = filepath.Join(repoRootAbsolute, file)
+
 				// if file is not in the map, continue
-				if _, ok := filesByRelativePathInRepository[file]; !ok {
+				if _, ok := filesByPathInRepository[file]; !ok {
 					// This case is normal, and occurs when a file is ignored
 					// or not in the list of files to analyze
 					nbFilesNotConcerned++
@@ -207,8 +222,8 @@ func (gitAnalyzer *GitAnalyzer) CalculateCount(files []*pb.File) []ResultOfGitAn
 					Date:   int64(timestamp),
 					Author: authorEmail,
 				}
-				filesByRelativePathInRepository[file].Commits.Count++
-				filesByRelativePathInRepository[file].Commits.Commits = append(filesByRelativePathInRepository[file].Commits.Commits, commit)
+				filesByPathInRepository[file].Commits.Count++
+				filesByPathInRepository[file].Commits.Commits = append(filesByPathInRepository[file].Commits.Commits, commit)
 
 				// add committer to the map
 				committersByFile[file][authorEmail] = true
@@ -225,14 +240,14 @@ func (gitAnalyzer *GitAnalyzer) CalculateCount(files []*pb.File) []ResultOfGitAn
 
 		// Count committers
 		for file, committers := range committersByFile {
-			filesByRelativePathInRepository[file].Commits.CountCommiters = 0
-			if filesByRelativePathInRepository[file].Commits == nil {
-				filesByRelativePathInRepository[file].Commits.CountCommiters = int32(len(committers))
+			filesByPathInRepository[file].Commits.CountCommiters = 0
+			if filesByPathInRepository[file].Commits == nil {
+				filesByPathInRepository[file].Commits.CountCommiters = int32(len(committers))
 			}
 
 			// creation commit is counted
-			if filesByRelativePathInRepository[file].Commits.Count == 0 {
-				filesByRelativePathInRepository[file].Commits.CountCommiters = 1
+			if filesByPathInRepository[file].Commits.Count == 0 {
+				filesByPathInRepository[file].Commits.CountCommiters = 1
 			}
 		}
 
