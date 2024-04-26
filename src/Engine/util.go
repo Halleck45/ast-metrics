@@ -1,11 +1,7 @@
 package Engine
 
 import (
-	"crypto/md5"
-	"encoding/hex"
-	"errors"
 	"fmt"
-	"io"
 	"os"
 	"strings"
 
@@ -85,26 +81,6 @@ func DumpProtobuf(file *pb.File, binPath string) error {
 	return nil
 }
 
-func UnmarshalProtobuf(file string) (*pb.File, error) {
-	pbFile := &pb.File{}
-
-	// load AST via ProtoBuf (using NodeType package)
-	in, err := os.ReadFile(file)
-	if err != nil {
-		return nil, err
-	}
-
-	// if file is empty, return
-	if len(in) == 0 {
-		return nil, errors.New("File is empty: " + file)
-	}
-
-	if err := proto.Unmarshal(in, pbFile); err != nil {
-		return nil, err
-	}
-
-	return pbFile, nil
-}
 
 // FactoryStmts returns a new instance of Stmts
 func FactoryStmts() *pb.Stmts {
@@ -118,22 +94,6 @@ func FactoryStmts() *pb.Stmts {
 	stmts.StmtClass = []*pb.StmtClass{}
 
 	return stmts
-}
-
-// Provides the hash of a file, in order to avoid to parse it twice
-func GetFileHash(filePath string) (string, error) {
-	file, err := os.Open(filePath)
-	if err != nil {
-		return "", err
-	}
-	defer file.Close()
-
-	hasher := md5.New()
-	if _, err := io.Copy(hasher, file); err != nil {
-		return "", err
-	}
-
-	return hex.EncodeToString(hasher.Sum(nil)), nil
 }
 
 func GetClassesInFile(file *pb.File) []*pb.StmtClass {

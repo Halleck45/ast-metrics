@@ -6,6 +6,7 @@ import (
 
 	"github.com/halleck45/ast-metrics/src/Engine"
 	pb "github.com/halleck45/ast-metrics/src/NodeType"
+	"github.com/halleck45/ast-metrics/src/Scm"
 )
 
 type ProjectAggregated struct {
@@ -15,10 +16,12 @@ type ProjectAggregated struct {
 	ByProgrammingLanguage map[string]Aggregated
 	ErroredFiles          []*pb.File
 	Evaluation            *EvaluationResult
+	Comparaison           *ProjectComparaison
 }
 
 type Aggregated struct {
 	ConcernedFiles []*pb.File
+	Comparaison    *Comparaison
 	// hashmap of classes, just with the qualified name, used for afferent coupling calculation
 	ClassesAfferentCoupling              map[string]int
 	NbFiles                              int
@@ -64,11 +67,19 @@ type Aggregated struct {
 	PackageRelations                     map[string]map[string]int // counter of dependencies. Ex: A -> B -> 2
 }
 
+type ProjectComparaison struct {
+	ByFile                Comparaison
+	ByClass               Comparaison
+	Combined              Comparaison
+	ByProgrammingLanguage map[string]Comparaison
+}
+
 type Aggregator struct {
 	files             []*pb.File
 	projectAggregated ProjectAggregated
 	analyzers         []AggregateAnalyzer
 	gitSummaries      []ResultOfGitAnalysis
+	ComparaidFiles    []*pb.File
 }
 
 type TopCommitter struct {
@@ -83,13 +94,13 @@ type ResultOfGitAnalysis struct {
 	CountCommiters          int
 	CountCommitsForLanguage int
 	CountCommitsIgnored     int
+	GitRepository           Scm.GitRepository
 }
 
 func NewAggregator(files []*pb.File, gitSummaries []ResultOfGitAnalysis) *Aggregator {
 	return &Aggregator{
-		files:             files,
-		projectAggregated: ProjectAggregated{},
-		gitSummaries:      gitSummaries,
+		files:        files,
+		gitSummaries: gitSummaries,
 	}
 }
 
@@ -143,24 +154,68 @@ func newAggregated() Aggregated {
 func (r *Aggregator) Aggregates() ProjectAggregated {
 
 	// We create a new aggregated object for each type of aggregation
+	r.projectAggregated = r.executeAggregationOnFiles(r.files)
+
+	// Do the same for the comparaison files (if needed)
+	if r.ComparaidFiles != nil {
+		comparaidAggregated := r.executeAggregationOnFiles(r.ComparaidFiles)
+
+		// Compare
+		comparaison := ProjectComparaison{}
+		comparator := NewComparator()
+		comparaison.Combined = comparator.Compare(r.projectAggregated.Combined, comparaidAggregated.Combined)
+		r.projectAggregated.Combined.Comparaison = &comparaison.Combined
+
+		comparaison.ByClass = comparator.Compare(r.projectAggregated.ByClass, comparaidAggregated.ByClass)
+		r.projectAggregated.ByClass.Comparaison = &comparaison.ByClass
+
+		comparaison.ByFile = comparator.Compare(r.projectAggregated.ByFile, comparaidAggregated.ByFile)
+		r.projectAggregated.ByFile.Comparaison = &comparaison.ByFile
+
+		// By language
+		comparaison.ByProgrammingLanguage = make(map[string]Comparaison)
+		for lng, byLanguage := range r.projectAggregated.ByProgrammingLanguage {
+			if _, ok := comparaidAggregated.ByProgrammingLanguage[lng]; !ok {
+				continue
+			}
+			c := comparator.Compare(byLanguage, comparaidAggregated.ByProgrammingLanguage[lng])
+			comparaison.ByProgrammingLanguage[lng] = c
+
+			// assign to the original object (slow, but otherwise we need to change the whole structure ByProgrammingLanguage map)
+			// @see https://stackoverflow.com/questions/42605337/cannot-assign-to-struct-field-in-a-map
+			// Feel free to change this
+			entry := r.projectAggregated.ByProgrammingLanguage[lng]
+			entry.Comparaison = &c
+			r.projectAggregated.ByProgrammingLanguage[lng] = entry
+		}
+		r.projectAggregated.Comparaison = &comparaison
+	}
+
+	return r.projectAggregated
+}
+
+func (r *Aggregator) executeAggregationOnFiles(files []*pb.File) ProjectAggregated {
+
+	// We create a new aggregated object for each type of aggregation
 	// ByFile, ByClass, Combined
-	r.projectAggregated.ByFile = newAggregated()
-	r.projectAggregated.ByClass = newAggregated()
-	r.projectAggregated.Combined = newAggregated()
+	projectAggregated := ProjectAggregated{}
+	projectAggregated.ByFile = newAggregated()
+	projectAggregated.ByClass = newAggregated()
+	projectAggregated.Combined = newAggregated()
 
 	// Count files
-	r.projectAggregated.ByClass.NbFiles = len(r.files)
-	r.projectAggregated.ByFile.NbFiles = len(r.files)
-	r.projectAggregated.Combined.NbFiles = len(r.files)
+	projectAggregated.ByClass.NbFiles = len(files)
+	projectAggregated.ByFile.NbFiles = len(files)
+	projectAggregated.Combined.NbFiles = len(files)
 
 	// Prepare errors
-	r.projectAggregated.ErroredFiles = make([]*pb.File, 0)
+	projectAggregated.ErroredFiles = make([]*pb.File, 0)
 
-	for _, file := range r.files {
+	for _, file := range files {
 
 		// Files with errors
 		if file.Errors != nil && len(file.Errors) > 0 {
-			r.projectAggregated.ErroredFiles = append(r.projectAggregated.ErroredFiles, file)
+			projectAggregated.ErroredFiles = append(projectAggregated.ErroredFiles, file)
 		}
 
 		if file.Stmts == nil {
@@ -168,40 +223,40 @@ func (r *Aggregator) Aggregates() ProjectAggregated {
 		}
 
 		// By language
-		if r.projectAggregated.ByProgrammingLanguage == nil {
-			r.projectAggregated.ByProgrammingLanguage = make(map[string]Aggregated)
+		if projectAggregated.ByProgrammingLanguage == nil {
+			projectAggregated.ByProgrammingLanguage = make(map[string]Aggregated)
 		}
-		if _, ok := r.projectAggregated.ByProgrammingLanguage[file.ProgrammingLanguage]; !ok {
-			r.projectAggregated.ByProgrammingLanguage[file.ProgrammingLanguage] = newAggregated()
+		if _, ok := projectAggregated.ByProgrammingLanguage[file.ProgrammingLanguage]; !ok {
+			projectAggregated.ByProgrammingLanguage[file.ProgrammingLanguage] = newAggregated()
 
 		}
-		byLanguage := r.projectAggregated.ByProgrammingLanguage[file.ProgrammingLanguage]
+		byLanguage := projectAggregated.ByProgrammingLanguage[file.ProgrammingLanguage]
 		byLanguage.NbFiles++
 
 		// Make calculations: sums of metrics, etc.
-		r.calculateSums(file, &r.projectAggregated.ByFile)
-		r.calculateSums(file, &r.projectAggregated.ByClass)
-		r.calculateSums(file, &r.projectAggregated.Combined)
+		r.calculateSums(file, &projectAggregated.ByFile)
+		r.calculateSums(file, &projectAggregated.ByClass)
+		r.calculateSums(file, &projectAggregated.Combined)
 		r.calculateSums(file, &byLanguage)
-		r.projectAggregated.ByProgrammingLanguage[file.ProgrammingLanguage] = byLanguage
+		projectAggregated.ByProgrammingLanguage[file.ProgrammingLanguage] = byLanguage
 	}
 
 	// Consolidate averages
-	r.consolidate(&r.projectAggregated.ByFile)
-	r.consolidate(&r.projectAggregated.ByClass)
-	r.consolidate(&r.projectAggregated.Combined)
+	r.consolidate(&projectAggregated.ByFile)
+	r.consolidate(&projectAggregated.ByClass)
+	r.consolidate(&projectAggregated.Combined)
 
 	// by language
-	for lng, byLanguage := range r.projectAggregated.ByProgrammingLanguage {
+	for lng, byLanguage := range projectAggregated.ByProgrammingLanguage {
 		r.consolidate(&byLanguage)
-		r.projectAggregated.ByProgrammingLanguage[lng] = byLanguage
+		projectAggregated.ByProgrammingLanguage[lng] = byLanguage
 	}
 
 	// Risks
 	riskAnalyzer := NewRiskAnalyzer()
-	riskAnalyzer.Analyze(r.projectAggregated)
+	riskAnalyzer.Analyze(projectAggregated)
 
-	return r.projectAggregated
+	return projectAggregated
 }
 
 // Consolidate the aggregated data
@@ -406,6 +461,10 @@ func (r *Aggregator) consolidate(aggregated *Aggregated) {
 // You can add multiple analyzers. See the example of RiskAnalyzer
 func (r *Aggregator) WithAggregateAnalyzer(analyzer AggregateAnalyzer) {
 	r.analyzers = append(r.analyzers, analyzer)
+}
+
+func (r *Aggregator) WithComparaison(allResultsCloned []*pb.File) {
+	r.ComparaidFiles = allResultsCloned
 }
 
 // Calculate the aggregated data

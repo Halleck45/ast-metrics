@@ -14,8 +14,9 @@ import (
 func TestAnalyzeCommand_Execute(t *testing.T) {
 	t.Run("TestAnalyzeCommand_Execute", func(t *testing.T) {
 		// Setup
-		Storage.Purge()
-		Storage.Ensure()
+		storage := Storage.Default()
+		storage.Purge()
+		storage.Ensure()
 
 		// HTML report
 		tmpReportHtmlDir := t.TempDir()
@@ -37,6 +38,7 @@ func TestAnalyzeCommand_Execute(t *testing.T) {
 				Html:     tmpReportHtmlDir,
 				Markdown: tmpReportMarkdownDir,
 			},
+			Storage: storage,
 		}
 		// Create a new AnalyzeCommand
 
@@ -52,12 +54,10 @@ func TestAnalyzeCommand_Execute(t *testing.T) {
 			t.Errorf("AnalyzeCommand.Execute() = %s; want it to be nil", err.Error())
 		}
 
-		workdir := t.TempDir()
-
 		// fake pterm *pterm.SpinnerPrinter
 		spinner := pterm.DefaultSpinner
 		// Check if the analysis was done
-		allResults := Analyzer.Start(workdir, &spinner)
+		allResults := Analyzer.Start(storage, &spinner)
 		if allResults == nil {
 			t.Errorf("Analyzer.Start() = nil; want it to not be nil")
 		}

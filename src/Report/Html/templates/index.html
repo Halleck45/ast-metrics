@@ -56,6 +56,9 @@
                         {{ currentView.Loc|stringifyNumber }}
                     </h5>
                     <p class="text-base font-normal text-gray-500 dark:text-gray-400">
+                        {% if currentView.Comparaison %}
+                            {% include 'componentComparaisonBadge.html' with comparaisonMode='dontCare' diff=currentView.Comparaison.Loc round=0 %}
+                        {% endif %}
                         Lines of code
                     </p>
                 </div>
@@ -77,6 +80,9 @@
                         {{ currentView.AverageCyclomaticComplexityPerMethod | floatformat:2 }}
                     </h5>
                     <p class="text-base font-normal text-gray-500 dark:text-gray-400">
+                        {% if currentView.Comparaison %}
+                            {% include 'componentComparaisonBadge.html' with comparaisonMode='lowIsBetter' diff=currentView.Comparaison.AverageCyclomaticComplexityPerMethod round=2 %}
+                        {% endif %}
                         Cycl. complexity per method
                     </p>
                 </div>
@@ -105,6 +111,9 @@
                         <span class="text-white bg-{{ color }}-500 rounded px-3 py-1">{{ currentView.AverageMI | floatformat:0 }}</span>
                     </h5>
                     <p class="text-base font-normal text-gray-500 dark:text-gray-400">
+                        {% if currentView.Comparaison %}
+                            {% include 'componentComparaisonBadge.html' with comparaisonMode='highIsBetter' diff=currentView.Comparaison.AverageMI round=2 %}
+                        {% endif %}
                         Maintainability index
                     </p>
                 </div>
@@ -127,6 +136,9 @@
                         {{ currentView.AverageLocPerMethod | floatformat:0 }}
                     </h5>
                     <p class="text-base font-normal text-gray-500 dark:text-gray-400">
+                        {% if currentView.Comparaison %}
+                            {% include 'componentComparaisonBadge.html' with comparaisonMode='lowIsBetter' diff=currentView.Comparaison.AverageLocPerMethod round=2 %}
+                        {% endif %}
                         Average lines of code per method
                     </p>
                 </div>
@@ -148,7 +160,7 @@
          <!-- start: card -->
          <div class="max-w-2xl px-8 py-4 bg-white rounded-lg shadow-md dark:bg-gray-800">
             <div class="mt-2">
-                {% if currentView.ResultOfGitAnalysis != nil %}
+                {% if currentView.ResultOfGitAnalysis %}
                     <div>
                         <h5 class="leading-none text-3xl font-bold text-gray-900 dark:text-white pb-2">
                             {{ currentView.CommitCountForPeriod | stringifyNumber }}

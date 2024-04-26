@@ -12,7 +12,7 @@ func NewCleanCommand() *CleanCommand {
 }
 
 func (v *CleanCommand) Execute() error {
-    Storage.Purge()
+    Storage.Default().Purge()
     pterm.Success.Println("Workdir cleaned")
     return nil
 }

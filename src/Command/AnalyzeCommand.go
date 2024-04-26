@@ -2,6 +2,7 @@ package Command
 
 import (
 	"bufio"
+	"errors"
 	"os"
 
 	"github.com/fsnotify/fsnotify"
@@ -10,6 +11,7 @@ import (
 	"github.com/halleck45/ast-metrics/src/Cli"
 	"github.com/halleck45/ast-metrics/src/Configuration"
 	"github.com/halleck45/ast-metrics/src/Engine"
+	pb "github.com/halleck45/ast-metrics/src/NodeType"
 	Report "github.com/halleck45/ast-metrics/src/Report/Html"
 	Markdown "github.com/halleck45/ast-metrics/src/Report/Markdown"
 	"github.com/halleck45/ast-metrics/src/Storage"
@@ -44,8 +46,8 @@ func NewAnalyzeCommand(configuration *Configuration.Configuration, outWriter *bu
 func (v *AnalyzeCommand) Execute() error {
 
 	// Prepare workdir
-	Storage.Purge()
-	Storage.Ensure()
+	v.configuration.Storage.Purge()
+	v.configuration.Storage.Ensure()
 
 	if v.alreadyExecuted {
 		// On refresh
@@ -70,52 +72,9 @@ func (v *AnalyzeCommand) Execute() error {
 		v.spinner = nil
 	}
 
-	for _, runner := range v.runners {
-
-		runner.SetConfiguration(v.configuration)
-
-		if runner.IsRequired() {
-
-			var progressBarSpecificForEngine *pterm.ProgressbarPrinter = nil
-			if v.spinner != nil {
-				progressBarSpecificForEngine, _ := pterm.DefaultSpinner.WithWriter(v.multi.NewWriter()).Start("...")
-				progressBarSpecificForEngine.RemoveWhenDone = true
-				runner.SetProgressbar(progressBarSpecificForEngine)
-			}
-
-			if v.spinner != nil {
-				v.spinner.Increment()
-			}
-
-			err := runner.Ensure()
-			if err != nil {
-				pterm.Error.Println(err.Error())
-				return err
-			}
-
-			// Dump ASTs (in parallel)
-			if v.spinner != nil {
-				v.spinner.UpdateTitle("Dumping AST code...")
-				v.spinner.Increment()
-			}
-
-			done := make(chan struct{})
-			go func() {
-				runner.DumpAST()
-				close(done)
-			}()
-			<-done
-
-			// Cleaning up
-			err = runner.Finish()
-			if v.isInteractive && progressBarSpecificForEngine != nil {
-				progressBarSpecificForEngine.Stop()
-			}
-			if err != nil {
-				pterm.Error.Println(err.Error())
-				// pass
-			}
-		}
+	err := v.ExecuteRunnerAnalysis(v.configuration)
+	if err != nil {
+		return err
 	}
 
 	if v.spinner != nil {
@@ -131,8 +90,9 @@ func (v *AnalyzeCommand) Execute() error {
 		v.spinner.Increment()
 	}
 
-	workdir := Storage.Path()
-	allResults := Analyzer.Start(workdir, progressBarAnalysis)
+	// Run global analysis
+	allResults := Analyzer.Start(v.configuration.Storage, progressBarAnalysis)
+
 	if progressBarAnalysis != nil {
 		progressBarAnalysis.Stop()
 	}
@@ -152,12 +112,58 @@ func (v *AnalyzeCommand) Execute() error {
 		v.outWriter.Flush()
 	}
 
+	// Now compare with another branch (if needed)
+	clonedConfiguration := v.configuration
+	allResultsCloned := []*pb.File{}
+
+	if v.configuration.CompareWith != "" {
+
+		if v.spinner != nil {
+			v.spinner.UpdateTitle("Comparing with " + v.configuration.CompareWith)
+			v.spinner.Increment()
+		}
+
+		// switch branches
+		for _, gitSummary := range v.gitSummaries {
+			err = gitSummary.GitRepository.Checkout(v.configuration.CompareWith)
+			if err != nil {
+				return errors.New(`Cannot compare code with branch or commit "` + v.configuration.CompareWith +
+					`" for repository ` + gitSummary.GitRepository.Path)
+			}
+		}
+
+		// create another workdir
+		clonedConfiguration.Storage = Storage.NewWithName("compare")
+		clonedConfiguration.Storage.Purge()
+		clonedConfiguration.Storage.Ensure()
+
+		// execute analysis on the other branch
+		err := v.ExecuteRunnerAnalysis(clonedConfiguration)
+		if err != nil {
+			return err
+		}
+
+		// Run global analysis on the other branch
+		allResultsCloned = Analyzer.Start(clonedConfiguration.Storage, progressBarAnalysis)
+
+		// switch back to the original branch
+		for _, gitSummary := range v.gitSummaries {
+			err = gitSummary.GitRepository.RestoreFirstBranch()
+			if err != nil {
+				log.Error("Cannot checkout back to branch " + gitSummary.GitRepository.InitialBranch + " for " + gitSummary.GitRepository.Path)
+			}
+		}
+	}
+
 	// Start aggregating results
 	aggregator := Analyzer.NewAggregator(allResults, v.gitSummaries)
 	aggregator.WithAggregateAnalyzer(Activity.NewBusFactor())
+	if v.configuration.CompareWith != "" {
+		aggregator.WithComparaison(allResultsCloned)
+	}
+
 	if v.spinner != nil {
 		v.spinner.UpdateTitle("Aggregating...")
-		//v.spinner.Increment()
 	}
 	projectAggregated := aggregator.Aggregates()
 
@@ -169,7 +175,7 @@ func (v *AnalyzeCommand) Execute() error {
 
 	// report: html
 	htmlReportGenerator := Report.NewHtmlReportGenerator(v.configuration.Reports.Html)
-	err := htmlReportGenerator.Generate(allResults, projectAggregated)
+	err = htmlReportGenerator.Generate(allResults, projectAggregated)
 	if err != nil {
 		pterm.Error.Println("Cannot generate html report: " + err.Error())
 		return err
@@ -242,6 +248,59 @@ func (v *AnalyzeCommand) Execute() error {
 
 	if shouldFail {
 		os.Exit(1)
+	}
+
+	return nil
+}
+
+func (v *AnalyzeCommand) ExecuteRunnerAnalysis(config *Configuration.Configuration) error {
+	for _, runner := range v.runners {
+
+		runner.SetConfiguration(config)
+
+		if !runner.IsRequired() {
+			continue
+		}
+
+		var progressBarSpecificForEngine *pterm.ProgressbarPrinter = nil
+		if v.spinner != nil {
+			progressBarSpecificForEngine, _ := pterm.DefaultSpinner.WithWriter(v.multi.NewWriter()).Start("...")
+			progressBarSpecificForEngine.RemoveWhenDone = true
+			runner.SetProgressbar(progressBarSpecificForEngine)
+		}
+
+		if v.spinner != nil {
+			v.spinner.Increment()
+		}
+
+		err := runner.Ensure()
+		if err != nil {
+			pterm.Error.Println(err.Error())
+			return err
+		}
+
+		// Dump ASTs (in parallel)
+		if v.spinner != nil {
+			v.spinner.UpdateTitle("Dumping AST code...")
+			v.spinner.Increment()
+		}
+
+		done := make(chan struct{})
+		go func() {
+			runner.DumpAST()
+			close(done)
+		}()
+		<-done
+
+		// Cleaning up
+		err = runner.Finish()
+		if v.isInteractive && progressBarSpecificForEngine != nil {
+			progressBarSpecificForEngine.Stop()
+		}
+		if err != nil {
+			pterm.Error.Println(err.Error())
+			// pass
+		}
 	}
 
 	return nil

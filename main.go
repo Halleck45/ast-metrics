@@ -92,6 +92,12 @@ func main() {
 						Usage:    "Load configuration from file",
 						Category: "Configuration",
 					},
+					// Diff mode (comparaison between current branch and another one or commit)
+					&cli.StringFlag{
+						Name:     "compare-with",
+						Usage:    "Compare with another Git branch or commit",
+						Category: "Global options",
+					},
 				},
 				Action: func(cCtx *cli.Context) error {
 
@@ -166,6 +172,11 @@ func main() {
 					}
 					if cCtx.String("report-markdown") != "" {
 						configuration.Reports.Markdown = cCtx.String("report-markdown")
+					}
+
+					// Compare with
+					if cCtx.String("compare-with") != "" {
+						configuration.CompareWith = cCtx.String("compare-with")
 					}
 
 					// Run command

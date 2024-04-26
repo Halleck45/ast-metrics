@@ -9,15 +9,16 @@ import (
 	Component "github.com/halleck45/ast-metrics/src/Analyzer/Component"
 	Volume "github.com/halleck45/ast-metrics/src/Analyzer/Volume"
 	pb "github.com/halleck45/ast-metrics/src/NodeType"
+	"github.com/halleck45/ast-metrics/src/Storage"
 	"github.com/pterm/pterm"
 	"github.com/yargevad/filepathx"
 	"google.golang.org/protobuf/proto"
 )
 
-func Start(workdir string, progressbar *pterm.SpinnerPrinter) []*pb.File {
+func Start(workdir *Storage.Workdir, progressbar *pterm.SpinnerPrinter) []*pb.File {
 
 	// List all ASTs files (*.bin) in the workdir
-	astFiles, err := filepathx.Glob(workdir + "/**/*.bin")
+	astFiles, err := filepathx.Glob(workdir.Path() + "/**/*.bin")
 	if err != nil {
 		panic(err)
 	}

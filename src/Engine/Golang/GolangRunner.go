@@ -68,11 +68,11 @@ func (r GolangRunner) DumpAST() {
 			r.progressbar.UpdateText("🦫 Dumping AST of Go files (" + fmt.Sprintf("%d", cnt) + "/" + fmt.Sprintf("%d", len(r.getFileList().Files)) + ")")
 		}
 
-		hash, err := Engine.GetFileHash(filePath)
+		hash, err := Storage.GetFileHash(filePath)
 		if err != nil {
 			log.Error(err)
 		}
-		binPath := Storage.OutputPath() + string(os.PathSeparator) + hash + ".bin"
+		binPath := r.configuration.Storage.AstDirectory() + string(os.PathSeparator) + hash + ".bin"
 		// if file exists, skip it
 		if _, err := os.Stat(binPath); err == nil {
 			continue

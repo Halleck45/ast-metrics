@@ -11,10 +11,11 @@ func TestCommandCleanupWorkspace(t *testing.T) {
     // Suite
     t.Run("TestCommandCleanupWorkspace", func(t *testing.T) {
 
-        providedPath := Storage.Path()
+        storage := Storage.Default()
+        providedPath := storage.Path()
 
         // Create folder
-        Storage.Ensure()
+        storage.Ensure()
 
         // providedPath should exist
         if _, err := os.Stat(providedPath); os.IsNotExist(err) {

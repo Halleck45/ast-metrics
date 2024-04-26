@@ -80,11 +80,11 @@ func (r PhpRunner) DumpAST() {
 
 func (r PhpRunner) dumpOneAst(wg *sync.WaitGroup, filePath string) {
 	defer wg.Done()
-	hash, err := Engine.GetFileHash(filePath)
+	hash, err := Storage.GetFileHash(filePath)
 	if err != nil {
 		log.Error("Error while hashing file " + filePath + ": " + err.Error())
 	}
-	binPath := Storage.OutputPath() + string(os.PathSeparator) + hash + ".bin"
+	binPath := r.configuration.Storage.AstDirectory() + string(os.PathSeparator) + hash + ".bin"
 	// if file exists, skip it
 	if _, err := os.Stat(binPath); err == nil {
 		return
