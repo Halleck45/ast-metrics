@@ -1,4 +1,4 @@
-package Analyzer
+package Scm
 
 import (
 	"io/ioutil"
@@ -24,7 +24,7 @@ func TestFindGitRoot(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		got, err := findGitRoot(tmpDir)
+		got, err := FindGitRoot(tmpDir)
 		if err != nil {
 			t.Fatalf("findGitRoot() error = %v", err)
 		}
@@ -42,7 +42,7 @@ func TestFindGitRoot(t *testing.T) {
 		}
 		defer os.RemoveAll(tmpDir)
 
-		_, err = findGitRoot(tmpDir)
+		_, err = FindGitRoot(tmpDir)
 		if err == nil {
 			t.Fatal("Expected error, got nil")
 		}

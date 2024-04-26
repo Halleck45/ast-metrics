@@ -6,6 +6,7 @@ import (
 
 	"github.com/halleck45/ast-metrics/src/Engine"
 	pb "github.com/halleck45/ast-metrics/src/NodeType"
+	"github.com/halleck45/ast-metrics/src/Storage"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -65,9 +66,13 @@ func TestAnalyzerStart(t *testing.T) {
 	}
 
 	// Dump protobuf object to destination
-	workdir := t.TempDir()
-	binPath := workdir + string(os.PathSeparator) + "tmp.bin"
-	Engine.DumpProtobuf(&protoFile, binPath)
+	storage := Storage.NewWithName("test")
+	storage.Ensure()
+	binPath := storage.AstDirectory() + string(os.PathSeparator) + "tmp.bin"
+	err := Engine.DumpProtobuf(&protoFile, binPath)
+	if err != nil {
+		t.Error("Error dumping protobuf object", err)
+	}
 
 	// Ensure file exists
 	if _, err := os.Stat(binPath); err != nil {
@@ -75,7 +80,7 @@ func TestAnalyzerStart(t *testing.T) {
 	}
 
 	// Start analysis
-	parsedFiles := Start(workdir, nil)
+	parsedFiles := Start(storage, nil)
 
 	// Now first parsed file should be the same as the one we dumped, + analysis
 	assert.Equal(t, "Go", parsedFiles[0].ProgrammingLanguage)

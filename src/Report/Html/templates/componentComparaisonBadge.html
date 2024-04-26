@@ -1,0 +1,67 @@
+{% if round == nil %}
+    {% set round = 2 %}
+{% endif %}
+
+{% if comparaisonMode == 'lowIsBetter' %}
+    {% set cssClass = 'bg-red-200 text-red-800' %}
+
+    {% if diff < 0 %}
+        {% set cssClass = 'bg-green-200 text-green-800' %}
+    {% else %}
+        {% if diff == 0 %}
+            {% set cssClass = 'bg-gray-200 text-gray-800' %}
+        {% endif %}
+    {% endif %}
+
+    <span class="inline-block px-2 py-1 rounded-full text-xs font-semibold {{ cssClass }}">
+        {% if diff > 0 %}
+            +{{ diff|floatformat:round }}
+        {% else %}
+            {% if diff < 0 %}
+                {{ diff|floatformat:round }}
+            {% else %}
+                =
+            {% endif %}
+        {% endif %}
+    </span>
+{% else %}
+    {% if comparaisonMode == 'highIsBetter' %}
+
+        {% set cssClass = 'bg-green-200 text-green-800' %}
+
+        {% if diff < 0 %}
+            {% set cssClass = 'bg-red-200 text-red-800' %}
+        {% else %}
+            {% if diff == 0 %}
+                {% set cssClass = 'bg-gray-200 text-gray-800' %}
+            {% endif %}
+        {% endif %}
+
+        <span class="inline-block px-2 py-1 rounded-full text-xs font-semibold {{ cssClass }}">
+            {% if diff > 0 %}
+                +{{ diff|floatformat:round }}
+            {% else %}
+                {% if diff < 0 %}
+                    {{ diff|floatformat:round }}
+                {% else %}
+                    =
+                {% endif %}
+            {% endif %}
+        </span>
+    {% else %}
+        {% set cssClass = 'bg-gray-200 text-gray-800' %}
+        <span class="inline-block px-2 py-1 rounded-full text-xs font-semibold {{ cssClass }}">
+            {% if diff > 0 %}
+                +{{ diff|floatformat:round }}
+            {% else %}
+                {% if diff < 0 %}
+                    {{ diff|floatformat:round }}
+                {% else %}
+                    =
+                {% endif %}
+            {% endif %}
+        </span>
+    {% endif %}
+{% endif %}
+
+

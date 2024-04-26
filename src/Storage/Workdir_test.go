@@ -1,37 +1,39 @@
 package Storage
 
 import (
-    "testing"
-    "strings"
-    "os"
+	"os"
+	"strings"
+	"testing"
 )
 
 func TestItReturnsPath(t *testing.T) {
-    providedPath := Path()
+	storage := Default()
+	providedPath := storage.WorkDir()
 
-    // providedPath should contain ".ast-metrics-cache" folder
-    expectedPath := ".ast-metrics-cache"
-    if strings.Contains(providedPath, expectedPath) == false {
-        t.Errorf("Path() = %s; want %s", providedPath, expectedPath)
-    }
+	// providedPath should contain ".ast-metrics-cache" folder
+	expectedPath := "/tmp/ast-metrics-cache"
+	if strings.Contains(providedPath, expectedPath) == false {
+		t.Errorf("WorkDir() = %s; want %s", providedPath, expectedPath)
+	}
 }
 
 func TestItCreatesPath(t *testing.T) {
-    providedPath := Path()
+	storage := Default()
+	providedPath := storage.WorkDir()
 
-    // Create folder
-    Ensure()
+	// Create folder
+	storage.Ensure()
 
-    // providedPath should exist
-    if _, err := os.Stat(providedPath); os.IsNotExist(err) {
-        t.Errorf("Path() = %s; want it to exist", providedPath)
-    }
+	// providedPath should exist
+	if _, err := os.Stat(providedPath); os.IsNotExist(err) {
+		t.Errorf("WorkDir() = %s; want it to exist", providedPath)
+	}
 
-    // Remove folder
-    Purge()
+	// Remove folder
+	storage.Purge()
 
-    // providedPath should not exist
-    if _, err := os.Stat(providedPath); os.IsNotExist(err) == false {
-        t.Errorf("Path() = %s; want it to not exist", providedPath)
-    }
+	// providedPath should not exist
+	if _, err := os.Stat(providedPath); os.IsNotExist(err) == false {
+		t.Errorf("WorkDir() = %s; want it to not exist", providedPath)
+	}
 }

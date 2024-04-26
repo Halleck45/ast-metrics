@@ -8,7 +8,6 @@ import (
 	"github.com/fsnotify/fsnotify"
 	"github.com/halleck45/ast-metrics/src/Command"
 	"github.com/halleck45/ast-metrics/src/Configuration"
-	"github.com/halleck45/ast-metrics/src/Storage"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -77,7 +76,7 @@ func (c *CommandWatcher) Start(command *Command.AnalyzeCommand) error {
 				}
 
 				// get file concerned by the event, and remove it from cache
-				Storage.DeleteCache(event.Name)
+				c.Configuration.Storage.DeleteCache(event.Name)
 
 				// Re-execute analyze command
 				command.Execute()

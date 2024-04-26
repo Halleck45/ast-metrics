@@ -3,6 +3,8 @@ package Configuration
 import (
 	"os"
 	"path/filepath"
+
+	"github.com/halleck45/ast-metrics/src/Storage"
 )
 
 type Configuration struct {
@@ -19,6 +21,12 @@ type Configuration struct {
 	Requirements *ConfigurationRequirements `yaml:"requirements"`
 
 	Watching bool
+
+	// if not empty, compare the current analysis with the one in this branch / commit
+	CompareWith string
+
+	// Location of cache files
+	Storage *Storage.Workdir
 }
 
 type ConfigurationReport struct {
@@ -53,6 +61,8 @@ func NewConfiguration() *Configuration {
 		SourcesToAnalyzePath: []string{},
 		ExcludePatterns:      []string{"/vendor/", "/node_modules/", "/.git/", "/.idea/", "/tests/", "/Tests/", "/test/", "/Test/", "/spec/", "/Spec/"},
 		Watching:             false,
+		CompareWith:          "",
+		Storage:              Storage.Default(),
 	}
 }
 

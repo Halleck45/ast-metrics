@@ -6,6 +6,7 @@ import (
 	"os"
 	"sort"
 	"strings"
+	"time"
 
 	log "github.com/sirupsen/logrus"
 
@@ -65,6 +66,7 @@ func (v *HtmlReportGenerator) Generate(files []*pb.File, projectAggregated Analy
 		"componentChartRadiusBarEfferent.html",
 		"componentChartRadiusBarAfferent.html",
 		"componentDependencyDiagram.html",
+		"componentComparaisonBadge.html",
 	} {
 		// read the file
 		content, err := content.ReadFile(fmt.Sprintf("templates/%s", file))
@@ -117,7 +119,8 @@ func (v *HtmlReportGenerator) GenerateLanguagePage(template string, language str
 		log.Error(err)
 	}
 	// Render it, passing projectAggregated and files as context
-	out, err := tpl.Execute(pongo2.Context{"page": template, "currentLanguage": language, "currentView": currentView, "projectAggregated": projectAggregated, "files": files})
+	datetime := time.Now().Format("2006-01-02 15:04")
+	out, err := tpl.Execute(pongo2.Context{"datetime": datetime, "page": template, "currentLanguage": language, "currentView": currentView, "projectAggregated": projectAggregated, "files": files})
 	if err != nil {
 		log.Error(err)
 	}

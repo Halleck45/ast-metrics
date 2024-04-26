@@ -1,8 +1,6 @@
 package Analyzer
 
 import (
-	"fmt"
-	"os"
 	"os/exec"
 	"path/filepath"
 	"strconv"
@@ -10,10 +8,12 @@ import (
 	"sync"
 
 	pb "github.com/halleck45/ast-metrics/src/NodeType"
+	"github.com/halleck45/ast-metrics/src/Scm"
 	log "github.com/sirupsen/logrus"
 )
 
 type GitAnalyzer struct {
+	git Scm.GitRepository
 }
 
 func NewGitAnalyzer() *GitAnalyzer {
@@ -22,21 +22,6 @@ func NewGitAnalyzer() *GitAnalyzer {
 
 type gitLogOutput struct {
 	lines []string
-}
-
-func findGitRoot(filePath string) (string, error) {
-	// Parcourir les dossiers parent jusqu'à ce qu'un dossier .git soit trouvé
-	for filePath != "" && filePath != "/" {
-
-		checkedPath := filepath.Join(filePath, ".git")
-		if _, err := os.Stat(checkedPath); err == nil {
-			return filePath, nil
-		}
-
-		filePath = filepath.Dir(filePath)
-	}
-
-	return "", fmt.Errorf("no git repository found")
 }
 
 func (gitAnalyzer *GitAnalyzer) Start(files []*pb.File) []ResultOfGitAnalysis {
@@ -54,7 +39,7 @@ func (gitAnalyzer *GitAnalyzer) CalculateCount(files []*pb.File) []ResultOfGitAn
 	for _, file := range files {
 
 		// Search root of git repository
-		repoRoot, err := findGitRoot(file.Path)
+		repoRoot, err := Scm.FindGitRoot(file.Path)
 		if err != nil {
 			continue
 		}
@@ -79,6 +64,12 @@ func (gitAnalyzer *GitAnalyzer) CalculateCount(files []*pb.File) []ResultOfGitAn
 	// For each git repository
 	for repoRoot, _ := range filesByGitRepo {
 
+		gitObject, err := Scm.NewGitRepositoryFromPath(repoRoot)
+		if err != nil {
+			log.Debug("Not a valid git repository: ", repoRoot)
+			continue
+		}
+
 		// Prepare result
 		summary := ResultOfGitAnalysis{
 			ReportRootDir:           repoRoot,
@@ -97,31 +88,11 @@ func (gitAnalyzer *GitAnalyzer) CalculateCount(files []*pb.File) []ResultOfGitAn
 		// Map of committers by file
 		committersByFile := make(map[string]map[string]bool)
 
-		// Check if repo is a git repository, using the shell command "git rev-parse --is-inside-work-tree"
-		// If not, continue to the next repository
-		cmd := exec.Command("git", "rev-parse", "--is-inside-work-tree")
-		cmd.Dir = repoRoot
-		err := cmd.Run()
-		if err != nil {
-			log.Debug("Not a git repository: ", repoRoot)
-			continue
-		}
-
-		// Get the git root absolute dir
-		cmd = exec.Command("git", "rev-parse", "--show-toplevel")
-		cmd.Dir = repoRoot
-		out, err := cmd.Output()
-		if err != nil {
-			log.Error("Error: ", err)
-			continue
-		}
-		repoRootAbsolute := strings.TrimSpace(string(out))
-
 		for _, file := range filesByGitRepo[repoRoot] {
 			// Add file to filesByPathInRepository map
 			absolutePath := file.Path
 			if !filepath.IsAbs(file.Path) {
-				absolutePath = filepath.Join(repoRootAbsolute, file.Path)
+				absolutePath = filepath.Join(gitObject.Path, file.Path)
 			}
 
 			if _, ok := filesByPathInRepository[absolutePath]; !ok {
@@ -132,9 +103,7 @@ func (gitAnalyzer *GitAnalyzer) CalculateCount(files []*pb.File) []ResultOfGitAn
 		}
 
 		// Get all commits since one year (only sha1)
-		cmd = exec.Command("git", "--no-pager", "log", "--pretty=format:%H", "--since=1.year")
-		cmd.Dir = repoRoot
-		out, err = cmd.Output()
+		commits, err := gitObject.ListAllCommitsSince("1.year")
 		if err != nil {
 			log.Error("Error: ", err)
 			continue
@@ -144,7 +113,6 @@ func (gitAnalyzer *GitAnalyzer) CalculateCount(files []*pb.File) []ResultOfGitAn
 		// Wait for end of all goroutines
 		var wg sync.WaitGroup
 
-		commits := strings.Split(string(out), "\n")
 		outputOfGitLog := make(chan []string, len(commits))
 		defer close(outputOfGitLog)
 
@@ -200,7 +168,7 @@ func (gitAnalyzer *GitAnalyzer) CalculateCount(files []*pb.File) []ResultOfGitAn
 
 			for _, file := range impactedFiles {
 
-				file = filepath.Join(repoRootAbsolute, file)
+				file = filepath.Join(gitObject.Path, file)
 
 				// if file is not in the map, continue
 				if _, ok := filesByPathInRepository[file]; !ok {
@@ -252,6 +220,7 @@ func (gitAnalyzer *GitAnalyzer) CalculateCount(files []*pb.File) []ResultOfGitAn
 		}
 
 		summary.CountCommiters = len(committersOnRepository)
+		summary.GitRepository = gitObject
 		summaries = append(summaries, summary)
 	}
 

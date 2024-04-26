@@ -162,11 +162,13 @@ func TestParsingGoFiles(t *testing.T) {
 	}
 
 	// Configure destination
-	Storage.Ensure()
-	workdir := Storage.Path() + string(os.PathSeparator) + "output"
+	storage := Storage.Default()
+	storage.Ensure()
+	workdir := storage.AstDirectory()
 
 	// Configure the runner
 	configuration := Configuration.NewConfiguration()
+	configuration.Storage = storage
 	configuration.SetSourcesToAnalyzePath([]string{sourceDirectory})
 	runner := GolangRunner{}
 	runner.SetConfiguration(configuration)
