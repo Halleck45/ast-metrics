@@ -6,6 +6,6 @@ AST Metrics offers an option to watch a directory and display the results in rea
 
 To watch a directory, run the following command in your terminal:
 
-```bash
+```console
 ast-metrics --watch /path/to/your/project
 ```
