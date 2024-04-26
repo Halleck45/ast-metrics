@@ -24,6 +24,7 @@ type Configuration struct {
 type ConfigurationReport struct {
 	Html     string `yaml:"html"`
 	Markdown string `yaml:"markdown"`
+	Json     string `yaml:"json"`
 }
 
 type ConfigurationRequirements struct {

@@ -11,6 +11,7 @@ import (
 	"github.com/halleck45/ast-metrics/src/Configuration"
 	"github.com/halleck45/ast-metrics/src/Engine"
 	Report "github.com/halleck45/ast-metrics/src/Report/Html"
+	Json "github.com/halleck45/ast-metrics/src/Report/Json"
 	Markdown "github.com/halleck45/ast-metrics/src/Report/Markdown"
 	"github.com/halleck45/ast-metrics/src/Storage"
 	"github.com/inancgumus/screen"
@@ -179,6 +180,12 @@ func (v *AnalyzeCommand) Execute() error {
 	err = markdownReportGenerator.Generate(allResults, projectAggregated)
 	if err != nil {
 		pterm.Error.Println("Cannot generate markdown report: " + err.Error())
+	}
+	// report: json
+	jsonReportGenerator := Json.NewJsonReportGenerator(v.configuration.Reports.Json)
+	err = jsonReportGenerator.Generate(allResults, projectAggregated)
+	if err != nil {
+		pterm.Error.Println("Cannot generate json report: " + err.Error())
 	}
 
 	// Evaluate requirements
