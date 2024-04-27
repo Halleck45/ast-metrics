@@ -1,14 +1,23 @@
-# AST Metrics [![CI](https://github.com/Halleck45/ast-metrics/actions/workflows/test.yml/badge.svg)](https://github.com/Halleck45/ast-metrics/actions/workflows/test.yml) [![Release](https://github.com/Halleck45/ast-metrics/actions/workflows/release.yml/badge.svg)](https://github.com/Halleck45/ast-metrics/actions/workflows/release.yml) [![CodeQL](https://github.com/Halleck45/ast-metrics/actions/workflows/github-code-scanning/codeql/badge.svg)](https://github.com/Halleck45/ast-metrics/actions/workflows/github-code-scanning/codeql)
+# AST Metrics 
 
 
-| Terminal application | HTML report |
-| --- | ---------- |
-| ![AST Metrics is a language-agnostic static code analyzer.](./docs/preview.gif) |![HTML report](./docs/preview-html-report.png) |
 
-**AST Metrics is a blazing-fast static code analyzer that works across programming languages..** It empowers you to gain deep insights into your code structure, identify potential problems early on, and improve code quality.  Leveraging the efficiency of Go, AST Metrics delivers exceptional performance for large codebases.
+<img src="https://raw.githubusercontent.com/Halleck45/ast-metrics/main/docs/logo-ast-metrics.jpg" height="200px" alt="PhpMetrics" align="left" style="margin-right:20px"/>
 
-[Twitter](https://twitter.com/Halleck45) | [Contributing](.github/CONTRIBUTING.md) | 
-[Getting started](https://halleck45.github.io/ast-metrics/getting-started/)
+[![CI](https://github.com/Halleck45/ast-metrics/actions/workflows/test.yml/badge.svg)](https://github.com/Halleck45/ast-metrics/actions/workflows/test.yml)
+![GitHub Release](https://img.shields.io/github/v/release/Halleck45/ast-metrics)
+
+
+AST Metrics is a blazing-fast static code analyzer. It provides metrics about your code, and helps you to identify potential problems early on. 
+
+[Documentation](https://phpmetrics.github.io/website/) | [Twitter](https://twitter.com/Halleck45) | [Contributing](https://github.com/phpmetrics/PhpMetrics/blob/master/doc/contributing.md)
+
+<br/><br/>
+<br/><br/>
+
+## Preview
+
+![HTML report](./docs/preview-html-report.png)
 
 ## Quick start
 
