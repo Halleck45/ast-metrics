@@ -2,6 +2,7 @@ package Report
 
 import (
 	"encoding/json"
+	"fmt"
 	"io/ioutil"
 	"os"
 
@@ -25,18 +26,21 @@ func NewJsonReportGenerator(ReportPath string) *JsonReportGenerator {
 func (j *JsonReportGenerator) Generate(files []*pb.File, projectAggregated Analyzer.ProjectAggregated) error {
 	report := j.buildReport(projectAggregated)
 
-	Cleaner.CleanVal(report)
+	err := Cleaner.CleanVal(report)
+	if err != nil {
+		return fmt.Errorf("can not clean report err: %s", err.Error())
+	}
 
 	// This code serializes the results to JSON
 	jsonReport, err := json.Marshal(report)
 	if err != nil {
-		return err
+		return fmt.Errorf("can not serialize report to JSON err: %s", err.Error())
 	}
 
 	// This code writes the JSON report to a file
 	err = ioutil.WriteFile(j.ReportPath, jsonReport, os.ModePerm)
 	if err != nil {
-		return err
+		return fmt.Errorf("can not save report to path %s err: %s", j.ReportPath, err.Error())
 	}
 
 	return nil

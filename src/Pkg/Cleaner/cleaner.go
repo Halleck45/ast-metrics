@@ -1,6 +1,7 @@
 package Cleaner
 
 import (
+	"errors"
 	"math"
 	"reflect"
 )
@@ -16,14 +17,16 @@ var (
 //
 // This function accepts a pointer because it needs
 // to modify the provided value.
-func CleanVal(val interface{}) {
+func CleanVal(val interface{}) error {
 	v := reflect.ValueOf(val)
 
 	if v.Kind() != reflect.Pointer {
-		panic("Val must be a pointer")
+		return errors.New("value must be a pointer")
 	}
 
 	clean(v)
+
+	return nil
 }
 
 func clean(v reflect.Value) {
