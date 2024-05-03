@@ -80,6 +80,11 @@ func main() {
 						Usage:    "Generate an Markdown report file",
 						Category: "Report",
 					},
+					// JSON report
+					&cli.StringFlag{
+						Name:  "report-json",
+						Usage: "Generate a report in JSON format",
+					},
 					// Watch mode
 					&cli.BoolFlag{
 						Name:     "watch",
@@ -172,6 +177,9 @@ func main() {
 					}
 					if cCtx.String("report-markdown") != "" {
 						configuration.Reports.Markdown = cCtx.String("report-markdown")
+					}
+					if cCtx.String("report-json") != "" {
+						configuration.Reports.Json = cCtx.String("report-json")
 					}
 
 					// Compare with
