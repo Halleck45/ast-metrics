@@ -62,7 +62,7 @@ func cleanField(field reflect.Value) {
 	switch field.Kind() {
 	case reflect.Float32, reflect.Float64:
 		f := field.Float()
-		isInvalidAndCanSet := (math.IsNaN(f) || math.IsInf(f, 0)) && field.CanSet()
+		isInvalidAndCanSet := field.CanSet() && (math.IsNaN(f) || math.IsInf(f, 0))
 		if !isInvalidAndCanSet {
 			return
 		}
