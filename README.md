@@ -8,7 +8,7 @@
 
 AST Metrics is a blazing-fast static code analyzer. It provides metrics about your code, and helps you to identify potential problems early on. 
 
-[Documentation](https://phpmetrics.github.io/website/) | [Twitter](https://twitter.com/Halleck45) | [Contributing](https://github.com/phpmetrics/PhpMetrics/blob/master/doc/contributing.md)
+[Documentation](https://halleck45.github.io/ast-metrics/) | [Twitter](https://twitter.com/Halleck45)
 
 <br/><br/>
 <br/><br/>
