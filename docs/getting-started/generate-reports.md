@@ -23,7 +23,7 @@ AST Metrics can also generate Markdown reports. The reports provide an overview 
 To generate a report, run the following command in your terminal:
 
 ```bash
-ast-metrics --report-md=<report-file.md> /path/to/your/project
+ast-metrics --report-markdown=<report-file.md> /path/to/your/project
 ```
 
 Where `<report-file.md>` is the file where the report will be saved.
