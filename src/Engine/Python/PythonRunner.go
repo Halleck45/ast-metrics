@@ -50,7 +50,9 @@ func (r *PythonRunner) Ensure() error {
 
 // Finish cleans up the workspace
 func (r PythonRunner) Finish() error {
-	r.progressbar.Stop()
+	if r.progressbar != nil {
+		r.progressbar.Stop()
+	}
 	return nil
 }
 
@@ -61,7 +63,9 @@ func (r PythonRunner) DumpAST() {
 	for _, filePath := range r.getFileList().Files {
 
 		cnt++
-		r.progressbar.UpdateText("🐍 Dumping AST of Python files (" + fmt.Sprintf("%d", cnt) + "/" + fmt.Sprintf("%d", len(r.getFileList().Files)) + ")")
+		if r.progressbar != nil {
+			r.progressbar.UpdateText("🐍 Dumping AST of Python files (" + fmt.Sprintf("%d", cnt) + "/" + fmt.Sprintf("%d", len(r.getFileList().Files)) + ")")
+		}
 
 		hash, err := Storage.GetFileHash(filePath)
 		if err != nil {
@@ -80,7 +84,9 @@ func (r PythonRunner) DumpAST() {
 		Engine.DumpProtobuf(protoFile, binPath)
 	}
 
-	r.progressbar.Info("🐍 Python code dumped")
+	if r.progressbar != nil {
+		r.progressbar.Info("🐍 Python code dumped")
+	}
 
 }
 
