@@ -120,14 +120,25 @@ func (gitAnalyzer *GitAnalyzer) CalculateCount(files []*pb.File) []ResultOfGitAn
 			wg.Add(1)
 
 			go func(commit string) {
-				// Run git log on this sha1, in sub routine
 				defer wg.Done()
+
+				if commit == "" {
+					outputOfGitLog <- strings.Split("ERROR", "\n")
+					return
+				}
+
+				// Run git log on this sha1, in sub routine
 				cmd := exec.Command("git", "log", "--pretty=format:%h|%an|%ct", "--name-only", "-n", "1", commit)
 				cmd.Dir = repoRoot
 				out, err := cmd.Output()
 
 				if err != nil {
-					log.Error("Error: ", err)
+					log.Error("Cannot parse git log for commit: ", err)
+					log.Debug(" - Command: ", cmd)
+					log.Debug(" - Output: ", string(out))
+					log.Debug(" - Error: ", err)
+					log.Debug(" - Commit: ", commit)
+
 					outputOfGitLog <- strings.Split(string("ERROR"), "\n") // cannot be nil, because we need to escape channel
 					return
 				}
