@@ -24,6 +24,11 @@ func NewJsonReportGenerator(ReportPath string) *JsonReportGenerator {
 
 // Generate generates a JSON report
 func (j *JsonReportGenerator) Generate(files []*pb.File, projectAggregated Analyzer.ProjectAggregated) error {
+
+	if j.ReportPath == "" {
+		return nil
+	}
+
 	report := j.buildReport(projectAggregated)
 
 	err := Cleaner.CleanVal(report)
@@ -55,37 +60,56 @@ func (j *JsonReportGenerator) buildReport(projectAggregated Analyzer.ProjectAggr
 
 	r.ConcernedFiles = make([]file, len(combined.ConcernedFiles))
 	for i, f := range combined.ConcernedFiles {
-		r.ConcernedFiles[i] = file{
+		concernedFile := file{
 			Path: f.Path,
-			Complexity: complexity{
-				Cyclomatic: *f.Stmts.Analyze.Complexity.Cyclomatic,
-			},
-			Volume: volume{
-				Loc:                     f.Stmts.Analyze.Volume.GetLoc(),
-				Lloc:                    f.Stmts.Analyze.Volume.GetLloc(),
-				Cloc:                    f.Stmts.Analyze.Volume.GetCloc(),
-				HalsteadVolume:          f.Stmts.Analyze.Volume.GetHalsteadVolume(),
-				HalsteadDifficulty:      f.Stmts.Analyze.Volume.GetHalsteadDifficulty(),
-				HalsteadEffort:          f.Stmts.Analyze.Volume.GetHalsteadEffort(),
-				HalsteadTime:            f.Stmts.Analyze.Volume.GetHalsteadTime(),
-				HalsteadVocabulary:      f.Stmts.Analyze.Volume.GetHalsteadVocabulary(),
-				HalsteadLength:          f.Stmts.Analyze.Volume.GetHalsteadLength(),
-				HalsteadEstimatedLength: f.Stmts.Analyze.Volume.GetHalsteadEstimatedLength(),
-			},
-			Maintainability: maintainability{
-				MaintainabilityIndex:                f.Stmts.Analyze.Maintainability.GetMaintainabilityIndex(),
-				MaintainabilityIndexWithoutComments: f.Stmts.Analyze.Maintainability.GetMaintainabilityIndexWithoutComments(),
-				CommentWeight:                       f.Stmts.Analyze.Maintainability.GetCommentWeight(),
-			},
-			Risk: risk{
-				Score: f.Stmts.Analyze.Risk.GetScore(),
-			},
-			Coupling: coupling{
-				Afferent:    f.Stmts.Analyze.Coupling.GetAfferent(),
-				Efferent:    f.Stmts.Analyze.Coupling.GetEfferent(),
-				Instability: f.Stmts.Analyze.Coupling.GetInstability(),
-			},
 		}
+
+		if f.Stmts != nil && f.Stmts.Analyze != nil {
+			if f.Stmts.Analyze.Complexity != nil {
+				concernedFile.Complexity = complexity{
+					Cyclomatic: *f.Stmts.Analyze.Complexity.Cyclomatic,
+				}
+			}
+
+			if f.Stmts.Analyze.Volume != nil {
+				concernedFile.Volume = volume{
+					Loc:                     f.Stmts.Analyze.Volume.GetLoc(),
+					Lloc:                    f.Stmts.Analyze.Volume.GetLloc(),
+					Cloc:                    f.Stmts.Analyze.Volume.GetCloc(),
+					HalsteadVolume:          f.Stmts.Analyze.Volume.GetHalsteadVolume(),
+					HalsteadDifficulty:      f.Stmts.Analyze.Volume.GetHalsteadDifficulty(),
+					HalsteadEffort:          f.Stmts.Analyze.Volume.GetHalsteadEffort(),
+					HalsteadTime:            f.Stmts.Analyze.Volume.GetHalsteadTime(),
+					HalsteadVocabulary:      f.Stmts.Analyze.Volume.GetHalsteadVocabulary(),
+					HalsteadLength:          f.Stmts.Analyze.Volume.GetHalsteadLength(),
+					HalsteadEstimatedLength: f.Stmts.Analyze.Volume.GetHalsteadEstimatedLength(),
+				}
+			}
+
+			if f.Stmts.Analyze.Maintainability != nil {
+				concernedFile.Maintainability = maintainability{
+					MaintainabilityIndex:                f.Stmts.Analyze.Maintainability.GetMaintainabilityIndex(),
+					MaintainabilityIndexWithoutComments: f.Stmts.Analyze.Maintainability.GetMaintainabilityIndexWithoutComments(),
+					CommentWeight:                       f.Stmts.Analyze.Maintainability.GetCommentWeight(),
+				}
+			}
+
+			if f.Stmts.Analyze.Risk != nil {
+				concernedFile.Risk = risk{
+					Score: f.Stmts.Analyze.Risk.GetScore(),
+				}
+			}
+
+			if f.Stmts.Analyze.Coupling != nil {
+				concernedFile.Coupling = coupling{
+					Afferent:    f.Stmts.Analyze.Coupling.GetAfferent(),
+					Efferent:    f.Stmts.Analyze.Coupling.GetEfferent(),
+					Instability: f.Stmts.Analyze.Coupling.GetInstability(),
+				}
+			}
+		}
+
+		r.ConcernedFiles[i] = concernedFile
 	}
 
 	r.TopCommitters = make([]contributor, len(combined.TopCommitters))

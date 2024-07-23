@@ -84,6 +84,7 @@ func main() {
 					&cli.StringFlag{
 						Name:  "report-json",
 						Usage: "Generate a report in JSON format",
+						Category: "Report",
 					},
 					// Watch mode
 					&cli.BoolFlag{
