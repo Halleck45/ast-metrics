@@ -44,6 +44,11 @@ func (gitAnalyzer *GitAnalyzer) CalculateCount(files []*pb.File) []ResultOfGitAn
 			continue
 		}
 
+		// Declare the short path of the file (from repository root)
+		// ex: /var/www/foo/bar.go -> foo/bar.go
+		file.ShortPath = strings.TrimPrefix(file.Path, repoRoot)
+		file.ShortPath = strings.TrimPrefix(file.ShortPath, "/")
+
 		// Add file to filesByGitRepo map
 		if _, ok := filesByGitRepo[repoRoot]; !ok {
 			filesByGitRepo[repoRoot] = make([]*pb.File, 0)
