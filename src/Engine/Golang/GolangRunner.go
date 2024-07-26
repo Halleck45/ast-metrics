@@ -90,6 +90,7 @@ func (r GolangRunner) DumpAST() {
 
 		// Create protobuf object
 		protoFile := r.ParseGoFile(filePath)
+		protoFile.Checksum = hash
 
 		// Dump protobuf object to destination
 		err = Engine.DumpProtobuf(protoFile, binPath)

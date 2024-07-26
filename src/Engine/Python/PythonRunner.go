@@ -79,6 +79,7 @@ func (r PythonRunner) DumpAST() {
 
 		// Create protobuf object
 		protoFile, _ := parsePythonFile(filePath)
+		protoFile.Checksum = hash
 
 		// Dump protobuf object to destination
 		Engine.DumpProtobuf(protoFile, binPath)

@@ -41,6 +41,8 @@ message File {
   string programmingLanguage  = 4;
   Commits commits = 5;
   repeated string errors = 6;
+  string checksum = 7;
+  string shortPath = 8;
 }
 
 // Describe the location of statement in file.

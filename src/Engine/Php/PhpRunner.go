@@ -92,6 +92,7 @@ func (r PhpRunner) dumpOneAst(wg *sync.WaitGroup, filePath string) {
 
 	// Create protobuf object
 	protoFile, _ := parsePhpFile(filePath)
+	protoFile.Checksum = hash
 
 	// Dump protobuf object to destination
 	err = Engine.DumpProtobuf(protoFile, binPath)
