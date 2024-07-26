@@ -85,7 +85,7 @@
                 </td>
                 {% if detailled == true %}
                     <td class="px-4 py-1 text-sm font-medium whitespace-nowrap">
-                        <span class="text-sm font-normal text-gray-600 dark:text-gray-400">
+                        <span class="text-xs font-normal text-gray-600 dark:text-gray-400">
                             {{ change.LatestVersion.Stmts.Analyze.Complexity.Cyclomatic|floatformat:0 }}
                             {% if change.Status == 'modified' %}
                                 {% include 'componentComparaisonBadge.html' with comparaisonMode='lowIsBetter' diff=change.Comparaison.AverageCyclomaticComplexityPerMethod round=0 %}
@@ -94,7 +94,7 @@
                     </td>
                     </td>
                     <td class="px-4 py-1 text-sm font-medium whitespace-nowrap">
-                        <span class="text-sm font-normal text-gray-600 dark:text-gray-400">
+                        <span class="text-xs font-normal text-gray-600 dark:text-gray-400">
                             {{ change.LatestVersion.LinesOfCode.LinesOfCode }}
                             {% if change.Status == 'modified' %}
                                 {% include 'componentComparaisonBadge.html' with comparaisonMode='dontCare' diff=change.Comparaison.Loc round=0 %}
@@ -102,7 +102,7 @@
                         </span>
                     </td>
                     <td class="px-4 py-1 text-sm font-medium whitespace-nowrap">
-                        <span class="text-sm font-normal text-gray-600 dark:text-gray-400">
+                        <span class="text-xs font-normal text-gray-600 dark:text-gray-400">
                             {{ change.LatestVersion.Stmts.Analyze.Coupling.Efferent }}
                             {% if change.Status == 'modified' %}
                                 {% include 'componentComparaisonBadge.html' with comparaisonMode='dontCare' diff=change.Comparaison.AverageEfferentCoupling round=0 %}
@@ -110,7 +110,7 @@
                         </span>
                     </td>
                     <td class="px-4 py-1 text-sm font-medium whitespace-nowrap">
-                        <span class="text-sm font-normal text-gray-600 dark:text-gray-400">
+                        <span class="text-xs font-normal text-gray-600 dark:text-gray-400">
                             {{ change.LatestVersion.Stmts.Analyze.Coupling.Afferent }}
                             {% if change.Status == 'modified' %}
                                 {% include 'componentComparaisonBadge.html' with comparaisonMode='dontCare' diff=change.Comparaison.AverageAfferentCoupling round=0 %}

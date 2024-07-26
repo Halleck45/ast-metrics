@@ -12,6 +12,7 @@ const (
 	ADDED    = "added"
 	DELETED  = "deleted"
 	MODIFIED = "modified"
+	UNCHANGED = "unchanged"
 )
 
 type ChangedFile struct {
@@ -178,7 +179,8 @@ func (c *Comparator) Compare(first Aggregated, second Aggregated) Comparaison {
 			}
 
 			if file.Checksum == file2.Checksum {
-				continue
+				// already present, no change
+				change.Status = UNCHANGED
 			}
 
 			// nb functions
@@ -298,6 +300,10 @@ func (c *Comparator) Compare(first Aggregated, second Aggregated) Comparaison {
 		}
 
 		if change.IsNegligible {
+			continue
+		}
+
+		if change.Status == UNCHANGED {
 			continue
 		}
 
