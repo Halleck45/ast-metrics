@@ -33,6 +33,12 @@ AST Metrics is a standalone package. It does not require any other software to b
 curl -s https://raw.githubusercontent.com/Halleck45/ast-metrics/main/scripts/download.sh|bash
 ```
 
+With Go
+
+```console
+go install github.com/halleck45/ast-metrics@latest
+```
+
 or follow the detailled [installation instructions](https://halleck45.github.io/ast-metrics/getting-started/install/).
 
 > [!IMPORTANT]
