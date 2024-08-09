@@ -60,6 +60,13 @@ You don't need anything, simply download the correct binary for your platform.
 
     For example, if the output is `OS: Linux, Arch: x86_64`, you should download the `amd64` binary for Linux.
 
+
+=== ":simple-go: With Go"
+
+    ```bash
+    go install github.com/halleck45/ast-metrics@latest
+    ```
+
 ## Verify Installation
 
 Verify that the installation worked by opening a new terminal session and listing AST Metrics's available subcommands.
