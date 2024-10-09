@@ -79,7 +79,8 @@ type Aggregator struct {
 	projectAggregated ProjectAggregated
 	analyzers         []AggregateAnalyzer
 	gitSummaries      []ResultOfGitAnalysis
-	ComparaidFiles    []*pb.File
+	ComparedFiles     []*pb.File
+	ComparedBranch    string
 }
 
 type TopCommitter struct {
@@ -157,12 +158,12 @@ func (r *Aggregator) Aggregates() ProjectAggregated {
 	r.projectAggregated = r.executeAggregationOnFiles(r.files)
 
 	// Do the same for the comparaison files (if needed)
-	if r.ComparaidFiles != nil {
-		comparaidAggregated := r.executeAggregationOnFiles(r.ComparaidFiles)
+	if r.ComparedFiles != nil {
+		comparaidAggregated := r.executeAggregationOnFiles(r.ComparedFiles)
 
 		// Compare
 		comparaison := ProjectComparaison{}
-		comparator := NewComparator()
+		comparator := NewComparator(r.ComparedBranch)
 		comparaison.Combined = comparator.Compare(r.projectAggregated.Combined, comparaidAggregated.Combined)
 		r.projectAggregated.Combined.Comparaison = &comparaison.Combined
 
@@ -382,6 +383,8 @@ func (r *Aggregator) consolidate(aggregated *Aggregated) {
 			// if in hashmap
 			if _, ok := aggregated.ClassesAfferentCoupling[class.Name.Qualified]; ok {
 				class.Stmts.Analyze.Coupling.Afferent = int32(aggregated.ClassesAfferentCoupling[class.Name.Qualified])
+
+				file.Stmts.Analyze.Coupling.Afferent += class.Stmts.Analyze.Coupling.Afferent
 			}
 
 			// instability
@@ -463,8 +466,9 @@ func (r *Aggregator) WithAggregateAnalyzer(analyzer AggregateAnalyzer) {
 	r.analyzers = append(r.analyzers, analyzer)
 }
 
-func (r *Aggregator) WithComparaison(allResultsCloned []*pb.File) {
-	r.ComparaidFiles = allResultsCloned
+func (r *Aggregator) WithComparaison(allResultsCloned []*pb.File, comparedBranch string) {
+	r.ComparedFiles = allResultsCloned
+	r.ComparedBranch = comparedBranch
 }
 
 // Calculate the aggregated data
@@ -520,14 +524,14 @@ func (r *Aggregator) calculateSums(file *pb.File, specificAggregation *Aggregate
 		specificAggregation.NbMethods++
 
 		// Average cyclomatic complexity per method
-		if function.Stmts.Analyze.Complexity != nil {
+		if function.Stmts.Analyze != nil && function.Stmts.Analyze.Complexity != nil {
 			if function.Stmts.Analyze.Complexity.Cyclomatic != nil {
 				specificAggregation.AverageCyclomaticComplexityPerMethod += float64(*function.Stmts.Analyze.Complexity.Cyclomatic)
 			}
 		}
 
 		// Average maintainability index per method
-		if function.Stmts.Analyze.Maintainability != nil {
+		if function.Stmts.Analyze != nil && function.Stmts.Analyze.Maintainability != nil {
 			if function.Stmts.Analyze.Maintainability.MaintainabilityIndex != nil && !math.IsNaN(float64(*function.Stmts.Analyze.Maintainability.MaintainabilityIndex)) {
 				specificAggregation.AverageMIPerMethod += float64(*function.Stmts.Analyze.Maintainability.MaintainabilityIndex)
 				specificAggregation.AverageMIwocPerMethod += float64(*function.Stmts.Analyze.Maintainability.MaintainabilityIndexWithoutComments)
@@ -535,7 +539,7 @@ func (r *Aggregator) calculateSums(file *pb.File, specificAggregation *Aggregate
 			}
 		}
 		// average lines of code per method
-		if function.Stmts.Analyze.Volume != nil {
+		if function.Stmts.Analyze != nil && function.Stmts.Analyze.Volume != nil {
 			if function.Stmts.Analyze.Volume.Loc != nil {
 				specificAggregation.AverageLocPerMethod += float64(*function.Stmts.Analyze.Volume.Loc)
 			}

@@ -3,13 +3,13 @@
 {% endif %}
 
 {% if comparaisonMode == 'lowIsBetter' %}
-    {% set cssClass = 'bg-red-200 text-red-800' %}
 
+    {% set cssClass = 'bg-gray-200 text-gray-800' %}
     {% if diff < 0 %}
         {% set cssClass = 'bg-green-200 text-green-800' %}
     {% else %}
-        {% if diff == 0 %}
-            {% set cssClass = 'bg-gray-200 text-gray-800' %}
+        {% if diff > 0 %}
+            {% set cssClass = 'bg-red-200 text-red-800' %}
         {% endif %}
     {% endif %}
 
@@ -27,13 +27,13 @@
 {% else %}
     {% if comparaisonMode == 'highIsBetter' %}
 
-        {% set cssClass = 'bg-green-200 text-green-800' %}
+        {% set cssClass = 'bg-gray-200 text-gray-800' %}
 
         {% if diff < 0 %}
             {% set cssClass = 'bg-red-200 text-red-800' %}
         {% else %}
-            {% if diff == 0 %}
-                {% set cssClass = 'bg-gray-200 text-gray-800' %}
+            {% if diff > 0 %}
+                {% set cssClass = 'bg-green-200 text-green-800' %}
             {% endif %}
         {% endif %}
 

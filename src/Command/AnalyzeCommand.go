@@ -160,7 +160,7 @@ func (v *AnalyzeCommand) Execute() error {
 	aggregator := Analyzer.NewAggregator(allResults, v.gitSummaries)
 	aggregator.WithAggregateAnalyzer(Activity.NewBusFactor())
 	if v.configuration.CompareWith != "" {
-		aggregator.WithComparaison(allResultsCloned)
+		aggregator.WithComparaison(allResultsCloned, v.configuration.CompareWith)
 	}
 
 	if v.spinner != nil {

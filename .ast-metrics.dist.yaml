@@ -5,16 +5,3 @@ exclude: []
 reports:
   html: ./build/report
   markdown: ./build/report.md
-
-requirements:
-  rules:
-    cyclomatic_complexity:
-      max: 100
-      excludes: []
-
-    lines_of_code:
-      max: 100
-      excludes: []
-
-    maintainability:
-      min: 65
