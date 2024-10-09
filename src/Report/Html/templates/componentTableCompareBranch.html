@@ -77,10 +77,9 @@
                 </td>
                 <td class="px-4 py-1 text-xs font-medium whitespace-nowrap text-center" width="60">
                     <span class="text-xs font-normal text-gray-600 dark:text-gray-400">
-                        {{ change.LatestVersion.Stmts.Analyze.Maintainability.MaintainabilityIndex|floatformat:0 }}
-                        {% if change.Status == 'modified' %}
-                            {% include 'componentComparaisonBadge.html' with comparaisonMode='highIsBetter' diff=change.Comparaison.AverageMI round=2 %}
-                        {% endif %}
+                        {% for class in change.LatestVersion.Stmts.StmtClass %}
+                            {{ class.Stmts.Analyze.Maintainability.MaintainabilityIndex|floatformat:0 }}
+                        {% endfor %}
                     </span>
                 </td>
                 {% if detailled == true %}

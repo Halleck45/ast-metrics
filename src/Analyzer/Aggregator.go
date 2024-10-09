@@ -398,9 +398,6 @@ func (r *Aggregator) consolidate(aggregated *Aggregated) {
 			}
 		}
 
-
-
-
 		dependencies := file.Stmts.StmtExternalDependencies
 
 		if dependencies != nil {
