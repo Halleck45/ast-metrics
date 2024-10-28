@@ -72,7 +72,7 @@ else
 fi
 
 if [[ "$download_url" != "" ]]; then
-  echo "Downloading $download_url"
+  echo "📦 Downloading $download_url"
   curl -L -o $destination $download_url
 fi
 
@@ -82,8 +82,21 @@ if [[ "$os_arch" == *"Linux"* || "$os_arch" == *"Darwin"* ]]; then
 fi
 
 echo
-echo "File downloaded: $destination"
+echo "📁 File downloaded: $destination"
 echo
 echo "You can move the executable to a directory in your PATH to make it easier to run."
 echo
-
+if [[ "$os_arch" == *"Windows"* ]]; then
+  echo "    Example: "
+  echo "    mv $destination C:\\Windows\\System32"
+fi
+if [[ "$os_arch" == *"Linux"* || "$os_arch" == *"Darwin"* ]]; then
+  echo "    Example: "
+  echo
+  echo "    mv $destination /usr/local/bin"
+  echo "    chmod +x /usr/local/bin/$destination"
+fi
+echo
+echo
+echo "🌟 If you like AST Metrics, please consider starring the project on GitHub: https://github.com/Halleck45/ast-metrics/"
+echo
