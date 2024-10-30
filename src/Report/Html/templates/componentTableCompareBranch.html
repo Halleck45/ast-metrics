@@ -1,31 +1,31 @@
-<table class="sortable w-full mt-2 min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-    <thead class="uppercase bg-gray-50 dark:bg-gray-800">
+<table class="sortable w-full mt-2 min-w-full divide-y divide-gray-200 ">
+    <thead class="uppercase bg-gray-50 ">
         <tr>
-            <th class="py-2 px-4 text-sm font-normal text-left rtl:text-right text-gray-500 dark:text-gray-400">
+            <th class="py-2 px-4 text-sm font-normal text-left rtl:text-right text-gray-500 ">
                 <!-- Git status -->
             </th>
-            <th class="py-2 px-4 text-sm font-normal text-left rtl:text-right text-gray-500 dark:text-gray-400">File</th>
-            <th class="py-2 px-4 text-sm font-normal text-left rtl:text-right text-gray-500 dark:text-gray-400">
+            <th class="py-2 px-4 text-sm font-normal text-left rtl:text-right text-gray-500 ">File</th>
+            <th class="py-2 px-4 text-sm font-normal text-left rtl:text-right text-gray-500 ">
                 <acronym title="Maintainability index is based on the complexity of operators, operands, and cyclomatic complexity.">
                     Maint.
                 </acronym>
             </th>
-            <th class="py-2 px-4 text-sm font-normal text-left rtl:text-right text-gray-500 dark:text-gray-400">
+            <th class="py-2 px-4 text-sm font-normal text-left rtl:text-right text-gray-500 ">
                 <acronym title="Cyclomatic complexity is the number of decision points in a program">
                     Cyclomatic
                 </acronym>
             </th>
-            <th class="py-2 px-4 text-sm font-normal text-left rtl:text-right text-gray-500 dark:text-gray-400">
+            <th class="py-2 px-4 text-sm font-normal text-left rtl:text-right text-gray-500 ">
                 <acronym title="Lines of code (LOC)">
                     LOC
                 </acronym>
             </th>
-            <th class="py-2 px-4 text-sm font-normal text-left rtl:text-right text-gray-500 dark:text-gray-400">
+            <th class="py-2 px-4 text-sm font-normal text-left rtl:text-right text-gray-500 ">
                 <acronym title="Efferent coupling: number of external dependencies">
                     C<sub>e</sub>
                 </acronym>
             </th>
-            <th class="py-2 px-4 text-sm font-normal text-left rtl:text-right text-gray-500 dark:text-gray-400">
+            <th class="py-2 px-4 text-sm font-normal text-left rtl:text-right text-gray-500 ">
                 <acronym title="Afferent coupling: number of times the component is used by other components">
                     C<sub>a</sub>
                 </acronym>
@@ -38,7 +38,7 @@
 
         <tr>
             <td class="px-4 py-1 text-sm font-medium whitespace-nowrap" colspan="4">
-                <span class="text-sm font-normal text-gray-600 dark:text-gray-400">
+                <span class="text-sm font-normal text-gray-600 ">
                     No significant changes detected. Code may have been change, but metrics are stable.
                 </span>
             </td>
@@ -47,9 +47,9 @@
 
         {% for change in changedFiles %}
 
-            <tr class="odd:bg-white odd:dark:bg-gray-900 even:bg-gray-50 even:dark:bg-gray-800 border-b dark:border-gray-700">
+            <tr class="odd:bg-white odd:">
                 <td class="px-4 py-1 text-xs font-medium whitespace-nowrap">
-                    <span class="text-xs font-normal text-gray-600 dark:text-gray-400">
+                    <span class="text-xs font-normal text-gray-600 ">
                         {% if change.Status == 'added' %}
                             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-6">
                             <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m3.75 9v6m3-3H9m1.5-12H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z" />
@@ -69,13 +69,13 @@
                 </td>
                 <td class="px-4 py-1 text-xs text-left font-medium whitespace-nowrap">
                     <div class="truncate w-90" style="direction: rtl;">
-                        <acronym title="{{ change.LatestVersion.ShortPath }}" class="text-xs font-bold text-gray-600 dark:text-gray-400">
+                        <acronym title="{{ change.LatestVersion.ShortPath }}" class="text-xs font-bold text-gray-600 ">
                             &#x200E{{ change.LatestVersion.ShortPath }}
                         </acronym>
                     </div>
                 </td>
                 <td class="px-4 py-1 text-xs font-medium whitespace-nowrap text-center" width="60">
-                    <span class="text-xs font-normal text-gray-600 dark:text-gray-400">
+                    <span class="text-xs font-normal text-gray-600 ">
                         {% for class in change.LatestVersion.Stmts.StmtClass %}
                             {{ class.Stmts.Analyze.Maintainability.MaintainabilityIndex|floatformat:0 }}
                         {% endfor %}
@@ -83,7 +83,7 @@
                 </td>
                 {% if detailled == true %}
                     <td class="px-4 py-1 text-sm font-medium whitespace-nowrap">
-                        <span class="text-xs font-normal text-gray-600 dark:text-gray-400">
+                        <span class="text-xs font-normal text-gray-600 ">
                             {{ change.LatestVersion.Stmts.Analyze.Complexity.Cyclomatic|floatformat:0 }}
                             {% if change.Status == 'modified' %}
                                 {% include 'componentComparaisonBadge.html' with comparaisonMode='lowIsBetter' diff=change.Comparaison.AverageCyclomaticComplexityPerMethod round=0 %}
@@ -91,7 +91,7 @@
                         </span>
                     </td>
                     <td class="px-4 py-1 text-sm font-medium whitespace-nowrap">
-                        <span class="text-xs font-normal text-gray-600 dark:text-gray-400">
+                        <span class="text-xs font-normal text-gray-600 ">
                             {{ change.LatestVersion.LinesOfCode.LinesOfCode }}
                             {% if change.Status == 'modified' %}
                                 {% include 'componentComparaisonBadge.html' with comparaisonMode='dontCare' diff=change.Comparaison.Loc round=0 %}
@@ -99,7 +99,7 @@
                         </span>
                     </td>
                     <td class="px-4 py-1 text-sm font-medium whitespace-nowrap">
-                        <span class="text-xs font-normal text-gray-600 dark:text-gray-400">
+                        <span class="text-xs font-normal text-gray-600 ">
                             {{ change.LatestVersion.Stmts.Analyze.Coupling.Efferent }}
                             {% if change.Status == 'modified' %}
                                 {% include 'componentComparaisonBadge.html' with comparaisonMode='dontCare' diff=change.Comparaison.AverageEfferentCoupling round=0 %}
@@ -107,7 +107,7 @@
                         </span>
                     </td>
                     <td class="px-4 py-1 text-sm font-medium whitespace-nowrap">
-                        <span class="text-xs font-normal text-gray-600 dark:text-gray-400">
+                        <span class="text-xs font-normal text-gray-600 ">
                             {{ change.LatestVersion.Stmts.Analyze.Coupling.Afferent }}
                             {% if change.Status == 'modified' %}
                                 {% include 'componentComparaisonBadge.html' with comparaisonMode='dontCare' diff=change.Comparaison.AverageAfferentCoupling round=0 %}
