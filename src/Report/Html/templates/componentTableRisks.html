@@ -2,53 +2,53 @@
     <thead class="uppercase bg-gray-50 ">
         <tr>
             {% if detailled == true %}
-                <th class="py-2 px-4 text-sm font-normal text-left rtl:text-right text-gray-500 ">Lang.</th>
+                <th scope="col" class="py-2 px-4 text-sm font-normal text-left rtl:text-right text-gray-500 ">Lang.</th>
             {% endif %}
-            <th class="py-2 px-4 text-sm font-normal text-left rtl:text-right text-gray-500 ">Component</th>
-            <th class="py-2 px-4 text-sm font-normal text-left rtl:text-right text-gray-500 ">
+            <th scope="col" class="py-2 px-4 text-sm font-normal text-left rtl:text-right text-gray-500 ">Component</th>
+            <th scope="col" class="py-2 px-4 text-sm font-normal text-left rtl:text-right text-gray-500 ">
                 <acronym title="Risk score is calculated as the average risk of the component.">
                     Risk
                 </acronym>
             </th>
-            <th class="py-2 px-4 text-sm font-normal text-left rtl:text-right text-gray-500 ">
+            <th scope="col" class="py-2 px-4 text-sm font-normal text-left rtl:text-right text-gray-500 ">
                 <acronym title="Maintainability index is based on the complexity of operators, operands, and cyclomatic complexity.">
                     Maint.
                 </acronym>
             </th>
-            <th class="py-2 px-4 text-sm font-normal text-left rtl:text-right text-gray-500 ">
+            <th scope="col" class="py-2 px-4 text-sm font-normal text-left rtl:text-right text-gray-500 ">
                 <acronym title="Number of recents commits (12 month)">
                     Commits
                 </acronym>
             </th>
             {% if detailled == true %}
-                <th class="py-2 px-4 text-sm font-normal text-left rtl:text-right text-gray-500 ">
+                <th scope="col" class="py-2 px-4 text-sm font-normal text-left rtl:text-right text-gray-500 ">
                     <acronym title="Cyclomatic complexity is the number of decision points in a program">
                         Cyclomatic
                     </acronym>
                 </th>
-                <th class="py-2 px-4 text-sm font-normal text-left rtl:text-right text-gray-500 ">
+                <th scope="col" class="py-2 px-4 text-sm font-normal text-left rtl:text-right text-gray-500 ">
                     <acronym title="Halstead effort is calculated as the average effort required to implement a software programe.">
                     Effort
                     </acronmy>
                 </th>
-                <th class="py-2 px-4 text-sm font-normal text-left rtl:text-right text-gray-500 ">
+                <th scope="col" class="py-2 px-4 text-sm font-normal text-left rtl:text-right text-gray-500 ">
                     <acronym title="Lines of code (LOC)">
                         LOC
                     </acronym>
                 </th>
-                <th class="py-2 px-4 text-sm font-normal text-left rtl:text-right text-gray-500 ">
+                <th scope="col" class="py-2 px-4 text-sm font-normal text-left rtl:text-right text-gray-500 ">
                     <acronym title="Efferent coupling: number of external dependencies">
                         C<sub>e</sub>
                     </acronym>
                 </th>
                 </th>
-                <th class="py-2 px-4 text-sm font-normal text-left rtl:text-right text-gray-500 ">
+                <th scope="col" class="py-2 px-4 text-sm font-normal text-left rtl:text-right text-gray-500 ">
                     <acronym title="Afferent coupling: number of times the component is used by other components">
                         C<sub>a</sub>
                     </acronym>
                 </th>
                 </th>
-                <th class="py-2 px-4 text-sm font-normal text-left rtl:text-right text-gray-500 ">
+                <th scope="col" class="py-2 px-4 text-sm font-normal text-left rtl:text-right text-gray-500 ">
                     <acronym title="0 (stable) to 1 (unstable) - The ratio of efferent coupling (Ce) to total coupling (Ce + Ca)">
                         Instability
                     </acronym>
