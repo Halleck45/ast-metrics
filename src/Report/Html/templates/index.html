@@ -11,11 +11,11 @@
 {% block content %}
 
     <!-- start: language tabs-->
-    <div class="flex overflow-x-auto overflow-y-hidden border-b border-gray-200 whitespace-nowrap dark:border-gray-700">
+    <div class="flex overflow-x-auto overflow-y-hidden border-b border-gray-200 whitespace-nowrap ">
 
         <a 
             href="index.html"
-            class="inline-flex items-center h-10 px-2 py-2 -mb-px text-center {% if currentLanguage == "All" %}text-blue-600 border-blue-500{% endif %} bg-transparent border-b-2 sm:px-4 -px-1 dark:border-blue-400 dark:text-blue-300 whitespace-nowrap focus:outline-none">
+            class="inline-flex items-center h-10 px-2 py-2 -mb-px text-center {% if currentLanguage == "All" %}text-blue-600 border-blue-500{% endif %} bg-transparent border-b-2 sm:px-4 -px-1 focus:outline-none">
             <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 mx-1 sm:w-6 sm:h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z" />
             </svg>
@@ -29,7 +29,7 @@
             {% for languageName, lang in projectAggregated.ByProgrammingLanguage %}
             <a 
                 href="index_{{ languageName }}.html"
-                class="inline-flex items-center h-10 px-2 py-2 -mb-px text-center bg-transparent border-b-2 {% if currentLanguage == languageName %}text-blue-600 border-blue-500{% else %}text-gray-700   border-transparent{% endif %} sm:px-4 -px-1 dark:text-white whitespace-nowrap cursor-base focus:outline-none hover:border-gray-400">
+                class="inline-flex items-center h-10 px-2 py-2 -mb-px text-center bg-transparent border-b-2 {% if currentLanguage == languageName %}text-blue-600 border-blue-500{% else %}text-gray-700   border-transparent{% endif %} sm:px-4 -px-1 hover:border-gray-400">
                 <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 mx-1 sm:w-6 sm:h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z" />
                 </svg>
@@ -47,7 +47,7 @@
     <!-- start alert -->
     {% if currentView.Comparaison %}
         {% if currentView.Comparaison.ChangedFiles|length > 0 %}
-        <div class="flex bg-white rounded-lg shadow-md dark:bg-gray-800 mt-4">
+        <div class="flex bg-white rounded-lg shadow-md mt-4">
             <div class="rounded-l-lg flex items-center justify-center w-12 bg-blue-500">
                 <svg class="w-6 h-6 text-white fill-current" viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg">
                     <path d="M20 3.33331C10.8 3.33331 3.33337 10.8 3.33337 20C3.33337 29.2 10.8 36.6666 20 36.6666C29.2 36.6666 36.6667 29.2 36.6667 20C36.6667 10.8 29.2 3.33331 20 3.33331ZM21.6667 28.3333H18.3334V25H21.6667V28.3333ZM21.6667 21.6666H18.3334V11.6666H21.6667V21.6666Z" />
@@ -56,8 +56,8 @@
         
             <div class="px-4 py-2 -mx-3">
                 <div  class="mx-3">
-                    <span class="font-semibold text-blue-500 dark:text-blue-400">Code has changed</span>
-                    <div class="text-sm text-gray-600 dark:text-gray-200">
+                    <span class="font-semibold text-blue-500 changed</span>
+                    <div class="text-sm text-gray-600 ">
                         Code has changed compared to {{ currentView.Comparaison.ComparedBranch }}.
                         <a href="compare.html" class="text-blue-500 underline">Explore changes now</a>.
                     </div>
@@ -72,13 +72,13 @@
     <div class="grid grid-cols-4 gap-4 mt-4">
 
         <!-- start: card -->
-        <div class="max-w-2xl px-8 py-4 bg-white rounded-lg shadow-md dark:bg-gray-800">
+        <div class="max-w-2xl px-8 py-4 bg-white rounded-lg shadow-md ">
             <div class="mt-2">
                 <div>
-                    <h5 class="leading-none text-3xl font-bold text-gray-900 dark:text-white pb-2">
+                    <h5 class="leading-none text-3xl font-bold text-gray-900 pb-2">
                         {{ currentView.Loc|stringifyNumber }}
                     </h5>
-                    <p class="text-base font-normal text-gray-500 dark:text-gray-400">
+                    <p class="text-base font-normal text-gray-500 ">
                         {% if currentView.Comparaison %}
                             {% include 'componentComparaisonBadge.html' with comparaisonMode='dontCare' diff=currentView.Comparaison.Loc round=0 %}
                         {% endif %}
@@ -96,13 +96,13 @@
         <!-- end: card -->
 
         <!-- start: card -->
-        <div class="max-w-2xl px-8 py-4 bg-white rounded-lg shadow-md dark:bg-gray-800">
+        <div class="max-w-2xl px-8 py-4 bg-white rounded-lg shadow-md ">
             <div class="mt-2">
                 <div>
-                    <h5 class="leading-none text-3xl font-bold text-gray-900 dark:text-white pb-2">
+                    <h5 class="leading-none text-3xl font-bold text-gray-900 pb-2">
                         {{ currentView.AverageCyclomaticComplexityPerMethod | floatformat:2 }}
                     </h5>
-                    <p class="text-base font-normal text-gray-500 dark:text-gray-400">
+                    <p class="text-base font-normal text-gray-500 ">
                         {% if currentView.Comparaison %}
                             {% include 'componentComparaisonBadge.html' with comparaisonMode='lowIsBetter' diff=currentView.Comparaison.AverageCyclomaticComplexityPerMethod round=2 %}
                         {% endif %}
@@ -121,10 +121,10 @@
 
 
         <!-- start: card -->
-        <div class="max-w-2xl px-8 py-4 bg-white rounded-lg shadow-md dark:bg-gray-800">
+        <div class="max-w-2xl px-8 py-4 bg-white rounded-lg shadow-md ">
             <div class="mt-2">
                 <div>
-                    <h5 class="leading-none text-3xl font-bold text-gray-900 dark:text-white pb-2">
+                    <h5 class="leading-none text-3xl font-bold text-gray-900 pb-2">
                         {% set color="red" %}
                         {% if currentView.AverageMI > 84 %}
                             {% set color="green" %}
@@ -133,7 +133,7 @@
                         {% endif %}
                         <span class="text-white bg-{{ color }}-500 rounded px-3 py-1">{{ currentView.AverageMI | floatformat:0 }}</span>
                     </h5>
-                    <p class="text-base font-normal text-gray-500 dark:text-gray-400">
+                    <p class="text-base font-normal text-gray-500 ">
                         {% if currentView.Comparaison %}
                             {% include 'componentComparaisonBadge.html' with comparaisonMode='highIsBetter' diff=currentView.Comparaison.AverageMI round=2 %}
                         {% endif %}
@@ -152,13 +152,13 @@
         <!-- end: card -->
 
         <!-- start: card -->
-        <div class="max-w-2xl px-8 py-4 bg-white rounded-lg shadow-md dark:bg-gray-800">
+        <div class="max-w-2xl px-8 py-4 bg-white rounded-lg shadow-md ">
             <div class="mt-2">
                 <div>
-                    <h5 class="leading-none text-3xl font-bold text-gray-900 dark:text-white pb-2">
+                    <h5 class="leading-none text-3xl font-bold text-gray-900 pb-2">
                         {{ currentView.AverageLocPerMethod | floatformat:0 }}
                     </h5>
-                    <p class="text-base font-normal text-gray-500 dark:text-gray-400">
+                    <p class="text-base font-normal text-gray-500 ">
                         {% if currentView.Comparaison %}
                             {% include 'componentComparaisonBadge.html' with comparaisonMode='lowIsBetter' diff=currentView.Comparaison.AverageLocPerMethod round=2 %}
                         {% endif %}
@@ -181,33 +181,33 @@
     <div class="grid grid-cols-4 gap-4 mt-4">
 
          <!-- start: card -->
-         <div class="max-w-2xl px-8 py-4 bg-white rounded-lg shadow-md dark:bg-gray-800">
+         <div class="max-w-2xl px-8 py-4 bg-white rounded-lg shadow-md ">
             <div class="mt-2">
                 {% if currentView.ResultOfGitAnalysis %}
                     <div>
-                        <h5 class="leading-none text-3xl font-bold text-gray-900 dark:text-white pb-2">
+                        <h5 class="leading-none text-3xl font-bold text-gray-900 pb-2">
                             {{ currentView.CommitCountForPeriod | stringifyNumber }}
                         </h5>
-                        <p class="text-base font-normal text-gray-500 dark:text-gray-400">
+                        <p class="text-base font-normal text-gray-500 ">
                             Commits on analyzed code
                         </p>
                     </div>
                     <div class="card-graph">
                         {{ currentView|lineChartGitActivity}}
                     </div>
-                    <table class="sortable w-full mt-2 min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-                        <thead class="uppercase bg-gray-50 dark:bg-gray-800">
+                    <table class="sortable w-full mt-2 min-w-full divide-y divide-gray-200 ">
+                        <thead class="uppercase bg-gray-50 ">
                             <tr>
-                                <th class="py-2 px-2 text-sm font-normal text-left rtl:text-right text-gray-500 dark:text-gray-400"></th>
-                                <th class="py-2 px-2 text-sm font-normal text-left rtl:text-right text-gray-500 dark:text-gray-400">
+                                <th class="py-2 px-2 text-sm font-normal text-left rtl:text-right text-gray-500 "></th>
+                                <th class="py-2 px-2 text-sm font-normal text-left rtl:text-right text-gray-500 ">
                                     <acronym title="Total commits in the analyzed period">Total</acronym>
                                 </th>
-                                <th class="py-2 px-2 text-sm font-normal text-left rtl:text-right text-gray-500 dark:text-gray-400">
+                                <th class="py-2 px-2 text-sm font-normal text-left rtl:text-right text-gray-500 ">
                                     <acronym title="Commits on analyzed files">
                                         Impacting
                                     </acronym>
                                 </th>
-                                <th class="py-2 px-2 text-sm font-normal text-left rtl:text-right text-gray-500 dark:text-gray-400">
+                                <th class="py-2 px-2 text-sm font-normal text-left rtl:text-right text-gray-500 ">
                                     <acronym title="Commits on files ignored by the analysis, or merge commits">
                                         Ignored
                                     </acronym>
@@ -216,7 +216,7 @@
                         </thead>
                         <tbody>
                             {% for commitAnalysis in currentView.ResultOfGitAnalysis %}
-                                <tr class="text-sm odd:bg-white odd:dark:bg-gray-900 even:bg-gray-50 even:dark:bg-gray-800 border-b dark:border-gray-700">
+                                <tr class="text-sm odd:bg-white odd:">
                                     <td class="px-2 py-1 text-sm font-medium whitespace-nowrap">
                                         <acronym
                                         class="cursor-help"
@@ -246,10 +246,10 @@
                     </p>
                 {% else %}
                     <div>
-                        <h5 class="leading-none text-3xl font-bold text-gray-900 dark:text-white pb-2">
+                        <h5 class="leading-none text-3xl font-bold text-gray-900 pb-2">
                             {{ currentView.CommitCountForPeriod | stringifyNumber }}
                         </h5>
-                        <p class="text-base font-normal text-gray-500 dark:text-gray-400">
+                        <p class="text-base font-normal text-gray-500 ">
                             Commits
                         </p>
                     </div>
@@ -266,21 +266,21 @@
 
 
          <!-- start: card -->
-         <div class="px-8 py-4 bg-white rounded-lg shadow-md dark:bg-gray-800">
+         <div class="px-8 py-4 bg-white rounded-lg shadow-md ">
             <div class="mt-2">
                 <div>
-                    <h5 class="leading-none text-3xl font-bold text-gray-900 dark:text-white pb-2">
+                    <h5 class="leading-none text-3xl font-bold text-gray-900 pb-2">
                         {{ currentView.BusFactor }}
                     </h5>
-                    <p class="text-base font-normal text-gray-500 dark:text-gray-400">
+                    <p class="text-base font-normal text-gray-500 ">
                         Bus factor
                     </p>
                 </div>
                 <div class="card-graph h-48">
-                    <table class="w-full mt-2 divide-y divide-gray-200 dark:divide-gray-700">
-                        <thead class="uppercase bg-gray-50 dark:bg-gray-800">
+                    <table class="w-full mt-2 divide-y divide-gray-200 ">
+                        <thead class="uppercase bg-gray-50 ">
                             <tr>
-                                <th class="py-2 px-4 text-sm font-normal text-left rtl:text-right text-gray-500 dark:text-gray-400">
+                                <th class="py-2 px-4 text-sm font-normal text-left rtl:text-right text-gray-500 ">
                                     Top committers
                                 </th>
                                     Top committers
@@ -289,7 +289,7 @@
                         </thead>
                         <tbody>
                             {% for committer in currentView.TopCommitters %}
-                                <tr class="odd:bg-white odd:dark:bg-gray-900 even:bg-gray-50 even:dark:bg-gray-800 border-b dark:border-gray-700">
+                                <tr class="odd:bg-white odd:">
                                     <td class="px-4 py-1 text-xs whitespace-nowrap">
                                         <acronym title="{{ committer.Count }} commits">
                                             {{ committer.Name }}
@@ -309,12 +309,12 @@
 
 
         <!-- start: card about files with low maintenability -->
-        <div class="px-8 py-4 bg-white rounded-lg shadow-md dark:bg-gray-800 col-span-2">
+        <div class="px-8 py-4 bg-white rounded-lg shadow-md col-span-2">
             <div class="mt-2">
-                <a href="risks.html" class="text-xl font-bold text-gray-700 dark:text-white" tabindex="0" role="link">
-                    Top candidates for refactoring <span class="text-sm font-normal hover:underline text-blue-600 dark:text-blue-400 ml-4 ">(more)</span>
+                <a href="risks.html" class="text-xl font-bold text-gray-700 role="link">
+                    Top candidates for refactoring <span class="text-sm font-normal hover:underline text-blue-600 ">(more)</span>
                 </a>
-                <p class="mt-2 text-sm text-gray-600 dark:text-gray-300">
+                <p class="mt-2 text-sm text-gray-600 ">
                     These components have a low maintainability index and have been recently modified. They are good candidates for refactoring.
                 </p>
             </div>
@@ -330,13 +330,13 @@
 <div class="grid grid-cols-4 gap-4 mt-4">
 
     <!-- start: card -->
-    <div class="col-span-2 px-8 py-4 bg-white rounded-lg shadow-md dark:bg-gray-800">
+    <div class="col-span-2 px-8 py-4 bg-white rounded-lg shadow-md ">
         <div class="mt-2">
             <div>
-                <h5 class="leading-none text-3xl font-bold text-gray-900 dark:text-white pb-2">
+                <h5 class="leading-none text-3xl font-bold text-gray-900 pb-2">
                     Packages
                 </h5>
-                <p class="text-base font-normal text-gray-500 dark:text-gray-400">
+                <p class="text-base font-normal text-gray-500 ">
                     Relations between packages
                 </p>
             </div>
@@ -348,13 +348,13 @@
     <!-- end: card -->
 
     <!-- start: card -->
-    <div class="col-span-2 px-8 py-4 bg-white rounded-lg shadow-md dark:bg-gray-800">
+    <div class="col-span-2 px-8 py-4 bg-white rounded-lg shadow-md ">
         <div class="mt-2">
             <div>
-                <h5 class="leading-none text-3xl font-bold text-gray-900 dark:text-white pb-2">
+                <h5 class="leading-none text-3xl font-bold text-gray-900 pb-2">
                     {{ currentView.AverageInstability | floatformat:2 }}
                 </h5>
-                <p class="text-base font-normal text-gray-500 dark:text-gray-400">
+                <p class="text-base font-normal text-gray-500 ">
                     Average <acronym title="The higher the number, the more difficult the refactoring becomes because it impacts other components that depend on it.">
                          Instability
                     </acronym>
@@ -381,13 +381,13 @@
 
 
      <!-- start: card -->
-     <div class="col-span-1 px-8 py-4 bg-white rounded-lg shadow-md dark:bg-gray-800">
+     <div class="col-span-1 px-8 py-4 bg-white rounded-lg shadow-md ">
         <div class="mt-2">
             <div>
-                <h5 class="leading-none text-3xl font-bold text-gray-900 dark:text-white pb-2">
+                <h5 class="leading-none text-3xl font-bold text-gray-900 pb-2">
                     {{ currentView.MaxCyclomaticComplexity }}
                 </h5>
-                <p class="text-base font-normal text-gray-500 dark:text-gray-400">
+                <p class="text-base font-normal text-gray-500 ">
                     Complexity max
                 </p>
             </div>
