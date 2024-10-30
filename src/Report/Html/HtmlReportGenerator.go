@@ -57,8 +57,10 @@ func (v *HtmlReportGenerator) Generate(files []*pb.File, projectAggregated Analy
 		"index.html",
 		"layout.html",
 		"risks.html",
+		"compare.html",
 		"componentChartRadiusBar.html",
 		"componentTableRisks.html",
+		"componentTableCompareBranch.html",
 		"componentChartRadiusBarMaintainability.html",
 		"componentChartRadiusBarLoc.html",
 		"componentChartRadiusBarComplexity.html",
@@ -67,6 +69,7 @@ func (v *HtmlReportGenerator) Generate(files []*pb.File, projectAggregated Analy
 		"componentChartRadiusBarAfferent.html",
 		"componentDependencyDiagram.html",
 		"componentComparaisonBadge.html",
+		"componentComparaisonOperator.html",
 	} {
 		// read the file
 		content, err := content.ReadFile(fmt.Sprintf("templates/%s", file))
@@ -100,6 +103,13 @@ func (v *HtmlReportGenerator) Generate(files []*pb.File, projectAggregated Analy
 	// by language overview
 	for language, currentView := range projectAggregated.ByProgrammingLanguage {
 		v.GenerateLanguagePage("risks.html", language, currentView, files, projectAggregated)
+	}
+
+	// Comparaison with another branch
+	v.GenerateLanguagePage("compare.html", "All", projectAggregated.Combined, files, projectAggregated)
+	// by language overview
+	for language, currentView := range projectAggregated.ByProgrammingLanguage {
+		v.GenerateLanguagePage("compare.html", language, currentView, files, projectAggregated)
 	}
 
 	// cleanup temporary folder
