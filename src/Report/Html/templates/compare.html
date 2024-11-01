@@ -73,7 +73,7 @@
                     <p class="text-base font-normal text-gray-500 ">
                         Modified files
                     </p>
-                    <p class="border-t border-gray-200 mt-2 italic text-sm text-gray-400 pt-4 text-justify">
+                    <p class="border-t border-gray-200 mt-2 italic text-sm text-gray-600 pt-4 text-justify">
                         {% if currentView.Comparaison.NbModifiedFilesIncludingNegligible + currentView.Comparaison.NbModifiedFiles != currentView.Comparaison.NbModifiedFiles %}
                         {{ currentView.Comparaison.NbModifiedFilesIncludingNegligible + currentView.Comparaison.NbModifiedFiles|stringifyNumber }} modifications in commits, 
                         but only {{ currentView.Comparaison.NbModifiedFiles|stringifyNumber }} are significant.

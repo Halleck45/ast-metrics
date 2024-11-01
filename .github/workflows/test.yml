@@ -34,3 +34,14 @@ jobs:
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
           slug: Halleck45/ast-metrics
+
+      - name: Test the cli directly, generating HTML report
+        run: | 
+          go run . analyze --non-interactive --report-html=reporthtml src
+          ls reporthtml|| (echo "No report generated" && exit 1) && (echo "Report generated" && exit 0)
+
+      - name: Run Lighthouse CI
+        uses: treosh/lighthouse-ci-action@v12
+        with:
+          configPath: "./lighthouserc.json"
+          temporaryPublicStorage: true

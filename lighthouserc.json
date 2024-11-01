@@ -1,0 +1,12 @@
+{
+    "ci": {
+      "collect": {
+        "staticDistDir": "./reporthtml"
+      },
+      "assert": {
+        "assertions": {
+          "categories:accessibility": ["error", { "minScore": 0.98 }]
+        }
+      }
+    }
+  }

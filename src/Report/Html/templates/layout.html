@@ -1,5 +1,5 @@
 <!doctype html>
-<html>
+<html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -32,8 +32,11 @@
             </a>
         
             <div class="flex flex-col justify-between flex-1 mt-6">
-                <nav>
+                <nav role="menu">
                     <a 
+                        role="menuitem"
+                        aria-label="Dashboard"
+                        tabindex="0"
                         href="index.html"
                         class="flex items-center px-4 py-2 {% if page == "index.html"%}text-gray-700 bg-gray-100{% else %}text-gray-600{% endif %} rounded-md href="#">
                         <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -46,6 +49,9 @@
                     </a>
         
                     <a 
+                    role="menuitem"
+                    aria-label="Metrics"
+                    tabindex="0"
                     href="risks.html"
                     class="flex items-center px-4 py-2 mt-5 {% if page == "risks.html"%}text-gray-700 bg-gray-100{% else %}text-gray-600{% endif %} transition-colors duration-300 transform rounded-md href="#">
                         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6">
@@ -56,6 +62,9 @@
 
                     {% if currentView.Comparaison %}
                     <a
+                        role="menuitem"
+                        aria-label="Compare with {{ currentView.Comparaison.ComparedBranch }}"
+                        tabindex="0"
                         href="compare.html"
                         class="flex items-center px-4 py-2 mt-5 {% if page == "compare.html"%}text-gray-700 bg-gray-100{% else %}text-gray-600{% endif %} transition-colors duration-300 transform rounded-md hover:text-gray-700">
                           <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-6">
@@ -66,6 +75,9 @@
                     {% endif %}
 
                     <a 
+                    tabindex="0"
+                    role="menuitem"
+                    aria-label="Help"
                     href="https://halleck45.github.io/ast-metrics/"
                     class="flex items-center px-4 py-2 mt-5 text-gray-600 transition-colors duration-300 transform rounded-md hover:text-gray-700">
                         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6">
@@ -85,12 +97,13 @@
                 <div id="share-container" class="w-16 absolute right-10 grid grid-cols-2 gap-0">
                     <div class="rounded px-1 py-1 hover:bg-gray-200">
                         <a
+                            aria-label="Visit Github repository of AST Metrics"
                                 href="https://github.com/Halleck45/ast-metrics/">
                             <svg viewBox="0 0 24 24" aria-hidden="true" class="h-6 w-6 fill-slate-900"><path fill-rule="evenodd" clip-rule="evenodd" d="M12 2C6.477 2 2 6.463 2 11.97c0 4.404 2.865 8.14 6.839 9.458.5.092.682-.216.682-.48 0-.236-.008-.864-.013-1.695-2.782.602-3.369-1.337-3.369-1.337-.454-1.151-1.11-1.458-1.11-1.458-.908-.618.069-.606.069-.606 1.003.07 1.531 1.027 1.531 1.027.892 1.524 2.341 1.084 2.91.828.092-.643.35-1.083.636-1.332-2.22-.251-4.555-1.107-4.555-4.927 0-1.088.39-1.979 1.029-2.675-.103-.252-.446-1.266.098-2.638 0 0 .84-.268 2.75 1.022A9.607 9.607 0 0 1 12 6.82c.85.004 1.705.114 2.504.336 1.909-1.29 2.747-1.022 2.747-1.022.546 1.372.202 2.386.1 2.638.64.696 1.028 1.587 1.028 2.675 0 3.83-2.339 4.673-4.566 4.92.359.307.678.915.678 1.846 0 1.332-.012 2.407-.012 2.734 0 .267.18.577.688.48 3.97-1.32 6.833-5.054 6.833-9.458C22 6.463 17.522 2 12 2Z"></path></svg>
                         </a>
                     </div>
                     <div class="rounded px-1 py-1 hover:bg-gray-200">
-                        <a id="share-twitter" class="cursor-pointer">
+                        <a id="share-twitter" class="cursor-pointer" >
                             <svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" id="Layer_1" width="22px" height="22px" viewBox="0 0 22 22" style="enable-background:new 0 0 24 24;" xml:space="preserve"><path d="M14.095479,10.316482L22.286354,1h-1.940718l-7.115352,8.087682L7.551414,1H1l8.589488,12.231093L1,23h1.940717  l7.509372-8.542861L16.448587,23H23L14.095479,10.316482z M11.436522,13.338465l-0.871624-1.218704l-6.924311-9.68815h2.981339  l5.58978,7.82155l0.867949,1.218704l7.26506,10.166271h-2.981339L11.436522,13.338465z"/></svg>
                         </a>
                     </div>
@@ -105,17 +118,22 @@
                     <div class="flex -mx-2">
 
                         <a
+                            aria-label="Visit Twitter account of Halleck45"
                             href="https://twitter.com/Halleck45" class="mx-2 text-gray-600 transition-colors duration-300 aria-label="Twitter">
                             <svg class="w-5 h-5 fill-current" xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor"  viewBox="0 0 16 16">
                                 <path d="M12.6.75h2.454l-5.36 6.142L16 15.25h-4.937l-3.867-5.07-4.425 5.07H.316l5.733-6.57L0 .75h5.063l3.495 4.633L12.601.75Zm-.86 13.028h1.36L4.323 2.145H2.865z"/>
                               </svg>
                         </a>
             
-                        <a href="https://www.linkedin.com/in/jean-fran%C3%A7ois-l%C3%A9pine-6a122726" class="mx-2 text-gray-600 transition-colors duration-300 aria-label="Facebook">
+                        <a
+                            aria-label="Visit LinkedIn account of Jean-François Lépine"
+                            href="https://www.linkedin.com/in/jean-fran%C3%A7ois-l%C3%A9pine-6a122726" class="mx-2 text-gray-600 transition-colors duration-300 aria-label="Facebook">
                             <svg class="w-5 h-5 fill-current" role="img" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><title>LinkedIn</title><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/></svg>
                         </a>
             
-                        <a href="https://github.com/Halleck45/ast-metrics/" class="mx-2 text-gray-600 transition-colors duration-300 aria-label="Github">
+                        <a 
+                            aria-label="Visit Github repository of AST Metrics"
+                            href="https://github.com/Halleck45/ast-metrics/" class="mx-2 text-gray-600 transition-colors duration-300 aria-label="Github">
                             <svg class="w-5 h-5 fill-current" viewBox="0 0 24 24" fill="none"
                                 xmlns="http://www.w3.org/2000/svg">
                                 <path
