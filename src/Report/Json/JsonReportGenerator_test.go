@@ -27,7 +27,7 @@ func TestGenerateJson(t *testing.T) {
 		},
 	}
 
-	err := generator.Generate(files, projectAggregated)
+	_, err := generator.Generate(files, projectAggregated)
 
 	// Check if the error is nil
 	assert.Nil(t, err)

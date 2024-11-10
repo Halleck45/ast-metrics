@@ -3,6 +3,7 @@ package Command
 import (
 	"bufio"
 	"errors"
+	"fmt"
 	"os"
 
 	"github.com/fsnotify/fsnotify"
@@ -12,7 +13,8 @@ import (
 	"github.com/halleck45/ast-metrics/src/Configuration"
 	"github.com/halleck45/ast-metrics/src/Engine"
 	pb "github.com/halleck45/ast-metrics/src/NodeType"
-	Report "github.com/halleck45/ast-metrics/src/Report/Html"
+	Report "github.com/halleck45/ast-metrics/src/Report"
+	Html "github.com/halleck45/ast-metrics/src/Report/Html"
 	Json "github.com/halleck45/ast-metrics/src/Report/Json"
 	Markdown "github.com/halleck45/ast-metrics/src/Report/Markdown"
 	"github.com/halleck45/ast-metrics/src/Storage"
@@ -174,24 +176,28 @@ func (v *AnalyzeCommand) Execute() error {
 		v.spinner.Increment()
 	}
 
-	// report: html
-	htmlReportGenerator := Report.NewHtmlReportGenerator(v.configuration.Reports.Html)
-	err = htmlReportGenerator.Generate(allResults, projectAggregated)
-	if err != nil {
-		pterm.Error.Println("Cannot generate html report: " + err.Error())
-		return err
-	}
-	// report: markdown
-	markdownReportGenerator := Markdown.NewMarkdownReportGenerator(v.configuration.Reports.Markdown)
-	err = markdownReportGenerator.Generate(allResults, projectAggregated)
-	if err != nil {
-		pterm.Error.Println("Cannot generate markdown report: " + err.Error())
-	}
-	// report: json
-	jsonReportGenerator := Json.NewJsonReportGenerator(v.configuration.Reports.Json)
-	err = jsonReportGenerator.Generate(allResults, projectAggregated)
-	if err != nil {
-		pterm.Error.Println("Cannot generate json report: " + err.Error())
+	reporters := []Report.Reporter{}
+	generatedReports := []Report.GeneratedReport{}
+	if v.configuration.Reports.HasReports() {
+		if v.configuration.Reports.Html != "" {
+			reporters = append(reporters, Html.NewHtmlReportGenerator(v.configuration.Reports.Html))
+		}
+		if v.configuration.Reports.Markdown != "" {
+			reporters = append(reporters, Markdown.NewMarkdownReportGenerator(v.configuration.Reports.Markdown))
+		}
+		if v.configuration.Reports.Json != "" {
+			reporters = append(reporters, Json.NewJsonReportGenerator(v.configuration.Reports.Json))
+		}
+
+		// Generate reports
+		for _, reporter := range reporters {
+			reports, err := reporter.Generate(allResults, projectAggregated)
+			if err != nil {
+				pterm.Error.Println("Cannot generate report: " + err.Error())
+				return err
+			}
+			generatedReports = append(generatedReports, reports...)
+		}
 	}
 
 	// Evaluate requirements
@@ -245,6 +251,20 @@ func (v *AnalyzeCommand) Execute() error {
 		}
 	}
 
+	// List reports
+	if v.configuration.Reports.HasReports() {
+
+		fmt.Println("")
+		fmt.Println("📁 These reports have been generated:")
+
+		for _, report := range generatedReports {
+			fmt.Println("\n  ✔ " + report.Path + " (" + report.Type + ")")
+			fmt.Println("\n        " + report.Description)
+		}
+
+		fmt.Println("")
+	}
+
 	// Link to file wartcher (in order to close it when app is closed)
 	if v.FileWatcher != nil {
 		v.currentPage.FileWatcher = v.FileWatcher
@@ -252,6 +272,15 @@ func (v *AnalyzeCommand) Execute() error {
 
 	// Store state of the command
 	v.alreadyExecuted = true
+
+	// Tips if configuration file does not exist
+	if !v.configuration.IsComingFromConfigFile {
+		fmt.Println("\n💡 We noticed that you haven't yet created a configuration file. You can create a .ast-metrics.yaml configuration file by running: ast-metrics init")
+		fmt.Println("")
+	}
+
+	fmt.Println("\n🌟 If you like AST Metrics, please consider starring the project on GitHub: https://github.com/Halleck45/ast-metrics/. Thanks!")
+	fmt.Println("")
 
 	if shouldFail {
 		os.Exit(1)

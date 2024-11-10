@@ -14,6 +14,7 @@ import (
 	"github.com/halleck45/ast-metrics/src/Analyzer"
 	"github.com/halleck45/ast-metrics/src/Engine"
 	pb "github.com/halleck45/ast-metrics/src/NodeType"
+	"github.com/halleck45/ast-metrics/src/Report"
 	"github.com/halleck45/ast-metrics/src/Ui"
 )
 
@@ -27,30 +28,30 @@ type HtmlReportGenerator struct {
 	ReportPath string
 }
 
-func NewHtmlReportGenerator(reportPath string) *HtmlReportGenerator {
+func NewHtmlReportGenerator(reportPath string) Report.Reporter {
 	return &HtmlReportGenerator{
 		ReportPath: reportPath,
 	}
 }
 
-func (v *HtmlReportGenerator) Generate(files []*pb.File, projectAggregated Analyzer.ProjectAggregated) error {
+func (v *HtmlReportGenerator) Generate(files []*pb.File, projectAggregated Analyzer.ProjectAggregated) ([]Report.GeneratedReport, error) {
 
 	// Ensure report is required
 	if v.ReportPath == "" {
-		return nil
+		return nil, nil
 	}
 
 	// Ensure destination folder exists
 	err := v.EnsureFolder(v.ReportPath)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	// copy the templates from embed, to temporary folder
 	templateDir := fmt.Sprintf("%s/templates", os.TempDir())
 	err = os.MkdirAll(templateDir, os.ModePerm)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	for _, file := range []string{
@@ -74,13 +75,13 @@ func (v *HtmlReportGenerator) Generate(files []*pb.File, projectAggregated Analy
 		// read the file
 		content, err := content.ReadFile(fmt.Sprintf("templates/%s", file))
 		if err != nil {
-			return err
+			return nil, err
 		}
 
 		// write the file to temporary folder (/tmp)
 		err = os.WriteFile(fmt.Sprintf("%s/%s", templateDir, file), content, 0644)
 		if err != nil {
-			return err
+			return nil, err
 		}
 	}
 
@@ -115,10 +116,19 @@ func (v *HtmlReportGenerator) Generate(files []*pb.File, projectAggregated Analy
 	// cleanup temporary folder
 	err = os.RemoveAll(templateDir)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	return nil
+	reports := []Report.GeneratedReport{
+		{
+			Path:        v.ReportPath,
+			Type:        "directory",
+			Description: "The HTML reports allow you to visualize the metrics of your project in a web browser.",
+			Icon:        "📊",
+		},
+	}
+
+	return reports, nil
 }
 
 func (v *HtmlReportGenerator) GenerateLanguagePage(template string, language string, currentView Analyzer.Aggregated, files []*pb.File, projectAggregated Analyzer.ProjectAggregated) error {

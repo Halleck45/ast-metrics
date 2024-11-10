@@ -5,6 +5,7 @@ import (
 	"os"
 
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/charmbracelet/lipgloss"
 	"github.com/fsnotify/fsnotify"
 	"github.com/halleck45/ast-metrics/src/Analyzer"
 	pb "github.com/halleck45/ast-metrics/src/NodeType"
@@ -74,7 +75,8 @@ func (r *ScreenHome) Render() {
 
 	if !r.isInteractive {
 		// If not interactive
-		fmt.Println("No interactive mode detected.")
+		var style = lipgloss.NewStyle().Foreground(lipgloss.Color("#666666")).Italic(true)
+		fmt.Println(style.Render("No interactive mode detected."))
 		return
 	}
 

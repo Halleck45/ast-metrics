@@ -38,7 +38,7 @@ func TestGenerate(t *testing.T) {
 			files := []*pb.File{}
 			projectAggregated := Analyzer.ProjectAggregated{}
 
-			err := generator.Generate(files, projectAggregated)
+			_, err := generator.Generate(files, projectAggregated)
 
 			if tt.expectError {
 				if err == nil {
@@ -71,7 +71,7 @@ func TestGenerateWithTemplateFiles(t *testing.T) {
 	// Create a temporary template file
 	ioutil.WriteFile("/tmp/templates/index.md", []byte("Test template"), 0644)
 
-	err := generator.Generate(files, projectAggregated)
+	_, err := generator.Generate(files, projectAggregated)
 
 	if err != nil {
 		t.Errorf("Did not expect an error but got: %v", err)

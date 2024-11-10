@@ -2,8 +2,10 @@ package main
 
 import (
 	"bufio"
+	"fmt"
 	"os"
 
+	"github.com/charmbracelet/lipgloss"
 	"github.com/halleck45/ast-metrics/src/Cli"
 	"github.com/halleck45/ast-metrics/src/Command"
 	"github.com/halleck45/ast-metrics/src/Configuration"
@@ -82,14 +84,20 @@ func main() {
 					},
 					// JSON report
 					&cli.StringFlag{
-						Name:  "report-json",
-						Usage: "Generate a report in JSON format",
+						Name:     "report-json",
+						Usage:    "Generate a report in JSON format",
 						Category: "Report",
 					},
 					// Watch mode
 					&cli.BoolFlag{
 						Name:     "watch",
 						Usage:    "Re-run the analysis when files change",
+						Category: "Global options",
+					},
+					// CI mode (alias of --non-interactive, --report-html and --report-markdown)
+					&cli.BoolFlag{
+						Name:     "ci",
+						Usage:    "Enable CI mode",
 						Category: "Global options",
 					},
 					// Configuration
@@ -114,14 +122,16 @@ func main() {
 
 					// get option --non-interactive
 					isInteractive := true
-					if cCtx.Bool("non-interactive") {
+					if cCtx.Bool("non-interactive") || cCtx.Bool("ci") {
 						pterm.DisableColor()
 						isInteractive = false
 					}
 
 					// Stdout
 					outWriter := bufio.NewWriter(os.Stdout)
-					pterm.DefaultBasicText.Println(pterm.LightMagenta(" AST Metrics ") + "is a language-agnostic static code analyzer.")
+					var style = lipgloss.NewStyle().Foreground(lipgloss.Color("#FFFFFF")).Bold(true)
+					fmt.Println(style.Render("\n🦫 AST Metrics is a language-agnostic static code analyzer."))
+					fmt.Println("")
 
 					// Prepare configuration object
 					configuration := Configuration.NewConfiguration()
@@ -181,6 +191,16 @@ func main() {
 					}
 					if cCtx.String("report-json") != "" {
 						configuration.Reports.Json = cCtx.String("report-json")
+					}
+
+					// CI mode
+					if cCtx.Bool("ci") {
+						if configuration.Reports.Html == "" {
+							configuration.Reports.Html = "ast-metrics-html-report"
+						}
+						if configuration.Reports.Markdown == "" {
+							configuration.Reports.Markdown = "ast-metrics-markdown-report.md"
+						}
 					}
 
 					// Compare with
