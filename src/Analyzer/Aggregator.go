@@ -343,10 +343,47 @@ func (r *Aggregator) consolidate(aggregated *Aggregated) {
 			file.Stmts.Analyze.Maintainability.MaintainabilityIndex = &averageForFile
 		}
 
+		// LOC of file is the sum of all classes and methods
+		// That's useful when we navigate over the files instead of the classes
+		zero := int32(0)
+		loc := int32(0)
+		lloc := int32(0)
+		cloc := int32(0)
+
+		if file.Stmts.Analyze.Volume == nil {
+			file.Stmts.Analyze.Volume = &pb.Volume{
+				Lloc: &zero,
+				Cloc: &zero,
+				Loc:  &zero,
+			}
+		}
+
+		classes := Engine.GetClassesInFile(file)
+		functions := file.Stmts.StmtFunction
+		for _, class := range classes {
+			if class.LinesOfCode == nil {
+				continue
+			}
+			loc += class.LinesOfCode.LinesOfCode
+			lloc += class.LinesOfCode.LogicalLinesOfCode
+			cloc += class.LinesOfCode.CommentLinesOfCode
+		}
+
+		for _, function := range functions {
+			if function.LinesOfCode == nil {
+				continue
+			}
+			loc += function.LinesOfCode.LinesOfCode
+			lloc += function.LinesOfCode.LogicalLinesOfCode
+			cloc += function.LinesOfCode.CommentLinesOfCode
+		}
+
+		file.Stmts.Analyze.Volume.Loc = &loc
+		file.Stmts.Analyze.Volume.Lloc = &lloc
+		file.Stmts.Analyze.Volume.Cloc = &cloc
+
 		// File analysis should be the sum of all methods and classes in the file
 		// That's useful when we navigate over the files instead of the classes
-		functions := Engine.GetFunctionsInFile(file)
-		zero := int32(0)
 		if file.Stmts.Analyze.Complexity.Cyclomatic == nil {
 			file.Stmts.Analyze.Complexity.Cyclomatic = &zero
 		}
@@ -362,7 +399,6 @@ func (r *Aggregator) consolidate(aggregated *Aggregated) {
 
 		// Coupling
 		// Store relations, with counter
-		classes := Engine.GetClassesInFile(file)
 		for _, class := range classes {
 			if class.Stmts == nil || class.Stmts.Analyze == nil {
 				continue

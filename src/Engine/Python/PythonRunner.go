@@ -91,6 +91,11 @@ func (r PythonRunner) DumpAST() {
 
 }
 
+func (r PythonRunner) Parse(filePath string) (*pb.File, error) {
+	return parsePythonFile(filePath)
+}
+
+// @deprecated. Please use the Parse function
 func parsePythonFile(filename string) (*pb.File, error) {
 
 	stmts := Engine.FactoryStmts()

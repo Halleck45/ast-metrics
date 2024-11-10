@@ -3,7 +3,10 @@ package Analyzer
 import (
 	"testing"
 
+	"github.com/halleck45/ast-metrics/src/Engine"
+	"github.com/halleck45/ast-metrics/src/Engine/Golang"
 	pb "github.com/halleck45/ast-metrics/src/NodeType"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestLocVisitorVisit(t *testing.T) {
@@ -63,4 +66,36 @@ func TestLocVisitorVisit(t *testing.T) {
 		t.Errorf("Expected 60, got %d", stmts.StmtClass[0].LinesOfCode.GetCommentLinesOfCode())
 	}
 
+}
+
+func TestLocVisitorCountWithoutClasses(t *testing.T) {
+	fileContent := `
+    package main
+
+    import "fmt"
+
+    func example() {
+        if true {
+            if true {
+                fmt.Println("Hello")
+            }
+        } else if true {
+            fmt.Println("Hello")
+        } else {
+            fmt.Println("Hello")
+        }
+    }
+    `
+
+	parser := &Golang.GolangRunner{}
+	pbFile, _ := Engine.CreateTestFileWithCode(parser, fileContent)
+
+	visitor := LocVisitor{}
+	visitor.Visit(pbFile.Stmts, pbFile.Stmts)
+
+	// first function should have 11 lines of code
+	assert.Equal(t, int32(11), pbFile.Stmts.StmtFunction[0].Stmts.Analyze.Volume.GetLoc())
+
+	// file should have 11 lines of code
+	assert.Equal(t, int32(11), pbFile.Stmts.Analyze.Volume.GetLoc())
 }

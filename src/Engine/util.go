@@ -81,7 +81,6 @@ func DumpProtobuf(file *pb.File, binPath string) error {
 	return nil
 }
 
-
 // FactoryStmts returns a new instance of Stmts
 func FactoryStmts() *pb.Stmts {
 
@@ -327,4 +326,18 @@ if (document.getElementById("` + id + `") && typeof ApexCharts !== 'undefined') 
 }
 </script>`
 	return html
+}
+
+func CreateTestFileWithCode(parser Engine, fileContent string) (*pb.File, error) {
+	tmpDir := os.TempDir()
+	tmpFile := tmpDir + "/test.src"
+	if _, err := os.Create(tmpFile); err != nil {
+		return nil, err
+	}
+	defer os.Remove(tmpFile)
+	if err := os.WriteFile(tmpFile, []byte(fileContent), 0644); err != nil {
+		return nil, err
+	}
+
+	return parser.Parse(tmpFile)
 }

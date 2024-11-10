@@ -38,12 +38,14 @@ func (c *ComponentBarchartCyclomaticByMethodRepartition) GetData() *orderedmap.O
 
 	// repartition of classes by cyclomatic complexity
 	for _, file := range c.Files {
-		classes := Engine.GetClassesInFile(file)
-		for _, class := range classes {
-			if class.Stmts.Analyze == nil {
+
+		functions := Engine.GetFunctionsInFile(file)
+		for _, function := range functions {
+			if function.Stmts.Analyze == nil {
 				continue
 			}
-			mesured := *class.Stmts.Analyze.Complexity.Cyclomatic
+
+			mesured := *function.Stmts.Analyze.Complexity.Cyclomatic
 			for i, r := range rangeOfValues {
 				if mesured < r {
 					value, _ := data.Get(rangeOfLabels[i])

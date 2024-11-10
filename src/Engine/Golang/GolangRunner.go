@@ -143,6 +143,11 @@ func (r *GolangRunner) SearchModfile(path string) (*modfile.File, error) {
 	return r.SearchModfile(parentDirectory)
 }
 
+func (r *GolangRunner) Parse(filePath string) (*pb.File, error) {
+	return r.ParseGoFile(filePath), nil
+}
+
+// @deprecated. Please use the Parse function
 func (r GolangRunner) ParseGoFile(filePath string) *pb.File {
 	fset := token.NewFileSet()
 	f, err := parser.ParseFile(fset, filePath, nil, parser.ParseComments)

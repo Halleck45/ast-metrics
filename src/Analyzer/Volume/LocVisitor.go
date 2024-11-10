@@ -66,7 +66,7 @@ func (v *LocVisitor) Visit(stmts *pb.Stmts, parents *pb.Stmts) {
 				continue
 			}
 
-			v.consolidate(function.Stmts, function.LinesOfCode)
+			v.consolidate(parents, function.LinesOfCode)
 		}
 	}
 }
