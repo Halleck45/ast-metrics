@@ -364,4 +364,21 @@ func (v *HtmlReportGenerator) RegisterFilters() {
 		file := in.Interface().(*pb.File)
 		return pongo2.AsValue([]*pb.File{file}), nil
 	})
+
+	// filter : has class or uis procedural script
+	pongo2.RegisterFilter("fileHasClasses", func(in *pongo2.Value, param *pongo2.Value) (out *pongo2.Value, err *pongo2.Error) {
+		file := in.Interface().(*pb.File)
+		return pongo2.AsValue(len(Engine.GetClassesInFile(file)) > 0), nil
+	})
+
+	// filter : has class or uis procedural script
+	pongo2.RegisterFilter("toCollectionOfParsableComponents", func(in *pongo2.Value, param *pongo2.Value) (out *pongo2.Value, err *pongo2.Error) {
+		file := in.Interface().(*pb.File)
+
+		if len(Engine.GetClassesInFile(file)) > 0 {
+			return pongo2.AsValue(Engine.GetClassesInFile(file)), nil
+		}
+
+		return pongo2.AsValue(file.Stmts), nil
+	})
 }

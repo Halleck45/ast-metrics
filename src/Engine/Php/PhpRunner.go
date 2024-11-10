@@ -101,6 +101,11 @@ func (r PhpRunner) dumpOneAst(wg *sync.WaitGroup, filePath string) {
 	}
 }
 
+func (r PhpRunner) Parse(filePath string) (*pb.File, error) {
+	return parsePhpFile(filePath)
+}
+
+// @deprecated. Please use the Parse function
 func parsePhpFile(filename string) (*pb.File, error) {
 
 	stmts := Engine.FactoryStmts()

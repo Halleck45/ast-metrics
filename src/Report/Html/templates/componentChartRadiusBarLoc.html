@@ -2,19 +2,21 @@
     [
         {%- set files = currentView.ConcernedFiles -%}
         {%- for file in files -%}
-        {%- if len(file.Stmts.StmtClass) == 0 -%}
-        {% set elements = file|convertOneFileToCollection -%}
-        {% set name = file.Path %}
-        {%- else %}
-        {% set elements = file.Stmts.StmtClass -%}
-        {% set name = "" -%}
-        {%- endif -%}
-        {%- for class in elements -%}
-        {
-            "name": "{{ name|default:class.Name.Qualified|addslashes }}",
-            "loc": {{ class.Stmts.Analyze.Volume.Loc|floatformat:0 }}
-    },
-        {%- endfor -%}
+            {%- if not fileHasClasses(file) -%}
+            {% set elements = file|convertOneFileToCollection -%}
+                {% set name = file.Path %}
+                {% set value = file.Stmts.Analyze.Volume.Loc %}
+            {%- else %}
+                {% set elements = file.Stmts.StmtClass -%}
+                {% set name = class.Name.Qualified -%}
+                {% set value = class.Stmts.Analyze.Volume.Loc %}
+            {%- endif -%}
+            {%- for item in elements -%}
+                {
+                    "name": "{{ name|addslashes }}",
+                    "loc": {{ value|floatformat:0 }}
+                },
+            {%- endfor -%}
         {%- endfor -%}
     ]
 </script>
