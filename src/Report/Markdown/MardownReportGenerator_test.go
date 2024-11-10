@@ -7,6 +7,7 @@ import (
 
 	"github.com/halleck45/ast-metrics/src/Analyzer"
 	pb "github.com/halleck45/ast-metrics/src/NodeType"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestGenerate(t *testing.T) {
@@ -71,7 +72,7 @@ func TestGenerateWithTemplateFiles(t *testing.T) {
 	// Create a temporary template file
 	ioutil.WriteFile("/tmp/templates/index.md", []byte("Test template"), 0644)
 
-	_, err := generator.Generate(files, projectAggregated)
+	reports, err := generator.Generate(files, projectAggregated)
 
 	if err != nil {
 		t.Errorf("Did not expect an error but got: %v", err)
@@ -83,6 +84,8 @@ func TestGenerateWithTemplateFiles(t *testing.T) {
 			os.Remove("/tmp/report.md")
 		}
 	}
+
+	assert.Equal(t, 1, len(reports))
 
 	// cleanup
 	os.RemoveAll("/tmp/templates")

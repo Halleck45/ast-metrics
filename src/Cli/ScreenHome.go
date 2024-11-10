@@ -109,7 +109,7 @@ func (r *ScreenHome) Reset(files []*pb.File, projectAggregated Analyzer.ProjectA
 }
 
 // Get Tea model
-func (r ScreenHome) GetModel() modelChoices {
+func (r ScreenHome) GetModel() tea.Model {
 
 	// Prepare list of accepted screens
 	m := modelChoices{files: r.files, projectAggregated: r.projectAggregated}
@@ -237,6 +237,11 @@ func (m modelChoices) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	}
 
 	return m, nil
+}
+
+// GetScreenName returns the name of the screen
+func (r ScreenHome) GetScreenName() string {
+	return "Home"
 }
 
 // Color a string's foreground with the given value.

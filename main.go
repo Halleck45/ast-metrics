@@ -201,6 +201,9 @@ func main() {
 						if configuration.Reports.Markdown == "" {
 							configuration.Reports.Markdown = "ast-metrics-markdown-report.md"
 						}
+						if configuration.Reports.Json == "" {
+							configuration.Reports.Json = "ast-metrics-report.json"
+						}
 					}
 
 					// Compare with

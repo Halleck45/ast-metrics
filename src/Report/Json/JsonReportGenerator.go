@@ -53,7 +53,7 @@ func (j *JsonReportGenerator) Generate(files []*pb.File, projectAggregated Analy
 		{
 			Path:        j.ReportPath,
 			Type:        "file",
-			Description: "The JSON report allows scripts to parse the results",
+			Description: "The JSON report allows scripts to parse the results programmatically.",
 			Icon:        "📄",
 		},
 	}

@@ -3,7 +3,6 @@ package Command
 import (
 	"bufio"
 	"errors"
-	"fmt"
 	"os"
 
 	"github.com/fsnotify/fsnotify"
@@ -251,20 +250,6 @@ func (v *AnalyzeCommand) Execute() error {
 		}
 	}
 
-	// List reports
-	if v.configuration.Reports.HasReports() {
-
-		fmt.Println("")
-		fmt.Println("📁 These reports have been generated:")
-
-		for _, report := range generatedReports {
-			fmt.Println("\n  ✔ " + report.Path + " (" + report.Type + ")")
-			fmt.Println("\n        " + report.Description)
-		}
-
-		fmt.Println("")
-	}
-
 	// Link to file wartcher (in order to close it when app is closed)
 	if v.FileWatcher != nil {
 		v.currentPage.FileWatcher = v.FileWatcher
@@ -273,14 +258,9 @@ func (v *AnalyzeCommand) Execute() error {
 	// Store state of the command
 	v.alreadyExecuted = true
 
-	// Tips if configuration file does not exist
-	if !v.configuration.IsComingFromConfigFile {
-		fmt.Println("\n💡 We noticed that you haven't yet created a configuration file. You can create a .ast-metrics.yaml configuration file by running: ast-metrics init")
-		fmt.Println("")
-	}
-
-	fmt.Println("\n🌟 If you like AST Metrics, please consider starring the project on GitHub: https://github.com/Halleck45/ast-metrics/. Thanks!")
-	fmt.Println("")
+	// End screen
+	screen := Cli.NewScreenEnd(v.isInteractive, allResults, projectAggregated, *v.configuration, generatedReports)
+	screen.Render()
 
 	if shouldFail {
 		os.Exit(1)
