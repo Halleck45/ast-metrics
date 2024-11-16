@@ -12,7 +12,8 @@ import (
 	"github.com/halleck45/ast-metrics/src/Configuration"
 	"github.com/halleck45/ast-metrics/src/Engine"
 	pb "github.com/halleck45/ast-metrics/src/NodeType"
-	Report "github.com/halleck45/ast-metrics/src/Report/Html"
+	Report "github.com/halleck45/ast-metrics/src/Report"
+	Html "github.com/halleck45/ast-metrics/src/Report/Html"
 	Json "github.com/halleck45/ast-metrics/src/Report/Json"
 	Markdown "github.com/halleck45/ast-metrics/src/Report/Markdown"
 	"github.com/halleck45/ast-metrics/src/Storage"
@@ -174,24 +175,28 @@ func (v *AnalyzeCommand) Execute() error {
 		v.spinner.Increment()
 	}
 
-	// report: html
-	htmlReportGenerator := Report.NewHtmlReportGenerator(v.configuration.Reports.Html)
-	err = htmlReportGenerator.Generate(allResults, projectAggregated)
-	if err != nil {
-		pterm.Error.Println("Cannot generate html report: " + err.Error())
-		return err
-	}
-	// report: markdown
-	markdownReportGenerator := Markdown.NewMarkdownReportGenerator(v.configuration.Reports.Markdown)
-	err = markdownReportGenerator.Generate(allResults, projectAggregated)
-	if err != nil {
-		pterm.Error.Println("Cannot generate markdown report: " + err.Error())
-	}
-	// report: json
-	jsonReportGenerator := Json.NewJsonReportGenerator(v.configuration.Reports.Json)
-	err = jsonReportGenerator.Generate(allResults, projectAggregated)
-	if err != nil {
-		pterm.Error.Println("Cannot generate json report: " + err.Error())
+	reporters := []Report.Reporter{}
+	generatedReports := []Report.GeneratedReport{}
+	if v.configuration.Reports.HasReports() {
+		if v.configuration.Reports.Html != "" {
+			reporters = append(reporters, Html.NewHtmlReportGenerator(v.configuration.Reports.Html))
+		}
+		if v.configuration.Reports.Markdown != "" {
+			reporters = append(reporters, Markdown.NewMarkdownReportGenerator(v.configuration.Reports.Markdown))
+		}
+		if v.configuration.Reports.Json != "" {
+			reporters = append(reporters, Json.NewJsonReportGenerator(v.configuration.Reports.Json))
+		}
+
+		// Generate reports
+		for _, reporter := range reporters {
+			reports, err := reporter.Generate(allResults, projectAggregated)
+			if err != nil {
+				pterm.Error.Println("Cannot generate report: " + err.Error())
+				return err
+			}
+			generatedReports = append(generatedReports, reports...)
+		}
 	}
 
 	// Evaluate requirements
@@ -252,6 +257,10 @@ func (v *AnalyzeCommand) Execute() error {
 
 	// Store state of the command
 	v.alreadyExecuted = true
+
+	// End screen
+	screen := Cli.NewScreenEnd(v.isInteractive, allResults, projectAggregated, *v.configuration, generatedReports)
+	screen.Render()
 
 	if shouldFail {
 		os.Exit(1)

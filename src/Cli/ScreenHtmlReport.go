@@ -74,7 +74,7 @@ func (m modelScreenHtmlReport) View() string {
 		// Generate report
 		// report: html
 		htmlReportGenerator := Report.NewHtmlReportGenerator(directory)
-		err := htmlReportGenerator.Generate(m.files, m.projectAggregated)
+		_, err := htmlReportGenerator.Generate(m.files, m.projectAggregated)
 		if err != nil {
 			return fmt.Sprintf("Error generating report: %s", err)
 		}

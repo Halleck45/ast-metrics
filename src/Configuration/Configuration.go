@@ -27,12 +27,19 @@ type Configuration struct {
 
 	// Location of cache files
 	Storage *Storage.Workdir
+
+	IsComingFromConfigFile bool
 }
 
 type ConfigurationReport struct {
 	Html     string `yaml:"html"`
 	Markdown string `yaml:"markdown"`
 	Json     string `yaml:"json"`
+}
+
+// function HasReports() bool {
+func (c *ConfigurationReport) HasReports() bool {
+	return c.Html != "" || c.Markdown != "" || c.Json != ""
 }
 
 type ConfigurationRequirements struct {
@@ -64,6 +71,7 @@ func NewConfiguration() *Configuration {
 		Watching:             false,
 		CompareWith:          "",
 		Storage:              Storage.Default(),
+		IsComingFromConfigFile:   false,
 	}
 }
 

@@ -9,6 +9,7 @@ import (
 	"github.com/halleck45/ast-metrics/src/Analyzer"
 	pb "github.com/halleck45/ast-metrics/src/NodeType"
 	"github.com/halleck45/ast-metrics/src/Pkg/Cleaner"
+	"github.com/halleck45/ast-metrics/src/Report"
 )
 
 type JsonReportGenerator struct {
@@ -16,39 +17,47 @@ type JsonReportGenerator struct {
 }
 
 // This factory creates a new JsonReportGenerator
-func NewJsonReportGenerator(ReportPath string) *JsonReportGenerator {
+func NewJsonReportGenerator(ReportPath string) Report.Reporter {
 	return &JsonReportGenerator{
 		ReportPath: ReportPath,
 	}
 }
 
 // Generate generates a JSON report
-func (j *JsonReportGenerator) Generate(files []*pb.File, projectAggregated Analyzer.ProjectAggregated) error {
+func (j *JsonReportGenerator) Generate(files []*pb.File, projectAggregated Analyzer.ProjectAggregated) ([]Report.GeneratedReport, error) {
 
 	if j.ReportPath == "" {
-		return nil
+		return nil, nil
 	}
 
 	report := j.buildReport(projectAggregated)
 
 	err := Cleaner.CleanVal(report)
 	if err != nil {
-		return fmt.Errorf("can not clean report err: %s", err.Error())
+		return nil, fmt.Errorf("can not clean report err: %s", err.Error())
 	}
 
 	// This code serializes the results to JSON
 	jsonReport, err := json.Marshal(report)
 	if err != nil {
-		return fmt.Errorf("can not serialize report to JSON err: %s", err.Error())
+		return nil, fmt.Errorf("can not serialize report to JSON err: %s", err.Error())
 	}
 
 	// This code writes the JSON report to a file
 	err = ioutil.WriteFile(j.ReportPath, jsonReport, os.ModePerm)
 	if err != nil {
-		return fmt.Errorf("can not save report to path %s err: %s", j.ReportPath, err.Error())
+		return nil, fmt.Errorf("can not save report to path %s err: %s", j.ReportPath, err.Error())
 	}
 
-	return nil
+	reports := []Report.GeneratedReport{
+		{
+			Path:        j.ReportPath,
+			Type:        "file",
+			Description: "The JSON report allows scripts to parse the results programmatically.",
+			Icon:        "📄",
+		},
+	}
+	return reports, nil
 }
 
 // The buildReport creates a JSON report using the

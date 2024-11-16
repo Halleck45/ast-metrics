@@ -5,6 +5,7 @@ import (
 	"os"
 
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/charmbracelet/lipgloss"
 	"github.com/fsnotify/fsnotify"
 	"github.com/halleck45/ast-metrics/src/Analyzer"
 	pb "github.com/halleck45/ast-metrics/src/NodeType"
@@ -74,7 +75,8 @@ func (r *ScreenHome) Render() {
 
 	if !r.isInteractive {
 		// If not interactive
-		fmt.Println("No interactive mode detected.")
+		var style = lipgloss.NewStyle().Foreground(lipgloss.Color("#666666")).Italic(true)
+		fmt.Println(style.Render("No interactive mode detected."))
 		return
 	}
 
@@ -107,7 +109,7 @@ func (r *ScreenHome) Reset(files []*pb.File, projectAggregated Analyzer.ProjectA
 }
 
 // Get Tea model
-func (r ScreenHome) GetModel() modelChoices {
+func (r ScreenHome) GetModel() tea.Model {
 
 	// Prepare list of accepted screens
 	m := modelChoices{files: r.files, projectAggregated: r.projectAggregated}
@@ -235,6 +237,11 @@ func (m modelChoices) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	}
 
 	return m, nil
+}
+
+// GetScreenName returns the name of the screen
+func (r ScreenHome) GetScreenName() string {
+	return "Home"
 }
 
 // Color a string's foreground with the given value.

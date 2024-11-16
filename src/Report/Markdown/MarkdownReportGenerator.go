@@ -12,6 +12,7 @@ import (
 
 	"github.com/halleck45/ast-metrics/src/Analyzer"
 	pb "github.com/halleck45/ast-metrics/src/NodeType"
+	"github.com/halleck45/ast-metrics/src/Report"
 )
 
 var (
@@ -24,36 +25,36 @@ type MarkdownReportGenerator struct {
 	ReportPath string
 }
 
-func NewMarkdownReportGenerator(reportPath string) *MarkdownReportGenerator {
+func NewMarkdownReportGenerator(reportPath string) Report.Reporter {
 	return &MarkdownReportGenerator{
 		ReportPath: reportPath,
 	}
 }
 
-func (v *MarkdownReportGenerator) Generate(files []*pb.File, projectAggregated Analyzer.ProjectAggregated) error {
+func (v *MarkdownReportGenerator) Generate(files []*pb.File, projectAggregated Analyzer.ProjectAggregated) ([]Report.GeneratedReport, error) {
 
 	// Ensure report is required
 	if v.ReportPath == "" {
-		return nil
+		return nil, nil
 	}
 
 	// copy the templates from embed, to temporary folder
 	templateDir := fmt.Sprintf("%s/templates", os.TempDir())
 	err := os.MkdirAll(templateDir, os.ModePerm)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	for _, file := range []string{"index.md"} {
 		// read the file
 		content, err := content.ReadFile(fmt.Sprintf("templates/%s", file))
 		if err != nil {
-			return err
+			return nil, err
 		}
 
 		// write the file to temporary folder (/tmp)
 		err = os.WriteFile(fmt.Sprintf("%s/%s", templateDir, file), content, 0644)
 		if err != nil {
-			return err
+			return nil, err
 		}
 	}
 
@@ -68,20 +69,20 @@ func (v *MarkdownReportGenerator) Generate(files []*pb.File, projectAggregated A
 	tpl, err := pongo2.DefaultSet.FromFile("index.md")
 	if err != nil {
 		log.Error(err)
-		return err
+		return nil, err
 	}
 	// Render it, passing projectAggregated and files as context
 	out, err := tpl.Execute(pongo2.Context{"projectAggregated": projectAggregated, "files": files})
 	if err != nil {
 		log.Error(err)
-		return err
+		return nil, err
 	}
 
 	// Write the result to the file
 	file, err := os.Create(v.ReportPath)
 	if err != nil {
 		log.Error(err)
-		return err
+		return nil, err
 	}
 	defer file.Close()
 	file.WriteString(out)
@@ -90,10 +91,18 @@ func (v *MarkdownReportGenerator) Generate(files []*pb.File, projectAggregated A
 	err = os.RemoveAll(templateDir)
 	if err != nil {
 		log.Error(err)
-		return err
+		return nil, err
 	}
 
-	return nil
+	reports := []Report.GeneratedReport{
+		{
+			Path:        v.ReportPath,
+			Type:        "file",
+			Description: "The markdown report is useful for CI/CD pipelines, displaying the results in a human-readable format.",
+			Icon:        "📄",
+		},
+	}
+	return reports, nil
 
 }
 
