@@ -59,9 +59,9 @@ If you want to contribute code, please read the [contributing guidelines](.githu
 
 We are looking for help to support new programming languages, stabilize the tool, and enrich it. Here is the list of supported languages:
 
-+ ✅ **PHP** (full)
++ ✅ **PHP** (PHP 5, PHP 7, =< PHP 8.1)
++ ✅ **Golang**
 + 👷 **Python** (partial)
-+ 👷 **Golang** (partial)
 + 🕛 **Dart**
 + 🕛 **Flutter**
 + 🕛 **TypeScript**
