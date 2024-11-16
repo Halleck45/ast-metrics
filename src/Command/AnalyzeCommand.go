@@ -16,6 +16,7 @@ import (
 	Html "github.com/halleck45/ast-metrics/src/Report/Html"
 	Json "github.com/halleck45/ast-metrics/src/Report/Json"
 	Markdown "github.com/halleck45/ast-metrics/src/Report/Markdown"
+	OpenMetrics "github.com/halleck45/ast-metrics/src/Report/OpenMetrics"
 	"github.com/halleck45/ast-metrics/src/Storage"
 	"github.com/inancgumus/screen"
 	"github.com/pterm/pterm"
@@ -186,6 +187,9 @@ func (v *AnalyzeCommand) Execute() error {
 		}
 		if v.configuration.Reports.Json != "" {
 			reporters = append(reporters, Json.NewJsonReportGenerator(v.configuration.Reports.Json))
+		}
+		if v.configuration.Reports.OpenMetrics != "" {
+			reporters = append(reporters, OpenMetrics.NewOpenMetricsReportGenerator(v.configuration.Reports.OpenMetrics))
 		}
 
 		// Generate reports

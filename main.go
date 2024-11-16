@@ -88,6 +88,13 @@ func main() {
 						Usage:    "Generate a report in JSON format",
 						Category: "Report",
 					},
+					// OpenMetrics report
+					// https://github.com/prometheus/OpenMetrics/blob/main/specification/OpenMetrics.md
+					&cli.StringFlag{
+						Name:     "report-openmetrics",
+						Usage:    "Generate a report in OpenMetrics format",
+						Category: "Report",
+					},
 					// Watch mode
 					&cli.BoolFlag{
 						Name:     "watch",
@@ -192,6 +199,9 @@ func main() {
 					if cCtx.String("report-json") != "" {
 						configuration.Reports.Json = cCtx.String("report-json")
 					}
+					if cCtx.String("report-openmetrics") != "" {
+						configuration.Reports.OpenMetrics = cCtx.String("report-openmetrics")
+					}
 
 					// CI mode
 					if cCtx.Bool("ci") {
@@ -203,6 +213,11 @@ func main() {
 						}
 						if configuration.Reports.Json == "" {
 							configuration.Reports.Json = "ast-metrics-report.json"
+						}
+						if configuration.Reports.OpenMetrics == "" {
+							// we don't prefix the file with ast-metrics- because "metrics.txt" is a common filename for CI
+							// @see https://docs.gitlab.com/ee/ci/testing/metrics_reports.html
+							configuration.Reports.OpenMetrics = "metrics.txt"
 						}
 					}
 
