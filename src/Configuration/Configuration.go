@@ -32,9 +32,10 @@ type Configuration struct {
 }
 
 type ConfigurationReport struct {
-	Html     string `yaml:"html"`
-	Markdown string `yaml:"markdown"`
-	Json     string `yaml:"json"`
+	Html        string `yaml:"html"`
+	Markdown    string `yaml:"markdown"`
+	Json        string `yaml:"json"`
+	OpenMetrics string `yaml:"openmetrics"`
 }
 
 // function HasReports() bool {
@@ -66,12 +67,12 @@ type ConfigurationDefaultRule struct {
 
 func NewConfiguration() *Configuration {
 	return &Configuration{
-		SourcesToAnalyzePath: []string{},
-		ExcludePatterns:      []string{"/vendor/", "/node_modules/", "/.git/", "/.idea/", "/tests/", "/Tests/", "/test/", "/Test/", "/spec/", "/Spec/"},
-		Watching:             false,
-		CompareWith:          "",
-		Storage:              Storage.Default(),
-		IsComingFromConfigFile:   false,
+		SourcesToAnalyzePath:   []string{},
+		ExcludePatterns:        []string{"/vendor/", "/node_modules/", "/.git/", "/.idea/", "/tests/", "/Tests/", "/test/", "/Test/", "/spec/", "/Spec/"},
+		Watching:               false,
+		CompareWith:            "",
+		Storage:                Storage.Default(),
+		IsComingFromConfigFile: false,
 	}
 }
 
