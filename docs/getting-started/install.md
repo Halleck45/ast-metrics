@@ -13,7 +13,7 @@ You don't need anything, simply download the correct binary for your platform.
     Run the following command to download the latest version of AST Metrics:
 
     ```bash
-    curl -s https://raw.githubusercontent.com/Halleck45/ast-metrics/main/scripts/download.sh|bash
+    curl -s https://raw.githubusercontent.com/Halleck45/ast-metrics/main/scripts/download.sh|sh
     ```
 
     > Be careful when running scripts from the internet. Always check the content of the script before running it.
@@ -60,6 +60,7 @@ You don't need anything, simply download the correct binary for your platform.
 
     For example, if the output is `OS: Linux, Arch: x86_64`, you should download the `amd64` binary for Linux.
 
+    Then follow the instructions for your platform.
 
 === ":simple-go: With Go"
 

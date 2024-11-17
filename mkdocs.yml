@@ -16,6 +16,7 @@ theme:
 
 markdown_extensions:
   - pymdownx.superfences
+  - admonition
   - pymdownx.tabbed:
       alternate_style: true
   - attr_list
@@ -37,6 +38,8 @@ nav:
   - Continuous integration:
     - Definining rules for your code: ci/linting-architecture.md
     - GitHub Actions: ci/github-actions.md
+    - Gilab CI: ci/gitlab-ci.md
+    - Tips for CI: ci/tips.md
   - Advanced usage:
     - Watching a directory: advanced-usage/watch-directory.md
     - Updating binaries: advanced-usage/update-binaries.md

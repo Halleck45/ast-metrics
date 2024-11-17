@@ -20,3 +20,15 @@ jobs:
 Now every time you push to your repository, AST Metrics will analyze your code.
 
 Reports will be available on the build summary page.
+
+!!! info "Did you know?"
+
+    You can embed directly the AST Metrics report in the web page of your github action, using the `$GITHUB_STEP_SUMMARY` environment variable.
+
+    ```yaml
+    name: AST Metrics
+    (...)
+    steps:
+        - name: Adding markdown
+          run: cat ast-metrics-report.md >> $GITHUB_STEP_SUMMARY
+    ```
