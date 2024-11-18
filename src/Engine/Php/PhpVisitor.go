@@ -476,10 +476,31 @@ func (v *PhpVisitor) EnumCase(node *ast.EnumCase) {
 	if v.currentStmts == nil {
 		return
 	}
-	v.currentStmts.StmtDecisionSwitch = append(v.currentStmts.StmtDecisionSwitch, &pb.StmtDecisionSwitch{})
+	v.currentStmts.StmtDecisionCase = append(v.currentStmts.StmtDecisionCase, &pb.StmtDecisionCase{})
 }
 
 func (v *PhpVisitor) StmtElse(node *ast.StmtElse) {
+}
+
+func (v *PhpVisitor) StmtSwitch(node *ast.StmtSwitch) {
+	if v.currentStmts == nil {
+		return
+	}
+	v.currentStmts.StmtDecisionSwitch = append(v.currentStmts.StmtDecisionSwitch, &pb.StmtDecisionSwitch{})
+}
+
+func (v *PhpVisitor) StmtCase(node *ast.StmtCase) {
+	if v.currentStmts == nil {
+		return
+	}
+	v.currentStmts.StmtDecisionCase = append(v.currentStmts.StmtDecisionCase, &pb.StmtDecisionCase{})
+}
+
+func (v *PhpVisitor) StmtDefault(node *ast.StmtDefault) {
+	if v.currentStmts == nil {
+		return
+	}
+	v.currentStmts.StmtDecisionCase = append(v.currentStmts.StmtDecisionCase, &pb.StmtDecisionCase{})
 }
 
 // ----------------
