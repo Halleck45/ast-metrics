@@ -13,10 +13,6 @@ import (
 	"github.com/halleck45/ast-metrics/src/Engine"
 	pb "github.com/halleck45/ast-metrics/src/NodeType"
 	Report "github.com/halleck45/ast-metrics/src/Report"
-	Html "github.com/halleck45/ast-metrics/src/Report/Html"
-	Json "github.com/halleck45/ast-metrics/src/Report/Json"
-	Markdown "github.com/halleck45/ast-metrics/src/Report/Markdown"
-	OpenMetrics "github.com/halleck45/ast-metrics/src/Report/OpenMetrics"
 	"github.com/halleck45/ast-metrics/src/Storage"
 	"github.com/inancgumus/screen"
 	"github.com/pterm/pterm"
@@ -176,22 +172,14 @@ func (v *AnalyzeCommand) Execute() error {
 		v.spinner.Increment()
 	}
 
-	reporters := []Report.Reporter{}
+	// Factory reporters
+	reportersFactory := Report.ReportersFactory{
+		Configuration: v.configuration,
+	}
+	reporters := reportersFactory.Factory(v.configuration)
+
 	generatedReports := []Report.GeneratedReport{}
 	if v.configuration.Reports.HasReports() {
-		if v.configuration.Reports.Html != "" {
-			reporters = append(reporters, Html.NewHtmlReportGenerator(v.configuration.Reports.Html))
-		}
-		if v.configuration.Reports.Markdown != "" {
-			reporters = append(reporters, Markdown.NewMarkdownReportGenerator(v.configuration.Reports.Markdown))
-		}
-		if v.configuration.Reports.Json != "" {
-			reporters = append(reporters, Json.NewJsonReportGenerator(v.configuration.Reports.Json))
-		}
-		if v.configuration.Reports.OpenMetrics != "" {
-			reporters = append(reporters, OpenMetrics.NewOpenMetricsReportGenerator(v.configuration.Reports.OpenMetrics))
-		}
-
 		// Generate reports
 		for _, reporter := range reporters {
 			reports, err := reporter.Generate(allResults, projectAggregated)

@@ -10,7 +10,6 @@ import (
 	"github.com/halleck45/ast-metrics/src/Analyzer"
 	"github.com/halleck45/ast-metrics/src/Engine"
 	pb "github.com/halleck45/ast-metrics/src/NodeType"
-	"github.com/halleck45/ast-metrics/src/Report"
 )
 
 type OpenMetricsReportGenerator struct {
@@ -18,13 +17,13 @@ type OpenMetricsReportGenerator struct {
 	ReportPath string
 }
 
-func NewOpenMetricsReportGenerator(reportPath string) Report.Reporter {
+func NewOpenMetricsReportGenerator(reportPath string) Reporter {
 	return &OpenMetricsReportGenerator{
 		ReportPath: reportPath,
 	}
 }
 
-func (v *OpenMetricsReportGenerator) Generate(files []*pb.File, projectAggregated Analyzer.ProjectAggregated) ([]Report.GeneratedReport, error) {
+func (v *OpenMetricsReportGenerator) Generate(files []*pb.File, projectAggregated Analyzer.ProjectAggregated) ([]GeneratedReport, error) {
 
 	if v.ReportPath == "" {
 		return nil, nil
@@ -135,7 +134,7 @@ func (v *OpenMetricsReportGenerator) Generate(files []*pb.File, projectAggregate
 	}
 
 	// Return the created report, in order to inform the user
-	reports := []Report.GeneratedReport{
+	reports := []GeneratedReport{
 		{
 			Path:        v.ReportPath,
 			Type:        "file",

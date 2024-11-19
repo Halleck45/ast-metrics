@@ -12,12 +12,11 @@ import (
 
 	"github.com/halleck45/ast-metrics/src/Analyzer"
 	pb "github.com/halleck45/ast-metrics/src/NodeType"
-	"github.com/halleck45/ast-metrics/src/Report"
 )
 
 var (
 	//go:embed templates/*
-	content embed.FS
+	mdContent embed.FS
 )
 
 type MarkdownReportGenerator struct {
@@ -25,13 +24,13 @@ type MarkdownReportGenerator struct {
 	ReportPath string
 }
 
-func NewMarkdownReportGenerator(reportPath string) Report.Reporter {
+func NewMarkdownReportGenerator(reportPath string) Reporter {
 	return &MarkdownReportGenerator{
 		ReportPath: reportPath,
 	}
 }
 
-func (v *MarkdownReportGenerator) Generate(files []*pb.File, projectAggregated Analyzer.ProjectAggregated) ([]Report.GeneratedReport, error) {
+func (v *MarkdownReportGenerator) Generate(files []*pb.File, projectAggregated Analyzer.ProjectAggregated) ([]GeneratedReport, error) {
 
 	// Ensure report is required
 	if v.ReportPath == "" {
@@ -46,13 +45,13 @@ func (v *MarkdownReportGenerator) Generate(files []*pb.File, projectAggregated A
 	}
 	for _, file := range []string{"index.md"} {
 		// read the file
-		content, err := content.ReadFile(fmt.Sprintf("templates/%s", file))
+		mdContent, err := mdContent.ReadFile(fmt.Sprintf("templates/markdown/%s", file))
 		if err != nil {
 			return nil, err
 		}
 
 		// write the file to temporary folder (/tmp)
-		err = os.WriteFile(fmt.Sprintf("%s/%s", templateDir, file), content, 0644)
+		err = os.WriteFile(fmt.Sprintf("%s/%s", templateDir, file), mdContent, 0644)
 		if err != nil {
 			return nil, err
 		}
@@ -94,7 +93,7 @@ func (v *MarkdownReportGenerator) Generate(files []*pb.File, projectAggregated A
 		return nil, err
 	}
 
-	reports := []Report.GeneratedReport{
+	reports := []GeneratedReport{
 		{
 			Path:        v.ReportPath,
 			Type:        "file",
