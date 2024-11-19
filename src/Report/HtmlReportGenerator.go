@@ -14,13 +14,12 @@ import (
 	"github.com/halleck45/ast-metrics/src/Analyzer"
 	"github.com/halleck45/ast-metrics/src/Engine"
 	pb "github.com/halleck45/ast-metrics/src/NodeType"
-	"github.com/halleck45/ast-metrics/src/Report"
 	"github.com/halleck45/ast-metrics/src/Ui"
 )
 
 var (
 	//go:embed templates/*
-	content embed.FS
+	htmlContent embed.FS
 )
 
 type HtmlReportGenerator struct {
@@ -28,13 +27,13 @@ type HtmlReportGenerator struct {
 	ReportPath string
 }
 
-func NewHtmlReportGenerator(reportPath string) Report.Reporter {
+func NewHtmlReportGenerator(reportPath string) Reporter {
 	return &HtmlReportGenerator{
 		ReportPath: reportPath,
 	}
 }
 
-func (v *HtmlReportGenerator) Generate(files []*pb.File, projectAggregated Analyzer.ProjectAggregated) ([]Report.GeneratedReport, error) {
+func (v *HtmlReportGenerator) Generate(files []*pb.File, projectAggregated Analyzer.ProjectAggregated) ([]GeneratedReport, error) {
 
 	// Ensure report is required
 	if v.ReportPath == "" {
@@ -73,13 +72,13 @@ func (v *HtmlReportGenerator) Generate(files []*pb.File, projectAggregated Analy
 		"componentComparaisonOperator.html",
 	} {
 		// read the file
-		content, err := content.ReadFile(fmt.Sprintf("templates/%s", file))
+		htmlContent, err := htmlContent.ReadFile(fmt.Sprintf("templates/html/%s", file))
 		if err != nil {
 			return nil, err
 		}
 
 		// write the file to temporary folder (/tmp)
-		err = os.WriteFile(fmt.Sprintf("%s/%s", templateDir, file), content, 0644)
+		err = os.WriteFile(fmt.Sprintf("%s/%s", templateDir, file), htmlContent, 0644)
 		if err != nil {
 			return nil, err
 		}
@@ -119,7 +118,7 @@ func (v *HtmlReportGenerator) Generate(files []*pb.File, projectAggregated Analy
 		return nil, err
 	}
 
-	reports := []Report.GeneratedReport{
+	reports := []GeneratedReport{
 		{
 			Path:        v.ReportPath,
 			Type:        "directory",

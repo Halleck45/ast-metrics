@@ -9,7 +9,6 @@ import (
 	"github.com/halleck45/ast-metrics/src/Analyzer"
 	pb "github.com/halleck45/ast-metrics/src/NodeType"
 	"github.com/halleck45/ast-metrics/src/Pkg/Cleaner"
-	"github.com/halleck45/ast-metrics/src/Report"
 )
 
 type JsonReportGenerator struct {
@@ -17,14 +16,14 @@ type JsonReportGenerator struct {
 }
 
 // This factory creates a new JsonReportGenerator
-func NewJsonReportGenerator(ReportPath string) Report.Reporter {
+func NewJsonReportGenerator(ReportPath string) Reporter {
 	return &JsonReportGenerator{
 		ReportPath: ReportPath,
 	}
 }
 
 // Generate generates a JSON report
-func (j *JsonReportGenerator) Generate(files []*pb.File, projectAggregated Analyzer.ProjectAggregated) ([]Report.GeneratedReport, error) {
+func (j *JsonReportGenerator) Generate(files []*pb.File, projectAggregated Analyzer.ProjectAggregated) ([]GeneratedReport, error) {
 
 	if j.ReportPath == "" {
 		return nil, nil
@@ -49,7 +48,7 @@ func (j *JsonReportGenerator) Generate(files []*pb.File, projectAggregated Analy
 		return nil, fmt.Errorf("can not save report to path %s err: %s", j.ReportPath, err.Error())
 	}
 
-	reports := []Report.GeneratedReport{
+	reports := []GeneratedReport{
 		{
 			Path:        j.ReportPath,
 			Type:        "file",

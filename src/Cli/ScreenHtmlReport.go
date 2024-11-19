@@ -7,7 +7,7 @@ import (
 	"github.com/charmbracelet/lipgloss"
 	"github.com/halleck45/ast-metrics/src/Analyzer"
 	pb "github.com/halleck45/ast-metrics/src/NodeType"
-	Report "github.com/halleck45/ast-metrics/src/Report/Html"
+	"github.com/halleck45/ast-metrics/src/Report"
 )
 
 type ScreenHtmlReport struct {
