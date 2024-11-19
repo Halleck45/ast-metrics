@@ -42,8 +42,11 @@ func (v *CyclomaticComplexityVisitor) Calculate(stmts *pb.Stmts) int32 {
 	ccn = int32(len(stmts.StmtLoop) +
 		len(stmts.StmtDecisionIf) +
 		len(stmts.StmtDecisionElseIf) +
-		len(stmts.StmtDecisionCase))
+		len(stmts.StmtDecisionCase) +
+		len(stmts.StmtDecisionSwitch) +
+		len(stmts.StmtFunction)) // +1 for the function itself
 	// else is not a decision point for ccn
+	// class is not a decision point for ccn
 
 	// iterate over children
 	for _, stmt := range stmts.StmtFunction {
@@ -67,6 +70,14 @@ func (v *CyclomaticComplexityVisitor) Calculate(stmts *pb.Stmts) int32 {
 	}
 
 	for _, stmt := range stmts.StmtDecisionCase {
+		ccn += v.Calculate(stmt.Stmts)
+	}
+
+	for _, stmt := range stmts.StmtClass {
+		ccn += v.Calculate(stmt.Stmts)
+	}
+
+	for _, stmt := range stmts.StmtDecisionSwitch {
 		ccn += v.Calculate(stmt.Stmts)
 	}
 

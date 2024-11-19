@@ -5,11 +5,12 @@ import (
 	"os"
 	"testing"
 
+	"github.com/halleck45/ast-metrics/src/Engine"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestPhpRunner(t *testing.T) {
-	pythonSource := `
+	phpSource := `
 <?php
 namespace Foo\Bar;
 
@@ -44,22 +45,11 @@ class calculatrice {
 }
 `
 
-	// Create a temporary file
-	tmpFile := t.TempDir() + "/test.php"
-	if _, err := os.Create(tmpFile); err != nil {
-		t.Error(err)
-	}
-	if err := os.WriteFile(tmpFile, []byte(pythonSource), 0644); err != nil {
-		t.Error(err)
-	}
-
-	result, err := parsePhpFile(tmpFile)
+	result, err := Engine.CreateTestFileWithCode(&PhpRunner{}, phpSource)
+	assert.Nil(t, err, "Expected no error, got %s", err)
 
 	// Ensure no error
 	assert.Nil(t, err, "Expected no error, got %s", err)
-
-	// Ensure path
-	assert.Equal(t, tmpFile, result.Path, "Expected path to be %s, got %s", tmpFile, result.Path)
 
 	// Ensure functions
 	assert.Equal(t, 0, len(result.Stmts.StmtFunction), "Incorrect number of functions")
@@ -141,16 +131,8 @@ function test() {
 	} while ($i < 10);
 	}
 `
-	// Create a temporary file
-	tmpFile := t.TempDir() + "/test.php"
-	if _, err := os.Create(tmpFile); err != nil {
-		t.Error(err)
-	}
-	if err := os.WriteFile(tmpFile, []byte(phpSource), 0644); err != nil {
-		t.Error(err)
-	}
-
-	result, err := parsePhpFile(tmpFile)
+	result, err := Engine.CreateTestFileWithCode(&PhpRunner{}, phpSource)
+	assert.Nil(t, err, "Expected no error, got %s", err)
 
 	// Ensure no error
 	assert.Nil(t, err, "Expected no error, got %s", err)
@@ -219,16 +201,8 @@ trait MonTrait1 {
 	}
 }
 `
-	// Create a temporary file
-	tmpFile := t.TempDir() + "/test.php"
-	if _, err := os.Create(tmpFile); err != nil {
-		t.Error(err)
-	}
-	if err := os.WriteFile(tmpFile, []byte(phpSource), 0644); err != nil {
-		t.Error(err)
-	}
-
-	result, err := parsePhpFile(tmpFile)
+	result, err := Engine.CreateTestFileWithCode(&PhpRunner{}, phpSource)
+	assert.Nil(t, err, "Expected no error, got %s", err)
 
 	// Ensure no error
 	assert.Nil(t, err, "Expected no error, got %s", err)
@@ -254,18 +228,8 @@ interface Foo {
 	public function bar();
 }
 `
-	// Create a temporary file
-	tmpFile := t.TempDir() + "/test.php"
-	if _, err := os.Create(tmpFile); err != nil {
-		t.Error(err)
-	}
-	if err := os.WriteFile(tmpFile, []byte(phpSource), 0644); err != nil {
-		t.Error(err)
-	}
 
-	result, err := parsePhpFile(tmpFile)
-
-	// Ensure no error
+	result, err := Engine.CreateTestFileWithCode(&PhpRunner{}, phpSource)
 	assert.Nil(t, err, "Expected no error, got %s", err)
 
 	// Check that a namespace is found
@@ -323,18 +287,7 @@ function test() {
 	$ab = $a >>= $b;
 }
 `
-	// Create a temporary file
-	tmpFile := t.TempDir() + "/test.php"
-	if _, err := os.Create(tmpFile); err != nil {
-		t.Error(err)
-	}
-	if err := os.WriteFile(tmpFile, []byte(phpSource), 0644); err != nil {
-		t.Error(err)
-	}
-
-	result, err := parsePhpFile(tmpFile)
-
-	// Ensure no error
+	result, err := Engine.CreateTestFileWithCode(&PhpRunner{}, phpSource)
 	assert.Nil(t, err, "Expected no error, got %s", err)
 
 	// 1 function should be found
@@ -380,18 +333,7 @@ function bar() {
 	}
 }
 `
-	// Create a temporary file
-	tmpFile := t.TempDir() + "/test.php"
-	if _, err := os.Create(tmpFile); err != nil {
-		t.Error(err)
-	}
-	if err := os.WriteFile(tmpFile, []byte(phpSource), 0644); err != nil {
-		t.Error(err)
-	}
-
-	result, err := parsePhpFile(tmpFile)
-
-	// Ensure no error
+	result, err := Engine.CreateTestFileWithCode(&PhpRunner{}, phpSource)
 	assert.Nil(t, err, "Expected no error, got %s", err)
 
 	// Ensure functions
@@ -420,22 +362,8 @@ namespace {
     }
 }
 `
-	// Create a temporary file
-	tmpFile := t.TempDir() + "/test.php"
-	if _, err := os.Create(tmpFile); err != nil {
-		t.Error(err)
-	}
-	if err := os.WriteFile(tmpFile, []byte(phpSource), 0644); err != nil {
-		t.Error(err)
-	}
-
-	result, err := parsePhpFile(tmpFile)
-
-	// Ensure no error
+	result, err := Engine.CreateTestFileWithCode(&PhpRunner{}, phpSource)
 	assert.Nil(t, err, "Expected no error, got %s", err)
-
-	// Ensure path
-	assert.Equal(t, tmpFile, result.Path, "Expected path to be %s, got %s", tmpFile, result.Path)
 
 	// Ensure classes
 	assert.Equal(t, 1, len(result.Stmts.StmtClass), "Incorrect number of classes")
@@ -458,16 +386,8 @@ class Foo
 }
 `
 
-	// Create a temporary file
-	tmpFile := t.TempDir() + "/test.php"
-	if _, err := os.Create(tmpFile); err != nil {
-		t.Error(err)
-	}
-	if err := os.WriteFile(tmpFile, []byte(phpSource), 0644); err != nil {
-		t.Error(err)
-	}
-
-	result, _ := parsePhpFile(tmpFile)
+	result, err := Engine.CreateTestFileWithCode(&PhpRunner{}, phpSource)
+	assert.Nil(t, err, "Expected no error, got %s", err)
 
 	// Ensure errors
 	assert.NotEmpty(t, result.Errors)
@@ -489,18 +409,7 @@ class ` + string(classname) + `
 }
 `
 
-	// Create a temporary file
-	tmpFile := t.TempDir() + "/test.php"
-	if _, err := os.Create(tmpFile); err != nil {
-		t.Error(err)
-	}
-	if err := os.WriteFile(tmpFile, []byte(phpSource), 0644); err != nil {
-		t.Error(err)
-	}
-
-	result, err := parsePhpFile(tmpFile)
-
-	// Ensure no error
+	result, err := Engine.CreateTestFileWithCode(&PhpRunner{}, phpSource)
 	assert.Nil(t, err, "Expected no error, got %s", err)
 
 	// Ensure errors
@@ -555,18 +464,7 @@ class TestedClass
 	}
 }
 `
-	// Create a temporary file
-	tmpFile := t.TempDir() + "/test.php"
-	if _, err := os.Create(tmpFile); err != nil {
-		t.Error(err)
-	}
-	if err := os.WriteFile(tmpFile, []byte(phpSource), 0644); err != nil {
-		t.Error(err)
-	}
-
-	result, err := parsePhpFile(tmpFile)
-
-	// Ensure no error
+	result, err := Engine.CreateTestFileWithCode(&PhpRunner{}, phpSource)
 	assert.Nil(t, err, "Expected no error, got %s", err)
 	assert.Empty(t, result.Errors)
 
@@ -643,18 +541,7 @@ class TestedClass
 	}
 }
 `
-	// Create a temporary file
-	tmpFile := t.TempDir() + "/test.php"
-	if _, err := os.Create(tmpFile); err != nil {
-		t.Error(err)
-	}
-	if err := os.WriteFile(tmpFile, []byte(phpSource), 0644); err != nil {
-		t.Error(err)
-	}
-
-	result, err := parsePhpFile(tmpFile)
-
-	// Ensure no error
+	result, err := Engine.CreateTestFileWithCode(&PhpRunner{}, phpSource)
 	assert.Nil(t, err, "Expected no error, got %s", err)
 	assert.Empty(t, result.Errors)
 
@@ -688,4 +575,31 @@ class TestedClass
 
 	// Compare the list
 	assert.ElementsMatch(t, expected, found, "Incorrect external dependencies")
+}
+
+func TestSwitchCasesAreCorrectlyParser(t *testing.T) {
+	phpSource := `
+<?php
+function foo() {
+	switch ($a) {
+		case 1:
+			echo "a";
+			break;
+		case 2:
+			echo "b";
+			break;
+		default:
+			echo "c";
+	}
+}
+`
+	result, err := Engine.CreateTestFileWithCode(&PhpRunner{}, phpSource)
+	assert.Nil(t, err, "Expected no error, got %s", err)
+
+	// Ensure functions
+	assert.Equal(t, 1, len(result.Stmts.StmtFunction), "Incorrect number of functions")
+
+	// Function 1
+	func1 := result.Stmts.StmtFunction[0]
+	assert.Equal(t, 1, len(func1.Stmts.StmtDecisionSwitch), "Incorrect number of switch statements")
 }
