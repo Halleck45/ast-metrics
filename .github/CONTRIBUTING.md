@@ -1,17 +1,17 @@
 # Contributing
 
-Thank you for your interest, it's amazing 🥰. Here is some information to help you contribute to this project.
+Thank you for your interest; it's greatly appreciated 🥰. Here is some information to help you contribute to this project.
 
-I hope these informations will help you:
+I hope this information will help you:
 
 > - [I have never programmed in Go, but I would love to learn](#-i-have-never-programmed-in-go-but-i-would-love-to-learn)
-> - [How to run automated tests?](#-how-to-run-automated-tests)
+> - [How do I run automated tests?](#-how-to-run-automated-tests)
 > - [How is the source code organized?](#-how-is-the-source-code-organized)
-> - [I want to add or modify a report](#-i-want-to-add-or-modify-a-report)
-> - [My contribution is about supporting a new programming language](#-my-contribution-is-about-supporting-a-new-programming-language)
-> - [My contribution involves updating the data structure (protobuf)](#-my-contribution-involves-updating-the-data-structure-protobuf)
+> - [Adding or modifying a report](#-i-want-to-add-or-modify-a-report)
+> - [Supporting a new programming language](#-my-contribution-is-about-supporting-a-new-programming-language)
+> - [Updating the data structure (protobuf)](#-my-contribution-involves-updating-the-data-structure-protobuf)
 > - [How to release new version?](#-how-to-release-new-version)
-> - [How to improve the website?](#-how-to-improve-the-website)
+> - [improving the website?](#-how-to-improve-the-website)
 
 
 ## 🤓 I have never programmed in Go, but I would love to learn
