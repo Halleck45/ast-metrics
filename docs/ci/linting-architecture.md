@@ -44,6 +44,19 @@ requirements:
 
 The list of available rules is growing regularly. Here is the current list:
 
+**Avoid coupling between classes**
+
+This constraint checks that there is no coupling between classes. For example, it may be forbidden for a controller to use a repository.
+
+```yaml
+requirements:
+  rules:
+    coupling:
+      forbidden:
+        - from: "Controller.*"
+          to: ".*Repository.*"
+```
+
 **Maximum number of lines of code per file**
 
 ```yaml
