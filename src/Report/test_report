@@ -1,0 +1,31 @@
+# TYPE cyclomatic_complexity gauge
+# HELP cyclomatic_complexity Cyclomatic complexity of the code
+cyclomatic_complexity{path="file1"} 10
+# TYPE lines_of_code gauge
+# HELP lines_of_code Lines of code
+lines_of_code{path="file1"} 100
+# TYPE logical_lines_of_code gauge
+# HELP logical_lines_of_code Logical lines of code
+logical_lines_of_code{path="file1"} 80
+# TYPE comment_lines_of_code gauge
+# HELP comment_lines_of_code Comment lines of code
+comment_lines_of_code{path="file1"} 20
+# TYPE maintainability gauge
+# HELP maintainability Maintainability index
+maintainability{path="file1"} 75.5
+# TYPE maintainability_without_comments gauge
+# HELP maintainability_without_comments Maintainability index without comments
+maintainability_without_comments{path="file1"} 70
+# TYPE number_of_functions gauge
+# HELP number_of_functions Number of functions
+number_of_functions{path="file1"} 0
+# TYPE number_of_classes gauge
+# HELP number_of_classes Number of classes
+number_of_classes{path="file1"} 0
+# TYPE afferent_coupling gauge
+# HELP afferent_coupling Afferent coupling
+afferent_coupling{path="file1"} 5
+# TYPE efferent_coupling gauge
+# HELP efferent_coupling Efferent coupling
+efferent_coupling{path="file1"} 3
+# EOF

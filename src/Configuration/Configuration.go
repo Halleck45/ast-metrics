@@ -40,7 +40,7 @@ type ConfigurationReport struct {
 
 // function HasReports() bool {
 func (c *ConfigurationReport) HasReports() bool {
-	return c.Html != "" || c.Markdown != "" || c.Json != ""
+	return c.Html != "" || c.Markdown != "" || c.Json != "" || c.OpenMetrics != ""
 }
 
 type ConfigurationRequirements struct {
