@@ -2,14 +2,16 @@ package Scm
 
 import (
 	"fmt"
+	"log"
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strconv"
 	"strings"
 )
 
 type GitRepository struct {
-	Path string
+	Path          string
 	InitialBranch string
 }
 
@@ -73,16 +75,58 @@ func getAbsolutePath(repoRoot string) (string, error) {
 	return repoRootAbsolute, nil
 }
 
-func (git *GitRepository) ListAllCommitsSince(since string) ([]string, error) {
+func (git *GitRepository) ListAllCommitsSince(since string) ([]Commit, error) {
 	// Get all commits since one year (only sha1)
-	cmd := exec.Command("git", "--no-pager", "log", "--pretty=format:%H", "--since="+since)
+	cmd := exec.Command("git", "--no-pager", "log", "--pretty=format:# %h|%an|%ct", "--name-only", "--since="+since)
 	cmd.Dir = git.Path
 	out, err := cmd.Output()
 	if err != nil {
 		return nil, err
 	}
 
-	commits := strings.Split(string(out), "\n")
+	// Iterate over the output to get the commits, line by line
+	var currentCommit Commit
+	commits := make([]Commit, 0)
+
+	lines := strings.Split(string(out), "\n")
+	for _, line := range lines {
+
+		if strings.HasPrefix(line, "#") {
+			// split the line to get the sha1, author and date
+			commitInfos := strings.Split(line[2:], "|")
+
+			// convert the date to an integer
+			timestamp, err := strconv.Atoi(commitInfos[2])
+			if err != nil {
+				log.Println("Invalid timestamp in git log")
+				continue
+			}
+
+			currentCommit = Commit{
+				Hash:      commitInfos[0],
+				Author:    commitInfos[1],
+				Timestamp: timestamp,
+			}
+
+			continue
+		}
+
+		// if the line is not a commit, it's a file
+		if currentCommit.Hash == "" {
+			log.Println("Incomplete output from git log")
+			continue
+		}
+
+		// add the file to the commit
+		currentCommit.Files = append(currentCommit.Files, line)
+
+		// if the line is empty, it's the end of the commit
+		if line == "" {
+			commits = append(commits, currentCommit)
+			currentCommit = Commit{}
+		}
+	}
+
 	return commits, nil
 }
 
