@@ -1,17 +1,18 @@
 # Contributing
 
-Thank you for your interest; it's greatly appreciated 🥰. Here is some information to help you contribute to this project.
+Thank you for your interest, it's amazing 🥰. Here is some information to help you contribute to this project.
 
-I hope this information will help you:
+I hope these informations will help you:
 
+> - [How to contribute?](#-how-to-contribute)
 > - [I have never programmed in Go, but I would love to learn](#-i-have-never-programmed-in-go-but-i-would-love-to-learn)
-> - [How do I run automated tests?](#-how-to-run-automated-tests)
+> - [How to run automated tests?](#-how-to-run-automated-tests)
 > - [How is the source code organized?](#-how-is-the-source-code-organized)
-> - [Adding or modifying a report](#-i-want-to-add-or-modify-a-report)
-> - [Supporting a new programming language](#-my-contribution-is-about-supporting-a-new-programming-language)
-> - [Updating the data structure (protobuf)](#-my-contribution-involves-updating-the-data-structure-protobuf)
+> - [I want to add or modify a report](#-i-want-to-add-or-modify-a-report)
+> - [My contribution is about supporting a new programming language](#-my-contribution-is-about-supporting-a-new-programming-language)
+> - [My contribution involves updating the data structure (protobuf)](#-my-contribution-involves-updating-the-data-structure-protobuf)
 > - [How to release new version?](#-how-to-release-new-version)
-> - [improving the website?](#-how-to-improve-the-website)
+> - [How to improve the website?](#-how-to-improve-the-website)
 
 
 ## 🤓 I have never programmed in Go, but I would love to learn
@@ -40,6 +41,44 @@ The main directories of the application are as follows:
 + `src/Configuration`: manages configuration (loading files, validation, etc.)
 + `src/Engine`: contains various engines that convert source code (Python, Golang, PHP...) into an AST
 + `src/Report`: generates reports (HTML, markdown, etc.)
+
+The `NodeType` structure is the most important part of the project. It's the data structure that will be used to store the AST of the source code, and analysis results. This structure is automatically generated from the `proto/NodeType.proto` file.
+
+> [!INFO]
+> 
+> An **AST (Abstract Syntax Tree)** is a tree representation of the source code. It's used to represent the structure of the source code in a way that is easy to analyze.
+>
+> A **Statement** is a node in the AST. It represents a part of the source code, like a function, a class, an if statement, etc.
+
+Each statement in the AST can have another statements as children, recursively. For example, the `StmtClass` statement can have `StmtFunction` as children, which can have `StmtDecisionIf` as children, etc. 
+
+In all case, each statement has at least the following properties:
+
++ `Name`: the structured name of the statement
++ `Stmts`: a list of children statements
++ `Analyze`: a list of analysis results (Volume, complexity, etc.)
++ (optional) `StmtLocationInFile`: tracks the location of the statement in the source code
+
+The role of each `Engine` consists in parsing the source code, and creating the corresponding `Stmt*` statement(s).
+
+Then, each `Analyzer` will then traverse the AST, and compute analysis results (like cyclomatic complexity, volume, etc.) filling the `Analyze` property of each statement.
+
+Do not hesitate to look at the existing analyzers to understand how to use the `Analyze` property. An analyzer is a structure that implements the `Visitor` interface, and will be used to traverse the AST.
+
+This [visitor pattern](https://en.wikipedia.org/wiki/Visitor_pattern) is used to traverse the AST, and compute analysis results.
+
+```go
+type Visitor interface {
+	Visit(stmts *pb.Stmts, parents *pb.Stmts)
+	LeaveNode(stmts *pb.Stmts)
+}
+```
+
+You'll find an example of an analyzer in the `src/Analyzer/Complexity/CyclomaticVisitor.go` file.
+
+> [!INFO]
+> 
+> If you want to discover protobuf, you can read the [official documentation](https://protobuf.dev/).
 
 ## 📃 I want to add or modify a report
 
