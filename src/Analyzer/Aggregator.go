@@ -3,6 +3,7 @@ package Analyzer
 import (
 	"math"
 	"regexp"
+	"runtime"
 	"sync"
 
 	"github.com/halleck45/ast-metrics/src/Engine"
@@ -356,187 +357,199 @@ func (r *Aggregator) consolidate(aggregated *Aggregated) {
 
 	var wg sync.WaitGroup
 	var mu sync.Mutex
+	numWorkers := runtime.NumCPU()
+	filesChan := make(chan *pb.File, numWorkers)
 
 	reg := regexp.MustCompile("[^A-Za-z0-9.]+")
 
-	for _, file := range aggregated.ConcernedFiles {
-		wg.Add(1)
-		go func(file *pb.File) {
-			defer wg.Done()
+	for i := 0; i < numWorkers; i++ {
+		go func() {
+			for file := range filesChan {
 
-			if file.LinesOfCode == nil {
-				return
-			}
-
-			mu.Lock()
-			aggregated.Loc += int(file.LinesOfCode.LinesOfCode)
-			aggregated.Cloc += int(file.LinesOfCode.CommentLinesOfCode)
-			aggregated.Lloc += int(file.LinesOfCode.LogicalLinesOfCode)
-			mu.Unlock()
-
-			// Create local variables for file processing
-			localFile := &pb.File{
-				Stmts:       file.Stmts,
-			}
-
-			// Calculate alternate MI using average MI per method when file has no class
-			if len(localFile.Stmts.StmtClass) == 0 {
-				if localFile.Stmts.Analyze.Maintainability == nil {
-					localFile.Stmts.Analyze.Maintainability = &pb.Maintainability{}
-				}
-
-				methods := file.Stmts.StmtFunction
-				if len(methods) == 0 {
-					return
-				}
-				averageForFile := float32(0)
-				for _, method := range methods {
-					if method.Stmts.Analyze == nil || method.Stmts.Analyze.Maintainability == nil {
-						continue
+				wg.Add(1)
+				go func(file *pb.File) {
+					defer wg.Done()
+		
+					if file.LinesOfCode == nil {
+						return
 					}
-					averageForFile += float32(*method.Stmts.Analyze.Maintainability.MaintainabilityIndex)
-				}
-				averageForFile = averageForFile / float32(len(methods))
-				localFile.Stmts.Analyze.Maintainability.MaintainabilityIndex = &averageForFile
-			}
-
-			// Update the original file with processed data
-			mu.Lock()
-			file.Stmts = localFile.Stmts
-			mu.Unlock()
-
-			// LOC of file is the sum of all classes and methods
-			// That's useful when we navigate over the files instead of the classes
-			zero := int32(0)
-			loc := int32(0)
-			lloc := int32(0)
-			cloc := int32(0)
-
-			if file.Stmts.Analyze.Volume == nil {
-				file.Stmts.Analyze.Volume = &pb.Volume{
-					Lloc: &zero,
-					Cloc: &zero,
-					Loc:  &zero,
-				}
-			}
-
-			classes := Engine.GetClassesInFile(file)
-			functions := file.Stmts.StmtFunction
-
-			// Initialize file complexity if needed
-			if file.Stmts.Analyze.Complexity.Cyclomatic == nil {
-				file.Stmts.Analyze.Complexity.Cyclomatic = &zero
-			}
-
-			// Process functions
-			for _, function := range functions {
-				// Handle LOC
-				if function.LinesOfCode != nil {
-					loc += function.LinesOfCode.LinesOfCode
-					lloc += function.LinesOfCode.LogicalLinesOfCode
-					cloc += function.LinesOfCode.CommentLinesOfCode
-				}
-
-				// Handle complexity
-				if function.Stmts.Analyze != nil && function.Stmts.Analyze.Complexity != nil {
-					*file.Stmts.Analyze.Complexity.Cyclomatic += *function.Stmts.Analyze.Complexity.Cyclomatic
-				}
-			}
-
-			// Process classes
-			for _, class := range classes {
-				// Handle LOC
-				if class.LinesOfCode != nil {
-					loc += class.LinesOfCode.LinesOfCode
-					lloc += class.LinesOfCode.LogicalLinesOfCode
-					cloc += class.LinesOfCode.CommentLinesOfCode
-				}
-
-				// Handle coupling
-				if class.Stmts != nil && class.Stmts.Analyze != nil {
-					if class.Stmts.Analyze.Coupling == nil {
-						class.Stmts.Analyze.Coupling = &pb.Coupling{
-							Efferent: 0,
-							Afferent: 0,
+		
+					mu.Lock()
+					aggregated.Loc += int(file.LinesOfCode.LinesOfCode)
+					aggregated.Cloc += int(file.LinesOfCode.CommentLinesOfCode)
+					aggregated.Lloc += int(file.LinesOfCode.LogicalLinesOfCode)
+					mu.Unlock()
+		
+					// Create local variables for file processing
+					localFile := &pb.File{
+						Stmts:       file.Stmts,
+					}
+		
+					// Calculate alternate MI using average MI per method when file has no class
+					if len(localFile.Stmts.StmtClass) == 0 {
+						if localFile.Stmts.Analyze.Maintainability == nil {
+							localFile.Stmts.Analyze.Maintainability = &pb.Maintainability{}
+						}
+		
+						methods := file.Stmts.StmtFunction
+						if len(methods) == 0 {
+							return
+						}
+						averageForFile := float32(0)
+						for _, method := range methods {
+							if method.Stmts.Analyze == nil || method.Stmts.Analyze.Maintainability == nil {
+								continue
+							}
+							averageForFile += float32(*method.Stmts.Analyze.Maintainability.MaintainabilityIndex)
+						}
+						averageForFile = averageForFile / float32(len(methods))
+						localFile.Stmts.Analyze.Maintainability.MaintainabilityIndex = &averageForFile
+					}
+		
+					// Update the original file with processed data
+					mu.Lock()
+					file.Stmts = localFile.Stmts
+					mu.Unlock()
+		
+					// LOC of file is the sum of all classes and methods
+					// That's useful when we navigate over the files instead of the classes
+					zero := int32(0)
+					loc := int32(0)
+					lloc := int32(0)
+					cloc := int32(0)
+		
+					if file.Stmts.Analyze.Volume == nil {
+						file.Stmts.Analyze.Volume = &pb.Volume{
+							Lloc: &zero,
+							Cloc: &zero,
+							Loc:  &zero,
 						}
 					}
-					class.Stmts.Analyze.Coupling.Afferent = 0
-
-					if class.Name != nil {
+		
+					classes := Engine.GetClassesInFile(file)
+					functions := file.Stmts.StmtFunction
+		
+					// Initialize file complexity if needed
+					if file.Stmts.Analyze.Complexity.Cyclomatic == nil {
+						file.Stmts.Analyze.Complexity.Cyclomatic = &zero
+					}
+		
+					// Process functions
+					for _, function := range functions {
+						// Handle LOC
+						if function.LinesOfCode != nil {
+							loc += function.LinesOfCode.LinesOfCode
+							lloc += function.LinesOfCode.LogicalLinesOfCode
+							cloc += function.LinesOfCode.CommentLinesOfCode
+						}
+		
+						// Handle complexity
+						if function.Stmts.Analyze != nil && function.Stmts.Analyze.Complexity != nil {
+							*file.Stmts.Analyze.Complexity.Cyclomatic += *function.Stmts.Analyze.Complexity.Cyclomatic
+						}
+					}
+		
+					// Process classes
+					for _, class := range classes {
+						// Handle LOC
+						if class.LinesOfCode != nil {
+							loc += class.LinesOfCode.LinesOfCode
+							lloc += class.LinesOfCode.LogicalLinesOfCode
+							cloc += class.LinesOfCode.CommentLinesOfCode
+						}
+		
+						// Handle coupling
+						if class.Stmts != nil && class.Stmts.Analyze != nil {
+							if class.Stmts.Analyze.Coupling == nil {
+								class.Stmts.Analyze.Coupling = &pb.Coupling{
+									Efferent: 0,
+									Afferent: 0,
+								}
+							}
+							class.Stmts.Analyze.Coupling.Afferent = 0
+		
+							if class.Name != nil {
+								mu.Lock()
+								// if in hashmap
+								if _, ok := aggregated.ClassesAfferentCoupling[class.Name.Qualified]; ok {
+									class.Stmts.Analyze.Coupling.Afferent = int32(aggregated.ClassesAfferentCoupling[class.Name.Qualified])
+									file.Stmts.Analyze.Coupling.Afferent += class.Stmts.Analyze.Coupling.Afferent
+								}
+		
+								// instability
+								if class.Stmts.Analyze.Coupling.Afferent > 0 || class.Stmts.Analyze.Coupling.Efferent > 0 {
+									instability := float32(class.Stmts.Analyze.Coupling.Efferent) / float32(class.Stmts.Analyze.Coupling.Efferent+class.Stmts.Analyze.Coupling.Afferent)
+									class.Stmts.Analyze.Coupling.Instability = instability
+									aggregated.AverageInstability += instability
+								}
+								mu.Unlock()
+							}
+						}
+					}
+		
+					file.Stmts.Analyze.Volume.Loc = &loc
+					file.Stmts.Analyze.Volume.Lloc = &lloc
+					file.Stmts.Analyze.Volume.Cloc = &cloc
+		
+					dependencies := file.Stmts.StmtExternalDependencies
+		
+					for _, dependency := range dependencies {
+						if dependency == nil {
+							continue
+						}
+		
+						namespaceTo := dependency.Namespace
+						namespaceFrom := dependency.From
+		
+						if namespaceFrom == "" || namespaceTo == "" {
+							continue
+						}
+		
+						// Keep only 2 levels in namespace
+						separator := reg.FindString(namespaceFrom)
+						parts := reg.Split(namespaceTo, -1)
+						if len(parts) > 2 {
+							namespaceTo = parts[0] + separator + parts[1]
+						}
+		
+						parts = reg.Split(namespaceFrom, -1)
+						if len(parts) > 2 {
+							namespaceFrom = parts[0] + separator + parts[1]
+						}
+		
+						// if same, continue
+						if namespaceFrom == namespaceTo {
+							continue
+						}
+		
+						// if root namespace, continue
+						if namespaceFrom == "" || namespaceTo == "" {
+							continue
+						}
+		
 						mu.Lock()
-						// if in hashmap
-						if _, ok := aggregated.ClassesAfferentCoupling[class.Name.Qualified]; ok {
-							class.Stmts.Analyze.Coupling.Afferent = int32(aggregated.ClassesAfferentCoupling[class.Name.Qualified])
-							file.Stmts.Analyze.Coupling.Afferent += class.Stmts.Analyze.Coupling.Afferent
+						// create the map if not exists
+						if _, ok := aggregated.PackageRelations[namespaceFrom]; !ok {
+							aggregated.PackageRelations[namespaceFrom] = make(map[string]int)
 						}
-
-						// instability
-						if class.Stmts.Analyze.Coupling.Afferent > 0 || class.Stmts.Analyze.Coupling.Efferent > 0 {
-							instability := float32(class.Stmts.Analyze.Coupling.Efferent) / float32(class.Stmts.Analyze.Coupling.Efferent+class.Stmts.Analyze.Coupling.Afferent)
-							class.Stmts.Analyze.Coupling.Instability = instability
-							aggregated.AverageInstability += instability
+		
+						if _, ok := aggregated.PackageRelations[namespaceFrom][namespaceTo]; !ok {
+							aggregated.PackageRelations[namespaceFrom][namespaceTo] = 0
 						}
+		
+						// increment the counter
+						aggregated.PackageRelations[namespaceFrom][namespaceTo]++
 						mu.Unlock()
 					}
-				}
+				}(file)
 			}
-
-			file.Stmts.Analyze.Volume.Loc = &loc
-			file.Stmts.Analyze.Volume.Lloc = &lloc
-			file.Stmts.Analyze.Volume.Cloc = &cloc
-
-			dependencies := file.Stmts.StmtExternalDependencies
-
-			for _, dependency := range dependencies {
-				if dependency == nil {
-					continue
-				}
-
-				namespaceTo := dependency.Namespace
-				namespaceFrom := dependency.From
-
-				if namespaceFrom == "" || namespaceTo == "" {
-					continue
-				}
-
-				// Keep only 2 levels in namespace
-				separator := reg.FindString(namespaceFrom)
-				parts := reg.Split(namespaceTo, -1)
-				if len(parts) > 2 {
-					namespaceTo = parts[0] + separator + parts[1]
-				}
-
-				parts = reg.Split(namespaceFrom, -1)
-				if len(parts) > 2 {
-					namespaceFrom = parts[0] + separator + parts[1]
-				}
-
-				// if same, continue
-				if namespaceFrom == namespaceTo {
-					continue
-				}
-
-				// if root namespace, continue
-				if namespaceFrom == "" || namespaceTo == "" {
-					continue
-				}
-
-				mu.Lock()
-				// create the map if not exists
-				if _, ok := aggregated.PackageRelations[namespaceFrom]; !ok {
-					aggregated.PackageRelations[namespaceFrom] = make(map[string]int)
-				}
-
-				if _, ok := aggregated.PackageRelations[namespaceFrom][namespaceTo]; !ok {
-					aggregated.PackageRelations[namespaceFrom][namespaceTo] = 0
-				}
-
-				// increment the counter
-				aggregated.PackageRelations[namespaceFrom][namespaceTo]++
-				mu.Unlock()
-			}
-		}(file)
+		}()
 	}
+
+	for _, file := range aggregated.ConcernedFiles {
+		filesChan <- file
+	}
+
 	wg.Wait()
 
 	// Consolidate
