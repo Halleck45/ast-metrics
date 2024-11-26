@@ -66,23 +66,23 @@ func (v *MaintainabilityIndexVisitor) Calculate(stmts *pb.Stmts) {
 	var cloc int32 = *stmts.Analyze.Volume.Cloc
 	var cyclomatic int32 = *stmts.Analyze.Complexity.Cyclomatic
 	var halsteadVolume float32 = *stmts.Analyze.Volume.HalsteadVolume
-	var MIwoC float64 = 0
-	var MI float64 = 0
-	var commentWeight float64 = 0
+	var MIwoC float32 = 0
+	var MI float32 = 0
+	var commentWeight float32 = 0
 
 	// // maintainability index without comment
-	MIwoC = max((171-
+	MIwoC = float32(math.Max((171-
 		(5.2*math.Log(float64(halsteadVolume)))-
 		(0.23*float64(cyclomatic))-
-		(16.2*math.Log(float64(lloc))))*100/171, 0)
+		(16.2*math.Log(float64(lloc))))*100/171, 0))
 
-	if math.IsInf(MIwoC, 0) {
+	if math.IsInf(float64(MIwoC), 0) {
 		MIwoC = 171
 	}
 
 	if loc > 0 {
 		CM := float64(cloc) / float64(loc)
-		commentWeight = 50 * math.Sin(math.Sqrt(2.4*CM))
+		commentWeight = float32(50 * math.Sin(math.Sqrt(2.4*CM)))
 	}
 
 	MI = MIwoC + commentWeight

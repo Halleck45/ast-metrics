@@ -33,33 +33,33 @@ type Aggregated struct {
 	Loc                                  int
 	Cloc                                 int
 	Lloc                                 int
-	AverageMethodsPerClass               float64
-	AverageLocPerMethod                  float64
-	AverageLlocPerMethod                 float64
-	AverageClocPerMethod                 float64
-	AverageCyclomaticComplexityPerMethod float64
-	AverageCyclomaticComplexityPerClass  float64
+	AverageMethodsPerClass               float32
+	AverageLocPerMethod                  float32
+	AverageLlocPerMethod                 float32
+	AverageClocPerMethod                 float32
+	AverageCyclomaticComplexityPerMethod float32
+	AverageCyclomaticComplexityPerClass  float32
 	MinCyclomaticComplexity              int
 	MaxCyclomaticComplexity              int
-	AverageHalsteadDifficulty            float64
-	AverageHalsteadEffort                float64
-	AverageHalsteadVolume                float64
-	AverageHalsteadTime                  float64
-	AverageHalsteadBugs                  float64
-	SumHalsteadDifficulty                float64
-	SumHalsteadEffort                    float64
-	SumHalsteadVolume                    float64
-	SumHalsteadTime                      float64
-	SumHalsteadBugs                      float64
-	AverageMI                            float64
-	AverageMIwoc                         float64
-	AverageMIcw                          float64
-	AverageMIPerMethod                   float64
-	AverageMIwocPerMethod                float64
-	AverageMIcwPerMethod                 float64
-	AverageAfferentCoupling              float64
-	AverageEfferentCoupling              float64
-	AverageInstability                   float64
+	AverageHalsteadDifficulty            float32
+	AverageHalsteadEffort                float32
+	AverageHalsteadVolume                float32
+	AverageHalsteadTime                  float32
+	AverageHalsteadBugs                  float32
+	SumHalsteadDifficulty                float32
+	SumHalsteadEffort                    float32
+	SumHalsteadVolume                    float32
+	SumHalsteadTime                      float32
+	SumHalsteadBugs                      float32
+	AverageMI                            float32
+	AverageMIwoc                         float32
+	AverageMIcw                          float32
+	AverageMIPerMethod                   float32
+	AverageMIwocPerMethod                float32
+	AverageMIcwPerMethod                 float32
+	AverageAfferentCoupling              float32
+	AverageEfferentCoupling              float32
+	AverageInstability                   float32
 	CommitCountForPeriod                 int
 	CommittedFilesCountForPeriod         int // for example if one commit concerns 10 files, it will be 10
 	BusFactor                            int
@@ -245,7 +245,7 @@ func (r *Aggregator) executeAggregationOnFiles(files []*pb.File) ProjectAggregat
 		}()
 
 		go func() {
-			defer wg.Done() 
+			defer wg.Done()
 			r.calculateSums(file, &projectAggregated.ByClass)
 		}()
 
@@ -306,37 +306,37 @@ func (r *Aggregator) executeAggregationOnFiles(files []*pb.File) ProjectAggregat
 func (r *Aggregator) consolidate(aggregated *Aggregated) {
 
 	if aggregated.NbClasses > 0 {
-		aggregated.AverageMethodsPerClass = float64(aggregated.NbMethods) / float64(aggregated.NbClasses)
-		aggregated.AverageCyclomaticComplexityPerClass = aggregated.AverageCyclomaticComplexityPerClass / float64(aggregated.NbClasses)
+		aggregated.AverageMethodsPerClass = float32(aggregated.NbMethods) / float32(aggregated.NbClasses)
+		aggregated.AverageCyclomaticComplexityPerClass = aggregated.AverageCyclomaticComplexityPerClass / float32(aggregated.NbClasses)
 	} else {
 		aggregated.AverageMethodsPerClass = 0
 		aggregated.AverageCyclomaticComplexityPerClass = 0
 	}
 
 	if aggregated.AverageMI > 0 {
-		aggregated.AverageMI = aggregated.AverageMI / float64(aggregated.NbClasses)
-		aggregated.AverageMIwoc = aggregated.AverageMIwoc / float64(aggregated.NbClasses)
-		aggregated.AverageMIcw = aggregated.AverageMIcw / float64(aggregated.NbClasses)
+		aggregated.AverageMI = aggregated.AverageMI / float32(aggregated.NbClasses)
+		aggregated.AverageMIwoc = aggregated.AverageMIwoc / float32(aggregated.NbClasses)
+		aggregated.AverageMIcw = aggregated.AverageMIcw / float32(aggregated.NbClasses)
 	}
 
 	if aggregated.AverageInstability > 0 {
-		aggregated.AverageEfferentCoupling = aggregated.AverageEfferentCoupling / float64(aggregated.NbClasses)
-		aggregated.AverageAfferentCoupling = aggregated.AverageAfferentCoupling / float64(aggregated.NbClasses)
+		aggregated.AverageEfferentCoupling = aggregated.AverageEfferentCoupling / float32(aggregated.NbClasses)
+		aggregated.AverageAfferentCoupling = aggregated.AverageAfferentCoupling / float32(aggregated.NbClasses)
 	}
 
 	if aggregated.NbMethods > 0 {
-		aggregated.AverageLocPerMethod = aggregated.AverageLocPerMethod / float64(aggregated.NbMethods)
-		aggregated.AverageClocPerMethod = aggregated.AverageClocPerMethod / float64(aggregated.NbMethods)
-		aggregated.AverageLlocPerMethod = aggregated.AverageLlocPerMethod / float64(aggregated.NbMethods)
-		aggregated.AverageCyclomaticComplexityPerMethod = aggregated.AverageCyclomaticComplexityPerMethod / float64(aggregated.NbMethods)
-		aggregated.AverageMIPerMethod = aggregated.AverageMIPerMethod / float64(aggregated.NbMethods)
-		aggregated.AverageMIwocPerMethod = aggregated.AverageMIwocPerMethod / float64(aggregated.NbMethods)
-		aggregated.AverageMIcwPerMethod = aggregated.AverageMIcwPerMethod / float64(aggregated.NbMethods)
-		aggregated.AverageHalsteadDifficulty = aggregated.AverageHalsteadDifficulty / float64(aggregated.NbClasses)
-		aggregated.AverageHalsteadEffort = aggregated.AverageHalsteadEffort / float64(aggregated.NbClasses)
-		aggregated.AverageHalsteadVolume = aggregated.AverageHalsteadVolume / float64(aggregated.NbClasses)
-		aggregated.AverageHalsteadTime = aggregated.AverageHalsteadTime / float64(aggregated.NbClasses)
-		aggregated.AverageHalsteadBugs = aggregated.AverageHalsteadBugs / float64(aggregated.NbClasses)
+		aggregated.AverageLocPerMethod = aggregated.AverageLocPerMethod / float32(aggregated.NbMethods)
+		aggregated.AverageClocPerMethod = aggregated.AverageClocPerMethod / float32(aggregated.NbMethods)
+		aggregated.AverageLlocPerMethod = aggregated.AverageLlocPerMethod / float32(aggregated.NbMethods)
+		aggregated.AverageCyclomaticComplexityPerMethod = aggregated.AverageCyclomaticComplexityPerMethod / float32(aggregated.NbMethods)
+		aggregated.AverageMIPerMethod = aggregated.AverageMIPerMethod / float32(aggregated.NbMethods)
+		aggregated.AverageMIwocPerMethod = aggregated.AverageMIwocPerMethod / float32(aggregated.NbMethods)
+		aggregated.AverageMIcwPerMethod = aggregated.AverageMIcwPerMethod / float32(aggregated.NbMethods)
+		aggregated.AverageHalsteadDifficulty = aggregated.AverageHalsteadDifficulty / float32(aggregated.NbClasses)
+		aggregated.AverageHalsteadEffort = aggregated.AverageHalsteadEffort / float32(aggregated.NbClasses)
+		aggregated.AverageHalsteadVolume = aggregated.AverageHalsteadVolume / float32(aggregated.NbClasses)
+		aggregated.AverageHalsteadTime = aggregated.AverageHalsteadTime / float32(aggregated.NbClasses)
+		aggregated.AverageHalsteadBugs = aggregated.AverageHalsteadBugs / float32(aggregated.NbClasses)
 	}
 
 	// if langage without classes
@@ -462,7 +462,7 @@ func (r *Aggregator) consolidate(aggregated *Aggregated) {
 						if class.Stmts.Analyze.Coupling.Afferent > 0 || class.Stmts.Analyze.Coupling.Efferent > 0 {
 							instability := float32(class.Stmts.Analyze.Coupling.Efferent) / float32(class.Stmts.Analyze.Coupling.Efferent+class.Stmts.Analyze.Coupling.Afferent)
 							class.Stmts.Analyze.Coupling.Instability = instability
-							aggregated.AverageInstability += float64(instability)
+							aggregated.AverageInstability += instability
 						}
 						mu.Unlock()
 					}
@@ -530,14 +530,14 @@ func (r *Aggregator) consolidate(aggregated *Aggregated) {
 	wg.Wait()
 
 	// Consolidate
-	aggregated.AverageInstability = aggregated.AverageInstability / float64(aggregated.NbClasses)
+	aggregated.AverageInstability = aggregated.AverageInstability / float32(aggregated.NbClasses)
 
 	// Count commits for the period based on `ResultOfGitAnalysis` data
 	aggregated.ResultOfGitAnalysis = r.gitSummaries
 	if aggregated.ResultOfGitAnalysis != nil {
 		var wg sync.WaitGroup
 		var mu sync.Mutex
-		
+
 		for _, result := range aggregated.ResultOfGitAnalysis {
 			wg.Add(1)
 			go func(res ResultOfGitAnalysis) {
@@ -627,28 +627,28 @@ func (r *Aggregator) calculateSums(file *pb.File, specificAggregation *Aggregate
 		// Average cyclomatic complexity per method
 		if function.Stmts.Analyze != nil && function.Stmts.Analyze.Complexity != nil {
 			if function.Stmts.Analyze.Complexity.Cyclomatic != nil {
-				specificAggregation.AverageCyclomaticComplexityPerMethod += float64(*function.Stmts.Analyze.Complexity.Cyclomatic)
+				specificAggregation.AverageCyclomaticComplexityPerMethod += float32(*function.Stmts.Analyze.Complexity.Cyclomatic)
 			}
 		}
 
 		// Average maintainability index per method
 		if function.Stmts.Analyze != nil && function.Stmts.Analyze.Maintainability != nil {
 			if function.Stmts.Analyze.Maintainability.MaintainabilityIndex != nil && !math.IsNaN(float64(*function.Stmts.Analyze.Maintainability.MaintainabilityIndex)) {
-				specificAggregation.AverageMIPerMethod += float64(*function.Stmts.Analyze.Maintainability.MaintainabilityIndex)
-				specificAggregation.AverageMIwocPerMethod += float64(*function.Stmts.Analyze.Maintainability.MaintainabilityIndexWithoutComments)
-				specificAggregation.AverageMIcwPerMethod += float64(*function.Stmts.Analyze.Maintainability.CommentWeight)
+				specificAggregation.AverageMIPerMethod += *function.Stmts.Analyze.Maintainability.MaintainabilityIndex
+				specificAggregation.AverageMIwocPerMethod += *function.Stmts.Analyze.Maintainability.MaintainabilityIndexWithoutComments
+				specificAggregation.AverageMIcwPerMethod += *function.Stmts.Analyze.Maintainability.CommentWeight
 			}
 		}
 		// average lines of code per method
 		if function.Stmts.Analyze != nil && function.Stmts.Analyze.Volume != nil {
 			if function.Stmts.Analyze.Volume.Loc != nil {
-				specificAggregation.AverageLocPerMethod += float64(*function.Stmts.Analyze.Volume.Loc)
+				specificAggregation.AverageLocPerMethod += float32(*function.Stmts.Analyze.Volume.Loc)
 			}
 			if function.Stmts.Analyze.Volume.Cloc != nil {
-				specificAggregation.AverageClocPerMethod += float64(*function.Stmts.Analyze.Volume.Cloc)
+				specificAggregation.AverageClocPerMethod += float32(*function.Stmts.Analyze.Volume.Cloc)
 			}
 			if function.Stmts.Analyze.Volume.Lloc != nil {
-				specificAggregation.AverageLlocPerMethod += float64(*function.Stmts.Analyze.Volume.Lloc)
+				specificAggregation.AverageLlocPerMethod += float32(*function.Stmts.Analyze.Volume.Lloc)
 			}
 		}
 	}
@@ -667,22 +667,22 @@ func (r *Aggregator) calculateSums(file *pb.File, specificAggregation *Aggregate
 		// Maintainability Index
 		if class.Stmts.Analyze.Maintainability != nil {
 			if class.Stmts.Analyze.Maintainability.MaintainabilityIndex != nil && !math.IsNaN(float64(*class.Stmts.Analyze.Maintainability.MaintainabilityIndex)) {
-				specificAggregation.AverageMI += float64(*class.Stmts.Analyze.Maintainability.MaintainabilityIndex)
-				specificAggregation.AverageMIwoc += float64(*class.Stmts.Analyze.Maintainability.MaintainabilityIndexWithoutComments)
-				specificAggregation.AverageMIcw += float64(*class.Stmts.Analyze.Maintainability.CommentWeight)
+				specificAggregation.AverageMI += *class.Stmts.Analyze.Maintainability.MaintainabilityIndex
+				specificAggregation.AverageMIwoc += *class.Stmts.Analyze.Maintainability.MaintainabilityIndexWithoutComments
+				specificAggregation.AverageMIcw += *class.Stmts.Analyze.Maintainability.CommentWeight
 			}
 		}
 
 		// Coupling
 		if class.Stmts.Analyze.Coupling != nil {
-			specificAggregation.AverageInstability += float64(class.Stmts.Analyze.Coupling.Instability)
-			specificAggregation.AverageEfferentCoupling += float64(class.Stmts.Analyze.Coupling.Efferent)
-			specificAggregation.AverageAfferentCoupling += float64(class.Stmts.Analyze.Coupling.Afferent)
+			specificAggregation.AverageInstability += class.Stmts.Analyze.Coupling.Instability
+			specificAggregation.AverageEfferentCoupling += float32(class.Stmts.Analyze.Coupling.Efferent)
+			specificAggregation.AverageAfferentCoupling += float32(class.Stmts.Analyze.Coupling.Afferent)
 		}
 
 		// cyclomatic complexity per class
 		if class.Stmts.Analyze.Complexity != nil && class.Stmts.Analyze.Complexity.Cyclomatic != nil {
-			specificAggregation.AverageCyclomaticComplexityPerClass += float64(*class.Stmts.Analyze.Complexity.Cyclomatic)
+			specificAggregation.AverageCyclomaticComplexityPerClass += float32(*class.Stmts.Analyze.Complexity.Cyclomatic)
 			if specificAggregation.MinCyclomaticComplexity == 0 || int(*class.Stmts.Analyze.Complexity.Cyclomatic) < specificAggregation.MinCyclomaticComplexity {
 				specificAggregation.MinCyclomaticComplexity = int(*class.Stmts.Analyze.Complexity.Cyclomatic)
 			}
@@ -694,20 +694,20 @@ func (r *Aggregator) calculateSums(file *pb.File, specificAggregation *Aggregate
 		// Halstead
 		if class.Stmts.Analyze.Volume != nil {
 			if class.Stmts.Analyze.Volume.HalsteadDifficulty != nil && !math.IsNaN(float64(*class.Stmts.Analyze.Volume.HalsteadDifficulty)) {
-				specificAggregation.AverageHalsteadDifficulty += float64(*class.Stmts.Analyze.Volume.HalsteadDifficulty)
-				specificAggregation.SumHalsteadDifficulty += float64(*class.Stmts.Analyze.Volume.HalsteadDifficulty)
+				specificAggregation.AverageHalsteadDifficulty += *class.Stmts.Analyze.Volume.HalsteadDifficulty
+				specificAggregation.SumHalsteadDifficulty += *class.Stmts.Analyze.Volume.HalsteadDifficulty
 			}
 			if class.Stmts.Analyze.Volume.HalsteadEffort != nil && !math.IsNaN(float64(*class.Stmts.Analyze.Volume.HalsteadEffort)) {
-				specificAggregation.AverageHalsteadEffort += float64(*class.Stmts.Analyze.Volume.HalsteadEffort)
-				specificAggregation.SumHalsteadEffort += float64(*class.Stmts.Analyze.Volume.HalsteadEffort)
+				specificAggregation.AverageHalsteadEffort += *class.Stmts.Analyze.Volume.HalsteadEffort
+				specificAggregation.SumHalsteadEffort += *class.Stmts.Analyze.Volume.HalsteadEffort
 			}
 			if class.Stmts.Analyze.Volume.HalsteadVolume != nil && !math.IsNaN(float64(*class.Stmts.Analyze.Volume.HalsteadVolume)) {
-				specificAggregation.AverageHalsteadVolume += float64(*class.Stmts.Analyze.Volume.HalsteadVolume)
-				specificAggregation.SumHalsteadVolume += float64(*class.Stmts.Analyze.Volume.HalsteadVolume)
+				specificAggregation.AverageHalsteadVolume += *class.Stmts.Analyze.Volume.HalsteadVolume
+				specificAggregation.SumHalsteadVolume += *class.Stmts.Analyze.Volume.HalsteadVolume
 			}
 			if class.Stmts.Analyze.Volume.HalsteadTime != nil && !math.IsNaN(float64(*class.Stmts.Analyze.Volume.HalsteadTime)) {
-				specificAggregation.AverageHalsteadTime += float64(*class.Stmts.Analyze.Volume.HalsteadTime)
-				specificAggregation.SumHalsteadTime += float64(*class.Stmts.Analyze.Volume.HalsteadTime)
+				specificAggregation.AverageHalsteadTime += *class.Stmts.Analyze.Volume.HalsteadTime
+				specificAggregation.SumHalsteadTime += *class.Stmts.Analyze.Volume.HalsteadTime
 			}
 		}
 

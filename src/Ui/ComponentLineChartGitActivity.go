@@ -18,7 +18,7 @@ type ComponentLineChartGitActivity struct {
 // Render is the method to render the component
 func (c *ComponentLineChartGitActivity) AsTerminalElement() string {
 	dataOrdered := c.GetData()
-	data := make(map[string]float64)
+	data := make(map[string]float32)
 	for _, k := range dataOrdered.Keys() {
 		value, _ := dataOrdered.Get(k)
 		data[k] = value
@@ -35,9 +35,9 @@ func (c *ComponentLineChartGitActivity) AsHtml() string {
 	return Engine.HtmlChartArea(data, "Number of commits", "chart-git")
 }
 
-func (c *ComponentLineChartGitActivity) GetData() *orderedmap.OrderedMap[string, float64] {
-	//data := make(map[string]float64)*
-	data := orderedmap.NewOrderedMap[string, float64]()
+func (c *ComponentLineChartGitActivity) GetData() *orderedmap.OrderedMap[string, float32] {
+	//data := make(map[string]float32)*
+	data := orderedmap.NewOrderedMap[string, float32]()
 
 	// 1 year ago
 	oneYearAgo := time.Now().AddDate(-1, 0, 0)

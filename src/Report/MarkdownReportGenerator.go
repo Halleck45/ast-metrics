@@ -165,9 +165,9 @@ func (v *MarkdownReportGenerator) RegisterFilters() {
 
 			// format it
 			if number > 1000000 {
-				return pongo2.AsValue(fmt.Sprintf("%.1f M", float64(number)/1000000)), nil
+				return pongo2.AsValue(fmt.Sprintf("%.1f M", number/1000000)), nil
 			} else if number > 1000 {
-				return pongo2.AsValue(fmt.Sprintf("%.1f K", float64(number)/1000)), nil
+				return pongo2.AsValue(fmt.Sprintf("%.1f K", number/1000)), nil
 			}
 
 			return pongo2.AsValue(number), nil
