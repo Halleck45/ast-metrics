@@ -32,6 +32,7 @@ func Start(workdir *Storage.Workdir, progressbar *pterm.SpinnerPrinter) []*pb.Fi
 	// https://stackoverflow.com/questions/58743038/why-does-this-goroutine-not-call-wg-done
 	channelResult := make(chan *pb.File, len(astFiles))
 
+
 	nbParsingFiles := 0
 	// analyze each AST file running the runAnalysis function
 	numWorkers := runtime.NumCPU()
@@ -41,11 +42,13 @@ func Start(workdir *Storage.Workdir, progressbar *pterm.SpinnerPrinter) []*pb.Fi
 	for i := 0; i < numWorkers; i++ {
 		go func() {
 			for file := range filesChan {
+				mu.Lock()
+				nbParsingFiles++
+				mu.Unlock()
+
 				executeFileAnalysis(file, channelResult)
 
-				mu.Lock()
 				details := strconv.Itoa(nbParsingFiles) + "/" + strconv.Itoa(len(astFiles))
-				mu.Unlock()
 
 				if progressbar != nil {
 					progressbar.UpdateText("Analyzing (" + details + ")")

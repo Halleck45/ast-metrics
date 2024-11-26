@@ -511,6 +511,10 @@ func (r *Aggregator) consolidate(aggregated *Aggregated) {
 						if len(parts) > 2 {
 							namespaceTo = parts[0] + separator + parts[1]
 						}
+
+						if namespaceFrom == "" || namespaceTo == "" {
+							continue
+						}
 		
 						parts = reg.Split(namespaceFrom, -1)
 						if len(parts) > 2 {
@@ -574,14 +578,15 @@ func (r *Aggregator) consolidate(aggregated *Aggregated) {
 	}
 
 	// Bus factor and other metrics based on aggregated data
-	wg.Add(len(r.analyzers))
+	var wgAnalyzers sync.WaitGroup
+	wgAnalyzers.Add(len(r.analyzers))
 	for _, analyzer := range r.analyzers {
 		go func(a AggregateAnalyzer) {
-			defer wg.Done()
+			defer wgAnalyzers.Done()
 			a.Calculate(aggregated)
 		}(analyzer)
 	}
-	wg.Wait()
+	wgAnalyzers.Wait()
 }
 
 // Add an analyzer to the aggregator
