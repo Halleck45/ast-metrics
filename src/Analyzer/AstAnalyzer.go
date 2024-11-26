@@ -2,6 +2,7 @@ package Analyzer
 
 import (
 	"io/ioutil"
+	"runtime"
 	"strconv"
 	"sync"
 
@@ -32,21 +33,29 @@ func Start(workdir *Storage.Workdir, progressbar *pterm.SpinnerPrinter) []*pb.Fi
 	channelResult := make(chan *pb.File, len(astFiles))
 
 	nbParsingFiles := 0
-	// in parallel, 8 process max, analyze each AST file running the runAnalysis function
-	for _, file := range astFiles {
-		wg.Add(1)
-		nbParsingFiles++
-		go func(file string) {
-			defer wg.Done()
-			executeFileAnalysis(file, channelResult)
-			// details is the number of files processed / total number of files
-			details := strconv.Itoa(nbParsingFiles) + "/" + strconv.Itoa(len(astFiles))
+	// analyze each AST file running the runAnalysis function
+	numWorkers := runtime.NumCPU()
+	mu := sync.Mutex{}
+	filesChan := make(chan string, numWorkers)
 
-			if progressbar != nil {
-				progressbar.UpdateText("Analyzing (" + details + ")")
+	for i := 0; i < numWorkers; i++ {
+		go func() {
+			for file := range filesChan {
+				executeFileAnalysis(file, channelResult)
+
+				mu.Lock()
+				details := strconv.Itoa(nbParsingFiles) + "/" + strconv.Itoa(len(astFiles))
+				mu.Unlock()
+
+				if progressbar != nil {
+					progressbar.UpdateText("Analyzing (" + details + ")")
+				}
 			}
+		}()
+	}
 
-		}(file)
+	for _, file := range astFiles {
+		filesChan <- file
 	}
 
 	wg.Wait()
