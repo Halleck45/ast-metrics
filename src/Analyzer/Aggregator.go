@@ -357,6 +357,8 @@ func (r *Aggregator) consolidate(aggregated *Aggregated) {
 	var wg sync.WaitGroup
 	var mu sync.Mutex
 
+	reg := regexp.MustCompile("[^A-Za-z0-9.]+")
+
 	for _, file := range aggregated.ConcernedFiles {
 		wg.Add(1)
 		go func(file *pb.File) {
@@ -373,10 +375,9 @@ func (r *Aggregator) consolidate(aggregated *Aggregated) {
 			mu.Unlock()
 
 			// Create local variables for file processing
-            localFile := &pb.File{
-                Stmts: file.Stmts,
-                LinesOfCode: file.LinesOfCode,
-            }
+			localFile := &pb.File{
+				Stmts:       file.Stmts,
+			}
 
 			// Calculate alternate MI using average MI per method when file has no class
 			if len(localFile.Stmts.StmtClass) == 0 {
@@ -494,13 +495,11 @@ func (r *Aggregator) consolidate(aggregated *Aggregated) {
 				namespaceTo := dependency.Namespace
 				namespaceFrom := dependency.From
 
-				// Keep only 2 levels in namespace
-				reg := regexp.MustCompile("[^A-Za-z0-9.]+")
-
 				if namespaceFrom == "" || namespaceTo == "" {
 					continue
 				}
 
+				// Keep only 2 levels in namespace
 				separator := reg.FindString(namespaceFrom)
 				parts := reg.Split(namespaceTo, -1)
 				if len(parts) > 2 {
