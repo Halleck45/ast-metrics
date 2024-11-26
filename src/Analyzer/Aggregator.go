@@ -485,6 +485,11 @@ func (r *Aggregator) consolidate(aggregated *Aggregated) {
 
 				// Keep only 2 levels in namespace
 				reg := regexp.MustCompile("[^A-Za-z0-9.]+")
+
+				if namespaceFrom == "" || namespaceTo == "" {
+					continue
+				}
+
 				separator := reg.FindString(namespaceFrom)
 				parts := reg.Split(namespaceTo, -1)
 				if len(parts) > 2 {
