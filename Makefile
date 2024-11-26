@@ -1,4 +1,4 @@
-.PHONY: install build
+.PHONY: install build monkey-test
 
 PROTOC_VERSION=24.4
 ARCHITECTURE=linux-x86_64
@@ -41,4 +41,10 @@ test:
 	go clean -testcache
 	find . -type d  -iname ".ast-metrics-cache" -exec rm -rf "{}" \; || true
 	go test ./...
+	@echo "\e[34m\033[1mDONE \033[0m\e[39m\n"
+
+# monkey test: download random PHP and Go packages from top 100 and analyze them
+monkey-test:
+	@echo "\e[34m\033[1m-> Monkey testing\033[0m\e[39m\n"
+	bash scripts/monkey-test.sh
 	@echo "\e[34m\033[1mDONE \033[0m\e[39m\n"
