@@ -125,11 +125,11 @@ func DecorateMaintainabilityIndex(mi int, analyze *pb.Analyze) string {
 	return "🟢 " + strconv.Itoa(mi)
 }
 
-func Round(num float64) int {
-	return int(num + math.Copysign(0.5, num))
+func Round(num float32) int {
+	return int(num + float32(math.Copysign(0.5, float64(num))))
 }
 
-func ToFixed(num float64, precision int) float64 {
+func ToFixed(num float32, precision int) float32 {
 	output := math.Pow(10, float64(precision))
-	return float64(Round(num*output)) / output
+	return float32(Round(num*float32(output))) / float32(output)
 }

@@ -30,11 +30,11 @@ func (v *HalsteadMetricsVisitor) Visit(stmts *pb.Stmts, parents *pb.Stmts) {
 	var N int32  // program length (N)
 	var N1 int32
 	var N2 int32
-	var hatN float64 = 0 // estimated program length (𝑁̂)
-	var V float64 = 0    // volume (V)
-	var D float64 = 0    // difficulty (D)
-	var E float64 = 0    // effort (E)
-	var T float64 = 0    // time required to program (T)
+	var hatN float32 = 0 // estimated program length (𝑁̂)
+	var V float32 = 0    // volume (V)
+	var D float32 = 0    // difficulty (D)
+	var E float32 = 0    // effort (E)
+	var T float32 = 0    // time required to program (T)
 
 	for _, stmt := range parents.StmtFunction {
 		if stmt.Stmts == nil {
@@ -74,20 +74,20 @@ func (v *HalsteadMetricsVisitor) Visit(stmts *pb.Stmts, parents *pb.Stmts) {
 		N = int32(N1 + N2)
 
 		// Calculate estimated program length (𝑁̂)
-		hatN = float64(n1)*math.Log2(float64(n1)) + float64(n2)*math.Log2(float64(n2))
-		if math.IsNaN(hatN) {
+		hatN = float32(n1)*float32(math.Log2(float64(n1))) + float32(n2)*float32(math.Log2(float64(n2)))
+		if math.IsNaN(float64(hatN)) {
 			hatN = 0
 		}
 
 		// Calculate volume (V)
-		V = float64(N) * math.Log2(float64(n))
-		if math.IsNaN(V) {
+		V = float32(N) * float32(math.Log2(float64(n)))
+		if math.IsNaN(float64(V)) {
 			V = 0
 		}
 
 		// Calculate difficulty (D)
-		D = float64(n1) / 2 * float64(N2) / float64(n2)
-		if math.IsNaN(D) {
+		D = float32(n1)/2*float32(N2)/float32(n2)
+		if math.IsNaN(float64(D)) {
 			D = 0
 		}
 
@@ -135,11 +135,11 @@ func (v *HalsteadMetricsVisitor) LeaveNode(stmts *pb.Stmts) {
 
 			var n int32 = 0
 			var N int32 = 0
-			var hatN float64
-			var V float64
-			var D float64
-			var E float64
-			var T float64
+			var hatN float32
+			var V float32
+			var D float32
+			var E float32
+			var T float32
 
 			// initialize default values
 			hatN = 0
@@ -155,11 +155,11 @@ func (v *HalsteadMetricsVisitor) LeaveNode(stmts *pb.Stmts) {
 					}
 					n += int32(*method.Stmts.Analyze.Volume.HalsteadVocabulary)
 					N += int32(*method.Stmts.Analyze.Volume.HalsteadLength)
-					hatN += float64(*method.Stmts.Analyze.Volume.HalsteadEstimatedLength)
-					V += float64(*method.Stmts.Analyze.Volume.HalsteadVolume)
-					D += float64(*method.Stmts.Analyze.Volume.HalsteadDifficulty)
-					E += float64(*method.Stmts.Analyze.Volume.HalsteadEffort)
-					T += float64(*method.Stmts.Analyze.Volume.HalsteadTime)
+					hatN += *method.Stmts.Analyze.Volume.HalsteadEstimatedLength
+					V += *method.Stmts.Analyze.Volume.HalsteadVolume
+					D += *method.Stmts.Analyze.Volume.HalsteadDifficulty
+					E += *method.Stmts.Analyze.Volume.HalsteadEffort
+					T += *method.Stmts.Analyze.Volume.HalsteadTime
 				}
 			}
 
@@ -167,11 +167,11 @@ func (v *HalsteadMetricsVisitor) LeaveNode(stmts *pb.Stmts) {
 			if len(stmt.Stmts.StmtFunction) > 0 {
 				n = n / int32(len(stmt.Stmts.StmtFunction))
 				N = N / int32(len(stmt.Stmts.StmtFunction))
-				hatN = hatN / float64(len(stmt.Stmts.StmtFunction))
-				V = V / float64(len(stmt.Stmts.StmtFunction))
-				D = D / float64(len(stmt.Stmts.StmtFunction))
-				E = E / float64(len(stmt.Stmts.StmtFunction))
-				T = T / float64(len(stmt.Stmts.StmtFunction))
+				hatN = hatN / float32(len(stmt.Stmts.StmtFunction))
+				V = V / float32(len(stmt.Stmts.StmtFunction))
+				D = D / float32(len(stmt.Stmts.StmtFunction))
+				E = E / float32(len(stmt.Stmts.StmtFunction))
+				T = T / float32(len(stmt.Stmts.StmtFunction))
 			}
 
 			// convert float to float32

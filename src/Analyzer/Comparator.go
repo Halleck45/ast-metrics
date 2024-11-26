@@ -9,9 +9,9 @@ type Comparator struct {
 }
 
 const (
-	ADDED    = "added"
-	DELETED  = "deleted"
-	MODIFIED = "modified"
+	ADDED     = "added"
+	DELETED   = "deleted"
+	MODIFIED  = "modified"
 	UNCHANGED = "unchanged"
 )
 
@@ -33,37 +33,37 @@ type Comparaison struct {
 	Loc                                  int
 	Cloc                                 int
 	Lloc                                 int
-	AverageMethodsPerClass               float64
-	AverageLocPerMethod                  float64
-	AverageLlocPerMethod                 float64
-	AverageClocPerMethod                 float64
-	AverageCyclomaticComplexityPerMethod float64
-	AverageCyclomaticComplexityPerClass  float64
+	AverageMethodsPerClass               float32
+	AverageLocPerMethod                  float32
+	AverageLlocPerMethod                 float32
+	AverageClocPerMethod                 float32
+	AverageCyclomaticComplexityPerMethod float32
+	AverageCyclomaticComplexityPerClass  float32
 	MinCyclomaticComplexity              int
 	MaxCyclomaticComplexity              int
-	AverageHalsteadDifficulty            float64
-	AverageHalsteadEffort                float64
-	AverageHalsteadVolume                float64
-	AverageHalsteadTime                  float64
-	AverageHalsteadBugs                  float64
-	SumHalsteadDifficulty                float64
-	SumHalsteadEffort                    float64
-	SumHalsteadVolume                    float64
-	SumHalsteadTime                      float64
-	SumHalsteadBugs                      float64
-	AverageMI                            float64
-	AverageMIwoc                         float64
-	AverageMIcw                          float64
-	AverageMIPerMethod                   float64
-	AverageMIwocPerMethod                float64
-	AverageMIcwPerMethod                 float64
-	AverageAfferentCoupling              float64
-	AverageEfferentCoupling              float64
-	AverageInstability                   float64
+	AverageHalsteadDifficulty            float32
+	AverageHalsteadEffort                float32
+	AverageHalsteadVolume                float32
+	AverageHalsteadTime                  float32
+	AverageHalsteadBugs                  float32
+	SumHalsteadDifficulty                float32
+	SumHalsteadEffort                    float32
+	SumHalsteadVolume                    float32
+	SumHalsteadTime                      float32
+	SumHalsteadBugs                      float32
+	AverageMI                            float32
+	AverageMIwoc                         float32
+	AverageMIcw                          float32
+	AverageMIPerMethod                   float32
+	AverageMIwocPerMethod                float32
+	AverageMIcwPerMethod                 float32
+	AverageAfferentCoupling              float32
+	AverageEfferentCoupling              float32
+	AverageInstability                   float32
 	CommitCountForPeriod                 int
 	CommittedFilesCountForPeriod         int // for example if one commit concerns 10 files, it will be 10
 	BusFactor                            int
-	Risk                                 float64
+	Risk                                 float32
 	ChangedFiles                         []ChangedFile
 	NbNewFiles                           int
 	NbDeletedFiles                       int
@@ -218,36 +218,36 @@ func (c *Comparator) Compare(first Aggregated, second Aggregated) Comparaison {
 
 				// Cyclomatic complexity
 				if file.Stmts.Analyze.Complexity != nil && file2.Stmts.Analyze.Complexity != nil {
-					change.Comparaison.AverageCyclomaticComplexityPerMethod = float64(*file.Stmts.Analyze.Complexity.Cyclomatic) - float64(*file2.Stmts.Analyze.Complexity.Cyclomatic)
+					change.Comparaison.AverageCyclomaticComplexityPerMethod = float32(*file.Stmts.Analyze.Complexity.Cyclomatic) - float32(*file2.Stmts.Analyze.Complexity.Cyclomatic)
 				}
 
 				// Halstead
 				if file.Stmts.Analyze.Volume != nil && file.Stmts.Analyze.Volume.HalsteadDifficulty != nil &&
 					file2.Stmts.Analyze.Volume != nil && file2.Stmts.Analyze.Volume.HalsteadDifficulty != nil {
-					change.Comparaison.AverageHalsteadDifficulty = float64(*file.Stmts.Analyze.Volume.HalsteadDifficulty) - float64(*file2.Stmts.Analyze.Volume.HalsteadDifficulty)
-					change.Comparaison.AverageHalsteadEffort = float64(*file.Stmts.Analyze.Volume.HalsteadEffort) - float64(*file2.Stmts.Analyze.Volume.HalsteadEffort)
-					change.Comparaison.AverageHalsteadVolume = float64(*file.Stmts.Analyze.Volume.HalsteadVolume) - float64(*file2.Stmts.Analyze.Volume.HalsteadVolume)
-					change.Comparaison.AverageHalsteadTime = float64(*file.Stmts.Analyze.Volume.HalsteadTime) - float64(*file2.Stmts.Analyze.Volume.HalsteadTime)
+					change.Comparaison.AverageHalsteadDifficulty = *file.Stmts.Analyze.Volume.HalsteadDifficulty - *file2.Stmts.Analyze.Volume.HalsteadDifficulty
+					change.Comparaison.AverageHalsteadEffort = *file.Stmts.Analyze.Volume.HalsteadEffort - *file2.Stmts.Analyze.Volume.HalsteadEffort
+					change.Comparaison.AverageHalsteadVolume = *file.Stmts.Analyze.Volume.HalsteadVolume - *file2.Stmts.Analyze.Volume.HalsteadVolume
+					change.Comparaison.AverageHalsteadTime = *file.Stmts.Analyze.Volume.HalsteadTime - *file2.Stmts.Analyze.Volume.HalsteadTime
 				}
 
 				// Maintainability index
 				if file.Stmts.Analyze.Maintainability != nil && file2.Stmts.Analyze.Maintainability != nil && file.Stmts.Analyze.Maintainability.MaintainabilityIndex != nil && file2.Stmts.Analyze.Maintainability.MaintainabilityIndex != nil {
-					change.Comparaison.AverageMI = float64(*file.Stmts.Analyze.Maintainability.MaintainabilityIndex) - float64(*file2.Stmts.Analyze.Maintainability.MaintainabilityIndex)
+					change.Comparaison.AverageMI = *file.Stmts.Analyze.Maintainability.MaintainabilityIndex - *file2.Stmts.Analyze.Maintainability.MaintainabilityIndex
 				}
 				if file.Stmts.Analyze.Maintainability != nil && file2.Stmts.Analyze.Maintainability != nil && file.Stmts.Analyze.Maintainability.MaintainabilityIndexWithoutComments != nil && file2.Stmts.Analyze.Maintainability.MaintainabilityIndexWithoutComments != nil {
-					change.Comparaison.AverageMIwoc = float64(*file.Stmts.Analyze.Maintainability.MaintainabilityIndexWithoutComments) - float64(*file2.Stmts.Analyze.Maintainability.MaintainabilityIndexWithoutComments)
+					change.Comparaison.AverageMIwoc = *file.Stmts.Analyze.Maintainability.MaintainabilityIndexWithoutComments - *file2.Stmts.Analyze.Maintainability.MaintainabilityIndexWithoutComments
 				}
 
 				// Coupling
 				if file.Stmts.Analyze.Coupling != nil && file2.Stmts.Analyze.Coupling != nil {
-					change.Comparaison.AverageAfferentCoupling = float64(file.Stmts.Analyze.Coupling.Afferent) - float64(file2.Stmts.Analyze.Coupling.Afferent)
-					change.Comparaison.AverageEfferentCoupling = float64(file.Stmts.Analyze.Coupling.Efferent) - float64(file2.Stmts.Analyze.Coupling.Efferent)
-					change.Comparaison.AverageInstability = float64(file.Stmts.Analyze.Coupling.Instability) - float64(file2.Stmts.Analyze.Coupling.Instability)
+					change.Comparaison.AverageAfferentCoupling = float32(file.Stmts.Analyze.Coupling.Afferent) - float32(file2.Stmts.Analyze.Coupling.Afferent)
+					change.Comparaison.AverageEfferentCoupling = float32(file.Stmts.Analyze.Coupling.Efferent) - float32(file2.Stmts.Analyze.Coupling.Efferent)
+					change.Comparaison.AverageInstability = file.Stmts.Analyze.Coupling.Instability - file2.Stmts.Analyze.Coupling.Instability
 				}
 
 				// Risk
 				if file.Stmts.Analyze.Risk != nil && file2.Stmts.Analyze.Risk != nil {
-					change.Comparaison.Risk = float64(file.Stmts.Analyze.Risk.Score) - float64(file2.Stmts.Analyze.Risk.Score)
+					change.Comparaison.Risk = file.Stmts.Analyze.Risk.Score - file2.Stmts.Analyze.Risk.Score
 					// check if not NaN
 					if change.Comparaison.Risk != change.Comparaison.Risk {
 						change.Comparaison.Risk = 0

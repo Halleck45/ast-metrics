@@ -16,7 +16,7 @@ type ComponentBarchartLocByMethodRepartition struct {
 // Render is the method to render the component
 func (c *ComponentBarchartLocByMethodRepartition) AsTerminalElement() string {
 	dataOrdered := c.GetData()
-	data := make(map[string]float64)
+	data := make(map[string]float32)
 	for _, k := range dataOrdered.Keys() {
 		value, _ := dataOrdered.Get(k)
 		data[k] = value
@@ -33,8 +33,8 @@ func (c *ComponentBarchartLocByMethodRepartition) AsHtml() string {
 	return Engine.HtmlChartLine(data, "Number of files", "chart-loc-by-method")
 }
 
-func (c *ComponentBarchartLocByMethodRepartition) GetData() *orderedmap.OrderedMap[string, float64] {
-	data := orderedmap.NewOrderedMap[string, float64]()
+func (c *ComponentBarchartLocByMethodRepartition) GetData() *orderedmap.OrderedMap[string, float32] {
+	data := orderedmap.NewOrderedMap[string, float32]()
 
 	rangeOfLabels := []string{"< 15", "< 35", "< 50", "> 50"}
 	rangeOfValues := []int32{15, 35, 50, 999999}
