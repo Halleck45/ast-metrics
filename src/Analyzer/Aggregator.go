@@ -372,14 +372,20 @@ func (r *Aggregator) consolidate(aggregated *Aggregated) {
 			aggregated.Lloc += int(file.LinesOfCode.LogicalLinesOfCode)
 			mu.Unlock()
 
+			// Create local variables for file processing
+            localFile := &pb.File{
+                Stmts: file.Stmts,
+                LinesOfCode: file.LinesOfCode,
+            }
+
 			// Calculate alternate MI using average MI per method when file has no class
-			if file.Stmts.StmtClass == nil || len(file.Stmts.StmtClass) == 0 {
-				if file.Stmts.Analyze.Maintainability == nil {
-					file.Stmts.Analyze.Maintainability = &pb.Maintainability{}
+			if len(localFile.Stmts.StmtClass) == 0 {
+				if localFile.Stmts.Analyze.Maintainability == nil {
+					localFile.Stmts.Analyze.Maintainability = &pb.Maintainability{}
 				}
 
 				methods := file.Stmts.StmtFunction
-				if methods == nil || len(methods) == 0 {
+				if len(methods) == 0 {
 					return
 				}
 				averageForFile := float32(0)
@@ -390,8 +396,13 @@ func (r *Aggregator) consolidate(aggregated *Aggregated) {
 					averageForFile += float32(*method.Stmts.Analyze.Maintainability.MaintainabilityIndex)
 				}
 				averageForFile = averageForFile / float32(len(methods))
-				file.Stmts.Analyze.Maintainability.MaintainabilityIndex = &averageForFile
+				localFile.Stmts.Analyze.Maintainability.MaintainabilityIndex = &averageForFile
 			}
+
+			// Update the original file with processed data
+			mu.Lock()
+			file.Stmts = localFile.Stmts
+			mu.Unlock()
 
 			// LOC of file is the sum of all classes and methods
 			// That's useful when we navigate over the files instead of the classes
