@@ -402,122 +402,112 @@ func (r *Aggregator) consolidate(aggregated *Aggregated) {
 
 		classes := Engine.GetClassesInFile(file)
 		functions := file.Stmts.StmtFunction
-		for _, class := range classes {
-			if class.LinesOfCode == nil {
-				continue
-			}
-			loc += class.LinesOfCode.LinesOfCode
-			lloc += class.LinesOfCode.LogicalLinesOfCode
-			cloc += class.LinesOfCode.CommentLinesOfCode
+
+		// Initialize file complexity if needed
+		if file.Stmts.Analyze.Complexity.Cyclomatic == nil {
+			file.Stmts.Analyze.Complexity.Cyclomatic = &zero
 		}
 
+		// Process functions in a single loop
 		for _, function := range functions {
-			if function.LinesOfCode == nil {
-				continue
+			// Handle LOC
+			if function.LinesOfCode != nil {
+				loc += function.LinesOfCode.LinesOfCode
+				lloc += function.LinesOfCode.LogicalLinesOfCode
+				cloc += function.LinesOfCode.CommentLinesOfCode
 			}
-			loc += function.LinesOfCode.LinesOfCode
-			lloc += function.LinesOfCode.LogicalLinesOfCode
-			cloc += function.LinesOfCode.CommentLinesOfCode
+
+			// Handle complexity
+			if function.Stmts.Analyze != nil && function.Stmts.Analyze.Complexity != nil {
+				*file.Stmts.Analyze.Complexity.Cyclomatic += *function.Stmts.Analyze.Complexity.Cyclomatic
+			}
+		}
+
+		// Process classes
+		for _, class := range classes {
+			// Handle LOC
+			if class.LinesOfCode != nil {
+				loc += class.LinesOfCode.LinesOfCode
+				lloc += class.LinesOfCode.LogicalLinesOfCode
+				cloc += class.LinesOfCode.CommentLinesOfCode
+			}
+
+			// Handle coupling
+			if class.Stmts != nil && class.Stmts.Analyze != nil {
+				if class.Stmts.Analyze.Coupling == nil {
+					class.Stmts.Analyze.Coupling = &pb.Coupling{
+						Efferent: 0,
+						Afferent: 0,
+					}
+				}
+				class.Stmts.Analyze.Coupling.Afferent = 0
+
+				if class.Name != nil {
+					// if in hashmap
+					if _, ok := aggregated.ClassesAfferentCoupling[class.Name.Qualified]; ok {
+						class.Stmts.Analyze.Coupling.Afferent = int32(aggregated.ClassesAfferentCoupling[class.Name.Qualified])
+						file.Stmts.Analyze.Coupling.Afferent += class.Stmts.Analyze.Coupling.Afferent
+					}
+
+					// instability
+					if class.Stmts.Analyze.Coupling.Afferent > 0 || class.Stmts.Analyze.Coupling.Efferent > 0 {
+						instability := float32(class.Stmts.Analyze.Coupling.Efferent) / float32(class.Stmts.Analyze.Coupling.Efferent+class.Stmts.Analyze.Coupling.Afferent)
+						class.Stmts.Analyze.Coupling.Instability = instability
+						aggregated.AverageInstability += float64(instability)
+					}
+				}
+			}
 		}
 
 		file.Stmts.Analyze.Volume.Loc = &loc
 		file.Stmts.Analyze.Volume.Lloc = &lloc
 		file.Stmts.Analyze.Volume.Cloc = &cloc
 
-		// File analysis should be the sum of all methods and classes in the file
-		// That's useful when we navigate over the files instead of the classes
-		if file.Stmts.Analyze.Complexity.Cyclomatic == nil {
-			file.Stmts.Analyze.Complexity.Cyclomatic = &zero
-		}
-		for _, function := range functions {
-			if function.Stmts.Analyze == nil || function.Stmts.Analyze.Complexity == nil {
-				continue
-			}
-			if function.Stmts.Analyze.Complexity != nil {
-
-				*file.Stmts.Analyze.Complexity.Cyclomatic += *function.Stmts.Analyze.Complexity.Cyclomatic
-			}
-		}
-
-		// Coupling
-		// Store relations, with counter
-		for _, class := range classes {
-			if class.Stmts == nil || class.Stmts.Analyze == nil {
-				continue
-			}
-			if class.Stmts.Analyze.Coupling == nil {
-				class.Stmts.Analyze.Coupling = &pb.Coupling{
-					Efferent: 0,
-					Afferent: 0,
-				}
-			}
-			class.Stmts.Analyze.Coupling.Afferent = 0
-
-			if class.Name == nil {
-				// avoid nil pointer during tests
-				continue
-			}
-
-			// if in hashmap
-			if _, ok := aggregated.ClassesAfferentCoupling[class.Name.Qualified]; ok {
-				class.Stmts.Analyze.Coupling.Afferent = int32(aggregated.ClassesAfferentCoupling[class.Name.Qualified])
-
-				file.Stmts.Analyze.Coupling.Afferent += class.Stmts.Analyze.Coupling.Afferent
-			}
-
-			// instability
-			if class.Stmts.Analyze.Coupling.Afferent > 0 || class.Stmts.Analyze.Coupling.Efferent > 0 {
-				// Ce / (Ce + Ca)
-				instability := float32(class.Stmts.Analyze.Coupling.Efferent) / float32(class.Stmts.Analyze.Coupling.Efferent+class.Stmts.Analyze.Coupling.Afferent)
-				class.Stmts.Analyze.Coupling.Instability = instability
-
-				// to consolidate
-				aggregated.AverageInstability += float64(instability)
-			}
-		}
-
 		dependencies := file.Stmts.StmtExternalDependencies
 
-		if dependencies != nil {
-			for _, dependency := range dependencies {
-				namespaceTo := dependency.Namespace
-				namespaceFrom := dependency.From
+		for _, dependency := range dependencies {
 
-				// Keep only 2 levels in namespace
-				reg := regexp.MustCompile("[^A-Za-z0-9.]+")
-				separator := reg.FindString(namespaceFrom)
-				parts := reg.Split(namespaceTo, -1)
-				if len(parts) > 2 {
-					namespaceTo = parts[0] + separator + parts[1]
-				}
-
-				parts = reg.Split(namespaceFrom, -1)
-				if len(parts) > 2 {
-					namespaceFrom = parts[0] + separator + parts[1]
-				}
-
-				// if same, continue
-				if namespaceFrom == namespaceTo {
-					continue
-				}
-
-				// if root namespace, continue
-				if namespaceFrom == "" || namespaceTo == "" {
-					continue
-				}
-
-				// create the map if not exists
-				if _, ok := aggregated.PackageRelations[namespaceFrom]; !ok {
-					aggregated.PackageRelations[namespaceFrom] = make(map[string]int)
-				}
-
-				if _, ok := aggregated.PackageRelations[namespaceFrom][namespaceTo]; !ok {
-					aggregated.PackageRelations[namespaceFrom][namespaceTo] = 0
-				}
-
-				// increment the counter
-				aggregated.PackageRelations[namespaceFrom][namespaceTo]++
+			if dependency == nil {
+				continue
 			}
+
+			namespaceTo := dependency.Namespace
+			namespaceFrom := dependency.From
+
+			// Keep only 2 levels in namespace
+			reg := regexp.MustCompile("[^A-Za-z0-9.]+")
+			separator := reg.FindString(namespaceFrom)
+			parts := reg.Split(namespaceTo, -1)
+			if len(parts) > 2 {
+				namespaceTo = parts[0] + separator + parts[1]
+			}
+
+			parts = reg.Split(namespaceFrom, -1)
+			if len(parts) > 2 {
+				namespaceFrom = parts[0] + separator + parts[1]
+			}
+
+			// if same, continue
+			if namespaceFrom == namespaceTo {
+				continue
+			}
+
+			// if root namespace, continue
+			if namespaceFrom == "" || namespaceTo == "" {
+				continue
+			}
+
+			// create the map if not exists
+			if _, ok := aggregated.PackageRelations[namespaceFrom]; !ok {
+				aggregated.PackageRelations[namespaceFrom] = make(map[string]int)
+			}
+
+			if _, ok := aggregated.PackageRelations[namespaceFrom][namespaceTo]; !ok {
+				aggregated.PackageRelations[namespaceFrom][namespaceTo] = 0
+			}
+
+			// increment the counter
+			aggregated.PackageRelations[namespaceFrom][namespaceTo]++
 		}
 	}
 
@@ -527,15 +517,31 @@ func (r *Aggregator) consolidate(aggregated *Aggregated) {
 	// Count commits for the period based on `ResultOfGitAnalysis` data
 	aggregated.ResultOfGitAnalysis = r.gitSummaries
 	if aggregated.ResultOfGitAnalysis != nil {
+		var wg sync.WaitGroup
+		var mu sync.Mutex
+		
 		for _, result := range aggregated.ResultOfGitAnalysis {
-			aggregated.CommitCountForPeriod += result.CountCommitsForLanguage
+			wg.Add(1)
+			go func(res ResultOfGitAnalysis) {
+				defer wg.Done()
+				mu.Lock()
+				aggregated.CommitCountForPeriod += res.CountCommitsForLanguage
+				mu.Unlock()
+			}(result)
 		}
+		wg.Wait()
 	}
 
 	// Bus factor and other metrics based on aggregated data
+	var wg sync.WaitGroup
+	wg.Add(len(r.analyzers))
 	for _, analyzer := range r.analyzers {
-		analyzer.Calculate(aggregated)
+		go func(a AggregateAnalyzer) {
+			defer wg.Done()
+			a.Calculate(aggregated)
+		}(analyzer)
 	}
+	wg.Wait()
 }
 
 // Add an analyzer to the aggregator
