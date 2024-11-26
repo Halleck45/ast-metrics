@@ -3,6 +3,7 @@ package Analyzer
 import (
 	"math"
 	"regexp"
+	"sync"
 
 	"github.com/halleck45/ast-metrics/src/Engine"
 	pb "github.com/halleck45/ast-metrics/src/NodeType"
@@ -235,23 +236,64 @@ func (r *Aggregator) executeAggregationOnFiles(files []*pb.File) ProjectAggregat
 		byLanguage.NbFiles++
 
 		// Make calculations: sums of metrics, etc.
-		r.calculateSums(file, &projectAggregated.ByFile)
-		r.calculateSums(file, &projectAggregated.ByClass)
-		r.calculateSums(file, &projectAggregated.Combined)
-		r.calculateSums(file, &byLanguage)
+		var wg sync.WaitGroup
+		wg.Add(4)
+
+		go func() {
+			defer wg.Done()
+			r.calculateSums(file, &projectAggregated.ByFile)
+		}()
+
+		go func() {
+			defer wg.Done() 
+			r.calculateSums(file, &projectAggregated.ByClass)
+		}()
+
+		go func() {
+			defer wg.Done()
+			r.calculateSums(file, &projectAggregated.Combined)
+		}()
+
+		go func() {
+			defer wg.Done()
+			r.calculateSums(file, &byLanguage)
+		}()
+
+		wg.Wait()
 		projectAggregated.ByProgrammingLanguage[file.ProgrammingLanguage] = byLanguage
 	}
 
-	// Consolidate averages
-	r.consolidate(&projectAggregated.ByFile)
-	r.consolidate(&projectAggregated.ByClass)
-	r.consolidate(&projectAggregated.Combined)
+	// Consolidate averages using goroutines
+	var wg sync.WaitGroup
+	wg.Add(3)
 
-	// by language
+	go func() {
+		defer wg.Done()
+		r.consolidate(&projectAggregated.ByFile)
+	}()
+
+	go func() {
+		defer wg.Done()
+		r.consolidate(&projectAggregated.ByClass)
+	}()
+
+	go func() {
+		defer wg.Done()
+		r.consolidate(&projectAggregated.Combined)
+	}()
+
+	wg.Wait()
+
+	// by language in parallel
+	wg.Add(len(projectAggregated.ByProgrammingLanguage))
 	for lng, byLanguage := range projectAggregated.ByProgrammingLanguage {
-		r.consolidate(&byLanguage)
-		projectAggregated.ByProgrammingLanguage[lng] = byLanguage
+		go func(language string, langAggregated Aggregated) {
+			defer wg.Done()
+			r.consolidate(&langAggregated)
+			projectAggregated.ByProgrammingLanguage[language] = langAggregated
+		}(lng, byLanguage)
 	}
+	wg.Wait()
 
 	// Risks
 	riskAnalyzer := NewRiskAnalyzer()
