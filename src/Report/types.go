@@ -16,33 +16,33 @@ type report struct {
 	Loc                                  int                       `json:"loc,omitempty"`
 	Cloc                                 int                       `json:"cloc,omitempty"`
 	Lloc                                 int                       `json:"lloc,omitempty"`
-	AverageMethodsPerClass               float32                   `json:"averageMethodsPerClass,omitempty"`
-	AverageLocPerMethod                  float32                   `json:"averageLocPerMethod,omitempty"`
-	AverageLlocPerMethod                 float32                   `json:"averageLlocPerMethod,omitempty"`
-	AverageClocPerMethod                 float32                   `json:"averageClocPerMethod,omitempty"`
-	AverageCyclomaticComplexityPerMethod float32                   `json:"averageCyclomaticComplexityPerMethod,omitempty"`
-	AverageCyclomaticComplexityPerClass  float32                   `json:"averageCyclomaticComplexityPerClass,omitempty"`
+	AverageMethodsPerClass               float64                   `json:"averageMethodsPerClass,omitempty"`
+	AverageLocPerMethod                  float64                   `json:"averageLocPerMethod,omitempty"`
+	AverageLlocPerMethod                 float64                   `json:"averageLlocPerMethod,omitempty"`
+	AverageClocPerMethod                 float64                   `json:"averageClocPerMethod,omitempty"`
+	AverageCyclomaticComplexityPerMethod float64                   `json:"averageCyclomaticComplexityPerMethod,omitempty"`
+	AverageCyclomaticComplexityPerClass  float64                   `json:"averageCyclomaticComplexityPerClass,omitempty"`
 	MinCyclomaticComplexity              int                       `json:"minCyclomaticComplexity,omitempty"`
 	MaxCyclomaticComplexity              int                       `json:"maxCyclomaticComplexity,omitempty"`
-	AverageHalsteadDifficulty            float32                   `json:"averageHalsteadDifficulty,omitempty"`
-	AverageHalsteadEffort                float32                   `json:"averageHalsteadEffort,omitempty"`
-	AverageHalsteadVolume                float32                   `json:"averageHalsteadVolume,omitempty"`
-	AverageHalsteadTime                  float32                   `json:"averageHalsteadTime,omitempty"`
-	AverageHalsteadBugs                  float32                   `json:"averageHalsteadBugs,omitempty"`
-	SumHalsteadDifficulty                float32                   `json:"sumHalsteadDifficulty,omitempty"`
-	SumHalsteadEffort                    float32                   `json:"sumHalsteadEffort,omitempty"`
-	SumHalsteadVolume                    float32                   `json:"sumHalsteadVolume,omitempty"`
-	SumHalsteadTime                      float32                   `json:"sumHalsteadTime,omitempty"`
-	SumHalsteadBugs                      float32                   `json:"sumHalsteadBugs,omitempty"`
-	AverageMI                            float32                   `json:"averageMI,omitempty"`
-	AverageMIwoc                         float32                   `json:"averageMIwoc,omitempty"`
-	AverageMIcw                          float32                   `json:"averageMIcw,omitempty"`
-	AverageMIPerMethod                   float32                   `json:"averageMIPerMethod,omitempty"`
-	AverageMIwocPerMethod                float32                   `json:"averageMIwocPerMethod,omitempty"`
-	AverageMIcwPerMethod                 float32                   `json:"averageMIcwPerMethod,omitempty"`
-	AverageAfferentCoupling              float32                   `json:"averageAfferentCoupling,omitempty"`
-	AverageEfferentCoupling              float32                   `json:"averageEfferentCoupling,omitempty"`
-	AverageInstability                   float32                   `json:"averageInstability,omitempty"`
+	AverageHalsteadDifficulty            float64                   `json:"averageHalsteadDifficulty,omitempty"`
+	AverageHalsteadEffort                float64                   `json:"averageHalsteadEffort,omitempty"`
+	AverageHalsteadVolume                float64                   `json:"averageHalsteadVolume,omitempty"`
+	AverageHalsteadTime                  float64                   `json:"averageHalsteadTime,omitempty"`
+	AverageHalsteadBugs                  float64                   `json:"averageHalsteadBugs,omitempty"`
+	SumHalsteadDifficulty                float64                   `json:"sumHalsteadDifficulty,omitempty"`
+	SumHalsteadEffort                    float64                   `json:"sumHalsteadEffort,omitempty"`
+	SumHalsteadVolume                    float64                   `json:"sumHalsteadVolume,omitempty"`
+	SumHalsteadTime                      float64                   `json:"sumHalsteadTime,omitempty"`
+	SumHalsteadBugs                      float64                   `json:"sumHalsteadBugs,omitempty"`
+	AverageMI                            float64                   `json:"averageMI,omitempty"`
+	AverageMIwoc                         float64                   `json:"averageMIwoc,omitempty"`
+	AverageMIcw                          float64                   `json:"averageMIcw,omitempty"`
+	AverageMIPerMethod                   float64                   `json:"averageMIPerMethod,omitempty"`
+	AverageMIwocPerMethod                float64                   `json:"averageMIwocPerMethod,omitempty"`
+	AverageMIcwPerMethod                 float64                   `json:"averageMIcwPerMethod,omitempty"`
+	AverageAfferentCoupling              float64                   `json:"averageAfferentCoupling,omitempty"`
+	AverageEfferentCoupling              float64                   `json:"averageEfferentCoupling,omitempty"`
+	AverageInstability                   float64                   `json:"averageInstability,omitempty"`
 	CommitCountForPeriod                 int                       `json:"commitCountForPeriod,omitempty"`
 	CommittedFilesCountForPeriod         int                       `json:"committedFilesCountForPeriod,omitempty"` // for example if one commit concerns 10 files, it will be 10
 	BusFactor                            int                       `json:"busFactor,omitempty"`
@@ -79,19 +79,19 @@ type complexity struct {
 }
 
 type risk struct {
-	Score float32 `json:"score,omitempty"` // score of risk. Lower is better
+	Score float64 `json:"score,omitempty"` // score of risk. Lower is better
 }
 
 type coupling struct {
 	Afferent    int32   `json:"afferent,omitempty"`    // number of classes that depends on this class
 	Efferent    int32   `json:"efferent,omitempty"`    // number of classes that this class depends on
-	Instability float32 `json:"instability,omitempty"` // instability of the class
+	Instability float64 `json:"instability,omitempty"` // instability of the class
 }
 
 type maintainability struct {
-	MaintainabilityIndex                float32 `json:"maintainabilityIndex,omitempty"`
-	MaintainabilityIndexWithoutComments float32 `json:"maintainabilityIndexWithoutComments,omitempty"`
-	CommentWeight                       float32 `json:"commentWeight,omitempty"`
+	MaintainabilityIndex                float64 `json:"maintainabilityIndex,omitempty"`
+	MaintainabilityIndexWithoutComments float64 `json:"maintainabilityIndexWithoutComments,omitempty"`
+	CommentWeight                       float64 `json:"commentWeight,omitempty"`
 }
 
 type volume struct {
@@ -100,9 +100,9 @@ type volume struct {
 	Cloc                    int32   `json:"cloc,omitempty"`
 	HalsteadVocabulary      int32   `json:"halsteadVocabulary,omitempty"`
 	HalsteadLength          int32   `json:"halsteadLength,omitempty"`
-	HalsteadVolume          float32 `json:"halsteadVolume,omitempty"`
-	HalsteadDifficulty      float32 `json:"halsteadDifficulty,omitempty"`
-	HalsteadEffort          float32 `json:"halsteadEffort,omitempty"`
-	HalsteadTime            float32 `json:"halsteadTime,omitempty"`
-	HalsteadEstimatedLength float32 `json:"halsteadEstimatedLength,omitempty"`
+	HalsteadVolume          float64 `json:"halsteadVolume,omitempty"`
+	HalsteadDifficulty      float64 `json:"halsteadDifficulty,omitempty"`
+	HalsteadEffort          float64 `json:"halsteadEffort,omitempty"`
+	HalsteadTime            float64 `json:"halsteadTime,omitempty"`
+	HalsteadEstimatedLength float64 `json:"halsteadEstimatedLength,omitempty"`
 }

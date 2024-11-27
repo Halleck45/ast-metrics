@@ -5,7 +5,7 @@ import (
 )
 
 type ComponentBarchart struct {
-	data     map[string]float32
+	data     map[string]float64
 	height   int
 	barWidth int
 }

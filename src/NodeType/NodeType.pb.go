@@ -1767,11 +1767,11 @@ type Volume struct {
 	Cloc                    *int32   `protobuf:"varint,3,opt,name=cloc,proto3,oneof" json:"cloc,omitempty"`
 	HalsteadVocabulary      *int32   `protobuf:"varint,4,opt,name=halsteadVocabulary,proto3,oneof" json:"halsteadVocabulary,omitempty"`
 	HalsteadLength          *int32   `protobuf:"varint,5,opt,name=halsteadLength,proto3,oneof" json:"halsteadLength,omitempty"`
-	HalsteadVolume          *float32 `protobuf:"fixed32,6,opt,name=halsteadVolume,proto3,oneof" json:"halsteadVolume,omitempty"`
-	HalsteadDifficulty      *float32 `protobuf:"fixed32,7,opt,name=halsteadDifficulty,proto3,oneof" json:"halsteadDifficulty,omitempty"`
-	HalsteadEffort          *float32 `protobuf:"fixed32,8,opt,name=halsteadEffort,proto3,oneof" json:"halsteadEffort,omitempty"`
-	HalsteadTime            *float32 `protobuf:"fixed32,9,opt,name=halsteadTime,proto3,oneof" json:"halsteadTime,omitempty"`
-	HalsteadEstimatedLength *float32 `protobuf:"fixed32,10,opt,name=halsteadEstimatedLength,proto3,oneof" json:"halsteadEstimatedLength,omitempty"`
+	HalsteadVolume          *float64 `protobuf:"fixed32,6,opt,name=halsteadVolume,proto3,oneof" json:"halsteadVolume,omitempty"`
+	HalsteadDifficulty      *float64 `protobuf:"fixed32,7,opt,name=halsteadDifficulty,proto3,oneof" json:"halsteadDifficulty,omitempty"`
+	HalsteadEffort          *float64 `protobuf:"fixed32,8,opt,name=halsteadEffort,proto3,oneof" json:"halsteadEffort,omitempty"`
+	HalsteadTime            *float64 `protobuf:"fixed32,9,opt,name=halsteadTime,proto3,oneof" json:"halsteadTime,omitempty"`
+	HalsteadEstimatedLength *float64 `protobuf:"fixed32,10,opt,name=halsteadEstimatedLength,proto3,oneof" json:"halsteadEstimatedLength,omitempty"`
 }
 
 func (x *Volume) Reset() {
@@ -1841,35 +1841,35 @@ func (x *Volume) GetHalsteadLength() int32 {
 	return 0
 }
 
-func (x *Volume) GetHalsteadVolume() float32 {
+func (x *Volume) GetHalsteadVolume() float64 {
 	if x != nil && x.HalsteadVolume != nil {
 		return *x.HalsteadVolume
 	}
 	return 0
 }
 
-func (x *Volume) GetHalsteadDifficulty() float32 {
+func (x *Volume) GetHalsteadDifficulty() float64 {
 	if x != nil && x.HalsteadDifficulty != nil {
 		return *x.HalsteadDifficulty
 	}
 	return 0
 }
 
-func (x *Volume) GetHalsteadEffort() float32 {
+func (x *Volume) GetHalsteadEffort() float64 {
 	if x != nil && x.HalsteadEffort != nil {
 		return *x.HalsteadEffort
 	}
 	return 0
 }
 
-func (x *Volume) GetHalsteadTime() float32 {
+func (x *Volume) GetHalsteadTime() float64 {
 	if x != nil && x.HalsteadTime != nil {
 		return *x.HalsteadTime
 	}
 	return 0
 }
 
-func (x *Volume) GetHalsteadEstimatedLength() float32 {
+func (x *Volume) GetHalsteadEstimatedLength() float64 {
 	if x != nil && x.HalsteadEstimatedLength != nil {
 		return *x.HalsteadEstimatedLength
 	}
@@ -1881,9 +1881,9 @@ type Maintainability struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	MaintainabilityIndex                *float32 `protobuf:"fixed32,1,opt,name=maintainabilityIndex,proto3,oneof" json:"maintainabilityIndex,omitempty"`
-	MaintainabilityIndexWithoutComments *float32 `protobuf:"fixed32,2,opt,name=maintainabilityIndexWithoutComments,proto3,oneof" json:"maintainabilityIndexWithoutComments,omitempty"`
-	CommentWeight                       *float32 `protobuf:"fixed32,3,opt,name=commentWeight,proto3,oneof" json:"commentWeight,omitempty"`
+	MaintainabilityIndex                *float64 `protobuf:"fixed32,1,opt,name=maintainabilityIndex,proto3,oneof" json:"maintainabilityIndex,omitempty"`
+	MaintainabilityIndexWithoutComments *float64 `protobuf:"fixed32,2,opt,name=maintainabilityIndexWithoutComments,proto3,oneof" json:"maintainabilityIndexWithoutComments,omitempty"`
+	CommentWeight                       *float64 `protobuf:"fixed32,3,opt,name=commentWeight,proto3,oneof" json:"commentWeight,omitempty"`
 }
 
 func (x *Maintainability) Reset() {
@@ -1918,21 +1918,21 @@ func (*Maintainability) Descriptor() ([]byte, []int) {
 	return file_proto_NodeType_proto_rawDescGZIP(), []int{25}
 }
 
-func (x *Maintainability) GetMaintainabilityIndex() float32 {
+func (x *Maintainability) GetMaintainabilityIndex() float64 {
 	if x != nil && x.MaintainabilityIndex != nil {
 		return *x.MaintainabilityIndex
 	}
 	return 0
 }
 
-func (x *Maintainability) GetMaintainabilityIndexWithoutComments() float32 {
+func (x *Maintainability) GetMaintainabilityIndexWithoutComments() float64 {
 	if x != nil && x.MaintainabilityIndexWithoutComments != nil {
 		return *x.MaintainabilityIndexWithoutComments
 	}
 	return 0
 }
 
-func (x *Maintainability) GetCommentWeight() float32 {
+func (x *Maintainability) GetCommentWeight() float64 {
 	if x != nil && x.CommentWeight != nil {
 		return *x.CommentWeight
 	}
@@ -2076,7 +2076,7 @@ type Risk struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	Score float32 `protobuf:"fixed32,1,opt,name=score,proto3" json:"score,omitempty"` // score of risk. Lower is better
+	Score float64 `protobuf:"fixed32,1,opt,name=score,proto3" json:"score,omitempty"` // score of risk. Lower is better
 }
 
 func (x *Risk) Reset() {
@@ -2111,7 +2111,7 @@ func (*Risk) Descriptor() ([]byte, []int) {
 	return file_proto_NodeType_proto_rawDescGZIP(), []int{28}
 }
 
-func (x *Risk) GetScore() float32 {
+func (x *Risk) GetScore() float64 {
 	if x != nil {
 		return x.Score
 	}
@@ -2128,7 +2128,7 @@ type Coupling struct {
 
 	Afferent    int32   `protobuf:"varint,1,opt,name=afferent,proto3" json:"afferent,omitempty"`        // number of classes that depends on this class
 	Efferent    int32   `protobuf:"varint,2,opt,name=efferent,proto3" json:"efferent,omitempty"`        // number of classes that this class depends on
-	Instability float32 `protobuf:"fixed32,3,opt,name=instability,proto3" json:"instability,omitempty"` // instability of the class
+	Instability float64 `protobuf:"fixed32,3,opt,name=instability,proto3" json:"instability,omitempty"` // instability of the class
 }
 
 func (x *Coupling) Reset() {
@@ -2177,7 +2177,7 @@ func (x *Coupling) GetEfferent() int32 {
 	return 0
 }
 
-func (x *Coupling) GetInstability() float32 {
+func (x *Coupling) GetInstability() float64 {
 	if x != nil {
 		return x.Instability
 	}

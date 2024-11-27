@@ -116,9 +116,9 @@ func (v *ComponentFileTable) Init() {
 			cyclo = int(*file.Stmts.Analyze.Complexity.Cyclomatic)
 		}
 
-		risk := float32(0.0)
+		risk := float64(0.0)
 		if file.Stmts != nil && file.Stmts.Analyze != nil && file.Stmts.Analyze.Risk != nil {
-			risk = float32(file.Stmts.Analyze.Risk.Score)
+			risk = float64(file.Stmts.Analyze.Risk.Score)
 		}
 
 		// truncate filename, but to the left

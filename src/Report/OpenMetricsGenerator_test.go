@@ -46,8 +46,8 @@ func TestGenerateOpenMetricsReports(t *testing.T) {
 							Cloc: proto.Int32(20),
 						},
 						Maintainability: &pb.Maintainability{
-							MaintainabilityIndex:                proto.Float32(75.5),
-							MaintainabilityIndexWithoutComments: proto.Float32(70.0),
+							MaintainabilityIndex:                proto.Float64(75.5),
+							MaintainabilityIndexWithoutComments: proto.Float64(70.0),
 						},
 						Coupling: &pb.Coupling{
 							Afferent: *proto.Int32(5),

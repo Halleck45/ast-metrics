@@ -15,7 +15,7 @@ type ComponentBarchartCyclomaticByMethodRepartition struct {
 func (c *ComponentBarchartCyclomaticByMethodRepartition) AsTerminalElement() string {
 
 	dataOrdered := c.GetData()
-	data := make(map[string]float32)
+	data := make(map[string]float64)
 	for _, k := range dataOrdered.Keys() {
 		value, _ := dataOrdered.Get(k)
 		data[k] = value
@@ -27,8 +27,8 @@ func (c *ComponentBarchartCyclomaticByMethodRepartition) AsTerminalElement() str
 	return graph.AsTerminalElement()
 }
 
-func (c *ComponentBarchartCyclomaticByMethodRepartition) GetData() *orderedmap.OrderedMap[string, float32] {
-	data := orderedmap.NewOrderedMap[string, float32]()
+func (c *ComponentBarchartCyclomaticByMethodRepartition) GetData() *orderedmap.OrderedMap[string, float64] {
+	data := orderedmap.NewOrderedMap[string, float64]()
 
 	rangeOfLabels := []string{"0-5", "5-20", "> 20"}
 	rangeOfValues := []int32{5, 20, 999999}

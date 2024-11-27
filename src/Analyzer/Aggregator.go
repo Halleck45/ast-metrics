@@ -34,33 +34,33 @@ type Aggregated struct {
 	Loc                                  int
 	Cloc                                 int
 	Lloc                                 int
-	AverageMethodsPerClass               float32
-	AverageLocPerMethod                  float32
-	AverageLlocPerMethod                 float32
-	AverageClocPerMethod                 float32
-	AverageCyclomaticComplexityPerMethod float32
-	AverageCyclomaticComplexityPerClass  float32
+	AverageMethodsPerClass               float64
+	AverageLocPerMethod                  float64
+	AverageLlocPerMethod                 float64
+	AverageClocPerMethod                 float64
+	AverageCyclomaticComplexityPerMethod float64
+	AverageCyclomaticComplexityPerClass  float64
 	MinCyclomaticComplexity              int
 	MaxCyclomaticComplexity              int
-	AverageHalsteadDifficulty            float32
-	AverageHalsteadEffort                float32
-	AverageHalsteadVolume                float32
-	AverageHalsteadTime                  float32
-	AverageHalsteadBugs                  float32
-	SumHalsteadDifficulty                float32
-	SumHalsteadEffort                    float32
-	SumHalsteadVolume                    float32
-	SumHalsteadTime                      float32
-	SumHalsteadBugs                      float32
-	AverageMI                            float32
-	AverageMIwoc                         float32
-	AverageMIcw                          float32
-	AverageMIPerMethod                   float32
-	AverageMIwocPerMethod                float32
-	AverageMIcwPerMethod                 float32
-	AverageAfferentCoupling              float32
-	AverageEfferentCoupling              float32
-	AverageInstability                   float32
+	AverageHalsteadDifficulty            float64
+	AverageHalsteadEffort                float64
+	AverageHalsteadVolume                float64
+	AverageHalsteadTime                  float64
+	AverageHalsteadBugs                  float64
+	SumHalsteadDifficulty                float64
+	SumHalsteadEffort                    float64
+	SumHalsteadVolume                    float64
+	SumHalsteadTime                      float64
+	SumHalsteadBugs                      float64
+	AverageMI                            float64
+	AverageMIwoc                         float64
+	AverageMIcw                          float64
+	AverageMIPerMethod                   float64
+	AverageMIwocPerMethod                float64
+	AverageMIcwPerMethod                 float64
+	AverageAfferentCoupling              float64
+	AverageEfferentCoupling              float64
+	AverageInstability                   float64
 	CommitCountForPeriod                 int
 	CommittedFilesCountForPeriod         int // for example if one commit concerns 10 files, it will be 10
 	BusFactor                            int
@@ -307,37 +307,37 @@ func (r *Aggregator) executeAggregationOnFiles(files []*pb.File) ProjectAggregat
 func (r *Aggregator) consolidate(aggregated *Aggregated) {
 
 	if aggregated.NbClasses > 0 {
-		aggregated.AverageMethodsPerClass = float32(aggregated.NbMethods) / float32(aggregated.NbClasses)
-		aggregated.AverageCyclomaticComplexityPerClass = aggregated.AverageCyclomaticComplexityPerClass / float32(aggregated.NbClasses)
+		aggregated.AverageMethodsPerClass = float64(aggregated.NbMethods) / float64(aggregated.NbClasses)
+		aggregated.AverageCyclomaticComplexityPerClass = aggregated.AverageCyclomaticComplexityPerClass / float64(aggregated.NbClasses)
 	} else {
 		aggregated.AverageMethodsPerClass = 0
 		aggregated.AverageCyclomaticComplexityPerClass = 0
 	}
 
 	if aggregated.AverageMI > 0 {
-		aggregated.AverageMI = aggregated.AverageMI / float32(aggregated.NbClasses)
-		aggregated.AverageMIwoc = aggregated.AverageMIwoc / float32(aggregated.NbClasses)
-		aggregated.AverageMIcw = aggregated.AverageMIcw / float32(aggregated.NbClasses)
+		aggregated.AverageMI = aggregated.AverageMI / float64(aggregated.NbClasses)
+		aggregated.AverageMIwoc = aggregated.AverageMIwoc / float64(aggregated.NbClasses)
+		aggregated.AverageMIcw = aggregated.AverageMIcw / float64(aggregated.NbClasses)
 	}
 
 	if aggregated.AverageInstability > 0 {
-		aggregated.AverageEfferentCoupling = aggregated.AverageEfferentCoupling / float32(aggregated.NbClasses)
-		aggregated.AverageAfferentCoupling = aggregated.AverageAfferentCoupling / float32(aggregated.NbClasses)
+		aggregated.AverageEfferentCoupling = aggregated.AverageEfferentCoupling / float64(aggregated.NbClasses)
+		aggregated.AverageAfferentCoupling = aggregated.AverageAfferentCoupling / float64(aggregated.NbClasses)
 	}
 
 	if aggregated.NbMethods > 0 {
-		aggregated.AverageLocPerMethod = aggregated.AverageLocPerMethod / float32(aggregated.NbMethods)
-		aggregated.AverageClocPerMethod = aggregated.AverageClocPerMethod / float32(aggregated.NbMethods)
-		aggregated.AverageLlocPerMethod = aggregated.AverageLlocPerMethod / float32(aggregated.NbMethods)
-		aggregated.AverageCyclomaticComplexityPerMethod = aggregated.AverageCyclomaticComplexityPerMethod / float32(aggregated.NbMethods)
-		aggregated.AverageMIPerMethod = aggregated.AverageMIPerMethod / float32(aggregated.NbMethods)
-		aggregated.AverageMIwocPerMethod = aggregated.AverageMIwocPerMethod / float32(aggregated.NbMethods)
-		aggregated.AverageMIcwPerMethod = aggregated.AverageMIcwPerMethod / float32(aggregated.NbMethods)
-		aggregated.AverageHalsteadDifficulty = aggregated.AverageHalsteadDifficulty / float32(aggregated.NbClasses)
-		aggregated.AverageHalsteadEffort = aggregated.AverageHalsteadEffort / float32(aggregated.NbClasses)
-		aggregated.AverageHalsteadVolume = aggregated.AverageHalsteadVolume / float32(aggregated.NbClasses)
-		aggregated.AverageHalsteadTime = aggregated.AverageHalsteadTime / float32(aggregated.NbClasses)
-		aggregated.AverageHalsteadBugs = aggregated.AverageHalsteadBugs / float32(aggregated.NbClasses)
+		aggregated.AverageLocPerMethod = aggregated.AverageLocPerMethod / float64(aggregated.NbMethods)
+		aggregated.AverageClocPerMethod = aggregated.AverageClocPerMethod / float64(aggregated.NbMethods)
+		aggregated.AverageLlocPerMethod = aggregated.AverageLlocPerMethod / float64(aggregated.NbMethods)
+		aggregated.AverageCyclomaticComplexityPerMethod = aggregated.AverageCyclomaticComplexityPerMethod / float64(aggregated.NbMethods)
+		aggregated.AverageMIPerMethod = aggregated.AverageMIPerMethod / float64(aggregated.NbMethods)
+		aggregated.AverageMIwocPerMethod = aggregated.AverageMIwocPerMethod / float64(aggregated.NbMethods)
+		aggregated.AverageMIcwPerMethod = aggregated.AverageMIcwPerMethod / float64(aggregated.NbMethods)
+		aggregated.AverageHalsteadDifficulty = aggregated.AverageHalsteadDifficulty / float64(aggregated.NbClasses)
+		aggregated.AverageHalsteadEffort = aggregated.AverageHalsteadEffort / float64(aggregated.NbClasses)
+		aggregated.AverageHalsteadVolume = aggregated.AverageHalsteadVolume / float64(aggregated.NbClasses)
+		aggregated.AverageHalsteadTime = aggregated.AverageHalsteadTime / float64(aggregated.NbClasses)
+		aggregated.AverageHalsteadBugs = aggregated.AverageHalsteadBugs / float64(aggregated.NbClasses)
 	}
 
 	// if langage without classes
@@ -369,55 +369,55 @@ func (r *Aggregator) consolidate(aggregated *Aggregated) {
 				wg.Add(1)
 				go func(file *pb.File) {
 					defer wg.Done()
-		
+
 					if file.LinesOfCode == nil {
 						return
 					}
-		
+
 					mu.Lock()
 					aggregated.Loc += int(file.LinesOfCode.LinesOfCode)
 					aggregated.Cloc += int(file.LinesOfCode.CommentLinesOfCode)
 					aggregated.Lloc += int(file.LinesOfCode.LogicalLinesOfCode)
 					mu.Unlock()
-		
+
 					// Create local variables for file processing
 					localFile := &pb.File{
-						Stmts:       file.Stmts,
+						Stmts: file.Stmts,
 					}
-		
+
 					// Calculate alternate MI using average MI per method when file has no class
 					if len(localFile.Stmts.StmtClass) == 0 {
 						if localFile.Stmts.Analyze.Maintainability == nil {
 							localFile.Stmts.Analyze.Maintainability = &pb.Maintainability{}
 						}
-		
+
 						methods := file.Stmts.StmtFunction
 						if len(methods) == 0 {
 							return
 						}
-						averageForFile := float32(0)
+						averageForFile := float64(0)
 						for _, method := range methods {
 							if method.Stmts.Analyze == nil || method.Stmts.Analyze.Maintainability == nil {
 								continue
 							}
-							averageForFile += float32(*method.Stmts.Analyze.Maintainability.MaintainabilityIndex)
+							averageForFile += float64(*method.Stmts.Analyze.Maintainability.MaintainabilityIndex)
 						}
-						averageForFile = averageForFile / float32(len(methods))
+						averageForFile = averageForFile / float64(len(methods))
 						localFile.Stmts.Analyze.Maintainability.MaintainabilityIndex = &averageForFile
 					}
-		
+
 					// Update the original file with processed data
 					mu.Lock()
 					file.Stmts = localFile.Stmts
 					mu.Unlock()
-		
+
 					// LOC of file is the sum of all classes and methods
 					// That's useful when we navigate over the files instead of the classes
 					zero := int32(0)
 					loc := int32(0)
 					lloc := int32(0)
 					cloc := int32(0)
-		
+
 					if file.Stmts.Analyze.Volume == nil {
 						file.Stmts.Analyze.Volume = &pb.Volume{
 							Lloc: &zero,
@@ -425,15 +425,15 @@ func (r *Aggregator) consolidate(aggregated *Aggregated) {
 							Loc:  &zero,
 						}
 					}
-		
+
 					classes := Engine.GetClassesInFile(file)
 					functions := file.Stmts.StmtFunction
-		
+
 					// Initialize file complexity if needed
 					if file.Stmts.Analyze.Complexity.Cyclomatic == nil {
 						file.Stmts.Analyze.Complexity.Cyclomatic = &zero
 					}
-		
+
 					// Process functions
 					for _, function := range functions {
 						// Handle LOC
@@ -442,13 +442,13 @@ func (r *Aggregator) consolidate(aggregated *Aggregated) {
 							lloc += function.LinesOfCode.LogicalLinesOfCode
 							cloc += function.LinesOfCode.CommentLinesOfCode
 						}
-		
+
 						// Handle complexity
 						if function.Stmts.Analyze != nil && function.Stmts.Analyze.Complexity != nil {
 							*file.Stmts.Analyze.Complexity.Cyclomatic += *function.Stmts.Analyze.Complexity.Cyclomatic
 						}
 					}
-		
+
 					// Process classes
 					for _, class := range classes {
 						// Handle LOC
@@ -457,7 +457,7 @@ func (r *Aggregator) consolidate(aggregated *Aggregated) {
 							lloc += class.LinesOfCode.LogicalLinesOfCode
 							cloc += class.LinesOfCode.CommentLinesOfCode
 						}
-		
+
 						// Handle coupling
 						if class.Stmts != nil && class.Stmts.Analyze != nil {
 							if class.Stmts.Analyze.Coupling == nil {
@@ -467,7 +467,7 @@ func (r *Aggregator) consolidate(aggregated *Aggregated) {
 								}
 							}
 							class.Stmts.Analyze.Coupling.Afferent = 0
-		
+
 							if class.Name != nil {
 								mu.Lock()
 								// if in hashmap
@@ -475,10 +475,10 @@ func (r *Aggregator) consolidate(aggregated *Aggregated) {
 									class.Stmts.Analyze.Coupling.Afferent = int32(aggregated.ClassesAfferentCoupling[class.Name.Qualified])
 									file.Stmts.Analyze.Coupling.Afferent += class.Stmts.Analyze.Coupling.Afferent
 								}
-		
+
 								// instability
 								if class.Stmts.Analyze.Coupling.Afferent > 0 || class.Stmts.Analyze.Coupling.Efferent > 0 {
-									instability := float32(class.Stmts.Analyze.Coupling.Efferent) / float32(class.Stmts.Analyze.Coupling.Efferent+class.Stmts.Analyze.Coupling.Afferent)
+									instability := float64(class.Stmts.Analyze.Coupling.Efferent) / float64(class.Stmts.Analyze.Coupling.Efferent+class.Stmts.Analyze.Coupling.Afferent)
 									class.Stmts.Analyze.Coupling.Instability = instability
 									aggregated.AverageInstability += instability
 								}
@@ -486,25 +486,25 @@ func (r *Aggregator) consolidate(aggregated *Aggregated) {
 							}
 						}
 					}
-		
+
 					file.Stmts.Analyze.Volume.Loc = &loc
 					file.Stmts.Analyze.Volume.Lloc = &lloc
 					file.Stmts.Analyze.Volume.Cloc = &cloc
-		
+
 					dependencies := file.Stmts.StmtExternalDependencies
-		
+
 					for _, dependency := range dependencies {
 						if dependency == nil {
 							continue
 						}
-		
+
 						namespaceTo := dependency.Namespace
 						namespaceFrom := dependency.From
-		
+
 						if namespaceFrom == "" || namespaceTo == "" {
 							continue
 						}
-		
+
 						// Keep only 2 levels in namespace
 						separator := reg.FindString(namespaceFrom)
 						parts := reg.Split(namespaceTo, -1)
@@ -515,32 +515,32 @@ func (r *Aggregator) consolidate(aggregated *Aggregated) {
 						if namespaceFrom == "" || namespaceTo == "" {
 							continue
 						}
-		
+
 						parts = reg.Split(namespaceFrom, -1)
 						if len(parts) > 2 {
 							namespaceFrom = parts[0] + separator + parts[1]
 						}
-		
+
 						// if same, continue
 						if namespaceFrom == namespaceTo {
 							continue
 						}
-		
+
 						// if root namespace, continue
 						if namespaceFrom == "" || namespaceTo == "" {
 							continue
 						}
-		
+
 						mu.Lock()
 						// create the map if not exists
 						if _, ok := aggregated.PackageRelations[namespaceFrom]; !ok {
 							aggregated.PackageRelations[namespaceFrom] = make(map[string]int)
 						}
-		
+
 						if _, ok := aggregated.PackageRelations[namespaceFrom][namespaceTo]; !ok {
 							aggregated.PackageRelations[namespaceFrom][namespaceTo] = 0
 						}
-		
+
 						// increment the counter
 						aggregated.PackageRelations[namespaceFrom][namespaceTo]++
 						mu.Unlock()
@@ -557,7 +557,7 @@ func (r *Aggregator) consolidate(aggregated *Aggregated) {
 	wg.Wait()
 
 	// Consolidate
-	aggregated.AverageInstability = aggregated.AverageInstability / float32(aggregated.NbClasses)
+	aggregated.AverageInstability = aggregated.AverageInstability / float64(aggregated.NbClasses)
 
 	// Count commits for the period based on `ResultOfGitAnalysis` data
 	aggregated.ResultOfGitAnalysis = r.gitSummaries
@@ -655,7 +655,7 @@ func (r *Aggregator) calculateSums(file *pb.File, specificAggregation *Aggregate
 		// Average cyclomatic complexity per method
 		if function.Stmts.Analyze != nil && function.Stmts.Analyze.Complexity != nil {
 			if function.Stmts.Analyze.Complexity.Cyclomatic != nil {
-				specificAggregation.AverageCyclomaticComplexityPerMethod += float32(*function.Stmts.Analyze.Complexity.Cyclomatic)
+				specificAggregation.AverageCyclomaticComplexityPerMethod += float64(*function.Stmts.Analyze.Complexity.Cyclomatic)
 			}
 		}
 
@@ -670,13 +670,13 @@ func (r *Aggregator) calculateSums(file *pb.File, specificAggregation *Aggregate
 		// average lines of code per method
 		if function.Stmts.Analyze != nil && function.Stmts.Analyze.Volume != nil {
 			if function.Stmts.Analyze.Volume.Loc != nil {
-				specificAggregation.AverageLocPerMethod += float32(*function.Stmts.Analyze.Volume.Loc)
+				specificAggregation.AverageLocPerMethod += float64(*function.Stmts.Analyze.Volume.Loc)
 			}
 			if function.Stmts.Analyze.Volume.Cloc != nil {
-				specificAggregation.AverageClocPerMethod += float32(*function.Stmts.Analyze.Volume.Cloc)
+				specificAggregation.AverageClocPerMethod += float64(*function.Stmts.Analyze.Volume.Cloc)
 			}
 			if function.Stmts.Analyze.Volume.Lloc != nil {
-				specificAggregation.AverageLlocPerMethod += float32(*function.Stmts.Analyze.Volume.Lloc)
+				specificAggregation.AverageLlocPerMethod += float64(*function.Stmts.Analyze.Volume.Lloc)
 			}
 		}
 	}
@@ -704,13 +704,13 @@ func (r *Aggregator) calculateSums(file *pb.File, specificAggregation *Aggregate
 		// Coupling
 		if class.Stmts.Analyze.Coupling != nil {
 			specificAggregation.AverageInstability += class.Stmts.Analyze.Coupling.Instability
-			specificAggregation.AverageEfferentCoupling += float32(class.Stmts.Analyze.Coupling.Efferent)
-			specificAggregation.AverageAfferentCoupling += float32(class.Stmts.Analyze.Coupling.Afferent)
+			specificAggregation.AverageEfferentCoupling += float64(class.Stmts.Analyze.Coupling.Efferent)
+			specificAggregation.AverageAfferentCoupling += float64(class.Stmts.Analyze.Coupling.Afferent)
 		}
 
 		// cyclomatic complexity per class
 		if class.Stmts.Analyze.Complexity != nil && class.Stmts.Analyze.Complexity.Cyclomatic != nil {
-			specificAggregation.AverageCyclomaticComplexityPerClass += float32(*class.Stmts.Analyze.Complexity.Cyclomatic)
+			specificAggregation.AverageCyclomaticComplexityPerClass += float64(*class.Stmts.Analyze.Complexity.Cyclomatic)
 			if specificAggregation.MinCyclomaticComplexity == 0 || int(*class.Stmts.Analyze.Complexity.Cyclomatic) < specificAggregation.MinCyclomaticComplexity {
 				specificAggregation.MinCyclomaticComplexity = int(*class.Stmts.Analyze.Complexity.Cyclomatic)
 			}

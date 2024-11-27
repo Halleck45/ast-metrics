@@ -170,9 +170,9 @@ func TestAggregates(t *testing.T) {
 							Stmts: &pb.Stmts{
 								Analyze: &pb.Analyze{
 									Maintainability: &pb.Maintainability{
-										MaintainabilityIndex:                proto.Float32(120),
-										MaintainabilityIndexWithoutComments: proto.Float32(48),
-										CommentWeight:                       proto.Float32(40),
+										MaintainabilityIndex:                proto.Float64(120),
+										MaintainabilityIndexWithoutComments: proto.Float64(48),
+										CommentWeight:                       proto.Float64(40),
 									},
 								},
 							},
@@ -182,9 +182,9 @@ func TestAggregates(t *testing.T) {
 							Stmts: &pb.Stmts{
 								Analyze: &pb.Analyze{
 									Maintainability: &pb.Maintainability{
-										MaintainabilityIndex:                proto.Float32(85),
-										MaintainabilityIndexWithoutComments: proto.Float32(48),
-										CommentWeight:                       proto.Float32(40),
+										MaintainabilityIndex:                proto.Float64(85),
+										MaintainabilityIndexWithoutComments: proto.Float64(48),
+										CommentWeight:                       proto.Float64(40),
 									},
 								},
 							},
@@ -194,9 +194,9 @@ func TestAggregates(t *testing.T) {
 							Stmts: &pb.Stmts{
 								Analyze: &pb.Analyze{
 									Maintainability: &pb.Maintainability{
-										MaintainabilityIndex:                proto.Float32(65),
-										MaintainabilityIndexWithoutComments: proto.Float32(48),
-										CommentWeight:                       proto.Float32(40),
+										MaintainabilityIndex:                proto.Float64(65),
+										MaintainabilityIndexWithoutComments: proto.Float64(48),
+										CommentWeight:                       proto.Float64(40),
 									},
 								},
 							},
@@ -206,9 +206,9 @@ func TestAggregates(t *testing.T) {
 							Stmts: &pb.Stmts{
 								Analyze: &pb.Analyze{
 									Maintainability: &pb.Maintainability{
-										MaintainabilityIndex:                proto.Float32(100),
-										MaintainabilityIndexWithoutComments: proto.Float32(48),
-										CommentWeight:                       proto.Float32(40),
+										MaintainabilityIndex:                proto.Float64(100),
+										MaintainabilityIndexWithoutComments: proto.Float64(48),
+										CommentWeight:                       proto.Float64(40),
 									},
 								},
 							},
@@ -234,9 +234,9 @@ func TestAggregates(t *testing.T) {
 										Stmts: &pb.Stmts{
 											Analyze: &pb.Analyze{
 												Maintainability: &pb.Maintainability{
-													MaintainabilityIndex:                proto.Float32(70),
-													MaintainabilityIndexWithoutComments: proto.Float32(48),
-													CommentWeight:                       proto.Float32(40),
+													MaintainabilityIndex:                proto.Float64(70),
+													MaintainabilityIndexWithoutComments: proto.Float64(48),
+													CommentWeight:                       proto.Float64(40),
 												},
 											},
 										},
@@ -246,9 +246,9 @@ func TestAggregates(t *testing.T) {
 										Stmts: &pb.Stmts{
 											Analyze: &pb.Analyze{
 												Maintainability: &pb.Maintainability{
-													MaintainabilityIndex:                proto.Float32(100),
-													MaintainabilityIndexWithoutComments: proto.Float32(48),
-													CommentWeight:                       proto.Float32(40),
+													MaintainabilityIndex:                proto.Float64(100),
+													MaintainabilityIndexWithoutComments: proto.Float64(48),
+													CommentWeight:                       proto.Float64(40),
 												},
 											},
 										},
@@ -287,9 +287,9 @@ func TestAggregates(t *testing.T) {
 							Stmts: &pb.Stmts{
 								Analyze: &pb.Analyze{
 									Maintainability: &pb.Maintainability{
-										MaintainabilityIndex:                proto.Float32(75),
-										MaintainabilityIndexWithoutComments: proto.Float32(48),
-										CommentWeight:                       proto.Float32(40),
+										MaintainabilityIndex:                proto.Float64(75),
+										MaintainabilityIndexWithoutComments: proto.Float64(48),
+										CommentWeight:                       proto.Float64(40),
 									},
 								},
 							},
@@ -299,9 +299,9 @@ func TestAggregates(t *testing.T) {
 							Stmts: &pb.Stmts{
 								Analyze: &pb.Analyze{
 									Maintainability: &pb.Maintainability{
-										MaintainabilityIndex:                proto.Float32(120),
-										MaintainabilityIndexWithoutComments: proto.Float32(48),
-										CommentWeight:                       proto.Float32(40),
+										MaintainabilityIndex:                proto.Float64(120),
+										MaintainabilityIndexWithoutComments: proto.Float64(48),
+										CommentWeight:                       proto.Float64(40),
 									},
 								},
 							},
@@ -327,9 +327,9 @@ func TestAggregates(t *testing.T) {
 										Stmts: &pb.Stmts{
 											Analyze: &pb.Analyze{
 												Maintainability: &pb.Maintainability{
-													MaintainabilityIndex:                proto.Float32(90),
-													MaintainabilityIndexWithoutComments: proto.Float32(48),
-													CommentWeight:                       proto.Float32(40),
+													MaintainabilityIndex:                proto.Float64(90),
+													MaintainabilityIndexWithoutComments: proto.Float64(48),
+													CommentWeight:                       proto.Float64(40),
 												},
 											},
 										},
@@ -371,9 +371,9 @@ func TestAggregates(t *testing.T) {
 										Stmts: &pb.Stmts{
 											Analyze: &pb.Analyze{
 												Maintainability: &pb.Maintainability{
-													MaintainabilityIndex:                proto.Float32(120),
-													MaintainabilityIndexWithoutComments: proto.Float32(48),
-													CommentWeight:                       proto.Float32(40),
+													MaintainabilityIndex:                proto.Float64(120),
+													MaintainabilityIndexWithoutComments: proto.Float64(48),
+													CommentWeight:                       proto.Float64(40),
 												},
 											},
 										},
@@ -472,9 +472,9 @@ func TestCalculateMaintainabilityIndex(t *testing.T) {
 					Stmts: &pb.Stmts{
 						Analyze: &pb.Analyze{
 							Maintainability: &pb.Maintainability{
-								MaintainabilityIndex:                proto.Float32(15),
-								MaintainabilityIndexWithoutComments: proto.Float32(20),
-								CommentWeight:                       proto.Float32(25),
+								MaintainabilityIndex:                proto.Float64(15),
+								MaintainabilityIndexWithoutComments: proto.Float64(20),
+								CommentWeight:                       proto.Float64(25),
 							},
 						},
 					},
@@ -483,9 +483,9 @@ func TestCalculateMaintainabilityIndex(t *testing.T) {
 					Stmts: &pb.Stmts{
 						Analyze: &pb.Analyze{
 							Maintainability: &pb.Maintainability{
-								MaintainabilityIndex:                proto.Float32(30),
-								MaintainabilityIndexWithoutComments: proto.Float32(35),
-								CommentWeight:                       proto.Float32(40),
+								MaintainabilityIndex:                proto.Float64(30),
+								MaintainabilityIndexWithoutComments: proto.Float64(35),
+								CommentWeight:                       proto.Float64(40),
 							},
 						},
 					},

@@ -16,7 +16,7 @@ func NewRiskAnalyzer() *RiskAnalyzer {
 
 func (v *RiskAnalyzer) Analyze(project ProjectAggregated) {
 
-	var maxComplexity float32 = 0
+	var maxComplexity float64 = 0
 	var maxCyclomatic int32 = 0
 	var maxCommits int = 0
 
@@ -53,7 +53,7 @@ func (v *RiskAnalyzer) Analyze(project ProjectAggregated) {
 	for _, file := range project.Combined.ConcernedFiles {
 
 		if file.Stmts.Analyze.Risk == nil {
-			file.Stmts.Analyze.Risk = &pb.Risk{Score: float32(0)}
+			file.Stmts.Analyze.Risk = &pb.Risk{Score: float64(0)}
 		}
 
 		nbCommits := 0
@@ -69,7 +69,7 @@ func (v *RiskAnalyzer) Analyze(project ProjectAggregated) {
 			}
 
 			risk := v.GetRisk(int32(maxCommits), maxComplexity, nbCommits, int(128-*class.Stmts.Analyze.Maintainability.MaintainabilityIndex))
-			file.Stmts.Analyze.Risk.Score += float32(risk)
+			file.Stmts.Analyze.Risk.Score += float64(risk)
 		}
 
 		// Procedural file. We put risk on the file itself, according to the cyclomatic complexity.
@@ -78,19 +78,19 @@ func (v *RiskAnalyzer) Analyze(project ProjectAggregated) {
 		}
 
 		cyclo := *file.Stmts.Analyze.Complexity.Cyclomatic
-		risk := v.GetRisk(int32(maxCommits), float32(maxCyclomatic), nbCommits, int(cyclo))
-		file.Stmts.Analyze.Risk.Score += float32(risk)
+		risk := v.GetRisk(int32(maxCommits), float64(maxCyclomatic), nbCommits, int(cyclo))
+		file.Stmts.Analyze.Risk.Score += float64(risk)
 	}
 }
 
-func (v *RiskAnalyzer) GetRisk(maxCommits int32, maxComplexity float32, nbCommits int, complexity int) float32 {
+func (v *RiskAnalyzer) GetRisk(maxCommits int32, maxComplexity float64, nbCommits int, complexity int) float64 {
 
 	// Calculate the horizontal and vertical distance from the "top right" corner.
-	horizontalDistance := float32(maxCommits) - float32(nbCommits)
-	verticalDistance := maxComplexity - float32(complexity)
+	horizontalDistance := float64(maxCommits) - float64(nbCommits)
+	verticalDistance := maxComplexity - float64(complexity)
 
 	// Normalize these values over time, we first divide by the maximum values, to always end up with distances between 0 and 1.
-	normalizedHorizontalDistance := horizontalDistance / float32(maxCommits)
+	normalizedHorizontalDistance := horizontalDistance / float64(maxCommits)
 	normalizedVerticalDistance := verticalDistance / maxComplexity
 
 	// Calculate the distance of this class from the "top right" corner, using the simple formula A^2 + B^2 = C^2; or: C = sqrt(A^2 + B^2)).
@@ -99,5 +99,5 @@ func (v *RiskAnalyzer) GetRisk(maxCommits int32, maxComplexity float32, nbCommit
 	// The resulting value will be between 0 and sqrt(2). A short distance is bad, so in order to end up with a high score, we invert the value by subtracting it from 1.
 	risk := 1 - distanceFromTopRightCorner
 
-	return float32(risk)
+	return float64(risk)
 }

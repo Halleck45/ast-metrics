@@ -133,7 +133,7 @@ func GetFunctionsInFile(file *pb.File) []*pb.StmtFunction {
 }
 
 // render as HTML
-func HtmlChartLine(data *orderedmap.OrderedMap[string, float32], label string, id string) string {
+func HtmlChartLine(data *orderedmap.OrderedMap[string, float64], label string, id string) string {
 	series := "["
 	for _, key := range data.Keys() {
 		value, _ := data.Get(key)
@@ -237,7 +237,7 @@ if (document.getElementById("` + id + `") && typeof ApexCharts !== 'undefined') 
 }
 
 // render as HTML
-func HtmlChartArea(data *orderedmap.OrderedMap[string, float32], label string, id string) string {
+func HtmlChartArea(data *orderedmap.OrderedMap[string, float64], label string, id string) string {
 
 	values := "["
 	keys := "["

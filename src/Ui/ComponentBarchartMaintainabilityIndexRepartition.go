@@ -22,7 +22,7 @@ func (c *ComponentBarchartMaintainabilityIndexRepartition) AsHtml() string {
 // Render is the method to render the component
 func (c *ComponentBarchartMaintainabilityIndexRepartition) AsTerminalElement() string {
 	dataOrdered := c.GetData()
-	data := make(map[string]float32)
+	data := make(map[string]float64)
 	for _, k := range dataOrdered.Keys() {
 		value, _ := dataOrdered.Get(k)
 		data[k] = value
@@ -33,11 +33,11 @@ func (c *ComponentBarchartMaintainabilityIndexRepartition) AsTerminalElement() s
 }
 
 // GetData returns the data for the barchart
-func (c *ComponentBarchartMaintainabilityIndexRepartition) GetData() *orderedmap.OrderedMap[string, float32] {
-	data := orderedmap.NewOrderedMap[string, float32]()
+func (c *ComponentBarchartMaintainabilityIndexRepartition) GetData() *orderedmap.OrderedMap[string, float64] {
+	data := orderedmap.NewOrderedMap[string, float64]()
 
 	rangeOfLabels := []string{"🔴 < 64", "🟡 < 85", "🟢 > 85"}
-	rangeOfValues := []float32{64, 85, 1000}
+	rangeOfValues := []float64{64, 85, 1000}
 	for _, r := range rangeOfLabels {
 		data.Set(r, 0)
 	}

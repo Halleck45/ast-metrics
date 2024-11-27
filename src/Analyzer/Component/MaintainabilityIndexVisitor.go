@@ -65,13 +65,13 @@ func (v *MaintainabilityIndexVisitor) Calculate(stmts *pb.Stmts) {
 	var lloc int32 = *stmts.Analyze.Volume.Lloc
 	var cloc int32 = *stmts.Analyze.Volume.Cloc
 	var cyclomatic int32 = *stmts.Analyze.Complexity.Cyclomatic
-	var halsteadVolume float32 = *stmts.Analyze.Volume.HalsteadVolume
-	var MIwoC float32 = 0
-	var MI float32 = 0
-	var commentWeight float32 = 0
+	var halsteadVolume float64 = *stmts.Analyze.Volume.HalsteadVolume
+	var MIwoC float64 = 0
+	var MI float64 = 0
+	var commentWeight float64 = 0
 
 	// // maintainability index without comment
-	MIwoC = float32(math.Max((171-
+	MIwoC = float64(math.Max((171-
 		(5.2*math.Log(float64(halsteadVolume)))-
 		(0.23*float64(cyclomatic))-
 		(16.2*math.Log(float64(lloc))))*100/171, 0))
@@ -82,7 +82,7 @@ func (v *MaintainabilityIndexVisitor) Calculate(stmts *pb.Stmts) {
 
 	if loc > 0 {
 		CM := float64(cloc) / float64(loc)
-		commentWeight = float32(50 * math.Sin(math.Sqrt(2.4*CM)))
+		commentWeight = float64(50 * math.Sin(math.Sqrt(2.4*CM)))
 	}
 
 	MI = MIwoC + commentWeight
@@ -94,9 +94,9 @@ func (v *MaintainabilityIndexVisitor) Calculate(stmts *pb.Stmts) {
 		commentWeight = 0
 	}
 
-	MI32 := float32(MI)
-	MIwoC32 := float32(MIwoC)
-	commentWeight32 := float32(commentWeight)
+	MI32 := float64(MI)
+	MIwoC32 := float64(MIwoC)
+	commentWeight32 := float64(commentWeight)
 
 	if stmts.Analyze.Maintainability == nil {
 		stmts.Analyze.Maintainability = &pb.Maintainability{}
@@ -104,7 +104,7 @@ func (v *MaintainabilityIndexVisitor) Calculate(stmts *pb.Stmts) {
 
 	if loc == 0 {
 		// when class has no code
-		MI32 = float32(171)
+		MI32 = float64(171)
 	}
 
 	stmts.Analyze.Maintainability.MaintainabilityIndex = &MI32

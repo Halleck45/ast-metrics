@@ -33,37 +33,37 @@ type Comparaison struct {
 	Loc                                  int
 	Cloc                                 int
 	Lloc                                 int
-	AverageMethodsPerClass               float32
-	AverageLocPerMethod                  float32
-	AverageLlocPerMethod                 float32
-	AverageClocPerMethod                 float32
-	AverageCyclomaticComplexityPerMethod float32
-	AverageCyclomaticComplexityPerClass  float32
+	AverageMethodsPerClass               float64
+	AverageLocPerMethod                  float64
+	AverageLlocPerMethod                 float64
+	AverageClocPerMethod                 float64
+	AverageCyclomaticComplexityPerMethod float64
+	AverageCyclomaticComplexityPerClass  float64
 	MinCyclomaticComplexity              int
 	MaxCyclomaticComplexity              int
-	AverageHalsteadDifficulty            float32
-	AverageHalsteadEffort                float32
-	AverageHalsteadVolume                float32
-	AverageHalsteadTime                  float32
-	AverageHalsteadBugs                  float32
-	SumHalsteadDifficulty                float32
-	SumHalsteadEffort                    float32
-	SumHalsteadVolume                    float32
-	SumHalsteadTime                      float32
-	SumHalsteadBugs                      float32
-	AverageMI                            float32
-	AverageMIwoc                         float32
-	AverageMIcw                          float32
-	AverageMIPerMethod                   float32
-	AverageMIwocPerMethod                float32
-	AverageMIcwPerMethod                 float32
-	AverageAfferentCoupling              float32
-	AverageEfferentCoupling              float32
-	AverageInstability                   float32
+	AverageHalsteadDifficulty            float64
+	AverageHalsteadEffort                float64
+	AverageHalsteadVolume                float64
+	AverageHalsteadTime                  float64
+	AverageHalsteadBugs                  float64
+	SumHalsteadDifficulty                float64
+	SumHalsteadEffort                    float64
+	SumHalsteadVolume                    float64
+	SumHalsteadTime                      float64
+	SumHalsteadBugs                      float64
+	AverageMI                            float64
+	AverageMIwoc                         float64
+	AverageMIcw                          float64
+	AverageMIPerMethod                   float64
+	AverageMIwocPerMethod                float64
+	AverageMIcwPerMethod                 float64
+	AverageAfferentCoupling              float64
+	AverageEfferentCoupling              float64
+	AverageInstability                   float64
 	CommitCountForPeriod                 int
 	CommittedFilesCountForPeriod         int // for example if one commit concerns 10 files, it will be 10
 	BusFactor                            int
-	Risk                                 float32
+	Risk                                 float64
 	ChangedFiles                         []ChangedFile
 	NbNewFiles                           int
 	NbDeletedFiles                       int
@@ -218,7 +218,7 @@ func (c *Comparator) Compare(first Aggregated, second Aggregated) Comparaison {
 
 				// Cyclomatic complexity
 				if file.Stmts.Analyze.Complexity != nil && file2.Stmts.Analyze.Complexity != nil {
-					change.Comparaison.AverageCyclomaticComplexityPerMethod = float32(*file.Stmts.Analyze.Complexity.Cyclomatic) - float32(*file2.Stmts.Analyze.Complexity.Cyclomatic)
+					change.Comparaison.AverageCyclomaticComplexityPerMethod = float64(*file.Stmts.Analyze.Complexity.Cyclomatic) - float64(*file2.Stmts.Analyze.Complexity.Cyclomatic)
 				}
 
 				// Halstead
@@ -240,8 +240,8 @@ func (c *Comparator) Compare(first Aggregated, second Aggregated) Comparaison {
 
 				// Coupling
 				if file.Stmts.Analyze.Coupling != nil && file2.Stmts.Analyze.Coupling != nil {
-					change.Comparaison.AverageAfferentCoupling = float32(file.Stmts.Analyze.Coupling.Afferent) - float32(file2.Stmts.Analyze.Coupling.Afferent)
-					change.Comparaison.AverageEfferentCoupling = float32(file.Stmts.Analyze.Coupling.Efferent) - float32(file2.Stmts.Analyze.Coupling.Efferent)
+					change.Comparaison.AverageAfferentCoupling = float64(file.Stmts.Analyze.Coupling.Afferent) - float64(file2.Stmts.Analyze.Coupling.Afferent)
+					change.Comparaison.AverageEfferentCoupling = float64(file.Stmts.Analyze.Coupling.Efferent) - float64(file2.Stmts.Analyze.Coupling.Efferent)
 					change.Comparaison.AverageInstability = file.Stmts.Analyze.Coupling.Instability - file2.Stmts.Analyze.Coupling.Instability
 				}
 
