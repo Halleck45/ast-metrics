@@ -80,69 +80,76 @@ func TestConsolidate(t *testing.T) {
 }
 
 func TestCalculate(t *testing.T) {
-	aggregator := Aggregator{}
-	stmts := pb.Stmts{
-		StmtFunction: []*pb.StmtFunction{
-			{
-				Stmts: &pb.Stmts{
-					Analyze: &pb.Analyze{
-						Complexity: &pb.Complexity{
-							Cyclomatic: proto.Int32(10),
+
+	t.Run("TestCalculate", func(t *testing.T) {
+		aggregator := Aggregator{}
+		stmts := pb.Stmts{
+			StmtFunction: []*pb.StmtFunction{
+				{
+					Stmts: &pb.Stmts{
+						Analyze: &pb.Analyze{
+							Complexity: &pb.Complexity{
+								Cyclomatic: proto.Int32(10),
+							},
+						},
+					},
+				},
+				{
+					Stmts: &pb.Stmts{
+						Analyze: &pb.Analyze{
+							Complexity: &pb.Complexity{
+								Cyclomatic: proto.Int32(20),
+							},
 						},
 					},
 				},
 			},
-			{
-				Stmts: &pb.Stmts{
-					Analyze: &pb.Analyze{
-						Complexity: &pb.Complexity{
-							Cyclomatic: proto.Int32(20),
-						},
-					},
+			StmtClass: []*pb.StmtClass{
+				{}, {}, {},
+			},
+			Analyze: &pb.Analyze{
+				Volume: &pb.Volume{
+					Loc:  proto.Int32(100),
+					Cloc: proto.Int32(200),
+					Lloc: proto.Int32(300),
 				},
 			},
-		},
-		StmtClass: []*pb.StmtClass{
-			{}, {}, {},
-		},
-		Analyze: &pb.Analyze{
-			Volume: &pb.Volume{
-				Loc:  proto.Int32(100),
-				Cloc: proto.Int32(200),
-				Lloc: proto.Int32(300),
-			},
-		},
-	}
-	file := pb.File{
-		Stmts: &stmts,
-	}
-	aggregated := Aggregated{}
-	aggregator.calculateSums(&file, &aggregated)
-	aggregator.consolidate(&aggregated)
+		}
+		file := pb.File{
+			Stmts: &stmts,
+			Path:  "test.foo",
+		}
+		aggregated := Aggregated{}
+		aggregator.calculateSums(&file, &aggregated)
+		aggregated.ConcernedFiles = []*pb.File{
+			&file,
+		}
+		aggregator.consolidate(&aggregated)
 
-	if aggregated.NbMethods != 2 {
-		t.Errorf("Expected 2, got %d", aggregated.NbMethods)
-	}
+		if aggregated.NbMethods != 2 {
+			t.Errorf("Expected 2, got %d", aggregated.NbMethods)
+		}
 
-	if aggregated.NbClasses != 3 {
-		t.Errorf("Expected 3 classes, got %d", aggregated.NbClasses)
-	}
+		if aggregated.NbClasses != 3 {
+			t.Errorf("Expected 3 classes, got %d", aggregated.NbClasses)
+		}
 
-	if aggregated.AverageCyclomaticComplexityPerMethod != 15 {
-		t.Errorf("Expected AverageCyclomaticComplexityPerMethod, got %f", aggregated.AverageCyclomaticComplexityPerMethod)
-	}
+		if aggregated.AverageCyclomaticComplexityPerMethod != 15 {
+			t.Errorf("Expected AverageCyclomaticComplexityPerMethod, got %f", aggregated.AverageCyclomaticComplexityPerMethod)
+		}
 
-	if aggregated.Loc != 100 {
-		t.Errorf("Expected 100, got %d", aggregated.Loc)
-	}
+		if aggregated.Loc != 100 {
+			t.Errorf("Expected 100, got %d", aggregated.Loc)
+		}
 
-	if aggregated.Cloc != 200 {
-		t.Errorf("Expected 200, got %d", aggregated.Cloc)
-	}
+		if aggregated.Cloc != 200 {
+			t.Errorf("Expected 200, got %d", aggregated.Cloc)
+		}
 
-	if aggregated.Lloc != 300 {
-		t.Errorf("Expected 300, got %d", aggregated.Lloc)
-	}
+		if aggregated.Lloc != 300 {
+			t.Errorf("Expected 300, got %d", aggregated.Lloc)
+		}
+	})
 }
 
 func TestAggregates(t *testing.T) {

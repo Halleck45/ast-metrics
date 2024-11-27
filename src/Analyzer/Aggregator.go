@@ -356,6 +356,7 @@ func (r *Aggregator) consolidate(aggregated *Aggregated) {
 	aggregated.Lloc = 0
 
 	var wg sync.WaitGroup
+	var wgByCpu sync.WaitGroup
 	var mu sync.Mutex
 	numWorkers := runtime.NumCPU()
 	filesChan := make(chan *pb.File, numWorkers)
@@ -363,7 +364,12 @@ func (r *Aggregator) consolidate(aggregated *Aggregated) {
 	reg := regexp.MustCompile("[^A-Za-z0-9.]+")
 
 	for i := 0; i < numWorkers; i++ {
+
+		wgByCpu.Add(1)
+
 		go func() {
+			defer wgByCpu.Done()
+
 			for file := range filesChan {
 
 				wg.Add(1)
@@ -404,12 +410,12 @@ func (r *Aggregator) consolidate(aggregated *Aggregated) {
 						}
 						averageForFile = averageForFile / float64(len(methods))
 						localFile.Stmts.Analyze.Maintainability.MaintainabilityIndex = &averageForFile
-					}
 
-					// Update the original file with processed data
-					mu.Lock()
-					file.Stmts = localFile.Stmts
-					mu.Unlock()
+						// Update the original file with processed data
+						mu.Lock()
+						file.Stmts = localFile.Stmts
+						mu.Unlock()
+					}
 
 					// LOC of file is the sum of all classes and methods
 					// That's useful when we navigate over the files instead of the classes
@@ -555,6 +561,8 @@ func (r *Aggregator) consolidate(aggregated *Aggregated) {
 	}
 
 	wg.Wait()
+	close(filesChan)
+	wgByCpu.Wait()
 
 	// Consolidate
 	aggregated.AverageInstability = aggregated.AverageInstability / float64(aggregated.NbClasses)

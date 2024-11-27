@@ -26,12 +26,12 @@ func Start(workdir *Storage.Workdir, progressbar *pterm.SpinnerPrinter) []*pb.Fi
 
 	// Wait for end of all goroutines
 	var wg sync.WaitGroup
+	var wgByCpu sync.WaitGroup
 
 	// store results
 	// channel should have value
 	// https://stackoverflow.com/questions/58743038/why-does-this-goroutine-not-call-wg-done
 	channelResult := make(chan *pb.File, len(astFiles))
-
 
 	nbParsingFiles := 0
 	// analyze each AST file running the runAnalysis function
@@ -40,7 +40,9 @@ func Start(workdir *Storage.Workdir, progressbar *pterm.SpinnerPrinter) []*pb.Fi
 	filesChan := make(chan string, numWorkers)
 
 	for i := 0; i < numWorkers; i++ {
+		wgByCpu.Add(1)
 		go func() {
+			defer wgByCpu.Done()
 			for file := range filesChan {
 				mu.Lock()
 				nbParsingFiles++
@@ -62,6 +64,8 @@ func Start(workdir *Storage.Workdir, progressbar *pterm.SpinnerPrinter) []*pb.Fi
 	}
 
 	wg.Wait()
+	close(filesChan)
+	wgByCpu.Wait()
 	if progressbar != nil {
 		progressbar.Info("AST Analysis finished")
 	}
