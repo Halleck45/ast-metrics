@@ -9,6 +9,7 @@ import (
 	Complexity "github.com/halleck45/ast-metrics/src/Analyzer/Complexity"
 	Component "github.com/halleck45/ast-metrics/src/Analyzer/Component"
 	Volume "github.com/halleck45/ast-metrics/src/Analyzer/Volume"
+	"github.com/halleck45/ast-metrics/src/Engine"
 	pb "github.com/halleck45/ast-metrics/src/NodeType"
 	"github.com/halleck45/ast-metrics/src/Storage"
 	"github.com/pterm/pterm"
@@ -26,7 +27,6 @@ func Start(workdir *Storage.Workdir, progressbar *pterm.SpinnerPrinter) []*pb.Fi
 
 	// Wait for end of all goroutines
 	var wg sync.WaitGroup
-	var wgByCpu sync.WaitGroup
 
 	// store results
 	// channel should have value
@@ -40,32 +40,34 @@ func Start(workdir *Storage.Workdir, progressbar *pterm.SpinnerPrinter) []*pb.Fi
 	filesChan := make(chan string, numWorkers)
 
 	for i := 0; i < numWorkers; i++ {
-		wgByCpu.Add(1)
 		go func() {
-			defer wgByCpu.Done()
 			for file := range filesChan {
-				mu.Lock()
-				nbParsingFiles++
-				mu.Unlock()
+				go func(file string) {
+					defer wg.Done()
+					mu.Lock()
+					nbParsingFiles++
+					mu.Unlock()
 
-				executeFileAnalysis(file, channelResult)
+					executeFileAnalysis(file, channelResult)
 
-				details := strconv.Itoa(nbParsingFiles) + "/" + strconv.Itoa(len(astFiles))
+					details := strconv.Itoa(nbParsingFiles) + "/" + strconv.Itoa(len(astFiles))
 
-				if progressbar != nil {
-					progressbar.UpdateText("Analyzing (" + details + ")")
-				}
+					if progressbar != nil {
+						progressbar.UpdateText("Analyzing (" + details + ")")
+					}
+				}(file)
 			}
 		}()
 	}
 
 	for _, file := range astFiles {
+		wg.Add(1)
 		filesChan <- file
 	}
 
 	wg.Wait()
 	close(filesChan)
-	wgByCpu.Wait()
+
 	if progressbar != nil {
 		progressbar.Info("AST Analysis finished")
 	}
@@ -130,6 +132,10 @@ func executeFileAnalysis(file string, channelResult chan<- *pb.File) error {
 
 	// visit AST
 	root.Visit()
+
+	// Ensure structure is complete
+	Engine.EnsureNodeTypeIsComplete(pbFile)
+
 	channelResult <- pbFile
 	return nil
 }

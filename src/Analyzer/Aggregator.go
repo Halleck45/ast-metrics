@@ -21,52 +21,65 @@ type ProjectAggregated struct {
 	Comparaison           *ProjectComparaison
 }
 
+type AggregateResult struct {
+	Sum     float64
+	Min     float64
+	Max     float64
+	Avg     float64
+	Counter int
+}
+
+func NewAggregateResult() AggregateResult {
+	return AggregateResult{
+		Sum:     0,
+		Min:     0,
+		Max:     0,
+		Avg:     0,
+		Counter: 0,
+	}
+}
+
 type Aggregated struct {
-	ConcernedFiles []*pb.File
-	Comparaison    *Comparaison
+	ProgrammingLanguages map[string]int
+	ConcernedFiles       []*pb.File
+	Comparaison          *Comparaison
 	// hashmap of classes, just with the qualified name, used for afferent coupling calculation
-	ClassesAfferentCoupling              map[string]int
-	NbFiles                              int
-	NbFunctions                          int
-	NbClasses                            int
-	NbClassesWithCode                    int
-	NbMethods                            int
-	Loc                                  int
-	Cloc                                 int
-	Lloc                                 int
-	AverageMethodsPerClass               float64
-	AverageLocPerMethod                  float64
-	AverageLlocPerMethod                 float64
-	AverageClocPerMethod                 float64
-	AverageCyclomaticComplexityPerMethod float64
-	AverageCyclomaticComplexityPerClass  float64
-	MinCyclomaticComplexity              int
-	MaxCyclomaticComplexity              int
-	AverageHalsteadDifficulty            float64
-	AverageHalsteadEffort                float64
-	AverageHalsteadVolume                float64
-	AverageHalsteadTime                  float64
-	AverageHalsteadBugs                  float64
-	SumHalsteadDifficulty                float64
-	SumHalsteadEffort                    float64
-	SumHalsteadVolume                    float64
-	SumHalsteadTime                      float64
-	SumHalsteadBugs                      float64
-	AverageMI                            float64
-	AverageMIwoc                         float64
-	AverageMIcw                          float64
-	AverageMIPerMethod                   float64
-	AverageMIwocPerMethod                float64
-	AverageMIcwPerMethod                 float64
-	AverageAfferentCoupling              float64
-	AverageEfferentCoupling              float64
-	AverageInstability                   float64
-	CommitCountForPeriod                 int
-	CommittedFilesCountForPeriod         int // for example if one commit concerns 10 files, it will be 10
-	BusFactor                            int
-	TopCommitters                        []TopCommitter
-	ResultOfGitAnalysis                  []ResultOfGitAnalysis
-	PackageRelations                     map[string]map[string]int // counter of dependencies. Ex: A -> B -> 2
+	ClassesAfferentCoupling                 map[string]int
+	NbFiles                                 int
+	NbFunctions                             int
+	NbClasses                               int
+	NbClassesWithCode                       int
+	NbMethods                               int
+	Loc                                     AggregateResult
+	Cloc                                    AggregateResult
+	Lloc                                    AggregateResult
+	MethodsPerClass                         AggregateResult
+	LocPerClass                             AggregateResult
+	LocPerMethod                            AggregateResult
+	LlocPerMethod                           AggregateResult
+	ClocPerMethod                           AggregateResult
+	CyclomaticComplexityPerMethod           AggregateResult
+	CyclomaticComplexityPerClass            AggregateResult
+	HalsteadDifficulty                      AggregateResult
+	HalsteadEffort                          AggregateResult
+	HalsteadVolume                          AggregateResult
+	HalsteadTime                            AggregateResult
+	HalsteadBugs                            AggregateResult
+	MaintainabilityIndex                    AggregateResult
+	MaintainabilityIndexWithoutComments     AggregateResult
+	MaintainabilityCommentWeight            AggregateResult
+	Instability                             AggregateResult
+	EfferentCoupling                        AggregateResult
+	AfferentCoupling                        AggregateResult
+	MaintainabilityPerMethod                AggregateResult
+	MaintainabilityPerMethodWithoutComments AggregateResult
+	MaintainabilityCommentWeightPerMethod   AggregateResult
+	CommitCountForPeriod                    int
+	CommittedFilesCountForPeriod            int
+	BusFactor                               int
+	TopCommitters                           []TopCommitter
+	ResultOfGitAnalysis                     []ResultOfGitAnalysis
+	PackageRelations                        map[string]map[string]int // counter of dependencies. Ex: A -> B -> 2
 }
 
 type ProjectComparaison struct {
@@ -113,44 +126,39 @@ type AggregateAnalyzer interface {
 
 func newAggregated() Aggregated {
 	return Aggregated{
-		ConcernedFiles:                       make([]*pb.File, 0),
-		ClassesAfferentCoupling:              make(map[string]int),
-		NbClasses:                            0,
-		NbClassesWithCode:                    0,
-		NbMethods:                            0,
-		NbFunctions:                          0,
-		Loc:                                  0,
-		Cloc:                                 0,
-		Lloc:                                 0,
-		AverageLocPerMethod:                  0,
-		AverageLlocPerMethod:                 0,
-		AverageClocPerMethod:                 0,
-		AverageCyclomaticComplexityPerMethod: 0,
-		AverageCyclomaticComplexityPerClass:  0,
-		MinCyclomaticComplexity:              0,
-		MaxCyclomaticComplexity:              0,
-		AverageHalsteadDifficulty:            0,
-		AverageHalsteadEffort:                0,
-		AverageHalsteadVolume:                0,
-		AverageHalsteadTime:                  0,
-		AverageHalsteadBugs:                  0,
-		SumHalsteadDifficulty:                0,
-		SumHalsteadEffort:                    0,
-		SumHalsteadVolume:                    0,
-		SumHalsteadTime:                      0,
-		SumHalsteadBugs:                      0,
-		AverageMI:                            0,
-		AverageMIwoc:                         0,
-		AverageMIcw:                          0,
-		AverageMIPerMethod:                   0,
-		AverageMIwocPerMethod:                0,
-		AverageAfferentCoupling:              0,
-		AverageEfferentCoupling:              0,
-		AverageInstability:                   0,
-		AverageMIcwPerMethod:                 0,
-		CommitCountForPeriod:                 0,
-		ResultOfGitAnalysis:                  nil,
-		PackageRelations:                     make(map[string]map[string]int),
+		ProgrammingLanguages:                    make(map[string]int),
+		ConcernedFiles:                          make([]*pb.File, 0),
+		ClassesAfferentCoupling:                 make(map[string]int),
+		NbClasses:                               0,
+		NbClassesWithCode:                       0,
+		NbMethods:                               0,
+		NbFunctions:                             0,
+		Loc:                                     NewAggregateResult(),
+		MethodsPerClass:                         NewAggregateResult(),
+		LocPerClass:                             NewAggregateResult(),
+		LocPerMethod:                            NewAggregateResult(),
+		ClocPerMethod:                           NewAggregateResult(),
+		CyclomaticComplexityPerMethod:           NewAggregateResult(),
+		CyclomaticComplexityPerClass:            NewAggregateResult(),
+		HalsteadEffort:                          NewAggregateResult(),
+		HalsteadVolume:                          NewAggregateResult(),
+		HalsteadTime:                            NewAggregateResult(),
+		HalsteadBugs:                            NewAggregateResult(),
+		MaintainabilityIndex:                    NewAggregateResult(),
+		MaintainabilityIndexWithoutComments:     NewAggregateResult(),
+		MaintainabilityCommentWeight:            NewAggregateResult(),
+		Instability:                             NewAggregateResult(),
+		EfferentCoupling:                        NewAggregateResult(),
+		AfferentCoupling:                        NewAggregateResult(),
+		MaintainabilityPerMethod:                NewAggregateResult(),
+		MaintainabilityPerMethodWithoutComments: NewAggregateResult(),
+		MaintainabilityCommentWeightPerMethod:   NewAggregateResult(),
+		CommitCountForPeriod:                    0,
+		CommittedFilesCountForPeriod:            0,
+		BusFactor:                               0,
+		TopCommitters:                           make([]TopCommitter, 0),
+		ResultOfGitAnalysis:                     nil,
+		PackageRelations:                        make(map[string]map[string]int),
 	}
 }
 
@@ -199,402 +207,160 @@ func (r *Aggregator) Aggregates() ProjectAggregated {
 
 func (r *Aggregator) executeAggregationOnFiles(files []*pb.File) ProjectAggregated {
 
-	// We create a new aggregated object for each type of aggregation
-	// ByFile, ByClass, Combined
-	projectAggregated := ProjectAggregated{}
-	projectAggregated.ByFile = newAggregated()
-	projectAggregated.ByClass = newAggregated()
-	projectAggregated.Combined = newAggregated()
+	projectAggregated := ProjectAggregated{
+		ByFile:                newAggregated(),
+		ByClass:               newAggregated(),
+		Combined:              newAggregated(),
+		ByProgrammingLanguage: make(map[string]Aggregated),
+		ErroredFiles:          make([]*pb.File, 0),
+		Evaluation:            nil,
+		Comparaison:           nil,
+	}
 
-	// Count files
-	projectAggregated.ByClass.NbFiles = len(files)
-	projectAggregated.ByFile.NbFiles = len(files)
-	projectAggregated.Combined.NbFiles = len(files)
+	// do the sums. Group files by number of processors
+	var wg sync.WaitGroup
+	numberOfProcessors := runtime.NumCPU()
 
-	// Prepare errors
-	projectAggregated.ErroredFiles = make([]*pb.File, 0)
-
-	for _, file := range files {
-
-		// Files with errors
-		if file.Errors != nil && len(file.Errors) > 0 {
-			projectAggregated.ErroredFiles = append(projectAggregated.ErroredFiles, file)
+	// Split the files into chunks
+	chunkSize := len(files) / numberOfProcessors
+	chunks := make([][]*pb.File, numberOfProcessors)
+	for i := 0; i < numberOfProcessors; i++ {
+		start := i * chunkSize
+		end := start + chunkSize
+		if i == numberOfProcessors-1 {
+			end = len(files)
 		}
+		chunks[i] = files[start:end]
+	}
 
-		if file.Stmts == nil {
+	// Prepare results
+	aggregateByFileChunk := newAggregated()
+	aggregateByClassChunk := newAggregated()
+
+	// for each programming language, we create a separeted result
+	aggregateByLanguageChunk := make(map[string]Aggregated)
+	for _, file := range files {
+		if file.ProgrammingLanguage == "" {
 			continue
 		}
-
-		// By language
-		if projectAggregated.ByProgrammingLanguage == nil {
-			projectAggregated.ByProgrammingLanguage = make(map[string]Aggregated)
+		if _, ok := aggregateByLanguageChunk[file.ProgrammingLanguage]; !ok {
+			aggregateByLanguageChunk[file.ProgrammingLanguage] = newAggregated()
 		}
-		if _, ok := projectAggregated.ByProgrammingLanguage[file.ProgrammingLanguage]; !ok {
-			projectAggregated.ByProgrammingLanguage[file.ProgrammingLanguage] = newAggregated()
-
-		}
-		byLanguage := projectAggregated.ByProgrammingLanguage[file.ProgrammingLanguage]
-		byLanguage.NbFiles++
-
-		// Make calculations: sums of metrics, etc.
-		var wg sync.WaitGroup
-		wg.Add(4)
-
-		go func() {
-			defer wg.Done()
-			r.calculateSums(file, &projectAggregated.ByFile)
-		}()
-
-		go func() {
-			defer wg.Done()
-			r.calculateSums(file, &projectAggregated.ByClass)
-		}()
-
-		go func() {
-			defer wg.Done()
-			r.calculateSums(file, &projectAggregated.Combined)
-		}()
-
-		go func() {
-			defer wg.Done()
-			r.calculateSums(file, &byLanguage)
-		}()
-
-		wg.Wait()
-		projectAggregated.ByProgrammingLanguage[file.ProgrammingLanguage] = byLanguage
 	}
 
-	// Consolidate averages
-	var wg sync.WaitGroup
-	wg.Add(3)
+	// Create channels for the results
+	resultsByClass := make(chan *Aggregated, numberOfProcessors)
+	resultsByFile := make(chan *Aggregated, numberOfProcessors)
+	resultsByProgrammingLanguage := make(chan *map[string]Aggregated, numberOfProcessors)
 
+	// Deadlock prevention
+	mu := sync.Mutex{}
+
+	// Process each chunk of files
+	// Please ensure that there is no data race here. If needed, use the mutex
+	chunkIndex := 0
+	for i := 0; i < numberOfProcessors; i++ {
+
+		wg.Add(1)
+
+		// Reduce results : we want to get sums, and to count calculated values into a AggregateResult
+		go func(files []*pb.File) {
+			defer wg.Done()
+
+			// the process deal with its own chunk
+			for _, file := range files {
+				localFile := file
+
+				if file.Stmts == nil {
+					continue
+				}
+
+				// by file
+				result := r.mapSums(localFile, aggregateByFileChunk)
+				result.ConcernedFiles = append(result.ConcernedFiles, localFile)
+				aggregateByFileChunk = result
+
+				// by class
+				result = r.mapSums(localFile, aggregateByClassChunk)
+				result.ConcernedFiles = append(result.ConcernedFiles, localFile)
+				aggregateByClassChunk = result
+
+				// by language
+				mu.Lock()
+				byLanguage := r.mapSums(localFile, aggregateByLanguageChunk[localFile.ProgrammingLanguage])
+				byLanguage.ConcernedFiles = append(byLanguage.ConcernedFiles, localFile)
+				aggregateByLanguageChunk[localFile.ProgrammingLanguage] = byLanguage
+				mu.Unlock()
+			}
+
+			// Send the result to the channels
+			resultsByClass <- &aggregateByClassChunk
+			resultsByFile <- &aggregateByFileChunk
+			resultsByProgrammingLanguage <- &aggregateByLanguageChunk
+
+		}(chunks[chunkIndex])
+		chunkIndex++
+	}
+
+	wg.Wait()
+	close(resultsByClass)
+	close(resultsByFile)
+	close(resultsByProgrammingLanguage)
+
+	// Now we have chunk of sums. We want to reduce its into a single object
+	wg.Add(1)
 	go func() {
 		defer wg.Done()
-		r.consolidate(&projectAggregated.ByFile)
+		for chunk := range resultsByClass {
+			r := r.mergeChunks(projectAggregated.ByClass, chunk)
+			projectAggregated.ByClass = r
+		}
 	}()
 
+	wg.Add(1)
 	go func() {
 		defer wg.Done()
-		r.consolidate(&projectAggregated.ByClass)
+		for chunk := range resultsByFile {
+			r := r.mergeChunks(projectAggregated.ByFile, chunk)
+			projectAggregated.ByFile = r
+		}
 	}()
 
+	wg.Add(1)
 	go func() {
+		mu.Lock()
 		defer wg.Done()
-		r.consolidate(&projectAggregated.Combined)
+		defer mu.Unlock()
+
+		for chunk := range resultsByProgrammingLanguage {
+			for k, v := range *chunk {
+				projectAggregated.ByProgrammingLanguage[k] = v
+			}
+		}
 	}()
 
 	wg.Wait()
 
-	// by language
-	wg.Add(len(projectAggregated.ByProgrammingLanguage))
-	for lng, byLanguage := range projectAggregated.ByProgrammingLanguage {
-		go func(language string, langAggregated Aggregated) {
-			defer wg.Done()
-			r.consolidate(&langAggregated)
-			projectAggregated.ByProgrammingLanguage[language] = langAggregated
-		}(lng, byLanguage)
+	// Now  we have sums. We want to reduce metrics and get the averages
+	projectAggregated.ByClass = r.reduceMetrics(projectAggregated.ByClass)
+	projectAggregated.ByFile = r.reduceMetrics(projectAggregated.ByFile)
+	for k, v := range projectAggregated.ByProgrammingLanguage {
+		v = r.reduceMetrics(v)
+		projectAggregated.ByProgrammingLanguage[k] = v
 	}
-	wg.Wait()
+
+	// Coupling (should be done separately, to avoid race condition)
+	projectAggregated.ByClass = r.mapCoupling(&projectAggregated.ByClass)
+	projectAggregated.ByFile = r.mapCoupling(&projectAggregated.ByFile)
 
 	// Risks
 	riskAnalyzer := NewRiskAnalyzer()
 	riskAnalyzer.Analyze(projectAggregated)
 
+	// For all languages
+	projectAggregated.Combined = projectAggregated.ByFile
+
 	return projectAggregated
-}
-
-// Consolidate the aggregated data
-func (r *Aggregator) consolidate(aggregated *Aggregated) {
-
-	if aggregated.NbClasses > 0 {
-		aggregated.AverageMethodsPerClass = float64(aggregated.NbMethods) / float64(aggregated.NbClasses)
-		aggregated.AverageCyclomaticComplexityPerClass = aggregated.AverageCyclomaticComplexityPerClass / float64(aggregated.NbClasses)
-	} else {
-		aggregated.AverageMethodsPerClass = 0
-		aggregated.AverageCyclomaticComplexityPerClass = 0
-	}
-
-	if aggregated.AverageMI > 0 {
-		aggregated.AverageMI = aggregated.AverageMI / float64(aggregated.NbClasses)
-		aggregated.AverageMIwoc = aggregated.AverageMIwoc / float64(aggregated.NbClasses)
-		aggregated.AverageMIcw = aggregated.AverageMIcw / float64(aggregated.NbClasses)
-	}
-
-	if aggregated.AverageInstability > 0 {
-		aggregated.AverageEfferentCoupling = aggregated.AverageEfferentCoupling / float64(aggregated.NbClasses)
-		aggregated.AverageAfferentCoupling = aggregated.AverageAfferentCoupling / float64(aggregated.NbClasses)
-	}
-
-	if aggregated.NbMethods > 0 {
-		aggregated.AverageLocPerMethod = aggregated.AverageLocPerMethod / float64(aggregated.NbMethods)
-		aggregated.AverageClocPerMethod = aggregated.AverageClocPerMethod / float64(aggregated.NbMethods)
-		aggregated.AverageLlocPerMethod = aggregated.AverageLlocPerMethod / float64(aggregated.NbMethods)
-		aggregated.AverageCyclomaticComplexityPerMethod = aggregated.AverageCyclomaticComplexityPerMethod / float64(aggregated.NbMethods)
-		aggregated.AverageMIPerMethod = aggregated.AverageMIPerMethod / float64(aggregated.NbMethods)
-		aggregated.AverageMIwocPerMethod = aggregated.AverageMIwocPerMethod / float64(aggregated.NbMethods)
-		aggregated.AverageMIcwPerMethod = aggregated.AverageMIcwPerMethod / float64(aggregated.NbMethods)
-		aggregated.AverageHalsteadDifficulty = aggregated.AverageHalsteadDifficulty / float64(aggregated.NbClasses)
-		aggregated.AverageHalsteadEffort = aggregated.AverageHalsteadEffort / float64(aggregated.NbClasses)
-		aggregated.AverageHalsteadVolume = aggregated.AverageHalsteadVolume / float64(aggregated.NbClasses)
-		aggregated.AverageHalsteadTime = aggregated.AverageHalsteadTime / float64(aggregated.NbClasses)
-		aggregated.AverageHalsteadBugs = aggregated.AverageHalsteadBugs / float64(aggregated.NbClasses)
-	}
-
-	// if langage without classes
-	if aggregated.NbClasses == 0 {
-		aggregated.AverageMI = aggregated.AverageMIPerMethod
-		aggregated.AverageMIwoc = aggregated.AverageMIwocPerMethod
-		aggregated.AverageMIcw = aggregated.AverageMIcwPerMethod
-		aggregated.AverageInstability = 0
-		aggregated.AverageEfferentCoupling = 0
-		aggregated.AverageAfferentCoupling = 0
-	}
-
-	// Total locs: increment loc of each file
-	aggregated.Loc = 0
-	aggregated.Cloc = 0
-	aggregated.Lloc = 0
-
-	var wg sync.WaitGroup
-	var wgByCpu sync.WaitGroup
-	var mu sync.Mutex
-	numWorkers := runtime.NumCPU()
-	filesChan := make(chan *pb.File, numWorkers)
-
-	reg := regexp.MustCompile("[^A-Za-z0-9.]+")
-
-	for i := 0; i < numWorkers; i++ {
-
-		wgByCpu.Add(1)
-
-		go func() {
-			defer wgByCpu.Done()
-
-			for file := range filesChan {
-
-				wg.Add(1)
-				go func(file *pb.File) {
-					defer wg.Done()
-
-					if file.LinesOfCode == nil {
-						return
-					}
-
-					mu.Lock()
-					aggregated.Loc += int(file.LinesOfCode.LinesOfCode)
-					aggregated.Cloc += int(file.LinesOfCode.CommentLinesOfCode)
-					aggregated.Lloc += int(file.LinesOfCode.LogicalLinesOfCode)
-					mu.Unlock()
-
-					// Create local variables for file processing
-					localFile := &pb.File{
-						Stmts: file.Stmts,
-					}
-
-					// Calculate alternate MI using average MI per method when file has no class
-					if len(localFile.Stmts.StmtClass) == 0 {
-						if localFile.Stmts.Analyze.Maintainability == nil {
-							localFile.Stmts.Analyze.Maintainability = &pb.Maintainability{}
-						}
-
-						methods := file.Stmts.StmtFunction
-						if len(methods) == 0 {
-							return
-						}
-						averageForFile := float64(0)
-						for _, method := range methods {
-							if method.Stmts.Analyze == nil || method.Stmts.Analyze.Maintainability == nil {
-								continue
-							}
-							averageForFile += float64(*method.Stmts.Analyze.Maintainability.MaintainabilityIndex)
-						}
-						averageForFile = averageForFile / float64(len(methods))
-						localFile.Stmts.Analyze.Maintainability.MaintainabilityIndex = &averageForFile
-
-						// Update the original file with processed data
-						mu.Lock()
-						file.Stmts = localFile.Stmts
-						mu.Unlock()
-					}
-
-					// LOC of file is the sum of all classes and methods
-					// That's useful when we navigate over the files instead of the classes
-					zero := int32(0)
-					loc := int32(0)
-					lloc := int32(0)
-					cloc := int32(0)
-
-					if file.Stmts.Analyze.Volume == nil {
-						file.Stmts.Analyze.Volume = &pb.Volume{
-							Lloc: &zero,
-							Cloc: &zero,
-							Loc:  &zero,
-						}
-					}
-
-					classes := Engine.GetClassesInFile(file)
-					functions := file.Stmts.StmtFunction
-
-					// Initialize file complexity if needed
-					if file.Stmts.Analyze.Complexity.Cyclomatic == nil {
-						file.Stmts.Analyze.Complexity.Cyclomatic = &zero
-					}
-
-					// Process functions
-					for _, function := range functions {
-						// Handle LOC
-						if function.LinesOfCode != nil {
-							loc += function.LinesOfCode.LinesOfCode
-							lloc += function.LinesOfCode.LogicalLinesOfCode
-							cloc += function.LinesOfCode.CommentLinesOfCode
-						}
-
-						// Handle complexity
-						if function.Stmts.Analyze != nil && function.Stmts.Analyze.Complexity != nil {
-							*file.Stmts.Analyze.Complexity.Cyclomatic += *function.Stmts.Analyze.Complexity.Cyclomatic
-						}
-					}
-
-					// Process classes
-					for _, class := range classes {
-						// Handle LOC
-						if class.LinesOfCode != nil {
-							loc += class.LinesOfCode.LinesOfCode
-							lloc += class.LinesOfCode.LogicalLinesOfCode
-							cloc += class.LinesOfCode.CommentLinesOfCode
-						}
-
-						// Handle coupling
-						if class.Stmts != nil && class.Stmts.Analyze != nil {
-							if class.Stmts.Analyze.Coupling == nil {
-								class.Stmts.Analyze.Coupling = &pb.Coupling{
-									Efferent: 0,
-									Afferent: 0,
-								}
-							}
-							class.Stmts.Analyze.Coupling.Afferent = 0
-
-							if class.Name != nil {
-								mu.Lock()
-								// if in hashmap
-								if _, ok := aggregated.ClassesAfferentCoupling[class.Name.Qualified]; ok {
-									class.Stmts.Analyze.Coupling.Afferent = int32(aggregated.ClassesAfferentCoupling[class.Name.Qualified])
-									file.Stmts.Analyze.Coupling.Afferent += class.Stmts.Analyze.Coupling.Afferent
-								}
-
-								// instability
-								if class.Stmts.Analyze.Coupling.Afferent > 0 || class.Stmts.Analyze.Coupling.Efferent > 0 {
-									instability := float64(class.Stmts.Analyze.Coupling.Efferent) / float64(class.Stmts.Analyze.Coupling.Efferent+class.Stmts.Analyze.Coupling.Afferent)
-									class.Stmts.Analyze.Coupling.Instability = instability
-									aggregated.AverageInstability += instability
-								}
-								mu.Unlock()
-							}
-						}
-					}
-
-					file.Stmts.Analyze.Volume.Loc = &loc
-					file.Stmts.Analyze.Volume.Lloc = &lloc
-					file.Stmts.Analyze.Volume.Cloc = &cloc
-
-					dependencies := file.Stmts.StmtExternalDependencies
-
-					for _, dependency := range dependencies {
-						if dependency == nil {
-							continue
-						}
-
-						namespaceTo := dependency.Namespace
-						namespaceFrom := dependency.From
-
-						if namespaceFrom == "" || namespaceTo == "" {
-							continue
-						}
-
-						// Keep only 2 levels in namespace
-						separator := reg.FindString(namespaceFrom)
-						parts := reg.Split(namespaceTo, -1)
-						if len(parts) > 2 {
-							namespaceTo = parts[0] + separator + parts[1]
-						}
-
-						if namespaceFrom == "" || namespaceTo == "" {
-							continue
-						}
-
-						parts = reg.Split(namespaceFrom, -1)
-						if len(parts) > 2 {
-							namespaceFrom = parts[0] + separator + parts[1]
-						}
-
-						// if same, continue
-						if namespaceFrom == namespaceTo {
-							continue
-						}
-
-						// if root namespace, continue
-						if namespaceFrom == "" || namespaceTo == "" {
-							continue
-						}
-
-						mu.Lock()
-						// create the map if not exists
-						if _, ok := aggregated.PackageRelations[namespaceFrom]; !ok {
-							aggregated.PackageRelations[namespaceFrom] = make(map[string]int)
-						}
-
-						if _, ok := aggregated.PackageRelations[namespaceFrom][namespaceTo]; !ok {
-							aggregated.PackageRelations[namespaceFrom][namespaceTo] = 0
-						}
-
-						// increment the counter
-						aggregated.PackageRelations[namespaceFrom][namespaceTo]++
-						mu.Unlock()
-					}
-				}(file)
-			}
-		}()
-	}
-
-	for _, file := range aggregated.ConcernedFiles {
-		filesChan <- file
-	}
-
-	wg.Wait()
-	close(filesChan)
-	wgByCpu.Wait()
-
-	// Consolidate
-	aggregated.AverageInstability = aggregated.AverageInstability / float64(aggregated.NbClasses)
-
-	// Count commits for the period based on `ResultOfGitAnalysis` data
-	aggregated.ResultOfGitAnalysis = r.gitSummaries
-	if aggregated.ResultOfGitAnalysis != nil {
-		var wg sync.WaitGroup
-		var mu sync.Mutex
-
-		for _, result := range aggregated.ResultOfGitAnalysis {
-			wg.Add(1)
-			go func(res ResultOfGitAnalysis) {
-				defer wg.Done()
-				mu.Lock()
-				aggregated.CommitCountForPeriod += res.CountCommitsForLanguage
-				mu.Unlock()
-			}(result)
-		}
-		wg.Wait()
-	}
-
-	// Bus factor and other metrics based on aggregated data
-	var wgAnalyzers sync.WaitGroup
-	wgAnalyzers.Add(len(r.analyzers))
-	for _, analyzer := range r.analyzers {
-		go func(a AggregateAnalyzer) {
-			defer wgAnalyzers.Done()
-			a.Calculate(aggregated)
-		}(analyzer)
-	}
-	wgAnalyzers.Wait()
 }
 
 // Add an analyzer to the aggregator
@@ -608,30 +374,17 @@ func (r *Aggregator) WithComparaison(allResultsCloned []*pb.File, comparedBranch
 	r.ComparedBranch = comparedBranch
 }
 
-// Calculate the aggregated data
-func (r *Aggregator) calculateSums(file *pb.File, specificAggregation *Aggregated) {
+func (r *Aggregator) mapSums(file *pb.File, specificAggregation Aggregated) Aggregated {
 	classes := Engine.GetClassesInFile(file)
 	functions := Engine.GetFunctionsInFile(file)
 
-	if specificAggregation.ConcernedFiles == nil {
-		specificAggregation.ConcernedFiles = make([]*pb.File, 0)
-	}
-
-	specificAggregation.ConcernedFiles = append(specificAggregation.ConcernedFiles, file)
+	// copy the specific aggregation to new object to avoid side effects
+	result := specificAggregation
 
 	// Number of classes
-	specificAggregation.NbClasses += len(classes)
+	result.NbClasses += len(classes)
 
-	// Prepare the file for analysis
-	if file.Stmts == nil {
-		return
-	}
-
-	if file.Stmts.Analyze == nil {
-		file.Stmts.Analyze = &pb.Analyze{}
-	}
-
-	// lines of code (it should be done in the analayzer. This case occurs only in test, or when the analyzer has issue)
+	// Ensure LOC is set
 	if file.LinesOfCode == nil && file.Stmts.Analyze.Volume != nil {
 		file.LinesOfCode = &pb.LinesOfCode{
 			LinesOfCode:        *file.Stmts.Analyze.Volume.Loc,
@@ -640,16 +393,12 @@ func (r *Aggregator) calculateSums(file *pb.File, specificAggregation *Aggregate
 		}
 	}
 
-	// Prepare the file for analysis
-	if file.Stmts.Analyze == nil {
-		file.Stmts.Analyze = &pb.Analyze{}
-	}
-	if file.Stmts.Analyze.Complexity == nil {
-		zero := int32(0)
-		file.Stmts.Analyze.Complexity = &pb.Complexity{
-			Cyclomatic: &zero,
-		}
-	}
+	result.Loc.Sum += float64(file.LinesOfCode.LinesOfCode)
+	result.Loc.Counter++
+	result.Cloc.Sum += float64(file.LinesOfCode.CommentLinesOfCode)
+	result.Cloc.Counter++
+	result.Lloc.Sum += float64(file.LinesOfCode.LogicalLinesOfCode)
+	result.Lloc.Counter++
 
 	// Functions
 	for _, function := range functions {
@@ -658,33 +407,52 @@ func (r *Aggregator) calculateSums(file *pb.File, specificAggregation *Aggregate
 			continue
 		}
 
-		specificAggregation.NbMethods++
+		result.NbMethods++
 
 		// Average cyclomatic complexity per method
 		if function.Stmts.Analyze != nil && function.Stmts.Analyze.Complexity != nil {
 			if function.Stmts.Analyze.Complexity.Cyclomatic != nil {
-				specificAggregation.AverageCyclomaticComplexityPerMethod += float64(*function.Stmts.Analyze.Complexity.Cyclomatic)
+
+				// @todo: only for functions and methods of classes (not interfaces)
+				// otherwise, average may be lower than 1
+				ccn := float64(*function.Stmts.Analyze.Complexity.Cyclomatic)
+				result.CyclomaticComplexityPerMethod.Sum += ccn
+				result.CyclomaticComplexityPerMethod.Counter++
+				if specificAggregation.CyclomaticComplexityPerMethod.Min == 0 || ccn < specificAggregation.CyclomaticComplexityPerMethod.Min {
+					result.CyclomaticComplexityPerMethod.Min = ccn
+				}
+				if specificAggregation.CyclomaticComplexityPerMethod.Max == 0 || ccn > specificAggregation.CyclomaticComplexityPerMethod.Max {
+					result.CyclomaticComplexityPerMethod.Max = ccn
+				}
 			}
 		}
 
 		// Average maintainability index per method
 		if function.Stmts.Analyze != nil && function.Stmts.Analyze.Maintainability != nil {
 			if function.Stmts.Analyze.Maintainability.MaintainabilityIndex != nil && !math.IsNaN(float64(*function.Stmts.Analyze.Maintainability.MaintainabilityIndex)) {
-				specificAggregation.AverageMIPerMethod += *function.Stmts.Analyze.Maintainability.MaintainabilityIndex
-				specificAggregation.AverageMIwocPerMethod += *function.Stmts.Analyze.Maintainability.MaintainabilityIndexWithoutComments
-				specificAggregation.AverageMIcwPerMethod += *function.Stmts.Analyze.Maintainability.CommentWeight
+				result.MaintainabilityIndex.Sum += *function.Stmts.Analyze.Maintainability.MaintainabilityIndex
+				result.MaintainabilityIndex.Counter++
+				if specificAggregation.MaintainabilityIndex.Min == 0 || *function.Stmts.Analyze.Maintainability.MaintainabilityIndex < specificAggregation.MaintainabilityIndex.Min {
+					result.MaintainabilityIndex.Min = *function.Stmts.Analyze.Maintainability.MaintainabilityIndex
+				}
+				if specificAggregation.MaintainabilityIndex.Max == 0 || *function.Stmts.Analyze.Maintainability.MaintainabilityIndex > specificAggregation.MaintainabilityIndex.Max {
+					result.MaintainabilityIndex.Max = *function.Stmts.Analyze.Maintainability.MaintainabilityIndex
+				}
 			}
 		}
 		// average lines of code per method
 		if function.Stmts.Analyze != nil && function.Stmts.Analyze.Volume != nil {
 			if function.Stmts.Analyze.Volume.Loc != nil {
-				specificAggregation.AverageLocPerMethod += float64(*function.Stmts.Analyze.Volume.Loc)
+				result.LocPerMethod.Sum += float64(*function.Stmts.Analyze.Volume.Loc)
+				result.LocPerMethod.Counter++
 			}
 			if function.Stmts.Analyze.Volume.Cloc != nil {
-				specificAggregation.AverageClocPerMethod += float64(*function.Stmts.Analyze.Volume.Cloc)
+				result.ClocPerMethod.Sum += float64(*function.Stmts.Analyze.Volume.Cloc)
+				result.ClocPerMethod.Counter++
 			}
 			if function.Stmts.Analyze.Volume.Lloc != nil {
-				specificAggregation.AverageLlocPerMethod += float64(*function.Stmts.Analyze.Volume.Lloc)
+				result.LlocPerMethod.Sum += float64(*function.Stmts.Analyze.Volume.Lloc)
+				result.LlocPerMethod.Counter++
 			}
 		}
 	}
@@ -697,53 +465,73 @@ func (r *Aggregator) calculateSums(file *pb.File, specificAggregation *Aggregate
 
 		// Number of classes with code
 		//if class.LinesOfCode != nil && class.LinesOfCode.LinesOfCode > 0 {
-		specificAggregation.NbClassesWithCode++
+		result.NbClassesWithCode++
 		//}
 
 		// Maintainability Index
 		if class.Stmts.Analyze.Maintainability != nil {
 			if class.Stmts.Analyze.Maintainability.MaintainabilityIndex != nil && !math.IsNaN(float64(*class.Stmts.Analyze.Maintainability.MaintainabilityIndex)) {
-				specificAggregation.AverageMI += *class.Stmts.Analyze.Maintainability.MaintainabilityIndex
-				specificAggregation.AverageMIwoc += *class.Stmts.Analyze.Maintainability.MaintainabilityIndexWithoutComments
-				specificAggregation.AverageMIcw += *class.Stmts.Analyze.Maintainability.CommentWeight
+				result.MaintainabilityIndex.Sum += *class.Stmts.Analyze.Maintainability.MaintainabilityIndex
+				result.MaintainabilityIndex.Counter++
+				if specificAggregation.MaintainabilityIndex.Min == 0 || *class.Stmts.Analyze.Maintainability.MaintainabilityIndex < specificAggregation.MaintainabilityIndex.Min {
+					result.MaintainabilityIndex.Min = *class.Stmts.Analyze.Maintainability.MaintainabilityIndex
+				}
+				if specificAggregation.MaintainabilityIndex.Max == 0 || *class.Stmts.Analyze.Maintainability.MaintainabilityIndex > specificAggregation.MaintainabilityIndex.Max {
+					result.MaintainabilityIndex.Max = *class.Stmts.Analyze.Maintainability.MaintainabilityIndex
+				}
+			}
+			if class.Stmts.Analyze.Maintainability.MaintainabilityIndexWithoutComments != nil && !math.IsNaN(float64(*class.Stmts.Analyze.Maintainability.MaintainabilityIndexWithoutComments)) {
+				result.MaintainabilityIndexWithoutComments.Sum += *class.Stmts.Analyze.Maintainability.MaintainabilityIndexWithoutComments
+				result.MaintainabilityIndexWithoutComments.Counter++
+				if specificAggregation.MaintainabilityIndexWithoutComments.Min == 0 || *class.Stmts.Analyze.Maintainability.MaintainabilityIndexWithoutComments < specificAggregation.MaintainabilityIndexWithoutComments.Min {
+					result.MaintainabilityIndexWithoutComments.Min = *class.Stmts.Analyze.Maintainability.MaintainabilityIndexWithoutComments
+				}
+				if specificAggregation.MaintainabilityIndexWithoutComments.Max == 0 || *class.Stmts.Analyze.Maintainability.MaintainabilityIndexWithoutComments > specificAggregation.MaintainabilityIndexWithoutComments.Max {
+					result.MaintainabilityIndexWithoutComments.Max = *class.Stmts.Analyze.Maintainability.MaintainabilityIndexWithoutComments
+				}
 			}
 		}
 
 		// Coupling
 		if class.Stmts.Analyze.Coupling != nil {
-			specificAggregation.AverageInstability += class.Stmts.Analyze.Coupling.Instability
-			specificAggregation.AverageEfferentCoupling += float64(class.Stmts.Analyze.Coupling.Efferent)
-			specificAggregation.AverageAfferentCoupling += float64(class.Stmts.Analyze.Coupling.Afferent)
+			result.EfferentCoupling.Sum += float64(class.Stmts.Analyze.Coupling.Efferent)
+			result.EfferentCoupling.Counter++
+			result.AfferentCoupling.Sum += float64(class.Stmts.Analyze.Coupling.Afferent)
+			result.AfferentCoupling.Counter++
+			result.Instability.Sum += float64(class.Stmts.Analyze.Coupling.Instability)
+			result.Instability.Counter++
 		}
 
 		// cyclomatic complexity per class
 		if class.Stmts.Analyze.Complexity != nil && class.Stmts.Analyze.Complexity.Cyclomatic != nil {
-			specificAggregation.AverageCyclomaticComplexityPerClass += float64(*class.Stmts.Analyze.Complexity.Cyclomatic)
-			if specificAggregation.MinCyclomaticComplexity == 0 || int(*class.Stmts.Analyze.Complexity.Cyclomatic) < specificAggregation.MinCyclomaticComplexity {
-				specificAggregation.MinCyclomaticComplexity = int(*class.Stmts.Analyze.Complexity.Cyclomatic)
+
+			result.CyclomaticComplexityPerClass.Sum += float64(*class.Stmts.Analyze.Complexity.Cyclomatic)
+			result.CyclomaticComplexityPerClass.Counter++
+			if specificAggregation.CyclomaticComplexityPerClass.Min == 0 || float64(*class.Stmts.Analyze.Complexity.Cyclomatic) < specificAggregation.CyclomaticComplexityPerClass.Min {
+				result.CyclomaticComplexityPerClass.Min = float64(*class.Stmts.Analyze.Complexity.Cyclomatic)
 			}
-			if specificAggregation.MaxCyclomaticComplexity == 0 || int(*class.Stmts.Analyze.Complexity.Cyclomatic) > specificAggregation.MaxCyclomaticComplexity {
-				specificAggregation.MaxCyclomaticComplexity = int(*class.Stmts.Analyze.Complexity.Cyclomatic)
+			if specificAggregation.CyclomaticComplexityPerClass.Max == 0 || float64(*class.Stmts.Analyze.Complexity.Cyclomatic) > specificAggregation.CyclomaticComplexityPerClass.Max {
+				result.CyclomaticComplexityPerClass.Max = float64(*class.Stmts.Analyze.Complexity.Cyclomatic)
 			}
 		}
 
 		// Halstead
 		if class.Stmts.Analyze.Volume != nil {
-			if class.Stmts.Analyze.Volume.HalsteadDifficulty != nil && !math.IsNaN(float64(*class.Stmts.Analyze.Volume.HalsteadDifficulty)) {
-				specificAggregation.AverageHalsteadDifficulty += *class.Stmts.Analyze.Volume.HalsteadDifficulty
-				specificAggregation.SumHalsteadDifficulty += *class.Stmts.Analyze.Volume.HalsteadDifficulty
+			if class.Stmts.Analyze.Volume.HalsteadDifficulty != nil && !math.IsNaN(*class.Stmts.Analyze.Volume.HalsteadDifficulty) {
+				result.HalsteadDifficulty.Sum += *class.Stmts.Analyze.Volume.HalsteadDifficulty
+				result.HalsteadDifficulty.Counter++
 			}
-			if class.Stmts.Analyze.Volume.HalsteadEffort != nil && !math.IsNaN(float64(*class.Stmts.Analyze.Volume.HalsteadEffort)) {
-				specificAggregation.AverageHalsteadEffort += *class.Stmts.Analyze.Volume.HalsteadEffort
-				specificAggregation.SumHalsteadEffort += *class.Stmts.Analyze.Volume.HalsteadEffort
+			if class.Stmts.Analyze.Volume.HalsteadEffort != nil && !math.IsNaN(*class.Stmts.Analyze.Volume.HalsteadEffort) {
+				result.HalsteadEffort.Sum += *class.Stmts.Analyze.Volume.HalsteadEffort
+				result.HalsteadEffort.Counter++
 			}
-			if class.Stmts.Analyze.Volume.HalsteadVolume != nil && !math.IsNaN(float64(*class.Stmts.Analyze.Volume.HalsteadVolume)) {
-				specificAggregation.AverageHalsteadVolume += *class.Stmts.Analyze.Volume.HalsteadVolume
-				specificAggregation.SumHalsteadVolume += *class.Stmts.Analyze.Volume.HalsteadVolume
+			if class.Stmts.Analyze.Volume.HalsteadVolume != nil && !math.IsNaN(*class.Stmts.Analyze.Volume.HalsteadVolume) {
+				result.HalsteadVolume.Sum += *class.Stmts.Analyze.Volume.HalsteadVolume
+				result.HalsteadVolume.Counter++
 			}
-			if class.Stmts.Analyze.Volume.HalsteadTime != nil && !math.IsNaN(float64(*class.Stmts.Analyze.Volume.HalsteadTime)) {
-				specificAggregation.AverageHalsteadTime += *class.Stmts.Analyze.Volume.HalsteadTime
-				specificAggregation.SumHalsteadTime += *class.Stmts.Analyze.Volume.HalsteadTime
+			if class.Stmts.Analyze.Volume.HalsteadTime != nil && !math.IsNaN(*class.Stmts.Analyze.Volume.HalsteadTime) {
+				result.HalsteadTime.Sum += *class.Stmts.Analyze.Volume.HalsteadTime
+				result.HalsteadTime.Counter++
 			}
 		}
 
@@ -754,24 +542,6 @@ func (r *Aggregator) calculateSums(file *pb.File, specificAggregation *Aggregate
 				Afferent: 0,
 			}
 		}
-		class.Stmts.Analyze.Coupling.Efferent = 0
-		uniqueDependencies := make(map[string]bool)
-		for _, dependency := range class.Stmts.StmtExternalDependencies {
-			dependencyName := dependency.ClassName
-
-			// check if dependency is already in hashmap
-			if _, ok := specificAggregation.ClassesAfferentCoupling[dependencyName]; !ok {
-				specificAggregation.ClassesAfferentCoupling[dependencyName] = 0
-			}
-			specificAggregation.ClassesAfferentCoupling[dependencyName]++
-
-			// check if dependency is unique
-			if _, ok := uniqueDependencies[dependencyName]; !ok {
-				uniqueDependencies[dependencyName] = true
-			}
-		}
-
-		class.Stmts.Analyze.Coupling.Efferent = int32(len(uniqueDependencies))
 
 		// Add dependencies to file
 		if file.Stmts.Analyze.Coupling == nil {
@@ -790,9 +560,243 @@ func (r *Aggregator) calculateSums(file *pb.File, specificAggregation *Aggregate
 	}
 
 	// consolidate coupling for file
-	if file.Stmts.Analyze.Coupling != nil && len(classes) > 0 {
+	if len(classes) > 0 && file.Stmts.Analyze.Coupling != nil {
 		file.Stmts.Analyze.Coupling.Efferent = file.Stmts.Analyze.Coupling.Efferent / int32(len(classes))
 		file.Stmts.Analyze.Coupling.Afferent = file.Stmts.Analyze.Coupling.Afferent / int32(len(classes))
 	}
 
+	return result
+}
+
+func (r *Aggregator) mergeChunks(aggregated Aggregated, chunk *Aggregated) Aggregated {
+
+	result := aggregated
+	result.ConcernedFiles = append(result.ConcernedFiles, chunk.ConcernedFiles...)
+	result.NbFiles += chunk.NbFiles
+	result.NbClasses += chunk.NbClasses
+	result.NbClassesWithCode += chunk.NbClassesWithCode
+	result.NbMethods += chunk.NbMethods
+
+	result.Loc.Sum += chunk.Loc.Sum
+	result.Loc.Counter += chunk.Loc.Counter
+	result.Cloc.Sum += chunk.Cloc.Sum
+	result.Cloc.Counter += chunk.Cloc.Counter
+	result.Lloc.Sum += chunk.Lloc.Sum
+	result.Lloc.Counter += chunk.Lloc.Counter
+
+	result.MethodsPerClass.Sum += chunk.MethodsPerClass.Sum
+	result.MethodsPerClass.Counter += chunk.MethodsPerClass.Counter
+	result.LocPerClass.Sum += chunk.LocPerClass.Sum
+	result.LocPerClass.Counter += chunk.LocPerClass.Counter
+	result.LocPerMethod.Sum += chunk.LocPerMethod.Sum
+	result.LocPerMethod.Counter += chunk.LocPerMethod.Counter
+	result.CyclomaticComplexityPerMethod.Sum += chunk.CyclomaticComplexityPerMethod.Sum
+	result.CyclomaticComplexityPerMethod.Counter += chunk.CyclomaticComplexityPerMethod.Counter
+
+	result.CyclomaticComplexityPerClass.Sum += chunk.CyclomaticComplexityPerClass.Sum
+	result.CyclomaticComplexityPerClass.Counter += chunk.CyclomaticComplexityPerClass.Counter
+
+	result.HalsteadDifficulty.Sum += chunk.HalsteadDifficulty.Sum
+	result.HalsteadDifficulty.Counter += chunk.HalsteadDifficulty.Counter
+	result.HalsteadEffort.Sum += chunk.HalsteadEffort.Sum
+	result.HalsteadEffort.Counter += chunk.HalsteadEffort.Counter
+	result.HalsteadVolume.Sum += chunk.HalsteadVolume.Sum
+	result.HalsteadVolume.Counter += chunk.HalsteadVolume.Counter
+	result.HalsteadTime.Sum += chunk.HalsteadTime.Sum
+	result.HalsteadTime.Counter += chunk.HalsteadTime.Counter
+	result.HalsteadBugs.Sum += chunk.HalsteadBugs.Sum
+	result.HalsteadBugs.Counter += chunk.HalsteadBugs.Counter
+
+	result.MaintainabilityIndex.Sum += chunk.MaintainabilityIndex.Sum
+	result.MaintainabilityIndex.Counter += chunk.MaintainabilityIndex.Counter
+	result.MaintainabilityIndexWithoutComments.Sum += chunk.MaintainabilityIndexWithoutComments.Sum
+	result.MaintainabilityIndexWithoutComments.Counter += chunk.MaintainabilityIndexWithoutComments.Counter
+	result.MaintainabilityCommentWeight.Sum += chunk.MaintainabilityCommentWeight.Sum
+	result.MaintainabilityCommentWeight.Counter += chunk.MaintainabilityCommentWeight.Counter
+
+	result.Instability.Sum += chunk.Instability.Sum
+	result.Instability.Counter += chunk.Instability.Counter
+
+	result.EfferentCoupling.Sum += chunk.EfferentCoupling.Sum
+	result.EfferentCoupling.Counter += chunk.EfferentCoupling.Counter
+	result.AfferentCoupling.Sum += chunk.AfferentCoupling.Sum
+	result.AfferentCoupling.Counter += chunk.AfferentCoupling.Counter
+
+	result.MaintainabilityPerMethod.Sum += chunk.MaintainabilityPerMethod.Sum
+	result.MaintainabilityPerMethod.Counter += chunk.MaintainabilityPerMethod.Counter
+	result.MaintainabilityPerMethodWithoutComments.Sum += chunk.MaintainabilityPerMethodWithoutComments.Sum
+	result.MaintainabilityPerMethodWithoutComments.Counter += chunk.MaintainabilityPerMethodWithoutComments.Counter
+	result.MaintainabilityCommentWeightPerMethod.Sum += chunk.MaintainabilityCommentWeightPerMethod.Sum
+	result.MaintainabilityCommentWeightPerMethod.Counter += chunk.MaintainabilityCommentWeightPerMethod.Counter
+
+	result.CommitCountForPeriod += chunk.CommitCountForPeriod
+	result.CommittedFilesCountForPeriod += chunk.CommittedFilesCountForPeriod
+
+	result.PackageRelations = make(map[string]map[string]int)
+	for k, v := range chunk.PackageRelations {
+		result.PackageRelations[k] = v
+	}
+
+	return result
+}
+
+func (r *Aggregator) reduceMetrics(aggregated Aggregated) Aggregated {
+	// here we reduce metrics by averaging them
+	result := aggregated
+	if result.Loc.Counter > 0 {
+		result.Loc.Avg = result.Loc.Sum / float64(result.Loc.Counter)
+	}
+	if result.Cloc.Counter > 0 {
+		result.Cloc.Avg = result.Cloc.Sum / float64(result.Cloc.Counter)
+	}
+	if result.Lloc.Counter > 0 {
+		result.Lloc.Avg = result.Lloc.Sum / float64(result.Lloc.Counter)
+	}
+	if result.MethodsPerClass.Counter > 0 {
+		result.MethodsPerClass.Avg = result.MethodsPerClass.Sum / float64(result.MethodsPerClass.Counter)
+	}
+	if result.LocPerClass.Counter > 0 {
+		result.LocPerClass.Avg = result.LocPerClass.Sum / float64(result.LocPerClass.Counter)
+	}
+	if result.LocPerMethod.Counter > 0 {
+		result.LocPerMethod.Avg = result.LocPerMethod.Sum / float64(result.LocPerMethod.Counter)
+	}
+	if result.CyclomaticComplexityPerMethod.Counter > 0 {
+		result.CyclomaticComplexityPerMethod.Avg = result.CyclomaticComplexityPerMethod.Sum / float64(result.CyclomaticComplexityPerMethod.Counter)
+	}
+	if result.CyclomaticComplexityPerClass.Counter > 0 {
+		result.CyclomaticComplexityPerClass.Avg = result.CyclomaticComplexityPerClass.Sum / float64(result.CyclomaticComplexityPerClass.Counter)
+	}
+	if result.HalsteadDifficulty.Counter > 0 {
+		result.HalsteadDifficulty.Avg = result.HalsteadDifficulty.Sum / float64(result.HalsteadDifficulty.Counter)
+	}
+	if result.HalsteadEffort.Counter > 0 {
+		result.HalsteadEffort.Avg = result.HalsteadEffort.Sum / float64(result.HalsteadEffort.Counter)
+	}
+	if result.HalsteadVolume.Counter > 0 {
+		result.HalsteadVolume.Avg = result.HalsteadVolume.Sum / float64(result.HalsteadVolume.Counter)
+	}
+	if result.HalsteadTime.Counter > 0 {
+		result.HalsteadTime.Avg = result.HalsteadTime.Sum / float64(result.HalsteadTime.Counter)
+	}
+	if result.MaintainabilityIndex.Counter > 0 {
+		result.MaintainabilityIndex.Avg = result.MaintainabilityIndex.Sum / float64(result.MaintainabilityIndex.Counter)
+	}
+	if result.MaintainabilityIndexWithoutComments.Counter > 0 {
+		result.MaintainabilityIndexWithoutComments.Avg = result.MaintainabilityIndexWithoutComments.Sum / float64(result.MaintainabilityIndexWithoutComments.Counter)
+	}
+	if result.MaintainabilityCommentWeight.Counter > 0 {
+		result.MaintainabilityCommentWeight.Avg = result.MaintainabilityCommentWeight.Sum / float64(result.MaintainabilityCommentWeight.Counter)
+	}
+
+	// afferent coupling
+	if result.Instability.Counter > 0 {
+		result.Instability.Avg = result.Instability.Sum / float64(result.Instability.Counter)
+	}
+	if result.EfferentCoupling.Counter > 0 {
+		result.EfferentCoupling.Avg = result.EfferentCoupling.Sum / float64(result.EfferentCoupling.Counter)
+	}
+	if result.AfferentCoupling.Counter > 0 {
+		result.AfferentCoupling.Avg = result.AfferentCoupling.Sum / float64(result.AfferentCoupling.Counter)
+	}
+
+	// Count commits for the period based on `ResultOfGitAnalysis` data
+	result.ResultOfGitAnalysis = r.gitSummaries
+	if result.ResultOfGitAnalysis != nil {
+		for _, gitAnalysis := range result.ResultOfGitAnalysis {
+			result.CommitCountForPeriod += gitAnalysis.CountCommitsForLanguage
+		}
+	}
+
+	// Bus factor and other metrics based on aggregated data
+	for _, analyzer := range r.analyzers {
+		analyzer.Calculate(&result)
+	}
+
+	return result
+}
+
+func (r *Aggregator) mapCoupling(aggregated *Aggregated) Aggregated {
+	result := *aggregated
+	reg := regexp.MustCompile("[^A-Za-z0-9.]+")
+
+	for _, file := range aggregated.ConcernedFiles {
+		classes := Engine.GetClassesInFile(file)
+
+		for _, class := range classes {
+
+			// dependencies
+			dependencies := file.Stmts.StmtExternalDependencies
+
+			for _, dependency := range dependencies {
+				if dependency == nil {
+					continue
+				}
+
+				namespaceTo := dependency.Namespace
+				namespaceFrom := dependency.From
+
+				if namespaceFrom == "" || namespaceTo == "" {
+					continue
+				}
+
+				// Keep only 2 levels in namespace
+				separator := reg.FindString(namespaceFrom)
+				parts := reg.Split(namespaceTo, -1)
+				if len(parts) > 2 {
+					namespaceTo = parts[0] + separator + parts[1]
+				}
+
+				if namespaceFrom == "" || namespaceTo == "" {
+					continue
+				}
+
+				parts = reg.Split(namespaceFrom, -1)
+				if len(parts) > 2 {
+					namespaceFrom = parts[0] + separator + parts[1]
+				}
+
+				// if same, continue
+				if namespaceFrom == namespaceTo {
+					continue
+				}
+
+				// if root namespace, continue
+				if namespaceFrom == "" || namespaceTo == "" {
+					continue
+				}
+
+				// create the map if not exists
+				if _, ok := result.PackageRelations[namespaceFrom]; !ok {
+					result.PackageRelations[namespaceFrom] = make(map[string]int)
+				}
+
+				if _, ok := result.PackageRelations[namespaceFrom][namespaceTo]; !ok {
+					result.PackageRelations[namespaceFrom][namespaceTo] = 0
+				}
+
+				// increment the counter
+				result.PackageRelations[namespaceFrom][namespaceTo]++
+			}
+
+			class.Stmts.Analyze.Coupling.Efferent = 0
+			uniqueDependencies := make(map[string]bool)
+			for _, dependency := range class.Stmts.StmtExternalDependencies {
+				dependencyName := dependency.ClassName
+
+				// check if dependency is already in hashmap
+				if _, ok := result.ClassesAfferentCoupling[dependencyName]; !ok {
+					result.ClassesAfferentCoupling[dependencyName] = 0
+				}
+				result.ClassesAfferentCoupling[dependencyName]++
+
+				// check if dependency is unique
+				if _, ok := uniqueDependencies[dependencyName]; !ok {
+					uniqueDependencies[dependencyName] = true
+				}
+			}
+			class.Stmts.Analyze.Coupling.Efferent = int32(len(uniqueDependencies))
+		}
+	}
+	return result
 }

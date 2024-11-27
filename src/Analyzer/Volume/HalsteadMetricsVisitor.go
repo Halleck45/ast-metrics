@@ -97,13 +97,6 @@ func (v *HalsteadMetricsVisitor) Visit(stmts *pb.Stmts, parents *pb.Stmts) {
 		// Calculate time required to program (T)
 		T = E / 18
 
-		// convert float to float64
-		V32 := float64(V)
-		hatN32 := float64(hatN)
-		D32 := float64(D)
-		E32 := float64(E)
-		T32 := float64(T)
-
 		// Assign to result
 		if stmt.Stmts.Analyze == nil {
 			stmt.Stmts.Analyze = &pb.Analyze{}
@@ -112,11 +105,11 @@ func (v *HalsteadMetricsVisitor) Visit(stmts *pb.Stmts, parents *pb.Stmts) {
 
 		stmt.Stmts.Analyze.Volume.HalsteadVocabulary = &n
 		stmt.Stmts.Analyze.Volume.HalsteadLength = &N
-		stmt.Stmts.Analyze.Volume.HalsteadEstimatedLength = &hatN32
-		stmt.Stmts.Analyze.Volume.HalsteadVolume = &V32
-		stmt.Stmts.Analyze.Volume.HalsteadDifficulty = &D32
-		stmt.Stmts.Analyze.Volume.HalsteadEffort = &E32
-		stmt.Stmts.Analyze.Volume.HalsteadTime = &T32
+		stmt.Stmts.Analyze.Volume.HalsteadEstimatedLength = &hatN
+		stmt.Stmts.Analyze.Volume.HalsteadVolume = &V
+		stmt.Stmts.Analyze.Volume.HalsteadDifficulty = &D
+		stmt.Stmts.Analyze.Volume.HalsteadEffort = &E
+		stmt.Stmts.Analyze.Volume.HalsteadTime = &T
 	}
 }
 
@@ -174,13 +167,6 @@ func (v *HalsteadMetricsVisitor) LeaveNode(stmts *pb.Stmts) {
 				T = T / float64(len(stmt.Stmts.StmtFunction))
 			}
 
-			// convert float to float64
-			V32 := float64(V)
-			hatN32 := float64(hatN)
-			D32 := float64(D)
-			E32 := float64(E)
-			T32 := float64(T)
-
 			// Assign to result
 			if stmt.Stmts.Analyze == nil {
 				stmt.Stmts.Analyze = &pb.Analyze{}
@@ -191,11 +177,11 @@ func (v *HalsteadMetricsVisitor) LeaveNode(stmts *pb.Stmts) {
 
 			stmt.Stmts.Analyze.Volume.HalsteadVocabulary = &n
 			stmt.Stmts.Analyze.Volume.HalsteadLength = &N
-			stmt.Stmts.Analyze.Volume.HalsteadEstimatedLength = &hatN32
-			stmt.Stmts.Analyze.Volume.HalsteadVolume = &V32
-			stmt.Stmts.Analyze.Volume.HalsteadDifficulty = &D32
-			stmt.Stmts.Analyze.Volume.HalsteadEffort = &E32
-			stmt.Stmts.Analyze.Volume.HalsteadTime = &T32
+			stmt.Stmts.Analyze.Volume.HalsteadEstimatedLength = &hatN
+			stmt.Stmts.Analyze.Volume.HalsteadVolume = &V
+			stmt.Stmts.Analyze.Volume.HalsteadDifficulty = &D
+			stmt.Stmts.Analyze.Volume.HalsteadEffort = &E
+			stmt.Stmts.Analyze.Volume.HalsteadTime = &T
 		}
 	}
 }

@@ -82,10 +82,10 @@ func (m modelScreenSummary) View() string {
    | Min | Max | Average per class | Average per method | 
    | --- | --- | --- | --- |
    | ` +
-		strconv.Itoa(combined.MinCyclomaticComplexity) +
-		` | ` + strconv.Itoa(combined.MaxCyclomaticComplexity) +
-		` | ` + fmt.Sprintf("%.2f", combined.AverageCyclomaticComplexityPerClass) +
-		` | ` + fmt.Sprintf("%.2f", combined.AverageCyclomaticComplexityPerMethod) +
+		strconv.Itoa(int(combined.CyclomaticComplexityPerMethod.Min)) +
+		` | ` + strconv.Itoa(int(combined.CyclomaticComplexityPerMethod.Max)) +
+		` | ` + fmt.Sprintf("%.2f", combined.CyclomaticComplexityPerClass.Avg) +
+		` | ` + fmt.Sprintf("%.2f", combined.CyclomaticComplexityPerMethod.Avg) +
 		` |
 
    ### Classes and methods
@@ -94,8 +94,8 @@ func (m modelScreenSummary) View() string {
    | --- | --- | --- | --- |` + "\n" +
 		` | ` + strconv.Itoa(aggregatedByClass.NbClasses) +
 		` | ` + strconv.Itoa(combined.NbMethods) +
-		` | ` + fmt.Sprintf("%.2f", aggregatedByClass.AverageMethodsPerClass) +
-		` | ` + fmt.Sprintf("%.2f", combined.AverageLocPerMethod) +
+		` | ` + fmt.Sprintf("%.2f", aggregatedByClass.MethodsPerClass.Avg) +
+		` | ` + fmt.Sprintf("%.2f", combined.LocPerMethod.Avg) +
 		` |
 
    ## Maintainability
@@ -105,7 +105,7 @@ func (m modelScreenSummary) View() string {
 
    | Maintainability index | MI without comments | Comment weight |
    | --- | --- | --- |
-   | ` + DecorateMaintainabilityIndex(int(aggregatedByClass.AverageMI), nil) + ` | ` + fmt.Sprintf("%.2f", aggregatedByClass.AverageMIwoc) + ` | ` + fmt.Sprintf("%.2f", aggregatedByClass.AverageMIcw) + ` |
+   | ` + DecorateMaintainabilityIndex(int(aggregatedByClass.MaintainabilityIndex.Avg), nil) + ` | ` + fmt.Sprintf("%.2f", aggregatedByClass.MaintainabilityIndexWithoutComments.Avg) + ` | ` + fmt.Sprintf("%.2f", aggregatedByClass.MaintainabilityCommentWeight.Avg) + ` |
    `
 	out, _ := glamour.Render(in, "dark")
 
