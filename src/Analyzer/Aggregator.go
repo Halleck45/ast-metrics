@@ -1,7 +1,6 @@
 package Analyzer
 
 import (
-	"fmt"
 	"math"
 	"regexp"
 	"runtime"
@@ -43,6 +42,7 @@ func NewAggregateResult() AggregateResult {
 type Aggregated struct {
 	ProgrammingLanguages map[string]int
 	ConcernedFiles       []*pb.File
+	ErroredFiles         []*pb.File
 	Comparaison          *Comparaison
 	// hashmap of classes, just with the qualified name, used for afferent coupling calculation
 	ClassesAfferentCoupling                 map[string]int
@@ -130,6 +130,7 @@ func newAggregated() Aggregated {
 		ProgrammingLanguages:                    make(map[string]int),
 		ConcernedFiles:                          make([]*pb.File, 0),
 		ClassesAfferentCoupling:                 make(map[string]int),
+		ErroredFiles:                            make([]*pb.File, 0),
 		NbClasses:                               0,
 		NbClassesWithCode:                       0,
 		NbMethods:                               0,
@@ -250,7 +251,6 @@ func (r *Aggregator) executeAggregationOnFiles(files []*pb.File) ProjectAggregat
 	resultsByFile := make(chan *Aggregated, numberOfProcessors)
 	resultsByProgrammingLanguage := make(chan *map[string]Aggregated, numberOfProcessors)
 
-	fmt.Println("Chunks:", len(chunks))
 	// Deadlock prevention
 	mu := sync.Mutex{}
 
@@ -276,10 +276,6 @@ func (r *Aggregator) executeAggregationOnFiles(files []*pb.File) ProjectAggregat
 			// the process deal with its own chunk
 			for _, file := range files {
 				localFile := file
-
-				if file.Stmts == nil {
-					continue
-				}
 
 				// by file
 				result := r.mapSums(localFile, aggregateByFileChunk)
@@ -365,6 +361,7 @@ func (r *Aggregator) executeAggregationOnFiles(files []*pb.File) ProjectAggregat
 
 	// For all languages
 	projectAggregated.Combined = projectAggregated.ByFile
+	projectAggregated.ErroredFiles = projectAggregated.ByFile.ErroredFiles
 
 	return projectAggregated
 }
@@ -381,21 +378,40 @@ func (r *Aggregator) WithComparaison(allResultsCloned []*pb.File, comparedBranch
 }
 
 func (r *Aggregator) mapSums(file *pb.File, specificAggregation Aggregated) Aggregated {
-	classes := Engine.GetClassesInFile(file)
-	functions := Engine.GetFunctionsInFile(file)
-
 	// copy the specific aggregation to new object to avoid side effects
 	result := specificAggregation
+	result.NbFiles++
+
+	// deal with errors
+	if len(file.Errors) > 0 {
+		result.ErroredFiles = append(result.ErroredFiles, file)
+		return result
+	}
+
+	if file.Stmts == nil {
+		return result
+	}
+
+	classes := Engine.GetClassesInFile(file)
+	functions := Engine.GetFunctionsInFile(file)
 
 	// Number of classes
 	result.NbClasses += len(classes)
 
 	// Ensure LOC is set
-	if file.LinesOfCode == nil && file.Stmts.Analyze.Volume != nil {
-		file.LinesOfCode = &pb.LinesOfCode{
-			LinesOfCode:        *file.Stmts.Analyze.Volume.Loc,
-			CommentLinesOfCode: *file.Stmts.Analyze.Volume.Cloc,
-			LogicalLinesOfCode: *file.Stmts.Analyze.Volume.Lloc,
+	if file.LinesOfCode == nil {
+		if file.Stmts != nil && file.Stmts.Analyze != nil && file.Stmts.Analyze.Volume != nil {
+			file.LinesOfCode = &pb.LinesOfCode{
+				LinesOfCode:        *file.Stmts.Analyze.Volume.Loc,
+				CommentLinesOfCode: *file.Stmts.Analyze.Volume.Cloc,
+				LogicalLinesOfCode: *file.Stmts.Analyze.Volume.Lloc,
+			}
+		} else {
+			file.LinesOfCode = &pb.LinesOfCode{
+				LinesOfCode:        0,
+				CommentLinesOfCode: 0,
+				LogicalLinesOfCode: 0,
+			}
 		}
 	}
 
@@ -443,6 +459,66 @@ func (r *Aggregator) mapSums(file *pb.File, specificAggregation Aggregated) Aggr
 				}
 				if specificAggregation.MaintainabilityIndex.Max == 0 || *function.Stmts.Analyze.Maintainability.MaintainabilityIndex > specificAggregation.MaintainabilityIndex.Max {
 					result.MaintainabilityIndex.Max = *function.Stmts.Analyze.Maintainability.MaintainabilityIndex
+				}
+			}
+
+			// Maintainability index without comments
+			if function.Stmts.Analyze.Maintainability.MaintainabilityIndexWithoutComments != nil && !math.IsNaN(float64(*function.Stmts.Analyze.Maintainability.MaintainabilityIndexWithoutComments)) {
+				result.MaintainabilityIndexWithoutComments.Sum += *function.Stmts.Analyze.Maintainability.MaintainabilityIndexWithoutComments
+				result.MaintainabilityIndexWithoutComments.Counter++
+				if specificAggregation.MaintainabilityIndexWithoutComments.Min == 0 || *function.Stmts.Analyze.Maintainability.MaintainabilityIndexWithoutComments < specificAggregation.MaintainabilityIndexWithoutComments.Min {
+					result.MaintainabilityIndexWithoutComments.Min = *function.Stmts.Analyze.Maintainability.MaintainabilityIndexWithoutComments
+				}
+				if specificAggregation.MaintainabilityIndexWithoutComments.Max == 0 || *function.Stmts.Analyze.Maintainability.MaintainabilityIndexWithoutComments > specificAggregation.MaintainabilityIndexWithoutComments.Max {
+					result.MaintainabilityIndexWithoutComments.Max = *function.Stmts.Analyze.Maintainability.MaintainabilityIndexWithoutComments
+				}
+			}
+
+			// Comment weight
+			if function.Stmts.Analyze.Maintainability.CommentWeight != nil && !math.IsNaN(float64(*function.Stmts.Analyze.Maintainability.CommentWeight)) {
+				result.MaintainabilityCommentWeight.Sum += *function.Stmts.Analyze.Maintainability.CommentWeight
+				result.MaintainabilityCommentWeight.Counter++
+				if specificAggregation.MaintainabilityCommentWeight.Min == 0 || *function.Stmts.Analyze.Maintainability.CommentWeight < specificAggregation.MaintainabilityCommentWeight.Min {
+					result.MaintainabilityCommentWeight.Min = *function.Stmts.Analyze.Maintainability.CommentWeight
+				}
+				if specificAggregation.MaintainabilityCommentWeight.Max == 0 || *function.Stmts.Analyze.Maintainability.CommentWeight > specificAggregation.MaintainabilityCommentWeight.Max {
+					result.MaintainabilityCommentWeight.Max = *function.Stmts.Analyze.Maintainability.CommentWeight
+				}
+			}
+
+			// Maintainability index per method
+			if function.Stmts.Analyze.Maintainability.MaintainabilityIndex != nil && !math.IsNaN(float64(*function.Stmts.Analyze.Maintainability.MaintainabilityIndex)) {
+				result.MaintainabilityPerMethod.Sum += *function.Stmts.Analyze.Maintainability.MaintainabilityIndex
+				result.MaintainabilityPerMethod.Counter++
+				if specificAggregation.MaintainabilityPerMethod.Min == 0 || *function.Stmts.Analyze.Maintainability.MaintainabilityIndex < specificAggregation.MaintainabilityPerMethod.Min {
+					result.MaintainabilityPerMethod.Min = *function.Stmts.Analyze.Maintainability.MaintainabilityIndex
+				}
+				if specificAggregation.MaintainabilityPerMethod.Max == 0 || *function.Stmts.Analyze.Maintainability.MaintainabilityIndex > specificAggregation.MaintainabilityPerMethod.Max {
+					result.MaintainabilityPerMethod.Max = *function.Stmts.Analyze.Maintainability.MaintainabilityIndex
+				}
+			}
+
+			// Maintainability index per method without comments
+			if function.Stmts.Analyze.Maintainability.MaintainabilityIndexWithoutComments != nil && !math.IsNaN(float64(*function.Stmts.Analyze.Maintainability.MaintainabilityIndexWithoutComments)) {
+				result.MaintainabilityPerMethodWithoutComments.Sum += *function.Stmts.Analyze.Maintainability.MaintainabilityIndexWithoutComments
+				result.MaintainabilityPerMethodWithoutComments.Counter++
+				if specificAggregation.MaintainabilityPerMethodWithoutComments.Min == 0 || *function.Stmts.Analyze.Maintainability.MaintainabilityIndexWithoutComments < specificAggregation.MaintainabilityPerMethodWithoutComments.Min {
+					result.MaintainabilityPerMethodWithoutComments.Min = *function.Stmts.Analyze.Maintainability.MaintainabilityIndexWithoutComments
+				}
+				if specificAggregation.MaintainabilityPerMethodWithoutComments.Max == 0 || *function.Stmts.Analyze.Maintainability.MaintainabilityIndexWithoutComments > specificAggregation.MaintainabilityPerMethodWithoutComments.Max {
+					result.MaintainabilityPerMethodWithoutComments.Max = *function.Stmts.Analyze.Maintainability.MaintainabilityIndexWithoutComments
+				}
+			}
+
+			// Comment weight per method
+			if function.Stmts.Analyze.Maintainability.CommentWeight != nil && !math.IsNaN(float64(*function.Stmts.Analyze.Maintainability.CommentWeight)) {
+				result.MaintainabilityCommentWeightPerMethod.Sum += *function.Stmts.Analyze.Maintainability.CommentWeight
+				result.MaintainabilityCommentWeightPerMethod.Counter++
+				if specificAggregation.MaintainabilityCommentWeightPerMethod.Min == 0 || *function.Stmts.Analyze.Maintainability.CommentWeight < specificAggregation.MaintainabilityCommentWeightPerMethod.Min {
+					result.MaintainabilityCommentWeightPerMethod.Min = *function.Stmts.Analyze.Maintainability.CommentWeight
+				}
+				if specificAggregation.MaintainabilityCommentWeightPerMethod.Max == 0 || *function.Stmts.Analyze.Maintainability.CommentWeight > specificAggregation.MaintainabilityCommentWeightPerMethod.Max {
+					result.MaintainabilityCommentWeightPerMethod.Max = *function.Stmts.Analyze.Maintainability.CommentWeight
 				}
 			}
 		}
@@ -643,6 +719,8 @@ func (r *Aggregator) mergeChunks(aggregated Aggregated, chunk *Aggregated) Aggre
 		result.PackageRelations[k] = v
 	}
 
+	result.ErroredFiles = append(result.ErroredFiles, chunk.ErroredFiles...)
+
 	return result
 }
 
@@ -663,6 +741,12 @@ func (r *Aggregator) reduceMetrics(aggregated Aggregated) Aggregated {
 	}
 	if result.LocPerClass.Counter > 0 {
 		result.LocPerClass.Avg = result.LocPerClass.Sum / float64(result.LocPerClass.Counter)
+	}
+	if result.ClocPerMethod.Counter > 0 {
+		result.ClocPerMethod.Avg = result.ClocPerMethod.Sum / float64(result.ClocPerMethod.Counter)
+	}
+	if result.LlocPerMethod.Counter > 0 {
+		result.LlocPerMethod.Avg = result.LlocPerMethod.Sum / float64(result.LlocPerMethod.Counter)
 	}
 	if result.LocPerMethod.Counter > 0 {
 		result.LocPerMethod.Avg = result.LocPerMethod.Sum / float64(result.LocPerMethod.Counter)
@@ -693,6 +777,15 @@ func (r *Aggregator) reduceMetrics(aggregated Aggregated) Aggregated {
 	}
 	if result.MaintainabilityCommentWeight.Counter > 0 {
 		result.MaintainabilityCommentWeight.Avg = result.MaintainabilityCommentWeight.Sum / float64(result.MaintainabilityCommentWeight.Counter)
+	}
+	if result.MaintainabilityPerMethod.Counter > 0 {
+		result.MaintainabilityPerMethod.Avg = result.MaintainabilityPerMethod.Sum / float64(result.MaintainabilityPerMethod.Counter)
+	}
+	if result.MaintainabilityPerMethodWithoutComments.Counter > 0 {
+		result.MaintainabilityPerMethodWithoutComments.Avg = result.MaintainabilityPerMethodWithoutComments.Sum / float64(result.MaintainabilityPerMethodWithoutComments.Counter)
+	}
+	if result.MaintainabilityCommentWeightPerMethod.Counter > 0 {
+		result.MaintainabilityCommentWeightPerMethod.Avg = result.MaintainabilityCommentWeightPerMethod.Sum / float64(result.MaintainabilityCommentWeightPerMethod.Counter)
 	}
 
 	// afferent coupling

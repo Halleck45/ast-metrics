@@ -12,71 +12,36 @@ func TestConsolidate(t *testing.T) {
 
 	aggregator := Aggregator{}
 	aggregated := Aggregated{
-		NbMethods:                           10,
+		MethodsPerClass:                     AggregateResult{Sum: 10, Counter: 5},
 		NbClasses:                           5,
 		NbClassesWithCode:                   5,
-		AverageCyclomaticComplexityPerClass: 20,
-		AverageHalsteadDifficulty:           30,
-		AverageHalsteadEffort:               40,
-		AverageHalsteadVolume:               50,
-		AverageHalsteadTime:                 60,
-		AverageLocPerMethod:                 70,
-		AverageClocPerMethod:                80,
-		AverageLlocPerMethod:                90,
-		AverageMI:                           100,
-		AverageMIwoc:                        110,
-		AverageMIcw:                         120,
+		CyclomaticComplexityPerClass:        AggregateResult{Sum: 20, Counter: 5},
+		HalsteadDifficulty:                  AggregateResult{Sum: 30, Counter: 5},
+		HalsteadEffort:                      AggregateResult{Sum: 40, Counter: 5},
+		HalsteadVolume:                      AggregateResult{Sum: 50, Counter: 5},
+		HalsteadTime:                        AggregateResult{Sum: 60, Counter: 5},
+		LocPerMethod:                        AggregateResult{Sum: 70, Counter: 10},
+		ClocPerMethod:                       AggregateResult{Sum: 80, Counter: 10},
+		LlocPerMethod:                       AggregateResult{Sum: 90, Counter: 10},
+		MaintainabilityIndex:                AggregateResult{Sum: 100, Counter: 5},
+		MaintainabilityIndexWithoutComments: AggregateResult{Sum: 110, Counter: 5},
 	}
 
-	aggregator.consolidate(&aggregated)
+	aggregated = aggregator.reduceMetrics(aggregated)
 
-	if aggregated.AverageMethodsPerClass != 2 {
-		t.Errorf("Expected 2, got %f", aggregated.AverageMethodsPerClass)
-	}
+	assert.Equal(t, float64(2), aggregated.MethodsPerClass.Avg, "Should have 2 methods per class")
+	assert.Equal(t, float64(10), aggregated.MethodsPerClass.Sum, "Should have 10 methods per class sum")
+	assert.Equal(t, float64(4), aggregated.CyclomaticComplexityPerClass.Avg, "Should have 4 cyclomatic complexity per class")
+	assert.Equal(t, float64(6), aggregated.HalsteadDifficulty.Avg, "Should have 6 halstead difficulty")
+	assert.Equal(t, float64(8), aggregated.HalsteadEffort.Avg, "Should have 8 halstead effort")
+	assert.Equal(t, float64(10), aggregated.HalsteadVolume.Avg, "Should have 10 halstead volume")
+	assert.Equal(t, float64(12), aggregated.HalsteadTime.Avg, "Should have 12 halstead time")
+	assert.Equal(t, float64(7), aggregated.LocPerMethod.Avg, "Should have 7 loc per method")
+	assert.Equal(t, float64(8), aggregated.ClocPerMethod.Avg, "Should have 8 cloc per method")
+	assert.Equal(t, float64(9), aggregated.LlocPerMethod.Avg, "Should have 9 lloc per method")
+	assert.Equal(t, float64(20), aggregated.MaintainabilityIndex.Avg, "Should have 20 maintainability index")
+	assert.Equal(t, float64(22), aggregated.MaintainabilityIndexWithoutComments.Avg, "Should have 22 maintainability index without comments")
 
-	if aggregated.AverageCyclomaticComplexityPerClass != 4 {
-		t.Errorf("Expected 4, got %f", aggregated.AverageCyclomaticComplexityPerClass)
-	}
-
-	if aggregated.AverageHalsteadDifficulty != 6 {
-		t.Errorf("Expected 6, got %f", aggregated.AverageHalsteadDifficulty)
-	}
-
-	if aggregated.AverageHalsteadEffort != 8 {
-		t.Errorf("Expected 8, got %f", aggregated.AverageHalsteadEffort)
-	}
-
-	if aggregated.AverageHalsteadVolume != 10 {
-		t.Errorf("Expected 10, got %f", aggregated.AverageHalsteadVolume)
-	}
-
-	if aggregated.AverageHalsteadTime != 12 {
-		t.Errorf("Expected 12, got %f", aggregated.AverageHalsteadTime)
-	}
-
-	if aggregated.AverageLocPerMethod != 7 {
-		t.Errorf("Expected 7, got %f", aggregated.AverageLocPerMethod)
-	}
-
-	if aggregated.AverageClocPerMethod != 8 {
-		t.Errorf("Expected 8, got %f", aggregated.AverageClocPerMethod)
-	}
-
-	if aggregated.AverageLlocPerMethod != 9 {
-		t.Errorf("Expected 9, got %f", aggregated.AverageLlocPerMethod)
-	}
-
-	if aggregated.AverageMI != 20 {
-		t.Errorf("Expected 20, got %f", aggregated.AverageMI)
-	}
-
-	if aggregated.AverageMIwoc != 22 {
-		t.Errorf("Expected 22, got %f", aggregated.AverageMIwoc)
-	}
-
-	if aggregated.AverageMIcw != 24 {
-		t.Errorf("Expected 24, got %f", aggregated.AverageMIcw)
-	}
 }
 
 func TestCalculate(t *testing.T) {
@@ -120,35 +85,18 @@ func TestCalculate(t *testing.T) {
 			Path:  "test.foo",
 		}
 		aggregated := Aggregated{}
-		aggregator.calculateSums(&file, &aggregated)
+		aggregated = aggregator.mapSums(&file, aggregated)
 		aggregated.ConcernedFiles = []*pb.File{
 			&file,
 		}
-		aggregator.consolidate(&aggregated)
+		aggregated = aggregator.reduceMetrics(aggregated)
 
-		if aggregated.NbMethods != 2 {
-			t.Errorf("Expected 2, got %d", aggregated.NbMethods)
-		}
-
-		if aggregated.NbClasses != 3 {
-			t.Errorf("Expected 3 classes, got %d", aggregated.NbClasses)
-		}
-
-		if aggregated.AverageCyclomaticComplexityPerMethod != 15 {
-			t.Errorf("Expected AverageCyclomaticComplexityPerMethod, got %f", aggregated.AverageCyclomaticComplexityPerMethod)
-		}
-
-		if aggregated.Loc != 100 {
-			t.Errorf("Expected 100, got %d", aggregated.Loc)
-		}
-
-		if aggregated.Cloc != 200 {
-			t.Errorf("Expected 200, got %d", aggregated.Cloc)
-		}
-
-		if aggregated.Lloc != 300 {
-			t.Errorf("Expected 300, got %d", aggregated.Lloc)
-		}
+		assert.Equal(t, 2, aggregated.NbMethods, "Should have 2 methods")
+		assert.Equal(t, 3, aggregated.NbClasses, "Should have 3 classes")
+		assert.Equal(t, float64(15), aggregated.CyclomaticComplexityPerMethod.Avg, "Should have 15 average cyclomatic complexity per method")
+		assert.Equal(t, float64(100), aggregated.Loc.Avg, "Should have 100 loc")
+		assert.Equal(t, float64(200), aggregated.Cloc.Avg, "Should have 200 cloc")
+		assert.Equal(t, float64(300), aggregated.Lloc.Avg, "Should have 300 lloc")
 	})
 }
 
@@ -404,70 +352,37 @@ func TestAggregates(t *testing.T) {
 
 		// Call the Aggregates method
 		projectAggregated := aggregator.Aggregates()
+		result := projectAggregated.Combined
 
 		// Check that the returned ProjectAggregated struct has the expected values
-		if projectAggregated.ByFile.NbFiles != 3 {
-			t.Errorf("Expected 3 files, got %d", projectAggregated.ByFile.NbFiles)
-		}
+		assert.Equal(t, 3, result.NbFiles, "Should have 3 files")
 
 		// Checks on Combined aggregate
-		if projectAggregated.ByClass.NbClasses != 10 {
-			t.Errorf("Expected 10 classes, got %d", projectAggregated.ByClass.NbClasses)
-		}
+		assert.Equal(t, 10, projectAggregated.ByClass.NbClasses, "Should have 10 classes")
 
-		if projectAggregated.Combined.NbClasses != 10 {
-			t.Errorf("Expected 10 classes, got %d", projectAggregated.ByClass.NbClasses)
-		}
+		assert.Equal(t, 5, result.NbMethods, "Should have 5 methods")
 
-		if projectAggregated.Combined.NbMethods != 5 {
-			t.Errorf("Expected 5 methods, got %d", projectAggregated.Combined.NbMethods)
-		}
+		assert.Equal(t, float64(30), result.CyclomaticComplexityPerMethod.Avg, "Should have 30 average cyclomatic complexity per method")
 
-		if projectAggregated.Combined.AverageCyclomaticComplexityPerMethod != 30 {
-			t.Errorf("Expected AverageCyclomaticComplexityPerMethod 30, got %f", projectAggregated.Combined.AverageCyclomaticComplexityPerMethod)
-		}
-
-		if int(projectAggregated.Combined.AverageMI) != 94 {
-			t.Errorf("Expected MI of 94 for all files, got %v", int(projectAggregated.Combined.AverageMI))
-		}
+		assert.Equal(t, 94, int(result.MaintainabilityIndex.Avg), "Should have 94 average maintainability index")
 
 		// Check on Go aggregate
-		if projectAggregated.ByProgrammingLanguage["Go"].NbClasses != 9 {
-			t.Errorf("Expected 9 classes, got %d", projectAggregated.ByProgrammingLanguage["Go"].NbClasses)
-		}
+		assert.Equal(t, 9, projectAggregated.ByProgrammingLanguage["Go"].NbClasses, "Should have 9 classes")
 
-		if projectAggregated.ByProgrammingLanguage["Go"].NbMethods != 4 {
-			t.Errorf("Expected 4 methods in Go, got %d", projectAggregated.ByProgrammingLanguage["Go"].NbMethods)
-		}
+		assert.Equal(t, 4, projectAggregated.ByProgrammingLanguage["Go"].NbMethods, "Should have 4 methods in Go")
 
-		if projectAggregated.ByProgrammingLanguage["Go"].NbFiles != 2 {
-			t.Errorf("Expected 2 Go files, got %d", projectAggregated.ByProgrammingLanguage["Go"].NbFiles)
-		}
+		assert.Equal(t, 2, projectAggregated.ByProgrammingLanguage["Go"].NbFiles, "Should have 2 Go files")
 
-		if int(projectAggregated.ByProgrammingLanguage["Go"].AverageMI) != 91 {
-			t.Errorf("Expected MI of 91 for Go files, got %v", int(projectAggregated.ByProgrammingLanguage["Go"].AverageMI))
-		}
+		assert.Equal(t, 91, int(projectAggregated.ByProgrammingLanguage["Go"].MaintainabilityIndex.Avg), "Should have 91 average maintainability index for Go files")
 
 		// Check on Php aggregate
-		if projectAggregated.ByProgrammingLanguage["Php"].NbClasses != 1 {
-			t.Errorf("Expected 1 class, got %d", projectAggregated.ByProgrammingLanguage["Php"].NbClasses)
-		}
+		assert.Equal(t, 1, projectAggregated.ByProgrammingLanguage["Php"].NbClasses, "Should have 1 class")
 
-		if projectAggregated.ByProgrammingLanguage["Php"].NbMethods != 1 {
-			t.Errorf("Expected 1 methods in PHP, got %d", projectAggregated.ByProgrammingLanguage["Php"].NbMethods)
-		}
+		assert.Equal(t, 1, projectAggregated.ByProgrammingLanguage["Php"].NbMethods, "Should have 1 methods in PHP")
 
-		if projectAggregated.ByProgrammingLanguage["Php"].NbFiles != 1 {
-			t.Errorf("Expected 1 PHP files, got %d", projectAggregated.ByProgrammingLanguage["Go"].NbFiles)
-		}
+		assert.Equal(t, 1, projectAggregated.ByProgrammingLanguage["Php"].NbFiles, "Should have 1 PHP files")
 
-		if projectAggregated.ByProgrammingLanguage["Php"].AverageMI != 120 {
-			t.Errorf("Expected MI of 120 for PHP files, got %f", projectAggregated.ByProgrammingLanguage["Php"].AverageMI)
-		}
-
-		if int(projectAggregated.ByProgrammingLanguage["Php"].AverageMI) != 120 {
-			t.Errorf("Expected MI of 120 for PHP files, got %v", int(projectAggregated.ByProgrammingLanguage["Go"].AverageMI))
-		}
+		assert.Equal(t, 120, int(projectAggregated.ByProgrammingLanguage["Php"].MaintainabilityIndex.Avg), "Should have 120 average maintainability index for PHP files")
 	})
 }
 
@@ -504,25 +419,12 @@ func TestCalculateMaintainabilityIndex(t *testing.T) {
 		}
 		aggregated := Aggregated{}
 
-		aggregator.calculateSums(&file, &aggregated)
-		aggregator.consolidate(&aggregated)
+		aggregated = aggregator.mapSums(&file, aggregated)
+		aggregated = aggregator.reduceMetrics(aggregated)
 
-		if aggregated.AverageMI != 22.5 {
-			t.Errorf("Expected 22.5, got %f", aggregated.AverageMI)
-		}
-
-		if aggregated.AverageMIwoc != 27.5 {
-			t.Errorf("Expected 27.5, got %f", aggregated.AverageMIwoc)
-		}
-
-		if aggregated.AverageMIcw != 32.5 {
-			t.Errorf("Expected 32.5, got %f", aggregated.AverageMIcw)
-		}
-
-		// Average per method
-		if aggregated.AverageMIPerMethod != 22.5 {
-			t.Errorf("Expected AverageMIPerMethod, got %f", aggregated.AverageMIPerMethod)
-		}
+		assert.Equal(t, float64(22.5), aggregated.MaintainabilityIndex.Avg, "Should have 22.5 average maintainability index")
+		assert.Equal(t, float64(27.5), aggregated.MaintainabilityIndexWithoutComments.Avg, "Should have 27.5 average maintainability index without comments")
+		assert.Equal(t, float64(22.5), aggregated.MaintainabilityPerMethod.Avg, "Should have 22.5 average maintainability index per method")
 	})
 }
 

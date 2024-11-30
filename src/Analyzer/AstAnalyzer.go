@@ -5,6 +5,7 @@ import (
 	"runtime"
 	"strconv"
 	"sync"
+	"sync/atomic"
 
 	Complexity "github.com/halleck45/ast-metrics/src/Analyzer/Complexity"
 	Component "github.com/halleck45/ast-metrics/src/Analyzer/Component"
@@ -33,10 +34,10 @@ func Start(workdir *Storage.Workdir, progressbar *pterm.SpinnerPrinter) []*pb.Fi
 	// https://stackoverflow.com/questions/58743038/why-does-this-goroutine-not-call-wg-done
 	channelResult := make(chan *pb.File, len(astFiles))
 
-	nbParsingFiles := 0
+	var nbParsingFiles atomic.Uint64
+
 	// analyze each AST file running the runAnalysis function
 	numWorkers := runtime.NumCPU()
-	mu := sync.Mutex{}
 	filesChan := make(chan string, numWorkers)
 
 	for i := 0; i < numWorkers; i++ {
@@ -44,13 +45,11 @@ func Start(workdir *Storage.Workdir, progressbar *pterm.SpinnerPrinter) []*pb.Fi
 			for file := range filesChan {
 				go func(file string) {
 					defer wg.Done()
-					mu.Lock()
-					nbParsingFiles++
-					mu.Unlock()
+					nbParsingFiles.Add(1)
 
 					executeFileAnalysis(file, channelResult)
 
-					details := strconv.Itoa(nbParsingFiles) + "/" + strconv.Itoa(len(astFiles))
+					details := strconv.Itoa(int(nbParsingFiles.Load())) + "/" + strconv.Itoa(len(astFiles))
 
 					if progressbar != nil {
 						progressbar.UpdateText("Analyzing (" + details + ")")
