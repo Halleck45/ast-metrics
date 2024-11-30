@@ -164,6 +164,15 @@ func newAggregated() Aggregated {
 	}
 }
 
+// This method is the main entry point to get the aggregated data
+// It will:
+// - chunk the files by number of processors, to speed up the process
+// - map the files to the aggregated object with sums
+// - reduce the sums to get the averages
+// - map the coupling
+// - run the risk analysis
+//
+// it also computes the comparaison if the compared files are set
 func (r *Aggregator) Aggregates() ProjectAggregated {
 
 	// We create a new aggregated object for each type of aggregation
@@ -372,11 +381,13 @@ func (r *Aggregator) WithAggregateAnalyzer(analyzer AggregateAnalyzer) {
 	r.analyzers = append(r.analyzers, analyzer)
 }
 
+// Set the files and branch to compare with
 func (r *Aggregator) WithComparaison(allResultsCloned []*pb.File, comparedBranch string) {
 	r.ComparedFiles = allResultsCloned
 	r.ComparedBranch = comparedBranch
 }
 
+// Map the sums of a file to the aggregated object
 func (r *Aggregator) mapSums(file *pb.File, specificAggregation Aggregated) Aggregated {
 	// copy the specific aggregation to new object to avoid side effects
 	result := specificAggregation
@@ -580,8 +591,11 @@ func (r *Aggregator) mapSums(file *pb.File, specificAggregation Aggregated) Aggr
 			result.EfferentCoupling.Counter++
 			result.AfferentCoupling.Sum += float64(class.Stmts.Analyze.Coupling.Afferent)
 			result.AfferentCoupling.Counter++
-			result.Instability.Sum += float64(class.Stmts.Analyze.Coupling.Instability)
-			result.Instability.Counter++
+
+			// Instability for class
+			if class.Stmts.Analyze.Coupling.Efferent > 0 {
+				class.Stmts.Analyze.Coupling.Instability = float64(class.Stmts.Analyze.Coupling.Efferent) / float64(class.Stmts.Analyze.Coupling.Efferent+class.Stmts.Analyze.Coupling.Afferent)
+			}
 		}
 
 		// cyclomatic complexity per class
@@ -650,6 +664,7 @@ func (r *Aggregator) mapSums(file *pb.File, specificAggregation Aggregated) Aggr
 	return result
 }
 
+// Merge the chunks of files to get the aggregated data (sums)
 func (r *Aggregator) mergeChunks(aggregated Aggregated, chunk *Aggregated) Aggregated {
 
 	result := aggregated
@@ -696,9 +711,6 @@ func (r *Aggregator) mergeChunks(aggregated Aggregated, chunk *Aggregated) Aggre
 	result.MaintainabilityCommentWeight.Sum += chunk.MaintainabilityCommentWeight.Sum
 	result.MaintainabilityCommentWeight.Counter += chunk.MaintainabilityCommentWeight.Counter
 
-	result.Instability.Sum += chunk.Instability.Sum
-	result.Instability.Counter += chunk.Instability.Counter
-
 	result.EfferentCoupling.Sum += chunk.EfferentCoupling.Sum
 	result.EfferentCoupling.Counter += chunk.EfferentCoupling.Counter
 	result.AfferentCoupling.Sum += chunk.AfferentCoupling.Sum
@@ -724,6 +736,7 @@ func (r *Aggregator) mergeChunks(aggregated Aggregated, chunk *Aggregated) Aggre
 	return result
 }
 
+// Reduce the sums to get the averages
 func (r *Aggregator) reduceMetrics(aggregated Aggregated) Aggregated {
 	// here we reduce metrics by averaging them
 	result := aggregated
@@ -788,15 +801,17 @@ func (r *Aggregator) reduceMetrics(aggregated Aggregated) Aggregated {
 		result.MaintainabilityCommentWeightPerMethod.Avg = result.MaintainabilityCommentWeightPerMethod.Sum / float64(result.MaintainabilityCommentWeightPerMethod.Counter)
 	}
 
-	// afferent coupling
-	if result.Instability.Counter > 0 {
-		result.Instability.Avg = result.Instability.Sum / float64(result.Instability.Counter)
-	}
 	if result.EfferentCoupling.Counter > 0 {
 		result.EfferentCoupling.Avg = result.EfferentCoupling.Sum / float64(result.EfferentCoupling.Counter)
 	}
 	if result.AfferentCoupling.Counter > 0 {
 		result.AfferentCoupling.Avg = result.AfferentCoupling.Sum / float64(result.AfferentCoupling.Counter)
+	}
+
+	// afferent coupling
+	// Ce / (Ce + Ca)
+	if result.AfferentCoupling.Counter > 0 {
+		result.Instability.Avg = result.EfferentCoupling.Sum / result.AfferentCoupling.Sum
 	}
 
 	// Count commits for the period based on `ResultOfGitAnalysis` data
@@ -815,6 +830,7 @@ func (r *Aggregator) reduceMetrics(aggregated Aggregated) Aggregated {
 	return result
 }
 
+// Map the coupling to get the package relations and the afferent coupling
 func (r *Aggregator) mapCoupling(aggregated *Aggregated) Aggregated {
 	result := *aggregated
 	reg := regexp.MustCompile("[^A-Za-z0-9.]+")
@@ -905,7 +921,25 @@ func (r *Aggregator) mapCoupling(aggregated *Aggregated) Aggregated {
 				}
 			}
 			class.Stmts.Analyze.Coupling.Efferent = int32(len(uniqueDependencies))
+
+			// Afferent coupling
+			class.Stmts.Analyze.Coupling.Afferent = int32(len(class.Stmts.StmtExternalDependencies))
+
+			// Increment result
+			result.EfferentCoupling.Sum += float64(class.Stmts.Analyze.Coupling.Efferent)
+			result.EfferentCoupling.Counter++
+			result.AfferentCoupling.Sum += float64(class.Stmts.Analyze.Coupling.Afferent)
+			result.AfferentCoupling.Counter++
 		}
 	}
+
+	// Afferent coupling
+	// Ce / (Ce + Ca)
+	if result.AfferentCoupling.Counter > 0 {
+		result.Instability.Avg = result.EfferentCoupling.Sum / result.AfferentCoupling.Sum
+	}
+	result.EfferentCoupling.Avg = result.EfferentCoupling.Sum / float64(result.EfferentCoupling.Counter)
+	result.AfferentCoupling.Avg = result.AfferentCoupling.Sum / float64(result.AfferentCoupling.Counter)
+
 	return result
 }
