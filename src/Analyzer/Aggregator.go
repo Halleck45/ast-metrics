@@ -1,6 +1,7 @@
 package Analyzer
 
 import (
+	"fmt"
 	"math"
 	"regexp"
 	"runtime"
@@ -233,10 +234,6 @@ func (r *Aggregator) executeAggregationOnFiles(files []*pb.File) ProjectAggregat
 		chunks[i] = files[start:end]
 	}
 
-	// Prepare results
-	aggregateByFileChunk := newAggregated()
-	aggregateByClassChunk := newAggregated()
-
 	// for each programming language, we create a separeted result
 	aggregateByLanguageChunk := make(map[string]Aggregated)
 	for _, file := range files {
@@ -253,6 +250,7 @@ func (r *Aggregator) executeAggregationOnFiles(files []*pb.File) ProjectAggregat
 	resultsByFile := make(chan *Aggregated, numberOfProcessors)
 	resultsByProgrammingLanguage := make(chan *map[string]Aggregated, numberOfProcessors)
 
+	fmt.Println("Chunks:", len(chunks))
 	// Deadlock prevention
 	mu := sync.Mutex{}
 
@@ -266,6 +264,14 @@ func (r *Aggregator) executeAggregationOnFiles(files []*pb.File) ProjectAggregat
 		// Reduce results : we want to get sums, and to count calculated values into a AggregateResult
 		go func(files []*pb.File) {
 			defer wg.Done()
+
+			if len(files) == 0 {
+				return
+			}
+
+			// Prepare results
+			aggregateByFileChunk := newAggregated()
+			aggregateByClassChunk := newAggregated()
 
 			// the process deal with its own chunk
 			for _, file := range files {
