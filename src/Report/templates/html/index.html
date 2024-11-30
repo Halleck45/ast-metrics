@@ -387,15 +387,19 @@
         <div class="mt-2">
             <div>
                 <h5 class="leading-none text-3xl font-bold text-gray-900 pb-2">
-                    {{ currentView.MaxCyclomaticComplexity }}
+                    {{ currentView.CyclomaticComplexityPerMethod.Avg | floatformat:2 }}
                 </h5>
                 <p class="text-base font-normal text-gray-500 ">
-                    Complexity max
+                    Average complexity per method (cyclomatic)
                 </p>
             </div>
             <div class="mt-4 chart-container" >
                 {% include "componentChartRadiusBarComplexity.html" %}
             </div>
+            <p class="border-t border-gray-200 mt-2 italic text-sm text-gray-600 pt-4 text-justify">
+                The average complexity of the code, measured by the number of possible execution paths. Lower is better. 
+                This metrics includes interfaces and abstract classes, and may be lower than 1.
+            </p>
         </div>
     </div>
     <!-- end: card -->

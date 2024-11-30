@@ -59,6 +59,7 @@ type Aggregated struct {
 	LocPerMethod                            AggregateResult
 	LlocPerMethod                           AggregateResult
 	ClocPerMethod                           AggregateResult
+	CyclomaticComplexity                    AggregateResult
 	CyclomaticComplexityPerMethod           AggregateResult
 	CyclomaticComplexityPerClass            AggregateResult
 	HalsteadDifficulty                      AggregateResult
@@ -140,6 +141,7 @@ func newAggregated() Aggregated {
 		LocPerClass:                             NewAggregateResult(),
 		LocPerMethod:                            NewAggregateResult(),
 		ClocPerMethod:                           NewAggregateResult(),
+		CyclomaticComplexity:           		 NewAggregateResult(),
 		CyclomaticComplexityPerMethod:           NewAggregateResult(),
 		CyclomaticComplexityPerClass:            NewAggregateResult(),
 		HalsteadEffort:                          NewAggregateResult(),
@@ -458,6 +460,15 @@ func (r *Aggregator) mapSums(file *pb.File, specificAggregation Aggregated) Aggr
 				if specificAggregation.CyclomaticComplexityPerMethod.Max == 0 || ccn > specificAggregation.CyclomaticComplexityPerMethod.Max {
 					result.CyclomaticComplexityPerMethod.Max = ccn
 				}
+
+				result.CyclomaticComplexity.Sum += ccn
+				result.CyclomaticComplexity.Counter++
+				if specificAggregation.CyclomaticComplexity.Min == 0 || ccn < specificAggregation.CyclomaticComplexity.Min {
+					result.CyclomaticComplexity.Min = ccn
+				}
+				if specificAggregation.CyclomaticComplexity.Max == 0 || ccn > specificAggregation.CyclomaticComplexity.Max {
+					result.CyclomaticComplexity.Max = ccn
+				}
 			}
 		}
 
@@ -610,6 +621,15 @@ func (r *Aggregator) mapSums(file *pb.File, specificAggregation Aggregated) Aggr
 			if specificAggregation.CyclomaticComplexityPerClass.Max == 0 || float64(*class.Stmts.Analyze.Complexity.Cyclomatic) > specificAggregation.CyclomaticComplexityPerClass.Max {
 				result.CyclomaticComplexityPerClass.Max = float64(*class.Stmts.Analyze.Complexity.Cyclomatic)
 			}
+
+			result.CyclomaticComplexity.Sum += float64(*class.Stmts.Analyze.Complexity.Cyclomatic)
+			result.CyclomaticComplexity.Counter++
+			if specificAggregation.CyclomaticComplexity.Min == 0 || float64(*class.Stmts.Analyze.Complexity.Cyclomatic) < specificAggregation.CyclomaticComplexity.Min {
+				result.CyclomaticComplexity.Min = float64(*class.Stmts.Analyze.Complexity.Cyclomatic)
+			}
+			if specificAggregation.CyclomaticComplexity.Max == 0 || float64(*class.Stmts.Analyze.Complexity.Cyclomatic) > specificAggregation.CyclomaticComplexity.Max {
+				result.CyclomaticComplexity.Max = float64(*class.Stmts.Analyze.Complexity.Cyclomatic)
+			}
 		}
 
 		// Halstead
@@ -694,6 +714,9 @@ func (r *Aggregator) mergeChunks(aggregated Aggregated, chunk *Aggregated) Aggre
 	result.CyclomaticComplexityPerClass.Sum += chunk.CyclomaticComplexityPerClass.Sum
 	result.CyclomaticComplexityPerClass.Counter += chunk.CyclomaticComplexityPerClass.Counter
 
+	result.CyclomaticComplexity.Sum += chunk.CyclomaticComplexity.Sum
+	result.CyclomaticComplexity.Counter += chunk.CyclomaticComplexity.Counter
+
 	result.HalsteadDifficulty.Sum += chunk.HalsteadDifficulty.Sum
 	result.HalsteadDifficulty.Counter += chunk.HalsteadDifficulty.Counter
 	result.HalsteadEffort.Sum += chunk.HalsteadEffort.Sum
@@ -770,6 +793,9 @@ func (r *Aggregator) reduceMetrics(aggregated Aggregated) Aggregated {
 	}
 	if result.CyclomaticComplexityPerClass.Counter > 0 {
 		result.CyclomaticComplexityPerClass.Avg = result.CyclomaticComplexityPerClass.Sum / float64(result.CyclomaticComplexityPerClass.Counter)
+	}
+	if result.CyclomaticComplexity.Counter > 0 {
+		result.CyclomaticComplexity.Avg = result.CyclomaticComplexity.Sum / float64(result.CyclomaticComplexity.Counter)
 	}
 	if result.HalsteadDifficulty.Counter > 0 {
 		result.HalsteadDifficulty.Avg = result.HalsteadDifficulty.Sum / float64(result.HalsteadDifficulty.Counter)
