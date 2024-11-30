@@ -5,7 +5,7 @@
             {%- if not fileHasClasses(file) -%}
             {% set elements = file|convertOneFileToCollection -%}
                 {% set name = file.Path %}
-                {% set value = file.Stmts.Analyze.Volume.Loc %}
+                {% set value = file.LinesOfCode.LinesOfCode %}
             {%- else %}
                 {% set elements = file.Stmts.StmtClass -%}
                 {% set name = class.Name.Qualified -%}
