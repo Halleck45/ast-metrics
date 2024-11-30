@@ -357,7 +357,8 @@ func (r *Aggregator) executeAggregationOnFiles(files []*pb.File) ProjectAggregat
 	projectAggregated.ByFile = r.reduceMetrics(projectAggregated.ByFile)
 	for k, v := range projectAggregated.ByProgrammingLanguage {
 		v = r.reduceMetrics(v)
-		projectAggregated.ByProgrammingLanguage[k] = v
+		f := r.mapCoupling(&v)
+		projectAggregated.ByProgrammingLanguage[k] = f
 	}
 
 	// Coupling (should be done separately, to avoid race condition)

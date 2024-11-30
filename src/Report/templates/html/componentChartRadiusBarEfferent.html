@@ -1,6 +1,7 @@
 <script id="chart_efferent_data" type="application/json">
     [
-        {%- set files = currentView.ConcernedFiles -%}
+    {% set separator = "," %}
+    {%- set files = currentView.ConcernedFiles -%}
         {%- for file in files -%}
         {%- if len(file.Stmts.StmtClass) == 0 -%}
         {% set elements = file|convertOneFileToCollection -%}
@@ -9,11 +10,14 @@
         {% set elements = file.Stmts.StmtClass -%}
         {% set name = "" -%}
         {%- endif -%}
+        {%if forloop.last %}
+            {% set separator = "" %}
+        {% endif %}
         {%- for class in elements -%}
         {
             "name": "{{ name|default:class.Name.Qualified|addslashes }}",
             "efferent": {{ class.Stmts.Analyze.Coupling.Efferent|floatformat:0  }}
-    },
+        }{{ separator }}
         {%- endfor -%}
         {%- endfor -%}
     ]
