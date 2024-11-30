@@ -261,6 +261,9 @@ func (v *HtmlReportGenerator) RegisterFilters() {
 		// Sort by risk of file
 		files := in.Interface().([]*pb.File)
 		sort.Slice(files, func(i, j int) bool {
+			if files[i].Stmts == nil && files[j].Stmts == nil {
+				return false
+			}
 
 			if files[i].Stmts.Analyze.Risk == nil && files[j].Stmts.Analyze.Risk == nil {
 				return false

@@ -824,6 +824,10 @@ func (r *Aggregator) mapCoupling(aggregated *Aggregated) Aggregated {
 
 		for _, class := range classes {
 
+			if class == nil {
+				continue
+			}
+
 			// dependencies
 			dependencies := file.Stmts.StmtExternalDependencies
 
@@ -878,7 +882,6 @@ func (r *Aggregator) mapCoupling(aggregated *Aggregated) Aggregated {
 				result.PackageRelations[namespaceFrom][namespaceTo]++
 			}
 
-			class.Stmts.Analyze.Coupling.Efferent = 0
 			uniqueDependencies := make(map[string]bool)
 			for _, dependency := range class.Stmts.StmtExternalDependencies {
 				dependencyName := dependency.ClassName
@@ -892,6 +895,13 @@ func (r *Aggregator) mapCoupling(aggregated *Aggregated) Aggregated {
 				// check if dependency is unique
 				if _, ok := uniqueDependencies[dependencyName]; !ok {
 					uniqueDependencies[dependencyName] = true
+				}
+			}
+
+			if class.Stmts.Analyze.Coupling == nil {
+				class.Stmts.Analyze.Coupling = &pb.Coupling{
+					Efferent: 0,
+					Afferent: 0,
 				}
 			}
 			class.Stmts.Analyze.Coupling.Efferent = int32(len(uniqueDependencies))
