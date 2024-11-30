@@ -10,3 +10,11 @@ build
 bindata.go
 include
 coverage.txt
+
+# Profiling
+ast-metrics.cpu
+ast-metrics.mem
+
+# CI
+ast-metrics-report.json
+metrics.txt

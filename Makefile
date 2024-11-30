@@ -48,3 +48,9 @@ monkey-test:
 	@echo "\e[34m\033[1m-> Monkey testing\033[0m\e[39m\n"
 	bash scripts/monkey-test.sh
 	@echo "\e[34m\033[1mDONE \033[0m\e[39m\n"
+
+# profiling
+profile:
+	go run . a --non-interactive --profile src
+	go tool pprof -png  ast-metrics.cpu
+	go tool pprof -png  ast-metrics.mem

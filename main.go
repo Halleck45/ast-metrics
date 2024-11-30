@@ -4,6 +4,8 @@ import (
 	"bufio"
 	"fmt"
 	"os"
+	"runtime"
+	"runtime/pprof"
 
 	"github.com/charmbracelet/lipgloss"
 	"github.com/halleck45/ast-metrics/src/Cli"
@@ -119,12 +121,44 @@ func main() {
 						Usage:    "Compare with another Git branch or commit",
 						Category: "Global options",
 					},
+					// Profiling (with pprof)
+					&cli.BoolFlag{
+						Name:     "profile",
+						Usage:    "Generate a profiling reports into files ast-metrics.cpu and ast-metrics.mem",
+						Category: "Global options",
+					},
 				},
 				Action: func(cCtx *cli.Context) error {
 
 					// get option --verbose
 					if cCtx.Bool("verbose") {
 						log.SetLevel(log.DebugLevel)
+					}
+
+					// get option --profile
+					profile := cCtx.Bool("profile")
+					if profile {
+						cpufile := "ast-metrics.cpu"
+						memfile := "ast-metrics.mem"
+						f, err := os.Create(cpufile)
+						if err != nil {
+							log.Fatal("could not create CPU profile: ", err)
+						}
+						defer f.Close() // error handling omitted for example
+						if err := pprof.StartCPUProfile(f); err != nil {
+							log.Fatal("could not start CPU profile: ", err)
+						}
+						defer pprof.StopCPUProfile()
+
+						f, err = os.Create(memfile)
+						if err != nil {
+							log.Fatal("could not create memory profile: ", err)
+						}
+						defer f.Close() // error handling omitted for example
+						runtime.GC()    // get up-to-date statistics
+						if err := pprof.WriteHeapProfile(f); err != nil {
+							log.Fatal("could not write memory profile: ", err)
+						}
 					}
 
 					// get option --non-interactive
