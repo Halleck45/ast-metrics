@@ -2,7 +2,6 @@ package Analyzer
 
 import (
 	"math"
-	"regexp"
 	"runtime"
 	"sync"
 
@@ -860,7 +859,6 @@ func (r *Aggregator) reduceMetrics(aggregated Aggregated) Aggregated {
 // Map the coupling to get the package relations and the afferent coupling
 func (r *Aggregator) mapCoupling(aggregated *Aggregated) Aggregated {
 	result := *aggregated
-	reg := regexp.MustCompile("[^A-Za-z0-9.]+")
 
 	for _, file := range aggregated.ConcernedFiles {
 		classes := Engine.GetClassesInFile(file)
@@ -879,35 +877,9 @@ func (r *Aggregator) mapCoupling(aggregated *Aggregated) Aggregated {
 					continue
 				}
 
-				namespaceTo := dependency.Namespace
-				namespaceFrom := dependency.From
+				namespaceTo := Engine.ReduceDepthOfNamespace(dependency.Namespace, 2)
+				namespaceFrom := Engine.ReduceDepthOfNamespace(dependency.From, 2)
 
-				if namespaceFrom == "" || namespaceTo == "" {
-					continue
-				}
-
-				// Keep only 2 levels in namespace
-				separator := reg.FindString(namespaceFrom)
-				parts := reg.Split(namespaceTo, -1)
-				if len(parts) > 2 {
-					namespaceTo = parts[0] + separator + parts[1]
-				}
-
-				if namespaceFrom == "" || namespaceTo == "" {
-					continue
-				}
-
-				parts = reg.Split(namespaceFrom, -1)
-				if len(parts) > 2 {
-					namespaceFrom = parts[0] + separator + parts[1]
-				}
-
-				// if same, continue
-				if namespaceFrom == namespaceTo {
-					continue
-				}
-
-				// if root namespace, continue
 				if namespaceFrom == "" || namespaceTo == "" {
 					continue
 				}

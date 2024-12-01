@@ -3,6 +3,7 @@ package Engine
 import (
 	"fmt"
 	"os"
+	"regexp"
 	"strings"
 
 	"github.com/elliotchance/orderedmap/v2"
@@ -340,4 +341,28 @@ func CreateTestFileWithCode(parser Engine, fileContent string) (*pb.File, error)
 	}
 
 	return parser.Parse(tmpFile)
+}
+
+var regForNamespacePart = regexp.MustCompile("[^A-Za-z0-9]+")
+
+// Keep only n levels in namespace
+func ReduceDepthOfNamespace(namespace string, depth int) string {
+
+	separator := regForNamespacePart.FindString(namespace)
+	parts := regForNamespacePart.Split(namespace, -1)
+
+	if depth >= len(parts) {
+		return namespace
+	}
+
+	result := ""
+	fmt.Println(separator, parts)
+	for i := 0; i < depth; i++ {
+		fmt.Println(namespace, i)
+		if i <= len(parts) {
+			result += parts[i] + separator
+		}
+	}
+
+	return strings.Trim(result, separator)
 }
