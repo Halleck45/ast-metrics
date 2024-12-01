@@ -3,24 +3,24 @@ AST Metrisc report
 ## Overview
 
 {% set mi="🔴" -%}
-{%- if projectAggregated.Combined.AverageMI > 84 -%}
+{%- if projectAggregated.Combined.MaintainabilityIndex.Avg > 84 -%}
     {% set mi="🟢" %}
-{%- elif projectAggregated.Combined.AverageMI > 64 -%}
+{%- elif projectAggregated.Combined.MaintainabilityIndex.Avg > 64 -%}
     {% set mi="🟡" -%}
 {%- endif -%}
 
-> Maintainability index: {{ mi }} {{ projectAggregated.Combined.AverageMI|floatformat:0 }}
+> Maintainability index: {{ mi }} {{ projectAggregated.Combined.MaintainabilityIndex.Avg|floatformat:0 }}
 
 | Language | LOC | Maintainability | Complexity per method | Average lines per method |
 | --- | --- | --- | --- | --- |
 {% for languageName,language in projectAggregated.ByProgrammingLanguage -%}
 {%- set mi="🔴" -%}
-{%- if language.AverageMI > 84 -%}
+{%- if language.MaintainabilityIndex.Avg > 84 -%}
     {% set mi="🟢" %}
-{%- elif language.AverageMI > 64 -%}
+{%- elif language.MaintainabilityIndex.Avg > 64 -%}
     {% set mi="🟡" -%}
 {%- endif -%}
-| **{{ languageName }}** | {{ language.Loc|stringifyNumber }} | {{ mi }} {{ language.AverageMI | floatformat:0 }} | {{ language.AverageCyclomaticComplexityPerMethod | floatformat:2 }} | {{ language.AverageLocPerMethod | floatformat:0 }} |
+| **{{ languageName }}** | {{ language.Loc.Sum|stringifyNumber }} | {{ mi }} {{ language.MaintainabilityIndex.Avg | floatformat:0 }} | {{ language.CyclomaticComplexityPerMethod.Avg | floatformat:2 }} | {{ language.LocPerMethod.Avg | floatformat:0 }} |
 {%- endfor %}
 
 > 💡 Help
