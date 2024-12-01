@@ -71,6 +71,7 @@ func (v *AnalyzeCommand) Execute() error {
 		v.spinner = nil
 	}
 
+	// Convert source code to ASTs (each source code is converted to a binary protobuf file)
 	err := v.ExecuteRunnerAnalysis(v.configuration)
 	if err != nil {
 		return err

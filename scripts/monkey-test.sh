@@ -1,13 +1,21 @@
 set -e
 
 # number of packages to download
-PACKAGES_COUNT=100
+PACKAGES_COUNT=$1
+if [ -z "$PACKAGES_COUNT" ]; then
+    PACKAGES_COUNT=100
+fi
 
-workdir=$(mktemp -d)
+# keep always the same workdir, to avoid download time for each package
+workdir="build/monkey-test"
 echo "Working in $workdir"
 if [ -z "$workdir" ]; then
     echo "Workdir not found"
     exit 1
+fi
+if [ ! -d "$workdir" ]; then
+    echo "Workdir not found, creating it"
+    mkdir -p $workdir
 fi
 
 # cleanup reports
@@ -25,28 +33,34 @@ echo "Downloading $PACKAGES_COUNT packages"
 for package in $packages; 
 do 
     echo "  Downloading $package"
-	repository=$(curl -s https://packagist.org/packages/$package.json | jq -r '.package.repository')
-    zipUrl="$repository/archive/refs/heads/master.zip"
-    # generate random name for destination
-    name=$(uuidgen)
-    destination="$workdir/$name"
-    echo "    Downloading $zipUrl to $destination"
-    curl -s -L -o $destination.zip $zipUrl
+	
+    # generate md5 checksum for destination
+    checksum=$(echo $package | md5sum | awk '{ print $1 }')
+    destination="$workdir/$checksum"
 
-    # if zip contains HTML, like "Just a moment...", then skip
-    if grep -q "<html" $destination.zip; then
-        echo "  Skipping $package because it contains HTML (probably rate limited)"
-        continue
+    if [ ! -d $destination ]; then
+        repository=$(curl -s https://packagist.org/packages/$package.json | jq -r '.package.repository')
+        zipUrl="$repository/archive/refs/heads/master.zip"
+        echo "    Downloading $zipUrl to $destination"
+        curl -s -L -o $destination.zip $zipUrl
+        # if zip contains HTML, like "Just a moment...", then skip
+        if grep -q "<html" $destination.zip; then
+            echo "  Skipping $package because it contains HTML (probably rate limited)"
+            continue
+        fi
+
+        # if contains 404, then skip
+        if grep -q "404" $destination.zip; then
+            echo "  Skipping $package because it contains 404"
+            continue
+        fi
+
+        unzip $destination.zip -d $destination > /dev/null
+        rm $destination.zip
+    else
+        echo "  Skipping $package because it already exists"
     fi
 
-    # if contains 404, then skip
-    if grep -q "404" $destination.zip; then
-        echo "  Skipping $package because it contains 404"
-        continue
-    fi
-
-    unzip $destination.zip -d $destination > /dev/null
-    rm $destination.zip
 done
 
 echo "Analyzing $workdir"
