@@ -141,7 +141,7 @@ func newAggregated() Aggregated {
 		LocPerClass:                             NewAggregateResult(),
 		LocPerMethod:                            NewAggregateResult(),
 		ClocPerMethod:                           NewAggregateResult(),
-		CyclomaticComplexity:           		 NewAggregateResult(),
+		CyclomaticComplexity:                    NewAggregateResult(),
 		CyclomaticComplexityPerMethod:           NewAggregateResult(),
 		CyclomaticComplexityPerClass:            NewAggregateResult(),
 		HalsteadEffort:                          NewAggregateResult(),

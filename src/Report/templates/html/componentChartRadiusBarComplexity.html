@@ -3,20 +3,14 @@
         {% set separator = "," %}
         {%- set files = currentView.ConcernedFiles -%}
         {%- for file in files -%}
-        {%- if len(file.Stmts.StmtClass) == 0 -%}
-        {% set elements = file|convertOneFileToCollection -%}
-        {% set name = file.Path %}
-        {%- else %}
-        {% set elements = file.Stmts.StmtClass -%}
-        {% set name = "" -%}
-        {%- endif -%}
+        {% set elements = file|toCollectionOfParsableComponents %}
         {%if forloop.last %}
             {% set separator = "" %}
         {% endif %}
-        {%- for class in elements -%}
+        {%- for item in elements -%}
         {
-            "name": "{{ name|default:class.Name.Qualified|addslashes }}",
-            "cyclomatic": {{ class.Stmts.Analyze.Complexity.Cyclomatic|floatformat:0 }}
+            "name": "{{ item.Name.Qualified|default:item.Path|addslashes }}",
+            "cyclomatic": {{ item.Stmts.Analyze.Complexity.Cyclomatic|floatformat:0 }}
         }{{ separator }}
         {%- endfor -%}
         {%- endfor -%}

@@ -400,6 +400,9 @@ func (v *HtmlReportGenerator) RegisterFilters() {
 			return pongo2.AsValue(Engine.GetClassesInFile(file)), nil
 		}
 
-		return pongo2.AsValue(file.Stmts), nil
+		collection := make([]*pb.StmtFunction, 0)
+		collection = append(collection, file.Stmts.StmtFunction...)
+
+		return pongo2.AsValue(collection), nil
 	})
 }
