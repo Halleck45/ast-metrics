@@ -2,6 +2,7 @@ package Php
 
 import (
 	"os"
+	"runtime"
 	"strings"
 	"sync"
 
@@ -60,17 +61,31 @@ func (r PhpRunner) Finish() error {
 // DumpAST dumps the AST of python files in protobuf format
 func (r PhpRunner) DumpAST() {
 
+	cpuCount := runtime.NumCPU()
 	var wg sync.WaitGroup
 	cnt := 0
-	for _, filePath := range r.getFileList().Files {
-		cnt++
-		if r.progressbar != nil {
-			r.progressbar.UpdateText("Dumping AST of PHP files (" + fmt.Sprintf("%d", cnt) + "/" + fmt.Sprintf("%d", len(r.getFileList().Files)) + ")")
-		}
-		wg.Add(1)
-		go r.dumpOneAst(&wg, filePath)
+	filesChan := make(chan string, cpuCount)
+
+	for i := 0; i < cpuCount; i++ {
+		go func() {
+			for filePath := range filesChan {
+				cnt++
+				if r.progressbar != nil {
+					r.progressbar.UpdateText("Dumping AST of PHP files (" + fmt.Sprintf("%d", cnt) + "/" + fmt.Sprintf("%d", len(r.getFileList().Files)) + ")")
+				}
+				wg.Add(1)
+				go r.dumpOneAst(&wg, filePath)
+			}
+		}()
 	}
 
+	// split files between workers
+	for _, filePath := range r.getFileList().Files {
+		filesChan <- filePath
+	}
+
+	// wait for all workers to finish
+	close(filesChan)
 	wg.Wait()
 
 	if r.progressbar != nil {
