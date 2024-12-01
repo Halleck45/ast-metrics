@@ -92,15 +92,15 @@ func TestHalsteadMetricsVisitor(t *testing.T) {
 		t.Errorf("Expected 4, got %d", *pbFile.Stmts.StmtFunction[0].Stmts.Analyze.Volume.HalsteadLength)
 	}
 
-	if *pbFile.Stmts.StmtFunction[0].Stmts.Analyze.Volume.HalsteadEstimatedLength != float32(4.754887502163469) {
+	if *pbFile.Stmts.StmtFunction[0].Stmts.Analyze.Volume.HalsteadEstimatedLength != float64(4.754887502163469) {
 		t.Errorf("Expected 4.754887502163469, got %f", *pbFile.Stmts.StmtFunction[0].Stmts.Analyze.Volume.HalsteadEstimatedLength)
 	}
 
-	if *pbFile.Stmts.StmtFunction[0].Stmts.Analyze.Volume.HalsteadVolume != float32(8) {
+	if *pbFile.Stmts.StmtFunction[0].Stmts.Analyze.Volume.HalsteadVolume != float64(8) {
 		t.Errorf("Expected 8, got %f", *pbFile.Stmts.StmtFunction[0].Stmts.Analyze.Volume.HalsteadVolume)
 	}
 
-	if *pbFile.Stmts.StmtFunction[0].Stmts.Analyze.Volume.HalsteadDifficulty != float32(1.5) {
+	if *pbFile.Stmts.StmtFunction[0].Stmts.Analyze.Volume.HalsteadDifficulty != float64(1.5) {
 		t.Errorf("Expected 1.5, got %f", *pbFile.Stmts.StmtFunction[0].Stmts.Analyze.Volume.HalsteadDifficulty)
 	}
 }
@@ -119,11 +119,11 @@ func TestHalsteadMetricsVisitor_LeaveNode(t *testing.T) {
 									Volume: &pb.Volume{
 										HalsteadVocabulary:      proto.Int32(2),
 										HalsteadLength:          proto.Int32(2),
-										HalsteadEstimatedLength: proto.Float32(2.5),
-										HalsteadVolume:          proto.Float32(2.5),
-										HalsteadDifficulty:      proto.Float32(2.5),
-										HalsteadEffort:          proto.Float32(2.5),
-										HalsteadTime:            proto.Float32(2.5),
+										HalsteadEstimatedLength: proto.Float64(2.5),
+										HalsteadVolume:          proto.Float64(2.5),
+										HalsteadDifficulty:      proto.Float64(2.5),
+										HalsteadEffort:          proto.Float64(2.5),
+										HalsteadTime:            proto.Float64(2.5),
 									},
 								},
 							},
@@ -134,11 +134,11 @@ func TestHalsteadMetricsVisitor_LeaveNode(t *testing.T) {
 									Volume: &pb.Volume{
 										HalsteadVocabulary:      proto.Int32(4),
 										HalsteadLength:          proto.Int32(4),
-										HalsteadEstimatedLength: proto.Float32(4.5),
-										HalsteadVolume:          proto.Float32(4.5),
-										HalsteadDifficulty:      proto.Float32(4.5),
-										HalsteadEffort:          proto.Float32(4.5),
-										HalsteadTime:            proto.Float32(4.5),
+										HalsteadEstimatedLength: proto.Float64(4.5),
+										HalsteadVolume:          proto.Float64(4.5),
+										HalsteadDifficulty:      proto.Float64(4.5),
+										HalsteadEffort:          proto.Float64(4.5),
+										HalsteadTime:            proto.Float64(4.5),
 									},
 								},
 							},
@@ -159,23 +159,23 @@ func TestHalsteadMetricsVisitor_LeaveNode(t *testing.T) {
 		t.Errorf("Expected 3, got %d", *stmts.StmtClass[0].Stmts.Analyze.Volume.HalsteadLength)
 	}
 
-	if *stmts.StmtClass[0].Stmts.Analyze.Volume.HalsteadEstimatedLength != float32(3.5) {
+	if *stmts.StmtClass[0].Stmts.Analyze.Volume.HalsteadEstimatedLength != float64(3.5) {
 		t.Errorf("Expected 3.5, got %f", *stmts.StmtClass[0].Stmts.Analyze.Volume.HalsteadEstimatedLength)
 	}
 
-	if *stmts.StmtClass[0].Stmts.Analyze.Volume.HalsteadVolume != float32(3.5) {
+	if *stmts.StmtClass[0].Stmts.Analyze.Volume.HalsteadVolume != float64(3.5) {
 		t.Errorf("Expected 3.5, got %f", *stmts.StmtClass[0].Stmts.Analyze.Volume.HalsteadVolume)
 	}
 
-	if *stmts.StmtClass[0].Stmts.Analyze.Volume.HalsteadDifficulty != float32(3.5) {
+	if *stmts.StmtClass[0].Stmts.Analyze.Volume.HalsteadDifficulty != float64(3.5) {
 		t.Errorf("Expected 3.5, got %f", *stmts.StmtClass[0].Stmts.Analyze.Volume.HalsteadDifficulty)
 	}
 
-	if *stmts.StmtClass[0].Stmts.Analyze.Volume.HalsteadEffort != float32(3.5) {
+	if *stmts.StmtClass[0].Stmts.Analyze.Volume.HalsteadEffort != float64(3.5) {
 		t.Errorf("Expected 3.5, got %f", *stmts.StmtClass[0].Stmts.Analyze.Volume.HalsteadEffort)
 	}
 
-	if *stmts.StmtClass[0].Stmts.Analyze.Volume.HalsteadTime != float32(3.5) {
+	if *stmts.StmtClass[0].Stmts.Analyze.Volume.HalsteadTime != float64(3.5) {
 		t.Errorf("Expected 3.5, got %f", *stmts.StmtClass[0].Stmts.Analyze.Volume.HalsteadTime)
 	}
 }

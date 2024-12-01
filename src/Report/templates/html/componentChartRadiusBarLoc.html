@@ -1,21 +1,25 @@
 <script id="chart_loc_data" type="application/json">
     [
+        {% set separator = "," %}
         {%- set files = currentView.ConcernedFiles -%}
         {%- for file in files -%}
             {%- if not fileHasClasses(file) -%}
             {% set elements = file|convertOneFileToCollection -%}
                 {% set name = file.Path %}
-                {% set value = file.Stmts.Analyze.Volume.Loc %}
+                {% set value = file.LinesOfCode.LinesOfCode %}
             {%- else %}
                 {% set elements = file.Stmts.StmtClass -%}
                 {% set name = class.Name.Qualified -%}
                 {% set value = class.Stmts.Analyze.Volume.Loc %}
             {%- endif -%}
+            {%if forloop.last %}
+                {% set separator = "" %}
+            {% endif %}
             {%- for item in elements -%}
                 {
                     "name": "{{ name|addslashes }}",
                     "loc": {{ value|floatformat:0 }}
-                },
+                }{{ separator }}
             {%- endfor -%}
         {%- endfor -%}
     ]

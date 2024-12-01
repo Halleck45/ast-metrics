@@ -9,9 +9,9 @@ type Comparator struct {
 }
 
 const (
-	ADDED    = "added"
-	DELETED  = "deleted"
-	MODIFIED = "modified"
+	ADDED     = "added"
+	DELETED   = "deleted"
+	MODIFIED  = "modified"
 	UNCHANGED = "unchanged"
 )
 
@@ -88,36 +88,35 @@ func (c *Comparator) Compare(first Aggregated, second Aggregated) Comparaison {
 	comparaison.NbClasses = first.NbClasses - second.NbClasses
 	comparaison.NbClassesWithCode = first.NbClassesWithCode - second.NbClassesWithCode
 	comparaison.NbMethods = first.NbMethods - second.NbMethods
-	comparaison.Loc = first.Loc - second.Loc
-	comparaison.Cloc = first.Cloc - second.Cloc
-	comparaison.Lloc = first.Lloc - second.Lloc
-	comparaison.AverageMethodsPerClass = first.AverageMethodsPerClass - second.AverageMethodsPerClass
-	comparaison.AverageLocPerMethod = first.AverageLocPerMethod - second.AverageLocPerMethod
-	comparaison.AverageLlocPerMethod = first.AverageLlocPerMethod - second.AverageLlocPerMethod
-	comparaison.AverageClocPerMethod = first.AverageClocPerMethod - second.AverageClocPerMethod
-	comparaison.AverageCyclomaticComplexityPerMethod = first.AverageCyclomaticComplexityPerMethod - second.AverageCyclomaticComplexityPerMethod
-	comparaison.AverageCyclomaticComplexityPerClass = first.AverageCyclomaticComplexityPerClass - second.AverageCyclomaticComplexityPerClass
-	comparaison.MinCyclomaticComplexity = first.MinCyclomaticComplexity - second.MinCyclomaticComplexity
-	comparaison.MaxCyclomaticComplexity = first.MaxCyclomaticComplexity - second.MaxCyclomaticComplexity
-	comparaison.AverageHalsteadDifficulty = first.AverageHalsteadDifficulty - second.AverageHalsteadDifficulty
-	comparaison.AverageHalsteadEffort = first.AverageHalsteadEffort - second.AverageHalsteadEffort
-	comparaison.AverageHalsteadVolume = first.AverageHalsteadVolume - second.AverageHalsteadVolume
-	comparaison.AverageHalsteadTime = first.AverageHalsteadTime - second.AverageHalsteadTime
-	comparaison.AverageHalsteadBugs = first.AverageHalsteadBugs - second.AverageHalsteadBugs
-	comparaison.SumHalsteadDifficulty = first.SumHalsteadDifficulty - second.SumHalsteadDifficulty
-	comparaison.SumHalsteadEffort = first.SumHalsteadEffort - second.SumHalsteadEffort
-	comparaison.SumHalsteadVolume = first.SumHalsteadVolume - second.SumHalsteadVolume
-	comparaison.SumHalsteadTime = first.SumHalsteadTime - second.SumHalsteadTime
-	comparaison.SumHalsteadBugs = first.SumHalsteadBugs - second.SumHalsteadBugs
-	comparaison.AverageMI = first.AverageMI - second.AverageMI
-	comparaison.AverageMIwoc = first.AverageMIwoc - second.AverageMIwoc
-	comparaison.AverageMIcw = first.AverageMIcw - second.AverageMIcw
-	comparaison.AverageMIPerMethod = first.AverageMIPerMethod - second.AverageMIPerMethod
-	comparaison.AverageMIwocPerMethod = first.AverageMIwocPerMethod - second.AverageMIwocPerMethod
-	comparaison.AverageMIcwPerMethod = first.AverageMIcwPerMethod - second.AverageMIcwPerMethod
-	comparaison.AverageAfferentCoupling = first.AverageAfferentCoupling - second.AverageAfferentCoupling
-	comparaison.AverageEfferentCoupling = first.AverageEfferentCoupling - second.AverageEfferentCoupling
-	comparaison.AverageInstability = first.AverageInstability - second.AverageInstability
+	comparaison.Loc = int(first.Loc.Sum - second.Loc.Sum)
+	comparaison.Cloc = int(first.Cloc.Sum - second.Cloc.Sum)
+	comparaison.Lloc = int(first.Lloc.Sum - second.Lloc.Sum)
+	comparaison.AverageMethodsPerClass = first.MethodsPerClass.Avg - second.MethodsPerClass.Avg
+	comparaison.AverageLocPerMethod = first.LocPerMethod.Avg - second.LocPerMethod.Avg
+	comparaison.AverageLlocPerMethod = first.LlocPerMethod.Avg - second.LlocPerMethod.Avg
+	comparaison.AverageClocPerMethod = first.ClocPerMethod.Avg - second.ClocPerMethod.Avg
+	comparaison.AverageCyclomaticComplexityPerMethod = first.CyclomaticComplexityPerMethod.Avg - second.CyclomaticComplexityPerMethod.Avg
+	comparaison.AverageCyclomaticComplexityPerClass = first.CyclomaticComplexityPerClass.Avg - second.CyclomaticComplexityPerClass.Avg
+	comparaison.MinCyclomaticComplexity = int(first.CyclomaticComplexityPerMethod.Min - second.CyclomaticComplexityPerMethod.Min)
+	comparaison.MaxCyclomaticComplexity = int(first.CyclomaticComplexityPerMethod.Max - second.CyclomaticComplexityPerMethod.Max)
+	comparaison.AverageHalsteadDifficulty = first.HalsteadDifficulty.Avg - second.HalsteadDifficulty.Avg
+	comparaison.AverageHalsteadEffort = first.HalsteadEffort.Avg - second.HalsteadEffort.Avg
+	comparaison.AverageHalsteadVolume = first.HalsteadVolume.Avg - second.HalsteadVolume.Avg
+	comparaison.AverageHalsteadTime = first.HalsteadTime.Avg - second.HalsteadTime.Avg
+	comparaison.AverageHalsteadBugs = first.HalsteadBugs.Avg - second.HalsteadBugs.Avg
+	comparaison.SumHalsteadDifficulty = first.HalsteadDifficulty.Sum - second.HalsteadDifficulty.Sum
+	comparaison.SumHalsteadEffort = first.HalsteadEffort.Sum - second.HalsteadEffort.Sum
+	comparaison.SumHalsteadVolume = first.HalsteadVolume.Sum - second.HalsteadVolume.Sum
+	comparaison.SumHalsteadTime = first.HalsteadTime.Sum - second.HalsteadTime.Sum
+	comparaison.SumHalsteadBugs = first.HalsteadBugs.Sum - second.HalsteadBugs.Sum
+	comparaison.AverageMI = first.MaintainabilityIndex.Avg - second.MaintainabilityIndex.Avg
+	comparaison.AverageMIwoc = first.MaintainabilityIndexWithoutComments.Avg - second.MaintainabilityIndexWithoutComments.Avg
+	comparaison.AverageMIPerMethod = first.MaintainabilityPerMethod.Avg - second.MaintainabilityPerMethod.Avg
+	comparaison.AverageMIwocPerMethod = first.MaintainabilityCommentWeightPerMethod.Avg - second.MaintainabilityCommentWeightPerMethod.Avg
+	comparaison.AverageMIcwPerMethod = first.MaintainabilityCommentWeightPerMethod.Avg - second.MaintainabilityCommentWeightPerMethod.Avg
+	comparaison.AverageAfferentCoupling = first.AfferentCoupling.Avg - second.AfferentCoupling.Avg
+	comparaison.AverageEfferentCoupling = first.EfferentCoupling.Avg - second.EfferentCoupling.Avg
+	comparaison.AverageInstability = first.Instability.Avg - second.Instability.Avg
 	comparaison.CommitCountForPeriod = first.CommitCountForPeriod - second.CommitCountForPeriod
 	comparaison.CommittedFilesCountForPeriod = first.CommittedFilesCountForPeriod - second.CommittedFilesCountForPeriod
 	comparaison.BusFactor = first.BusFactor - second.BusFactor
@@ -224,30 +223,30 @@ func (c *Comparator) Compare(first Aggregated, second Aggregated) Comparaison {
 				// Halstead
 				if file.Stmts.Analyze.Volume != nil && file.Stmts.Analyze.Volume.HalsteadDifficulty != nil &&
 					file2.Stmts.Analyze.Volume != nil && file2.Stmts.Analyze.Volume.HalsteadDifficulty != nil {
-					change.Comparaison.AverageHalsteadDifficulty = float64(*file.Stmts.Analyze.Volume.HalsteadDifficulty) - float64(*file2.Stmts.Analyze.Volume.HalsteadDifficulty)
-					change.Comparaison.AverageHalsteadEffort = float64(*file.Stmts.Analyze.Volume.HalsteadEffort) - float64(*file2.Stmts.Analyze.Volume.HalsteadEffort)
-					change.Comparaison.AverageHalsteadVolume = float64(*file.Stmts.Analyze.Volume.HalsteadVolume) - float64(*file2.Stmts.Analyze.Volume.HalsteadVolume)
-					change.Comparaison.AverageHalsteadTime = float64(*file.Stmts.Analyze.Volume.HalsteadTime) - float64(*file2.Stmts.Analyze.Volume.HalsteadTime)
+					change.Comparaison.AverageHalsteadDifficulty = *file.Stmts.Analyze.Volume.HalsteadDifficulty - *file2.Stmts.Analyze.Volume.HalsteadDifficulty
+					change.Comparaison.AverageHalsteadEffort = *file.Stmts.Analyze.Volume.HalsteadEffort - *file2.Stmts.Analyze.Volume.HalsteadEffort
+					change.Comparaison.AverageHalsteadVolume = *file.Stmts.Analyze.Volume.HalsteadVolume - *file2.Stmts.Analyze.Volume.HalsteadVolume
+					change.Comparaison.AverageHalsteadTime = *file.Stmts.Analyze.Volume.HalsteadTime - *file2.Stmts.Analyze.Volume.HalsteadTime
 				}
 
 				// Maintainability index
 				if file.Stmts.Analyze.Maintainability != nil && file2.Stmts.Analyze.Maintainability != nil && file.Stmts.Analyze.Maintainability.MaintainabilityIndex != nil && file2.Stmts.Analyze.Maintainability.MaintainabilityIndex != nil {
-					change.Comparaison.AverageMI = float64(*file.Stmts.Analyze.Maintainability.MaintainabilityIndex) - float64(*file2.Stmts.Analyze.Maintainability.MaintainabilityIndex)
+					change.Comparaison.AverageMI = *file.Stmts.Analyze.Maintainability.MaintainabilityIndex - *file2.Stmts.Analyze.Maintainability.MaintainabilityIndex
 				}
 				if file.Stmts.Analyze.Maintainability != nil && file2.Stmts.Analyze.Maintainability != nil && file.Stmts.Analyze.Maintainability.MaintainabilityIndexWithoutComments != nil && file2.Stmts.Analyze.Maintainability.MaintainabilityIndexWithoutComments != nil {
-					change.Comparaison.AverageMIwoc = float64(*file.Stmts.Analyze.Maintainability.MaintainabilityIndexWithoutComments) - float64(*file2.Stmts.Analyze.Maintainability.MaintainabilityIndexWithoutComments)
+					change.Comparaison.AverageMIwoc = *file.Stmts.Analyze.Maintainability.MaintainabilityIndexWithoutComments - *file2.Stmts.Analyze.Maintainability.MaintainabilityIndexWithoutComments
 				}
 
 				// Coupling
 				if file.Stmts.Analyze.Coupling != nil && file2.Stmts.Analyze.Coupling != nil {
 					change.Comparaison.AverageAfferentCoupling = float64(file.Stmts.Analyze.Coupling.Afferent) - float64(file2.Stmts.Analyze.Coupling.Afferent)
 					change.Comparaison.AverageEfferentCoupling = float64(file.Stmts.Analyze.Coupling.Efferent) - float64(file2.Stmts.Analyze.Coupling.Efferent)
-					change.Comparaison.AverageInstability = float64(file.Stmts.Analyze.Coupling.Instability) - float64(file2.Stmts.Analyze.Coupling.Instability)
+					change.Comparaison.AverageInstability = file.Stmts.Analyze.Coupling.Instability - file2.Stmts.Analyze.Coupling.Instability
 				}
 
 				// Risk
 				if file.Stmts.Analyze.Risk != nil && file2.Stmts.Analyze.Risk != nil {
-					change.Comparaison.Risk = float64(file.Stmts.Analyze.Risk.Score) - float64(file2.Stmts.Analyze.Risk.Score)
+					change.Comparaison.Risk = file.Stmts.Analyze.Risk.Score - file2.Stmts.Analyze.Risk.Score
 					// check if not NaN
 					if change.Comparaison.Risk != change.Comparaison.Risk {
 						change.Comparaison.Risk = 0

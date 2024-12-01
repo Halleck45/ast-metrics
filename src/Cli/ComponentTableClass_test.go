@@ -41,11 +41,11 @@ func TestNewComponentTableClass(t *testing.T) {
 
 func TestComponentTableClass_Render(t *testing.T) {
 
-	mi := float32(120)
+	mi := float64(120)
 	ccn := int32(5)
 	loc := int32(100)
 	halsteadLength := int32(100)
-	halsteadVolume := float32(100)
+	halsteadVolume := float64(100)
 
 	files := []*pb.File{
 		{
@@ -89,14 +89,14 @@ func TestComponentTableClass_Render(t *testing.T) {
 func TestComponentTableClass_Sort(t *testing.T) {
 
 	// class 1
-	mi1 := float32(120)
+	mi1 := float64(120)
 	ccn1 := int32(5)
 	loc1 := int32(100)
 	halsteadLength1 := int32(5)
-	halsteadVolume := float32(7)
+	halsteadVolume := float64(7)
 
 	//  class 2
-	mi2 := float32(110)
+	mi2 := float64(110)
 	ccn2 := int32(10)
 	loc2 := int32(80)
 	halsteadLength2 := int32(7)

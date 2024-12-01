@@ -20,7 +20,12 @@ func (c *ComponentBarchart) AsTerminalElement() string {
 		c.barWidth = 8
 	}
 
-	graph := bar.Draw(c.data, bar.Options{
+	data := make(map[string]float64)
+	for key, value := range c.data {
+		data[key] = float64(value)
+	}
+
+	graph := bar.Draw(data, bar.Options{
 		Chart: bar.Chart{
 			Height: c.height,
 		},

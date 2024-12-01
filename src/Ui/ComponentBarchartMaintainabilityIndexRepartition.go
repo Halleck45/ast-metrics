@@ -37,7 +37,7 @@ func (c *ComponentBarchartMaintainabilityIndexRepartition) GetData() *orderedmap
 	data := orderedmap.NewOrderedMap[string, float64]()
 
 	rangeOfLabels := []string{"🔴 < 64", "🟡 < 85", "🟢 > 85"}
-	rangeOfValues := []float32{64, 85, 1000}
+	rangeOfValues := []float64{64, 85, 1000}
 	for _, r := range rangeOfLabels {
 		data.Set(r, 0)
 	}

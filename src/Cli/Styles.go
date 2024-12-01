@@ -126,10 +126,10 @@ func DecorateMaintainabilityIndex(mi int, analyze *pb.Analyze) string {
 }
 
 func Round(num float64) int {
-	return int(num + math.Copysign(0.5, num))
+	return int(num + float64(math.Copysign(0.5, float64(num))))
 }
 
 func ToFixed(num float64, precision int) float64 {
 	output := math.Pow(10, float64(precision))
-	return float64(Round(num*output)) / output
+	return float64(Round(num*float64(output))) / float64(output)
 }

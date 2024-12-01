@@ -79,19 +79,19 @@ type complexity struct {
 }
 
 type risk struct {
-	Score float32 `json:"score,omitempty"` // score of risk. Lower is better
+	Score float64 `json:"score,omitempty"` // score of risk. Lower is better
 }
 
 type coupling struct {
 	Afferent    int32   `json:"afferent,omitempty"`    // number of classes that depends on this class
 	Efferent    int32   `json:"efferent,omitempty"`    // number of classes that this class depends on
-	Instability float32 `json:"instability,omitempty"` // instability of the class
+	Instability float64 `json:"instability,omitempty"` // instability of the class
 }
 
 type maintainability struct {
-	MaintainabilityIndex                float32 `json:"maintainabilityIndex,omitempty"`
-	MaintainabilityIndexWithoutComments float32 `json:"maintainabilityIndexWithoutComments,omitempty"`
-	CommentWeight                       float32 `json:"commentWeight,omitempty"`
+	MaintainabilityIndex                float64 `json:"maintainabilityIndex,omitempty"`
+	MaintainabilityIndexWithoutComments float64 `json:"maintainabilityIndexWithoutComments,omitempty"`
+	CommentWeight                       float64 `json:"commentWeight,omitempty"`
 }
 
 type volume struct {
@@ -100,9 +100,9 @@ type volume struct {
 	Cloc                    int32   `json:"cloc,omitempty"`
 	HalsteadVocabulary      int32   `json:"halsteadVocabulary,omitempty"`
 	HalsteadLength          int32   `json:"halsteadLength,omitempty"`
-	HalsteadVolume          float32 `json:"halsteadVolume,omitempty"`
-	HalsteadDifficulty      float32 `json:"halsteadDifficulty,omitempty"`
-	HalsteadEffort          float32 `json:"halsteadEffort,omitempty"`
-	HalsteadTime            float32 `json:"halsteadTime,omitempty"`
-	HalsteadEstimatedLength float32 `json:"halsteadEstimatedLength,omitempty"`
+	HalsteadVolume          float64 `json:"halsteadVolume,omitempty"`
+	HalsteadDifficulty      float64 `json:"halsteadDifficulty,omitempty"`
+	HalsteadEffort          float64 `json:"halsteadEffort,omitempty"`
+	HalsteadTime            float64 `json:"halsteadTime,omitempty"`
+	HalsteadEstimatedLength float64 `json:"halsteadEstimatedLength,omitempty"`
 }

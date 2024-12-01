@@ -248,6 +248,11 @@ func (v *HtmlReportGenerator) RegisterFilters() {
 		}
 		json = json[:len(json)-1] + "]"
 
+		if json == "]" {
+			// occurs when no relations are found
+			json = "[]"
+		}
+
 		return pongo2.AsSafeValue(json), nil
 	})
 
@@ -261,6 +266,13 @@ func (v *HtmlReportGenerator) RegisterFilters() {
 		// Sort by risk of file
 		files := in.Interface().([]*pb.File)
 		sort.Slice(files, func(i, j int) bool {
+			if files[i].Stmts == nil && files[j].Stmts == nil || files[i].Stmts.Analyze == nil || files[j].Stmts.Analyze == nil {
+				return false
+			}
+
+			if files[i].Stmts.Analyze.Risk == nil && files[j].Stmts.Analyze.Risk == nil {
+				return false
+			}
 
 			if files[i].Stmts.Analyze.Risk == nil {
 				return false

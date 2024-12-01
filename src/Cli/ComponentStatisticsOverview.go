@@ -31,7 +31,7 @@ func (v *ComponentStatisticsOverview) Render() string {
 		Files:      v.files,
 	}
 	boxCcn := StyleNumberBox(
-		fmt.Sprintf("%.2f", v.aggregated.AverageCyclomaticComplexityPerMethod),
+		fmt.Sprintf("%.2f", v.aggregated.CyclomaticComplexityPerMethod.Avg),
 		"Cycl. complexity per method",
 		chartRepartitionCyclomatic.AsTerminalElement(),
 	)
@@ -42,7 +42,7 @@ func (v *ComponentStatisticsOverview) Render() string {
 		Files:      v.files,
 	}
 	boxMethods := StyleNumberBox(
-		fmt.Sprintf("%.2f", v.aggregated.AverageLocPerMethod),
+		fmt.Sprintf("%.2f", v.aggregated.LocPerMethod.Avg),
 		"Average LOC per method",
 		chartRepartitionLocByMethod.AsTerminalElement()+"     ",
 	)
@@ -53,7 +53,7 @@ func (v *ComponentStatisticsOverview) Render() string {
 		Files:      v.files,
 	}
 	boxMaintainability := StyleNumberBox(
-		DecorateMaintainabilityIndex(int(v.aggregated.AverageMI), nil),
+		DecorateMaintainabilityIndex(int(v.aggregated.MaintainabilityIndex.Avg), nil),
 		"Maintainability index",
 		chartRepartitionMI.AsTerminalElement(),
 	)

@@ -74,20 +74,20 @@ func (v *HalsteadMetricsVisitor) Visit(stmts *pb.Stmts, parents *pb.Stmts) {
 		N = int32(N1 + N2)
 
 		// Calculate estimated program length (𝑁̂)
-		hatN = float64(n1)*math.Log2(float64(n1)) + float64(n2)*math.Log2(float64(n2))
-		if math.IsNaN(hatN) {
+		hatN = float64(n1)*float64(math.Log2(float64(n1))) + float64(n2)*float64(math.Log2(float64(n2)))
+		if math.IsNaN(float64(hatN)) {
 			hatN = 0
 		}
 
 		// Calculate volume (V)
-		V = float64(N) * math.Log2(float64(n))
-		if math.IsNaN(V) {
+		V = float64(N) * float64(math.Log2(float64(n)))
+		if math.IsNaN(float64(V)) {
 			V = 0
 		}
 
 		// Calculate difficulty (D)
 		D = float64(n1) / 2 * float64(N2) / float64(n2)
-		if math.IsNaN(D) {
+		if math.IsNaN(float64(D)) {
 			D = 0
 		}
 
@@ -97,13 +97,6 @@ func (v *HalsteadMetricsVisitor) Visit(stmts *pb.Stmts, parents *pb.Stmts) {
 		// Calculate time required to program (T)
 		T = E / 18
 
-		// convert float to float32
-		V32 := float32(V)
-		hatN32 := float32(hatN)
-		D32 := float32(D)
-		E32 := float32(E)
-		T32 := float32(T)
-
 		// Assign to result
 		if stmt.Stmts.Analyze == nil {
 			stmt.Stmts.Analyze = &pb.Analyze{}
@@ -112,11 +105,11 @@ func (v *HalsteadMetricsVisitor) Visit(stmts *pb.Stmts, parents *pb.Stmts) {
 
 		stmt.Stmts.Analyze.Volume.HalsteadVocabulary = &n
 		stmt.Stmts.Analyze.Volume.HalsteadLength = &N
-		stmt.Stmts.Analyze.Volume.HalsteadEstimatedLength = &hatN32
-		stmt.Stmts.Analyze.Volume.HalsteadVolume = &V32
-		stmt.Stmts.Analyze.Volume.HalsteadDifficulty = &D32
-		stmt.Stmts.Analyze.Volume.HalsteadEffort = &E32
-		stmt.Stmts.Analyze.Volume.HalsteadTime = &T32
+		stmt.Stmts.Analyze.Volume.HalsteadEstimatedLength = &hatN
+		stmt.Stmts.Analyze.Volume.HalsteadVolume = &V
+		stmt.Stmts.Analyze.Volume.HalsteadDifficulty = &D
+		stmt.Stmts.Analyze.Volume.HalsteadEffort = &E
+		stmt.Stmts.Analyze.Volume.HalsteadTime = &T
 	}
 }
 
@@ -155,11 +148,11 @@ func (v *HalsteadMetricsVisitor) LeaveNode(stmts *pb.Stmts) {
 					}
 					n += int32(*method.Stmts.Analyze.Volume.HalsteadVocabulary)
 					N += int32(*method.Stmts.Analyze.Volume.HalsteadLength)
-					hatN += float64(*method.Stmts.Analyze.Volume.HalsteadEstimatedLength)
-					V += float64(*method.Stmts.Analyze.Volume.HalsteadVolume)
-					D += float64(*method.Stmts.Analyze.Volume.HalsteadDifficulty)
-					E += float64(*method.Stmts.Analyze.Volume.HalsteadEffort)
-					T += float64(*method.Stmts.Analyze.Volume.HalsteadTime)
+					hatN += *method.Stmts.Analyze.Volume.HalsteadEstimatedLength
+					V += *method.Stmts.Analyze.Volume.HalsteadVolume
+					D += *method.Stmts.Analyze.Volume.HalsteadDifficulty
+					E += *method.Stmts.Analyze.Volume.HalsteadEffort
+					T += *method.Stmts.Analyze.Volume.HalsteadTime
 				}
 			}
 
@@ -174,13 +167,6 @@ func (v *HalsteadMetricsVisitor) LeaveNode(stmts *pb.Stmts) {
 				T = T / float64(len(stmt.Stmts.StmtFunction))
 			}
 
-			// convert float to float32
-			V32 := float32(V)
-			hatN32 := float32(hatN)
-			D32 := float32(D)
-			E32 := float32(E)
-			T32 := float32(T)
-
 			// Assign to result
 			if stmt.Stmts.Analyze == nil {
 				stmt.Stmts.Analyze = &pb.Analyze{}
@@ -191,11 +177,11 @@ func (v *HalsteadMetricsVisitor) LeaveNode(stmts *pb.Stmts) {
 
 			stmt.Stmts.Analyze.Volume.HalsteadVocabulary = &n
 			stmt.Stmts.Analyze.Volume.HalsteadLength = &N
-			stmt.Stmts.Analyze.Volume.HalsteadEstimatedLength = &hatN32
-			stmt.Stmts.Analyze.Volume.HalsteadVolume = &V32
-			stmt.Stmts.Analyze.Volume.HalsteadDifficulty = &D32
-			stmt.Stmts.Analyze.Volume.HalsteadEffort = &E32
-			stmt.Stmts.Analyze.Volume.HalsteadTime = &T32
+			stmt.Stmts.Analyze.Volume.HalsteadEstimatedLength = &hatN
+			stmt.Stmts.Analyze.Volume.HalsteadVolume = &V
+			stmt.Stmts.Analyze.Volume.HalsteadDifficulty = &D
+			stmt.Stmts.Analyze.Volume.HalsteadEffort = &E
+			stmt.Stmts.Analyze.Volume.HalsteadTime = &T
 		}
 	}
 }

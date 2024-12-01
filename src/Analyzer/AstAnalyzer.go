@@ -2,12 +2,15 @@ package Analyzer
 
 import (
 	"io/ioutil"
+	"runtime"
 	"strconv"
 	"sync"
+	"sync/atomic"
 
 	Complexity "github.com/halleck45/ast-metrics/src/Analyzer/Complexity"
 	Component "github.com/halleck45/ast-metrics/src/Analyzer/Component"
 	Volume "github.com/halleck45/ast-metrics/src/Analyzer/Volume"
+	"github.com/halleck45/ast-metrics/src/Engine"
 	pb "github.com/halleck45/ast-metrics/src/NodeType"
 	"github.com/halleck45/ast-metrics/src/Storage"
 	"github.com/pterm/pterm"
@@ -31,25 +34,39 @@ func Start(workdir *Storage.Workdir, progressbar *pterm.SpinnerPrinter) []*pb.Fi
 	// https://stackoverflow.com/questions/58743038/why-does-this-goroutine-not-call-wg-done
 	channelResult := make(chan *pb.File, len(astFiles))
 
-	nbParsingFiles := 0
-	// in parallel, 8 process max, analyze each AST file running the runAnalysis function
+	var nbParsingFiles atomic.Uint64
+
+	// analyze each AST file running the runAnalysis function
+	numWorkers := runtime.NumCPU()
+	filesChan := make(chan string, numWorkers)
+
+	for i := 0; i < numWorkers; i++ {
+		go func() {
+			for file := range filesChan {
+				go func(file string) {
+					defer wg.Done()
+					nbParsingFiles.Add(1)
+
+					executeFileAnalysis(file, channelResult)
+
+					details := strconv.Itoa(int(nbParsingFiles.Load())) + "/" + strconv.Itoa(len(astFiles))
+
+					if progressbar != nil {
+						progressbar.UpdateText("Analyzing (" + details + ")")
+					}
+				}(file)
+			}
+		}()
+	}
+
 	for _, file := range astFiles {
 		wg.Add(1)
-		nbParsingFiles++
-		go func(file string) {
-			defer wg.Done()
-			executeFileAnalysis(file, channelResult)
-			// details is the number of files processed / total number of files
-			details := strconv.Itoa(nbParsingFiles) + "/" + strconv.Itoa(len(astFiles))
-
-			if progressbar != nil {
-				progressbar.UpdateText("Analyzing (" + details + ")")
-			}
-
-		}(file)
+		filesChan <- file
 	}
 
 	wg.Wait()
+	close(filesChan)
+
 	if progressbar != nil {
 		progressbar.Info("AST Analysis finished")
 	}
@@ -114,6 +131,10 @@ func executeFileAnalysis(file string, channelResult chan<- *pb.File) error {
 
 	// visit AST
 	root.Visit()
+
+	// Ensure structure is complete
+	Engine.EnsureNodeTypeIsComplete(pbFile)
+
 	channelResult <- pbFile
 	return nil
 }

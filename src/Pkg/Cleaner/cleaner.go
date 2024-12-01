@@ -7,13 +7,13 @@ import (
 )
 
 var (
+	defaultfloat64 float64 = 0
 	defaultFloat64 float64 = 0
-	defaultFloat32 float32 = 0
 )
 
 // The CleanVal removes all NaN values from any value
 // and sets them to the default float64 value, which is 0.
-// For float32 values, it also sets them to 0.
+// For float64 values, it also sets them to 0.
 //
 // This function accepts a pointer because it needs
 // to modify the provided value.
@@ -60,18 +60,13 @@ func cleanSlice(v reflect.Value) {
 
 func cleanField(field reflect.Value) {
 	switch field.Kind() {
-	case reflect.Float32, reflect.Float64:
+	case reflect.Float64:
 		f := field.Float()
 		isInvalidAndCanSet := field.CanSet() && (math.IsNaN(f) || math.IsInf(f, 0))
 		if !isInvalidAndCanSet {
 			return
 		}
 
-		switch field.Kind() {
-		case reflect.Float64:
-			field.Set(reflect.ValueOf(defaultFloat64))
-		case reflect.Float32:
-			field.Set(reflect.ValueOf(defaultFloat32))
-		}
+		field.Set(reflect.ValueOf(defaultFloat64))
 	}
 }

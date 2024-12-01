@@ -209,16 +209,16 @@ message Volume {
   optional int32 cloc = 3;
   optional int32 halsteadVocabulary = 4;
   optional int32 halsteadLength = 5;
-  optional float halsteadVolume = 6;
-  optional float halsteadDifficulty = 7;
-  optional float halsteadEffort = 8;
-  optional float halsteadTime = 9;
-  optional float halsteadEstimatedLength = 10;
+  optional double halsteadVolume = 6;
+  optional double halsteadDifficulty = 7;
+  optional double halsteadEffort = 8;
+  optional double halsteadTime = 9;
+  optional double halsteadEstimatedLength = 10;
 }
 message Maintainability {
-  optional float maintainabilityIndex = 1;
-  optional float maintainabilityIndexWithoutComments = 2;
-  optional float commentWeight = 3;
+  optional double maintainabilityIndex = 1;
+  optional double maintainabilityIndexWithoutComments = 2;
+  optional double commentWeight = 3;
 }
 
 // ------------------------------------
@@ -239,7 +239,7 @@ message Commit {
 // -- Risk
 // ------------------------------------
 message Risk {
-  float score = 1; // score of risk. Lower is better
+  double score = 1; // score of risk. Lower is better
 }
 
 // ------------------------------------
@@ -248,5 +248,5 @@ message Risk {
 message Coupling {
   int32 afferent = 1; // number of classes that depends on this class
   int32 efferent = 2; // number of classes that this class depends on
-  float instability = 3; // instability of the class
+  double instability = 3; // instability of the class
 }
