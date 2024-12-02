@@ -348,20 +348,29 @@ var regForNamespacePart = regexp.MustCompile("[^A-Za-z0-9]+")
 // Keep only n levels in namespace
 func ReduceDepthOfNamespace(namespace string, depth int) string {
 
+	// if namespace starts with github.com, avoid using the dot separator
+	if strings.HasPrefix(namespace, "github.com") {
+		namespace = strings.Replace(namespace, "github.com", "githubcom", -1)
+		depth += 1
+	}
+
 	separator := regForNamespacePart.FindString(namespace)
 	parts := regForNamespacePart.Split(namespace, -1)
 
 	if depth >= len(parts) {
-		return namespace
+		return strings.Replace(namespace, "githubcom", "github.com", -1)
 	}
 
 	result := ""
-	fmt.Println(separator, parts)
 	for i := 0; i < depth; i++ {
-		fmt.Println(namespace, i)
 		if i <= len(parts) {
 			result += parts[i] + separator
 		}
+	}
+
+	// revert the github.com replacement
+	if strings.HasPrefix(namespace, "githubcom") {
+		result = strings.Replace(result, "githubcom", "github.com", -1)
 	}
 
 	return strings.Trim(result, separator)
