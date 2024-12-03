@@ -873,13 +873,13 @@ func (r *Aggregator) mapCoupling(aggregated *Aggregated) Aggregated {
 		// dependencies of file
 		dependencies := file.Stmts.StmtExternalDependencies
 		uniqueDependencies := make(map[string]*pb.StmtExternalDependency)
+
 		// make it unique
 		for _, dependency := range dependencies {
 			name := dependency.From
 			uniqueDependencies[name] = dependency
 		}
 
-		// @todo make dependencies unique here
 		for _, dependency := range uniqueDependencies {
 
 			if dependency == nil {
@@ -896,6 +896,8 @@ func (r *Aggregator) mapCoupling(aggregated *Aggregated) Aggregated {
 			// Increment the afferent coupling of the fromFile
 			fromFile := files[namespaceFrom]
 			if fromFile != nil {
+				// This code cannot work in a no-oop context
+				// => we cannot use afferent coupling of file itself, only the coupling of the class
 				fromFile.Stmts.Analyze.Coupling.Afferent++
 			}
 
@@ -932,8 +934,8 @@ func (r *Aggregator) mapCoupling(aggregated *Aggregated) Aggregated {
 					continue
 				}
 
-				if _, ok := uniqueClassDependencies[dependency.From]; !ok {
-					uniqueClassDependencies[dependency.From] = dependency
+				if _, ok := uniqueClassDependencies[dependency.Namespace]; !ok {
+					uniqueClassDependencies[dependency.Namespace] = dependency
 				}
 			}
 
@@ -959,13 +961,11 @@ func (r *Aggregator) mapCoupling(aggregated *Aggregated) Aggregated {
 					Afferent: 0,
 				}
 			}
-			class.Stmts.Analyze.Coupling.Efferent = int32(len(uniqueDependencies))
 
-			// Increment result
+			class.Stmts.Analyze.Coupling.Efferent = int32(len(uniqueClassDependencies))
+			// Increment result (efferent coupling)
 			result.EfferentCoupling.Sum += float64(class.Stmts.Analyze.Coupling.Efferent)
 			result.EfferentCoupling.Counter++
-			result.AfferentCoupling.Sum += float64(class.Stmts.Analyze.Coupling.Afferent)
-			result.AfferentCoupling.Counter++
 		}
 	}
 
@@ -978,8 +978,12 @@ func (r *Aggregator) mapCoupling(aggregated *Aggregated) Aggregated {
 	}
 	for _, class := range classesMap {
 		// instability
-		if class.Stmts.Analyze.Coupling.Afferent > 0 && class.Stmts.Analyze.Coupling.Efferent > 0 {
-			class.Stmts.Analyze.Coupling.Instability = float64(class.Stmts.Analyze.Coupling.Afferent) / float64(class.Stmts.Analyze.Coupling.Afferent+class.Stmts.Analyze.Coupling.Efferent)
+		if class.Stmts.Analyze.Coupling.Afferent > 0 {
+			result.AfferentCoupling.Sum += float64(class.Stmts.Analyze.Coupling.Afferent)
+			result.AfferentCoupling.Counter++
+			if class.Stmts.Analyze.Coupling.Efferent > 0 {
+				class.Stmts.Analyze.Coupling.Instability = float64(class.Stmts.Analyze.Coupling.Afferent) / float64(class.Stmts.Analyze.Coupling.Afferent+class.Stmts.Analyze.Coupling.Efferent)
+			}
 		}
 	}
 
