@@ -863,6 +863,11 @@ func (r *Aggregator) mapCoupling(aggregated *Aggregated) Aggregated {
 	// Create the hashmaps of files, by Path then by class name.
 	files := make(map[string]*pb.File)
 	classesMap := make(map[string]*pb.StmtClass)
+	// Populate the 'files' map with namespace keys
+	for _, fileItem := range aggregated.ConcernedFiles {
+		namespace := Engine.ReduceDepthOfNamespace(fileItem.Path, 2)
+		files[namespace] = fileItem
+	}
 
 	for _, file := range aggregated.ConcernedFiles {
 
@@ -873,13 +878,13 @@ func (r *Aggregator) mapCoupling(aggregated *Aggregated) Aggregated {
 		// dependencies of file
 		dependencies := file.Stmts.StmtExternalDependencies
 		uniqueDependencies := make(map[string]*pb.StmtExternalDependency)
+
 		// make it unique
 		for _, dependency := range dependencies {
 			name := dependency.From
 			uniqueDependencies[name] = dependency
 		}
 
-		// @todo make dependencies unique here
 		for _, dependency := range uniqueDependencies {
 
 			if dependency == nil {
@@ -896,6 +901,8 @@ func (r *Aggregator) mapCoupling(aggregated *Aggregated) Aggregated {
 			// Increment the afferent coupling of the fromFile
 			fromFile := files[namespaceFrom]
 			if fromFile != nil {
+				// This code cannot work in a no-oop context
+				// => we cannot use afferent coupling of file itself, only the coupling of the class
 				fromFile.Stmts.Analyze.Coupling.Afferent++
 			}
 
@@ -925,15 +932,19 @@ func (r *Aggregator) mapCoupling(aggregated *Aggregated) Aggregated {
 				classesMap[class.Name.Qualified] = class
 			}
 
+			if class.Stmts == nil || class.Stmts.StmtExternalDependencies == nil {
+				continue
+			}
 			uniqueClassDependencies := make(map[string]*pb.StmtExternalDependency)
+
 			for _, dependency := range class.Stmts.StmtExternalDependencies {
 				// make it unique
 				if dependency == nil || dependency.ClassName == "" {
 					continue
 				}
 
-				if _, ok := uniqueClassDependencies[dependency.From]; !ok {
-					uniqueClassDependencies[dependency.From] = dependency
+				if _, ok := uniqueClassDependencies[dependency.Namespace]; !ok {
+					uniqueClassDependencies[dependency.Namespace] = dependency
 				}
 			}
 
@@ -949,6 +960,14 @@ func (r *Aggregator) mapCoupling(aggregated *Aggregated) Aggregated {
 
 				fromClass := classesMap[dependencyName]
 				if fromClass != nil {
+
+					if fromClass.Stmts.Analyze.Coupling == nil {
+						fromClass.Stmts.Analyze.Coupling = &pb.Coupling{
+							Efferent: 0,
+							Afferent: 0,
+						}
+					}
+
 					fromClass.Stmts.Analyze.Coupling.Afferent++
 				}
 			}
@@ -959,34 +978,46 @@ func (r *Aggregator) mapCoupling(aggregated *Aggregated) Aggregated {
 					Afferent: 0,
 				}
 			}
-			class.Stmts.Analyze.Coupling.Efferent = int32(len(uniqueDependencies))
 
-			// Increment result
+			class.Stmts.Analyze.Coupling.Efferent = int32(len(uniqueClassDependencies))
+			// Increment result (efferent coupling)
 			result.EfferentCoupling.Sum += float64(class.Stmts.Analyze.Coupling.Efferent)
 			result.EfferentCoupling.Counter++
-			result.AfferentCoupling.Sum += float64(class.Stmts.Analyze.Coupling.Afferent)
-			result.AfferentCoupling.Counter++
 		}
 	}
 
 	// Now iterate again on each file, then on each class, in order to update the afferent coupling of the class itself
 	for _, file := range files {
+
+		if file.Stmts == nil || file.Stmts.Analyze == nil || file.Stmts.Analyze.Coupling == nil {
+			continue
+		}
+
 		// instability
 		if file.Stmts.Analyze.Coupling.Afferent > 0 && file.Stmts.Analyze.Coupling.Efferent > 0 {
 			file.Stmts.Analyze.Coupling.Instability = float64(file.Stmts.Analyze.Coupling.Afferent) / float64(file.Stmts.Analyze.Coupling.Afferent+file.Stmts.Analyze.Coupling.Efferent)
 		}
 	}
 	for _, class := range classesMap {
+
+		if class.Stmts == nil || class.Stmts.Analyze == nil || class.Stmts.Analyze.Coupling == nil {
+			continue
+		}
+
 		// instability
-		if class.Stmts.Analyze.Coupling.Afferent > 0 && class.Stmts.Analyze.Coupling.Efferent > 0 {
-			class.Stmts.Analyze.Coupling.Instability = float64(class.Stmts.Analyze.Coupling.Afferent) / float64(class.Stmts.Analyze.Coupling.Afferent+class.Stmts.Analyze.Coupling.Efferent)
+		if class.Stmts.Analyze.Coupling.Afferent > 0 {
+			result.AfferentCoupling.Sum += float64(class.Stmts.Analyze.Coupling.Afferent)
+			result.AfferentCoupling.Counter++
+			if class.Stmts.Analyze.Coupling.Efferent > 0 {
+				class.Stmts.Analyze.Coupling.Instability = float64(class.Stmts.Analyze.Coupling.Efferent) / float64(class.Stmts.Analyze.Coupling.Efferent+class.Stmts.Analyze.Coupling.Afferent)
+			}
 		}
 	}
 
 	// Afferent coupling (global, on aggregated data)
 	// Ce / (Ce + Ca)
 	if result.AfferentCoupling.Counter > 0 {
-		result.Instability.Avg = result.EfferentCoupling.Sum / result.AfferentCoupling.Sum
+		result.Instability.Avg = result.EfferentCoupling.Sum / (result.AfferentCoupling.Sum + result.EfferentCoupling.Sum)
 	}
 
 	result.EfferentCoupling.Avg = result.EfferentCoupling.Sum / float64(result.EfferentCoupling.Counter)

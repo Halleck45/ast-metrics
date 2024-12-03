@@ -354,7 +354,11 @@
         <div class="mt-2">
             <div>
                 <h5 class="leading-none text-3xl font-bold text-gray-900 pb-2">
-                    {{ currentView.Instability.Avg | floatformat:2 }}
+                    {% if currentView.Instability.Avg == 0.00 %}
+                        -
+                    {% else %}
+                        {{ currentView.Instability.Avg | floatformat:2 }}
+                    {% endif %}
                 </h5>
                 <p class="text-base font-normal text-gray-500 ">
                     Average <acronym title="The higher the number, the more difficult the refactoring becomes because it impacts other components that depend on it.">
@@ -362,21 +366,26 @@
                     </acronym>
                 </p>
             </div>
-            <div class="grid grid-cols-2 gap-8 w-full">
-                <div class="mt-4 chart-container" >
-                    {% include "componentChartRadiusBarAfferent.html" %}
+            {% if currentView.Instability.Avg == 0.00 %}
+                <div class="text-sm text-gray-600 mt-4 ">
+                    Instability is not available. This is likely due to a lack of classes (for example, only interfaces are present, or language is not object oriented).
+                </div>
+            {% else %}
+                <div class="grid grid-cols-2 gap-8 w-full">
+                    <div class="mt-4 chart-container" >
+                        {% include "componentChartRadiusBarAfferent.html" %}
                     <p class="border-t border-gray-200 mt-2 italic text-sm text-gray-600 pt-4 text-justify">
                         Number of times the component is used by other components. If high, the component is difficult to refactor.
                     </p>
+                    </div>
+                    <div class="mt-4 chart-container" >
+                        {% include "componentChartRadiusBarEfferent.html" %}
+                        <p class="border-t border-gray-200 mt-2 italic text-sm text-gray-600 pt-4 text-justify">
+                            Number of external dependencies.
+                        </p>
+                    </div>
                 </div>
-                <div class="mt-4 chart-container" >
-                    {% include "componentChartRadiusBarEfferent.html" %}
-                    <p class="border-t border-gray-200 mt-2 italic text-sm text-gray-600 pt-4 text-justify">
-                        Number of external dependencies.
-                    </p>
-                </div>
-            </div>
-            
+            {% endif %}
         </div>
     </div>
     <!-- end: card -->

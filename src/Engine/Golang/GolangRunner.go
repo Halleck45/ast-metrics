@@ -224,7 +224,9 @@ func (r GolangRunner) ParseGoFile(filePath string) *pb.File {
 		case *ast.File:
 			// Get the full package name
 			// File declaration
-			currentPackage += x.Name.Name
+			if x.Name != nil {
+				currentPackage += x.Name.Name
+			}
 
 		case *ast.Package:
 			currentPackage += x.Name
