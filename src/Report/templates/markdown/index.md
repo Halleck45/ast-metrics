@@ -1,4 +1,4 @@
-AST Metrisc report
+AST Metrics report
 
 ## Overview
 
