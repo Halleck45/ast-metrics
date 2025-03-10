@@ -71,7 +71,7 @@ func (busFactor *BusFactor) Calculate(aggregate *Analyzer.Aggregated) {
 		}
 	}
 
-	// keep only top 3 committers
+	// keep only top 4 committers
 	aggregate.TopCommitters = make([]Analyzer.TopCommitter, 0)
 	for i, kv := range ss {
 		if i > 3 {
