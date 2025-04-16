@@ -3,7 +3,7 @@
 # docker run -it --rm Halleck45/ast-metrics:latest sh
 # docker run -it -v .:/src  --rm Halleck45/ast-metrics:latest ast-metrics analyze --report-html=/src/repport /src
 #
-FROM golang:tip-alpine AS builder
+FROM golang:1.22-alpine AS builder
 
 # Install packages
 RUN apk --update --no-cache add \
@@ -19,7 +19,6 @@ WORKDIR /usr/app
 COPY . /usr/app
 
 RUN make build
-
 FROM alpine:latest
 
 WORKDIR /
