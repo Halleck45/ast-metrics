@@ -73,7 +73,7 @@ We are looking for help to support new programming languages, stabilize the tool
 
 + ✅ **PHP** (PHP 5, PHP 7, =< PHP 8.1)
 + ✅ **Golang**
-+ 👷 **Python** (partial)
++ ✅ **Python** (Python 2, Python 3)
 + 🕛 **Dart**
 + 🕛 **Flutter**
 + 🕛 **TypeScript**

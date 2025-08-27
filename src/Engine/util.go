@@ -3,6 +3,7 @@ package Engine
 import (
 	"fmt"
 	"os"
+	"path/filepath"
 	"regexp"
 	"strings"
 
@@ -374,4 +375,23 @@ func ReduceDepthOfNamespace(namespace string, depth int) string {
 	}
 
 	return strings.Trim(result, separator)
+}
+
+func SearchFilesByExtension(dirs []string, ext string) ([]string, error) {
+	var files []string
+	for _, dir := range dirs {
+		err := filepath.Walk(dir, func(path string, info os.FileInfo, err error) error {
+			if err != nil {
+				return err
+			}
+			if !info.IsDir() && strings.HasSuffix(info.Name(), ext) {
+				files = append(files, path)
+			}
+			return nil
+		})
+		if err != nil {
+			return nil, err
+		}
+	}
+	return files, nil
 }

@@ -180,19 +180,5 @@ func (r *PhpRunner) getFileList() File.FileList {
 	finder := File.Finder{Configuration: *r.configuration}
 	r.foundFiles = finder.Search(".php")
 
-	// exclude non pertinent files
-	// like _ide_helper.php
-	r.foundFiles.Files = r.filterPertinentFiles(r.foundFiles.Files)
-
 	return r.foundFiles
-}
-
-func (r PhpRunner) filterPertinentFiles(files []string) []string {
-	var pertinentFiles []string
-	for _, file := range files {
-		if !strings.Contains(file, "_ide_helper.php") {
-			pertinentFiles = append(pertinentFiles, file)
-		}
-	}
-	return pertinentFiles
 }
