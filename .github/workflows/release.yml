@@ -16,7 +16,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       # Checkout the repository
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
@@ -37,3 +37,45 @@ jobs:
           args: release --clean
         env:
           GITHUB_TOKEN: ${{ secrets.PUSH_TOKEN }}
+
+  dockerrelease:
+    runs-on: ubuntu-latest
+    steps:
+
+      - name: "Get current release tag"
+        id: branch-name
+        run: echo "SOURCE_TAG=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
+
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: "Log to GitHub Docker registry"
+        run: docker login ghcr.io --username ${DOCKER_USERNAME} --password ${DOCKER_PASSWORD}
+        env:
+          DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
+          DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: "Set up QEMU multi-arch. environment manager"
+        uses: docker/setup-qemu-action@v3
+
+      - name: "Set up Docker Buildx"
+        uses: docker/setup-buildx-action@v3
+
+      - name: "Set Docker meta (release tags, no label)"
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ghcr.io/Halleck45/ast-metrics
+          tags: |
+            type=raw,value=${{ steps.branch-name.outputs.SOURCE_TAG }}
+            type=raw,value=latest,enable=true
+
+      - name: "Build and push to registry"
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}

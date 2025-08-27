@@ -19,7 +19,17 @@ WORKDIR /usr/app
 COPY . /usr/app
 
 RUN make build
+
 FROM alpine:latest
+
+LABEL maintainer="Halleck45"
+LABEL org.opencontainers.image.source=https://github.com/Halleck45/ast-metrics
+LABEL org.opencontainers.image.path="Dockerfile"
+LABEL org.opencontainers.image.title="ast-metrics"
+LABEL org.opencontainers.image.description="AST Metrics is a blazing-fast static code analyzer. It provides metrics about your code, and helps you to identify potential problems early on."
+LABEL org.opencontainers.image.authors="Halleck45"
+LABEL org.opencontainers.image.licenses="MIT"
+LABEL org.opencontainers.image.documentation="https://github.com/Halleck45/ast-metrics/README.md"
 
 WORKDIR /
 
