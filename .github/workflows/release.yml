@@ -39,6 +39,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.PUSH_TOKEN }}
 
   dockerrelease:
+    needs: goreleaser
     runs-on: ubuntu-latest
     steps:
 
@@ -62,7 +63,7 @@ jobs:
       - name: "Set up Docker Buildx"
         uses: docker/setup-buildx-action@v3
 
-      - name: "Set Docker meta (release tags, no label)"
+      - name: "Set Docker meta"
         id: meta
         uses: docker/metadata-action@v5
         with:
