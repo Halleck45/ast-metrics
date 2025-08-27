@@ -2,7 +2,6 @@ package Analyzer
 
 import (
 	"math"
-	"regexp"
 	"runtime"
 	"sync"
 
@@ -860,84 +859,116 @@ func (r *Aggregator) reduceMetrics(aggregated Aggregated) Aggregated {
 // Map the coupling to get the package relations and the afferent coupling
 func (r *Aggregator) mapCoupling(aggregated *Aggregated) Aggregated {
 	result := *aggregated
-	reg := regexp.MustCompile("[^A-Za-z0-9.]+")
+
+	// Create the hashmaps of files, by Path then by class name.
+	files := make(map[string]*pb.File)
+	classesMap := make(map[string]*pb.StmtClass)
+	// Populate the 'files' map with namespace keys
+	for _, fileItem := range aggregated.ConcernedFiles {
+		namespace := Engine.ReduceDepthOfNamespace(fileItem.Path, 2)
+		files[namespace] = fileItem
+	}
 
 	for _, file := range aggregated.ConcernedFiles {
-		classes := Engine.GetClassesInFile(file)
 
-		for _, class := range classes {
+		if file == nil || file.Stmts == nil || file.Stmts.StmtExternalDependencies == nil {
+			continue
+		}
 
-			if class == nil {
+		// dependencies of file
+		dependencies := file.Stmts.StmtExternalDependencies
+		uniqueDependencies := make(map[string]*pb.StmtExternalDependency)
+
+		// make it unique
+		for _, dependency := range dependencies {
+			name := dependency.From
+			uniqueDependencies[name] = dependency
+		}
+
+		for _, dependency := range uniqueDependencies {
+
+			if dependency == nil {
 				continue
 			}
 
-			// dependencies
-			dependencies := file.Stmts.StmtExternalDependencies
+			namespaceTo := Engine.ReduceDepthOfNamespace(dependency.Namespace, 2)
+			namespaceFrom := Engine.ReduceDepthOfNamespace(dependency.From, 2)
 
-			for _, dependency := range dependencies {
-				if dependency == nil {
-					continue
-				}
-
-				namespaceTo := dependency.Namespace
-				namespaceFrom := dependency.From
-
-				if namespaceFrom == "" || namespaceTo == "" {
-					continue
-				}
-
-				// Keep only 2 levels in namespace
-				separator := reg.FindString(namespaceFrom)
-				parts := reg.Split(namespaceTo, -1)
-				if len(parts) > 2 {
-					namespaceTo = parts[0] + separator + parts[1]
-				}
-
-				if namespaceFrom == "" || namespaceTo == "" {
-					continue
-				}
-
-				parts = reg.Split(namespaceFrom, -1)
-				if len(parts) > 2 {
-					namespaceFrom = parts[0] + separator + parts[1]
-				}
-
-				// if same, continue
-				if namespaceFrom == namespaceTo {
-					continue
-				}
-
-				// if root namespace, continue
-				if namespaceFrom == "" || namespaceTo == "" {
-					continue
-				}
-
-				// create the map if not exists
-				if _, ok := result.PackageRelations[namespaceFrom]; !ok {
-					result.PackageRelations[namespaceFrom] = make(map[string]int)
-				}
-
-				if _, ok := result.PackageRelations[namespaceFrom][namespaceTo]; !ok {
-					result.PackageRelations[namespaceFrom][namespaceTo] = 0
-				}
-
-				// increment the counter
-				result.PackageRelations[namespaceFrom][namespaceTo]++
+			if namespaceFrom == "" || namespaceTo == "" {
+				continue
 			}
 
-			uniqueDependencies := make(map[string]bool)
+			// Increment the afferent coupling of the fromFile
+			fromFile := files[namespaceFrom]
+			if fromFile != nil {
+				// This code cannot work in a no-oop context
+				// => we cannot use afferent coupling of file itself, only the coupling of the class
+				fromFile.Stmts.Analyze.Coupling.Afferent++
+			}
+
+			// create the map if not exists
+			if _, ok := result.PackageRelations[namespaceFrom]; !ok {
+				result.PackageRelations[namespaceFrom] = make(map[string]int)
+			}
+
+			if _, ok := result.PackageRelations[namespaceFrom][namespaceTo]; !ok {
+				result.PackageRelations[namespaceFrom][namespaceTo] = 0
+			}
+
+			// increment the counter
+			result.PackageRelations[namespaceFrom][namespaceTo]++
+		}
+
+		// Zoom on each class, in order to update the afferent coupling of the class itself
+		classes := Engine.GetClassesInFile(file)
+		for _, class := range classes {
+
+			if class == nil || class.Name == nil || class.Name.Qualified == "" {
+				continue
+			}
+
+			// first we create the hashmap if not exists
+			if _, ok := classesMap[class.Name.Qualified]; !ok {
+				classesMap[class.Name.Qualified] = class
+			}
+
+			if class.Stmts == nil || class.Stmts.StmtExternalDependencies == nil {
+				continue
+			}
+			uniqueClassDependencies := make(map[string]*pb.StmtExternalDependency)
+
 			for _, dependency := range class.Stmts.StmtExternalDependencies {
+				// make it unique
+				if dependency == nil || dependency.ClassName == "" {
+					continue
+				}
+
+				if _, ok := uniqueClassDependencies[dependency.Namespace]; !ok {
+					uniqueClassDependencies[dependency.Namespace] = dependency
+				}
+			}
+
+			for _, dependency := range uniqueClassDependencies {
 				dependencyName := dependency.ClassName
 
 				// check if dependency is already in hashmap
 				if _, ok := result.ClassesAfferentCoupling[dependencyName]; !ok {
 					result.ClassesAfferentCoupling[dependencyName] = 0
 				}
+
 				result.ClassesAfferentCoupling[dependencyName]++
 
-				// check if dependency is unique
-				if _, ok := uniqueDependencies[dependencyName]; !ok {
-					uniqueDependencies[dependencyName] = true
+				fromClass := classesMap[dependencyName]
+				if fromClass != nil {
+
+					if fromClass.Stmts.Analyze.Coupling == nil {
+						fromClass.Stmts.Analyze.Coupling = &pb.Coupling{
+							Efferent: 0,
+							Afferent: 0,
+						}
+					}
+
+					fromClass.Stmts.Analyze.Coupling.Afferent++
 				}
 			}
 
@@ -947,24 +978,48 @@ func (r *Aggregator) mapCoupling(aggregated *Aggregated) Aggregated {
 					Afferent: 0,
 				}
 			}
-			class.Stmts.Analyze.Coupling.Efferent = int32(len(uniqueDependencies))
 
-			// Afferent coupling
-			class.Stmts.Analyze.Coupling.Afferent = int32(len(class.Stmts.StmtExternalDependencies))
-
-			// Increment result
+			class.Stmts.Analyze.Coupling.Efferent = int32(len(uniqueClassDependencies))
+			// Increment result (efferent coupling)
 			result.EfferentCoupling.Sum += float64(class.Stmts.Analyze.Coupling.Efferent)
 			result.EfferentCoupling.Counter++
-			result.AfferentCoupling.Sum += float64(class.Stmts.Analyze.Coupling.Afferent)
-			result.AfferentCoupling.Counter++
 		}
 	}
 
-	// Afferent coupling
+	// Now iterate again on each file, then on each class, in order to update the afferent coupling of the class itself
+	for _, file := range files {
+
+		if file.Stmts == nil || file.Stmts.Analyze == nil || file.Stmts.Analyze.Coupling == nil {
+			continue
+		}
+
+		// instability
+		if file.Stmts.Analyze.Coupling.Afferent > 0 && file.Stmts.Analyze.Coupling.Efferent > 0 {
+			file.Stmts.Analyze.Coupling.Instability = float64(file.Stmts.Analyze.Coupling.Afferent) / float64(file.Stmts.Analyze.Coupling.Afferent+file.Stmts.Analyze.Coupling.Efferent)
+		}
+	}
+	for _, class := range classesMap {
+
+		if class.Stmts == nil || class.Stmts.Analyze == nil || class.Stmts.Analyze.Coupling == nil {
+			continue
+		}
+
+		// instability
+		if class.Stmts.Analyze.Coupling.Afferent > 0 {
+			result.AfferentCoupling.Sum += float64(class.Stmts.Analyze.Coupling.Afferent)
+			result.AfferentCoupling.Counter++
+			if class.Stmts.Analyze.Coupling.Efferent > 0 {
+				class.Stmts.Analyze.Coupling.Instability = float64(class.Stmts.Analyze.Coupling.Efferent) / float64(class.Stmts.Analyze.Coupling.Efferent+class.Stmts.Analyze.Coupling.Afferent)
+			}
+		}
+	}
+
+	// Afferent coupling (global, on aggregated data)
 	// Ce / (Ce + Ca)
 	if result.AfferentCoupling.Counter > 0 {
-		result.Instability.Avg = result.EfferentCoupling.Sum / result.AfferentCoupling.Sum
+		result.Instability.Avg = result.EfferentCoupling.Sum / (result.AfferentCoupling.Sum + result.EfferentCoupling.Sum)
 	}
+
 	result.EfferentCoupling.Avg = result.EfferentCoupling.Sum / float64(result.EfferentCoupling.Counter)
 	result.AfferentCoupling.Avg = result.AfferentCoupling.Sum / float64(result.AfferentCoupling.Counter)
 
