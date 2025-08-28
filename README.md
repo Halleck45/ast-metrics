@@ -71,8 +71,8 @@ If you'd like to contribute to the codebase, **check out the [contributing guide
 
 We are looking for help to support new programming languages, stabilize the tool, and enrich it. Here is the list of supported languages:
 
-+ ✅ **PHP** (PHP 5, PHP 7, =< PHP 8.1)
-+ ✅ **Golang**
++ ✅ **PHP** (PHP 5, PHP 7, =< PHP 8.2)
++ ✅ **Golang** (any version)
 + ✅ **Python** (Python 2, Python 3)
 + 🕛 **Dart**
 + 🕛 **Flutter**
