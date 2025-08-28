@@ -1,19 +1,15 @@
 package Python
 
 import (
-	"fmt"
 	"os"
-	"path/filepath"
 
 	"github.com/halleck45/ast-metrics/src/Configuration"
 	"github.com/halleck45/ast-metrics/src/Engine"
-	"github.com/halleck45/ast-metrics/src/Engine/Treesitter"
+	Treesitter "github.com/halleck45/ast-metrics/src/Engine/TreeSitter"
 	"github.com/halleck45/ast-metrics/src/File"
 	pb "github.com/halleck45/ast-metrics/src/NodeType"
-	"github.com/halleck45/ast-metrics/src/Storage"
 
 	"github.com/pterm/pterm"
-	log "github.com/sirupsen/logrus"
 
 	sitter "github.com/smacker/go-tree-sitter"
 )
@@ -34,48 +30,15 @@ func (r *PythonRunner) Ensure() error { return nil }
 
 // First step of analysis. Parse all files, and generate protobuf-compatible AST files
 func (r PythonRunner) DumpAST() {
-	files := r.getFileList().Files
-	total := len(files)
-	if total == 0 {
-		if r.progressbar != nil {
-			r.progressbar.Info("No Python files detected")
-		}
-		return
-	}
+	Engine.DumpFiles(
+		r.getFileList().Files, r.configuration, r.progressbar,
+		func(path string) (*pb.File, error) { return r.Parse(path) },
+		Engine.DumpOptions{Label: r.Name()},
+	)
+}
 
-	for i, filePath := range files {
-		if r.progressbar != nil {
-			base := filepath.Base(filePath)
-			r.progressbar.UpdateText(fmt.Sprintf("Dumping AST of Python files (%s) [%d/%d]", base, i+1, total))
-		}
-
-		hash, err := Storage.GetFileHash(filePath)
-		if err != nil {
-			log.WithError(err).Warn("failed to get file hash")
-			continue
-		}
-		binPath := r.configuration.Storage.AstDirectory() + string(os.PathSeparator) + hash + ".bin"
-		// if file exists, skip it
-		if _, err := os.Stat(binPath); err == nil {
-			continue
-		}
-
-		protoFile, err := r.Parse(filePath)
-		if err != nil {
-			log.WithError(err).Warn("python parse failed")
-			continue
-		}
-
-		// Dump protobuf object to destination
-		err = Engine.DumpProtobuf(protoFile, binPath)
-		if err != nil {
-			log.Error(err)
-		}
-	}
-
-	if r.progressbar != nil {
-		r.progressbar.Info("Python code dumped (tree-sitter)")
-	}
+func (r PythonRunner) Name() string {
+	return "Python"
 }
 
 // Cleanups the engine

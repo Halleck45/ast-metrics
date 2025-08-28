@@ -4,7 +4,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/halleck45/ast-metrics/src/Engine/Treesitter"
+	Treesitter "github.com/halleck45/ast-metrics/src/Engine/TreeSitter"
 	sitter "github.com/smacker/go-tree-sitter"
 	tsPython "github.com/smacker/go-tree-sitter/python"
 )
