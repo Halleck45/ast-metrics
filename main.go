@@ -15,6 +15,7 @@ import (
 	"github.com/halleck45/ast-metrics/src/Engine/Golang"
 	"github.com/halleck45/ast-metrics/src/Engine/Php"
 	"github.com/halleck45/ast-metrics/src/Engine/Python"
+	"github.com/halleck45/ast-metrics/src/Engine/Rust"
 	"github.com/halleck45/ast-metrics/src/Watcher"
 	"github.com/pterm/pterm"
 	log "github.com/sirupsen/logrus"
@@ -44,7 +45,8 @@ func main() {
 	runnerPhp := Php.PhpRunner{}
 	runnerGolang := Golang.GolangRunner{}
 	runnerPython := Python.PythonRunner{}
-	runners := []Engine.Engine{&runnerPhp, &runnerGolang, &runnerPython}
+	runnerRust := Rust.RustRunner{}
+	runners := []Engine.Engine{&runnerPhp, &runnerGolang, &runnerPython, &runnerRust}
 
 	app := &cli.App{
 		Name:  "ast-metrics",
@@ -286,7 +288,8 @@ func main() {
 				Usage:   "Clean workdir",
 				Action: func(cCtx *cli.Context) error {
 					// Run command
-					command := Command.NewCleanCommand()
+					configuration := Configuration.NewConfiguration()
+					command := Command.NewCleanCommand(configuration.Storage)
 					err := command.Execute()
 					if err != nil {
 						pterm.Error.Println(err.Error())
