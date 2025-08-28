@@ -246,6 +246,11 @@ func (r GolangRunner) ParseGoFile(filePath string) *pb.File {
 				}
 			}
 
+			if (x.Body == nil) || (len(x.Body.List) == 0) {
+				// No body (interface function, or empty function)
+				return true
+			}
+
 			// Go through the function body
 			ast.Inspect(x.Body, func(n ast.Node) bool {
 
