@@ -28,3 +28,7 @@ type Engine interface {
 	// Parse a file and return a protobuff compatible AST object
 	Parse(filepath string) (*pb.File, error)
 }
+
+type NamedEngine interface {
+	Name() string
+}

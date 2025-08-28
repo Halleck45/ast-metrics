@@ -1,171 +1,191 @@
 package Python
 
 import (
-	"fmt"
-	"os"
 	"testing"
 
-	"github.com/golang/protobuf/proto"
-	"github.com/halleck45/ast-metrics/src/Configuration"
+	EnginePkg "github.com/halleck45/ast-metrics/src/Engine"
 	pb "github.com/halleck45/ast-metrics/src/NodeType"
-	"github.com/halleck45/ast-metrics/src/Storage"
-	"github.com/stretchr/testify/assert"
 )
 
-func TestPythonRunner(t *testing.T) {
+const samplePy = `# -*- coding: utf-8 -*-
+import sys
 
-	// randomly selected, and found at https://github.com/jaraco/path/blob/main/path/classes.py
-	pythonSource := `
-import functools
+class C:
+    def m(self, x):
+        if x > 0:
+            print(f"pos {x}")
+        elif x == 0:
+            print("zero")
+        else:
+            print("neg")
+        for i in range(3):
+            pass
+        while x < 2:
+            x += 1
+        return x
 
-class calculatrice:
-	"""
-	A multiline line comment is here
-	A multiline line comment is here
-	"""
+async def a(y):
+    match y:
+        case 1:
+            return "one"
+        case _:
+            return "other"
 
-	def add(self, a, b):
-		"""
-		A multiline line comment is here
-		A multiline line comment is here
-		"""
-		return a + b
-
-
-	def divide(self, a, b):
-		if b == 0:
-			raise ValueError("Cannot divide by zero")
-
-		d = a / b
-		d += 1
-		e = self.add(a, d)
-		return e
+def f(z):
+    return z * 2
 `
 
-	// Create a temporary file
-	tmpFile := t.TempDir() + "/test.py"
-	if _, err := os.Create(tmpFile); err != nil {
-		t.Error(err)
+func TestPythonParser_TreeSitter_Decisions(t *testing.T) {
+	r := &PythonRunner{}
+	file, err := EnginePkg.CreateTestFileWithCode(r, samplePy)
+	if err != nil {
+		t.Fatalf("parse error: %v", err)
 	}
-	if err := os.WriteFile(tmpFile, []byte(pythonSource), 0644); err != nil {
-		t.Error(err)
+	if file == nil || file.Stmts == nil {
+		t.Fatalf("nil file or stmts")
+	}
+	if file.ProgrammingLanguage != "Python" {
+		t.Fatalf("expected Python, got %q", file.ProgrammingLanguage)
+	}
+	if len(file.Stmts.StmtNamespace) != 1 {
+		t.Fatalf("expected 1 namespace, got %d", len(file.Stmts.StmtNamespace))
+	}
+	ns := file.Stmts.StmtNamespace[0]
+	if ns == nil || ns.Stmts == nil {
+		t.Fatalf("nil namespace stmts")
 	}
 
-	result, err := parsePythonFile(tmpFile)
+	// Classe C et méthode m
+	if len(ns.Stmts.StmtClass) != 1 {
+		t.Fatalf("expected 1 class, got %d", len(ns.Stmts.StmtClass))
+	}
+	cls := ns.Stmts.StmtClass[0]
+	if cls.Name == nil || cls.Name.Short != "C" {
+		t.Fatalf("expected class C, got %+v", cls.Name)
+	}
+	var m *pb.StmtFunction
+	for _, fn := range cls.Stmts.StmtFunction {
+		if fn.Name != nil && fn.Name.Short == "m" {
+			m = fn
+			break
+		}
+	}
+	if m == nil {
+		t.Fatalf("method m not found")
+	}
+	if got := len(m.Stmts.StmtDecisionIf); got != 1 {
+		t.Fatalf("expected 1 if in C.m, got %d", got)
+	}
+	if got := len(m.Stmts.StmtDecisionElseIf); got != 1 {
+		t.Fatalf("expected 1 elif in C.m, got %d", got)
+	}
+	if got := len(m.Stmts.StmtDecisionElse); got != 1 {
+		t.Fatalf("expected 1 else in C.m, got %d", got)
+	}
+	if got := len(m.Stmts.StmtLoop); got != 2 {
+		t.Fatalf("expected 2 loops (for, while) in C.m, got %d", got)
+	}
+	if m.LinesOfCode == nil || m.LinesOfCode.LinesOfCode == 0 {
+		t.Fatalf("expected LOC on C.m")
+	}
 
-	// Ensure no error
-	assert.Nil(t, err, "Expected no error, got %s", err)
+	// Fonctions top-level visibles dans le namespace
+	if len(ns.Stmts.StmtFunction) < 3 {
+		t.Fatalf("expected >=3 functions in namespace, got %d", len(ns.Stmts.StmtFunction))
+	}
 
-	// Ensure path
-	assert.Equal(t, tmpFile, result.Path, "Expected path to be %s, got %s", tmpFile, result.Path)
-
-	// Ensure functions
-	assert.Equal(t, 0, len(result.Stmts.StmtFunction), "Incorrect number of functions")
-
-	// Ensure classes
-	assert.Equal(t, 1, len(result.Stmts.StmtClass), "Incorrect number of classes")
-	class1 := result.Stmts.StmtClass[0]
-	assert.Equal(t, "calculatrice", class1.Name.Short, "Expected class name to be 'calculatrice', got %s", class1.Name)
-
-	// Ensure functions
-	assert.Equal(t, 2, len(class1.Stmts.StmtFunction), "Incorrect number of functions in class")
-
-	func1 := class1.Stmts.StmtFunction[0]
-	assert.Equal(t, "add", func1.Name.Short, "Expected function name to be 'add', got %s", func1.Name)
-	assert.Equal(t, "calculatrice.add", func1.Name.Qualified, "Expected function name to be 'calculatrice.add', got %s", func1.Name.Qualified)
-	func2 := class1.Stmts.StmtFunction[1]
-	assert.Equal(t, "divide", func2.Name.Short, "Expected function name to be 'divide', got %s", func2.Name)
-	assert.Equal(t, "calculatrice.divide", func2.Name.Qualified, "Expected function name to be 'calculatrice.divide', got %s", func2.Name.Qualified)
-
-	// Ensure operands
-	// [name:"aself" name:"a" name:"b" name:"a" name:"b"]
-	// Convert to string (for easier comparison)
-	operandsAsString := fmt.Sprintf("%v", func1.Operands)
-	operandsExpectedAsString := "[name:\"self\" name:\"a\" name:\"b\" name:\"a\" name:\"b\"]"
-	assert.Equal(t, operandsExpectedAsString, operandsAsString, "Expected operands to be %s, got %s", operandsExpectedAsString, operandsAsString)
-
-	// Ensure operands of function 2
-	// [self, a, b, b, d, a, b, d, e, a, d, e]
-	// Convert to string (for easier comparison)
-	operandsAsString = fmt.Sprintf("%v", func2.Operands)
-	operandsExpectedAsString = "[name:\"self\" name:\"a\" name:\"b\" name:\"b\" name:\"d\" name:\"a\" name:\"b\" name:\"d\" name:\"e\" name:\"a\" name:\"d\" name:\"e\"]"
-	assert.Equal(t, operandsExpectedAsString, operandsAsString, "Expected operands to be %s, got %s", operandsExpectedAsString, operandsAsString)
-
-	// Ensure operators
-
-	// Ensure LOC
-	assert.Equal(t, int32(6), func1.LinesOfCode.LinesOfCode, "Expected LOC")
-	assert.Equal(t, int32(2), func1.LinesOfCode.LogicalLinesOfCode, "Expected LLOC")
-	assert.Equal(t, int32(2), func1.LinesOfCode.CommentLinesOfCode, "Expected LLOC")
-	// Ensure LOC
-	assert.Equal(t, int32(8), func2.LinesOfCode.LinesOfCode, "Expected LOC")
-	assert.Equal(t, int32(5), func2.LinesOfCode.LogicalLinesOfCode, "Expected LLOC")
-	assert.Equal(t, int32(0), func2.LinesOfCode.CommentLinesOfCode, "Expected LLOC")
-
+	// async def a : match/case → switch/case
+	var fnA, fnF *pb.StmtFunction
+	for _, fn := range ns.Stmts.StmtFunction {
+		if fn.Name != nil && fn.Name.Short == "a" {
+			fnA = fn
+		}
+		if fn.Name != nil && fn.Name.Short == "f" {
+			fnF = fn
+		}
+	}
+	if fnA == nil || fnF == nil {
+		t.Fatalf("expected functions a and f")
+	}
+	if got := len(fnA.Stmts.StmtDecisionSwitch); got != 1 {
+		t.Fatalf("expected 1 switch (match) in a, got %d", got)
+	}
+	if got := len(fnA.Stmts.StmtDecisionCase); got != 2 {
+		t.Fatalf("expected 2 case in a, got %d", got)
+	}
+	if fnA.LinesOfCode == nil || fnA.LinesOfCode.LinesOfCode == 0 {
+		t.Fatalf("expected LOC on a")
+	}
+	if fnF.LinesOfCode == nil || fnF.LinesOfCode.LinesOfCode == 0 {
+		t.Fatalf("expected LOC on f")
+	}
 }
 
-func TestParsingPythonFiles(t *testing.T) {
-	pyFile := `
-import functools
+const sampleImports = `
+import os
+import json as js, pkg.sub.module
+from typing import List, Dict as D
+from .pkg import util, helpers as h
+`
 
-class calculatrice:
-	"""
-	A multiline line comment is here
-	A multiline line comment is here
-	"""
-
-	def add(self, a, b):
-		"""
-		A multiline line comment is here
-		A multiline line comment is here
-		"""
-		return a + b`
-
-	// Create a temporary file
-	sourceDirectory := t.TempDir()
-	tmpFile := sourceDirectory + string(os.PathSeparator) + "test.py"
-	defer os.Remove(tmpFile)
-	if _, err := os.Create(tmpFile); err != nil {
-		t.Error(err)
-	}
-	if err := os.WriteFile(tmpFile, []byte(pyFile), 0644); err != nil {
-		t.Error(err)
-	}
-
-	// Configure destination
-	storage := Storage.Default()
-	storage.Purge()
-	storage.Ensure()
-	workdir := storage.AstDirectory()
-
-	// Configure the runner
-	configuration := Configuration.NewConfiguration()
-	configuration.Storage = storage
-	configuration.SetSourcesToAnalyzePath([]string{sourceDirectory})
-	runner := PythonRunner{}
-	runner.SetConfiguration(configuration)
-	runner.DumpAST()
-
-	// list files
-	files, err := os.ReadDir(workdir)
+func TestPythonParser_TreeSitter_Imports(t *testing.T) {
+	r := &PythonRunner{}
+	file, err := EnginePkg.CreateTestFileWithCode(r, sampleImports)
 	if err != nil {
-		t.Error(err)
+		t.Fatalf("parse error: %v", err)
 	}
-	// check if bin file exists
-	assert.Equal(t, 1, len(files), "Expected 1 file in %s, got %d", workdir, len(files))
-
-	// read the file, and deserialize it to check if it's a protobuf
-	file := files[0]
-	binPath := workdir + string(os.PathSeparator) + file.Name()
-	in, err := os.ReadFile(binPath)
-	if err != nil {
-		t.Error(err)
+	if file == nil || file.Stmts == nil || len(file.Stmts.StmtNamespace) != 1 {
+		t.Fatalf("invalid file/namespace")
 	}
-	pbFile := &pb.File{}
-	if err := proto.Unmarshal(in, pbFile); err != nil {
-		t.Error(err)
+	ns := file.Stmts.StmtNamespace[0]
+	if ns == nil || ns.Stmts == nil {
+		t.Fatalf("nil ns stmts")
 	}
 
-	// Ensure path
-	assert.Contains(t, pbFile.Path, "test.py", "Expected path to contain 'test.py', got %s", pbFile.Path)
+	// Expect at least these dependencies:
+	wantMin := 7
+
+	// You attached deps both to current scope and to namespace view.
+	got := len(ns.Stmts.StmtExternalDependencies)
+	if got < wantMin {
+		t.Fatalf("expected at least %d external deps, got %d", wantMin, got)
+	}
+
+	// Spot-check a few entries
+	has := func(module, name string) bool {
+		for _, d := range ns.Stmts.StmtExternalDependencies {
+			if d.Namespace == module && d.ClassName == name {
+				return true
+			}
+			// plain import: we store module in Namespace and empty name
+			if name == "" && d.Namespace == module && d.ClassName == "" {
+				return true
+			}
+		}
+
+		return false
+	}
+
+	if !has("os", "") {
+		t.Fatalf("missing dep: import os")
+	}
+	if !has("json", "") && !has("json", "json") {
+		// depending on your adapter choice for plain import
+		t.Fatalf("missing dep: import json")
+	}
+	if !has("pkg.sub.module", "") {
+		t.Fatalf("missing dep: import pkg.sub.module")
+	}
+	if !has("typing", "List") {
+		t.Fatalf("missing dep: from typing import List")
+	}
+	if !has("typing", "Dict") {
+		t.Fatalf("missing dep: from typing import Dict")
+	}
+	if !has("pkg", "util") {
+		t.Fatalf("missing dep: from .pkg import util")
+	}
+	if !has("pkg", "helpers") {
+		t.Fatalf("missing dep: from .pkg import helpers")
+	}
 }

@@ -15,7 +15,6 @@ import (
 	"github.com/halleck45/ast-metrics/src/Engine"
 	"github.com/halleck45/ast-metrics/src/File"
 	pb "github.com/halleck45/ast-metrics/src/NodeType"
-	"github.com/halleck45/ast-metrics/src/Storage"
 	"github.com/pterm/pterm"
 	"golang.org/x/mod/modfile"
 )
@@ -58,50 +57,30 @@ func (r GolangRunner) Finish() error {
 }
 
 // DumpAST dumps the AST of Go files in protobuf format
+
 func (r GolangRunner) DumpAST() {
+	Engine.DumpFiles(
+		r.getFileList().Files, r.configuration, r.progressbar,
+		func(path string) (*pb.File, error) { return r.ParseGoFile(path), nil },
+		Engine.DumpOptions{
+			Label: r.Name(),
+			BeforeParse: func(path string) {
+				// Find the mod file sible to the file
+				// make it realpath
+				realPath, err := filepath.Abs(path)
+				if err == nil {
+					r.currentGoModFile, err = r.SearchModfile(realPath)
+					if err != nil {
+						log.Error(err)
+					}
+				}
+			},
+		},
+	)
+}
 
-	cnt := 0
-	for _, filePath := range r.getFileList().Files {
-
-		cnt++
-		if r.progressbar != nil {
-			r.progressbar.UpdateText("🦫 Dumping AST of Go files (" + fmt.Sprintf("%d", cnt) + "/" + fmt.Sprintf("%d", len(r.getFileList().Files)) + ")")
-		}
-
-		hash, err := Storage.GetFileHash(filePath)
-		if err != nil {
-			log.Error(err)
-		}
-		binPath := r.configuration.Storage.AstDirectory() + string(os.PathSeparator) + hash + ".bin"
-		// if file exists, skip it
-		if _, err := os.Stat(binPath); err == nil {
-			continue
-		}
-
-		// Find the mod file sible to the file
-		// make it realpath
-		realPath, err := filepath.Abs(filePath)
-		if err == nil {
-			r.currentGoModFile, err = r.SearchModfile(realPath)
-			if err != nil {
-				log.Error(err)
-			}
-		}
-
-		// Create protobuf object
-		protoFile := r.ParseGoFile(filePath)
-		protoFile.Checksum = hash
-
-		// Dump protobuf object to destination
-		err = Engine.DumpProtobuf(protoFile, binPath)
-		if err != nil {
-			log.Error(err)
-		}
-	}
-
-	if r.progressbar != nil {
-		r.progressbar.Info("🦫 Golang code dumped")
-	}
+func (r GolangRunner) Name() string {
+	return "Golang"
 }
 
 func (r *GolangRunner) SearchModfile(path string) (*modfile.File, error) {
