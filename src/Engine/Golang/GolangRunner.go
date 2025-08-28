@@ -146,7 +146,7 @@ func (r GolangRunner) ParseGoFile(filePath string) *pb.File {
 	var funcs []*pb.StmtFunction
 	importedPackages := make(map[string]string)
 	currentPackage := ""
-	if r.currentGoModFile != nil {
+	if r.currentGoModFile != nil && r.currentGoModFile.Module != nil {
 		currentPackage = r.currentGoModFile.Module.Mod.Path
 	}
 

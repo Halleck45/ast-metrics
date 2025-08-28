@@ -1,18 +1,22 @@
 package Command
 
 import (
-    "github.com/pterm/pterm"
-    "github.com/halleck45/ast-metrics/src/Storage"
+	"github.com/halleck45/ast-metrics/src/Storage"
+	"github.com/pterm/pterm"
 )
 
-type CleanCommand struct {}
+type CleanCommand struct {
+	storage *Storage.Workdir
+}
 
-func NewCleanCommand() *CleanCommand {
-    return &CleanCommand{}
+func NewCleanCommand(storage *Storage.Workdir) *CleanCommand {
+	return &CleanCommand{
+		storage: storage,
+	}
 }
 
 func (v *CleanCommand) Execute() error {
-    Storage.Default().Purge()
-    pterm.Success.Println("Workdir cleaned")
-    return nil
+	v.storage.Purge()
+	pterm.Success.Println("Workdir cleaned")
+	return nil
 }

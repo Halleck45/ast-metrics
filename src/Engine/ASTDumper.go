@@ -51,22 +51,27 @@ func DumpFiles(
 
 	worker := func() {
 		for path := range jobs {
-			if opts.ProgressText != nil && progress != nil {
-				mu.Lock()
-				done++
-				progress.UpdateText(opts.ProgressText(done, total, path))
-				mu.Unlock()
-			}
+			func(path string) {
+				defer wg.Done()
 
-			if opts.BeforeParse != nil {
-				opts.BeforeParse(path)
-			}
+				if opts.ProgressText != nil && progress != nil {
+					mu.Lock()
+					done++
+					progress.UpdateText(opts.ProgressText(done, total, path))
+					mu.Unlock()
+				}
 
-			hash, err := Storage.GetFileHash(path)
-			if err == nil {
+				if opts.BeforeParse != nil {
+					opts.BeforeParse(path)
+				}
+
+				hash, err := Storage.GetFileHash(path)
+				if err != nil {
+					return
+				}
 				bin := cfg.Storage.AstDirectory() + string(os.PathSeparator) + hash + ".bin"
 				if _, err := os.Stat(bin); err == nil {
-					continue
+					return // ok: Done() déjà garanti par defer
 				}
 				if file, err := parse(path); err == nil && file != nil {
 					file.Checksum = hash
@@ -75,8 +80,7 @@ func DumpFiles(
 						opts.AfterParse(file)
 					}
 				}
-			}
-			wg.Done()
+			}(path)
 		}
 	}
 
