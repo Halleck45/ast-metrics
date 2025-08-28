@@ -54,3 +54,18 @@ profile:
 	go run . a --non-interactive --profile src
 	go tool pprof -png  ast-metrics.cpu
 	go tool pprof -png  ast-metrics.mem
+
+
+dev-prepare-examples:
+	rm -rf /tmp/samples
+	mkdir -p /tmp/samples/rust
+	git clone git@github.com:rust-lang/regex.git /tmp/samples/rust/regex
+	git clone git@github.com:BurntSushi/jiff.git /tmp/samples/rust/jiff
+	git clone git@github.com:DNSCrypt/encrypted-dns-server.git /tmp/samples/rust/encrypted-dns-server
+	mkdir -p /tmp/samples/golang
+	git clone git@github.com:DNSCrypt/dnscrypt-proxy.git /tmp/samples/golang/dnscrypt-proxy
+	mkdir -p /tmp/samples/php
+	git clone git@github.com:WordPress/wordpress-develop.git /tmp/samples/php/wordpress-develop
+	git clone git@github.com:symfony/messenger.git /tmp/samples/php/messenger
+	mkdir -p /tmp/samples/python
+	git clone git@github.com:WordPress/openverse.git /tmp/samples/python/openverse

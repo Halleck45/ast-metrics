@@ -2,7 +2,6 @@ package Php
 
 import (
 	"fmt"
-	"os"
 	"testing"
 
 	"github.com/halleck45/ast-metrics/src/Engine"
@@ -163,22 +162,10 @@ enum Values {
 	}
 }
 `
-	// Create a temporary file
-	tmpFile := t.TempDir() + "/test.php"
-	if _, err := os.Create(tmpFile); err != nil {
-		t.Error(err)
-	}
-	if err := os.WriteFile(tmpFile, []byte(phpSource), 0644); err != nil {
-		t.Error(err)
-	}
-
-	result, err := parsePhpFile(tmpFile)
-
+	result, err := Engine.CreateTestFileWithCode(&PhpRunner{}, phpSource)
+	fmt.Println(result)
 	// Ensure no error
 	assert.Nil(t, err, "Expected no error, got %s", err)
-
-	// Ensure path
-	assert.Equal(t, tmpFile, result.Path, "Expected path to be %s, got %s", tmpFile, result.Path)
 
 	// a class (enum) should be found
 	assert.Equal(t, 1, len(result.Stmts.StmtClass), "Incorrect number of classes")

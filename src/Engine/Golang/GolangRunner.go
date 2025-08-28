@@ -146,7 +146,7 @@ func (r GolangRunner) ParseGoFile(filePath string) *pb.File {
 	var funcs []*pb.StmtFunction
 	importedPackages := make(map[string]string)
 	currentPackage := ""
-	if r.currentGoModFile != nil {
+	if r.currentGoModFile != nil && r.currentGoModFile.Module != nil {
 		currentPackage = r.currentGoModFile.Module.Mod.Path
 	}
 
@@ -244,6 +244,11 @@ func (r GolangRunner) ParseGoFile(filePath string) *pb.File {
 				for _, paramName := range param.Names {
 					funcNode.Operands = append(funcNode.Operands, &pb.StmtOperand{Name: paramName.Name})
 				}
+			}
+
+			if (x.Body == nil) || (len(x.Body.List) == 0) {
+				// No body (interface function, or empty function)
+				return true
 			}
 
 			// Go through the function body

@@ -3,6 +3,8 @@ package Storage
 import (
 	"os"
 	"path/filepath"
+
+	"github.com/google/uuid"
 )
 
 type Workdir struct {
@@ -12,8 +14,12 @@ type Workdir struct {
 func Default() *Workdir {
 	return NewWithName("ast-metrics-cache")
 }
+
 func NewWithName(path string) *Workdir {
-	return &Workdir{directory: os.TempDir() + string(os.PathSeparator) + path}
+	uniqRand := uuid.New().String()
+	return &Workdir{
+		directory: os.TempDir() + string(os.PathSeparator) + path + "-" + uniqRand + string(os.PathSeparator),
+	}
 }
 
 func (s *Workdir) WorkDir() string {

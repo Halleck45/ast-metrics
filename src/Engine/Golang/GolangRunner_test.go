@@ -161,6 +161,12 @@ func TestParsingGoFiles(t *testing.T) {
 		t.Error(err)
 	}
 
+	// Creating go.mod file
+	goModFile := sourceDirectory + string(os.PathSeparator) + "go.mod"
+	if _, err := os.Create(goModFile); err != nil {
+		t.Error(err)
+	}
+
 	// Configure destination
 	storage := Storage.Default()
 	storage.Ensure()
