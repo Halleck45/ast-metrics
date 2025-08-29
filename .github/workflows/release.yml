@@ -78,10 +78,7 @@ jobs:
                   formats: [zip]
               name_template: "{{ .ProjectName }}_{{ .Version }}_{{ title .Os }}_{{ if eq .Arch \"amd64\" }}x86_64{{ else }}{{ .Arch }}{{ end }}"
           checksum:
-            name_template: "{{ .ProjectName }}_{{ .Version }}_{{ .Date "20060102_150405" }}_checksums.txt"
-            algorithm: sha256
             disable: true
-            split: true
           changelog:
             sort: asc
             filters:
