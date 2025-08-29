@@ -25,6 +25,7 @@ archives:
 checksum:
   name_template: "{{ .ProjectName }}_{{ .Version }}_{{ .Date "20060102_150405" }}_checksums.txt"
   algorithm: sha256
+  disable: true
 
 release:
   github:
