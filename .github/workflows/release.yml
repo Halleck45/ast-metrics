@@ -72,11 +72,10 @@ jobs:
               ldflags: ["-s", "-w"]
               mod_timestamp: "{{ .CommitTimestamp }}"
           archives:
-            - formats: [tar.gz]
-              format_overrides:
-                - goos: windows
-                  formats: [zip]
-              name_template: "{{ .ProjectName }}_{{ .Version }}_{{ title .Os }}_{{ if eq .Arch \"amd64\" }}x86_64{{ else }}{{ .Arch }}{{ end }}"
+            - id: bin
+              builds: [app]
+              format: binary
+              name_template: '{{ .ProjectName }}_{{ title .Os }}_{{ if eq .Arch "amd64" }}x86_64{{ else }}{{ .Arch }}{{ end }}'
           changelog:
             sort: asc
             filters:
