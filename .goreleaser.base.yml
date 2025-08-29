@@ -23,7 +23,7 @@ archives:
     name_template: "{{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
 
 checksum:
-  name_template: "{{ .ProjectName }}_{{ .Version }}_checksums.txt" # avoid collisions
+  name_template: "{{ .ProjectName }}_{{ .Version }}_{{ .Date "20060102_150405" }}_checksums.txt"
   algorithm: sha256
 
 release:
