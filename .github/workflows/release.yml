@@ -77,14 +77,17 @@ jobs:
                 - goos: windows
                   formats: [zip]
               name_template: "{{ .ProjectName }}_{{ .Version }}_{{ title .Os }}_{{ if eq .Arch \"amd64\" }}x86_64{{ else }}{{ .Arch }}{{ end }}"
-          checksum:
-            disable: true
           changelog:
             sort: asc
             filters:
               exclude:
                 - "^docs:"
                 - "^test:"
+          checksum:
+            disable: true
+            name_template: "{{ .ProjectName }}_checksums.txt"
+            split: true
+          
           EOF
 
       - name: GoReleaser
