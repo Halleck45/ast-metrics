@@ -1,29 +1,38 @@
-version: 2
+project_name: ast-metrics
 
 before:
   hooks:
     - go mod tidy
-    - go generate ./...
 
 builds:
-  - id: app
-    env: ["CGO_ENABLED=1"]
-    goos: [__GOOS__]
-    goarch: [__GOARCH__]
-    ldflags: ["-s", "-w"]
-    mod_timestamp: "{{ .CommitTimestamp }}"
+  - id: ast-metrics
+    main: ./cmd/ast-metrics
+    goos:
+      - linux
+      - darwin
+      - windows
+    goarch:
+      - amd64
+      - arm64
 
 archives:
-  - formats: [tar.gz]
-    format_overrides:
-      - goos: windows
-        formats: [zip]
-    name_template: >-
-      {{ .ProjectName }}_{{ .Version }}_{{ title .Os }}_{{- if eq .Arch "amd64" }}x86_64{{- else }}{{ .Arch }}{{ end }}
+  - id: archive
+    builds:
+      - ast-metrics
+    format: tar.gz
+    name_template: "{{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
+
+checksum:
+  name_template: "{{ .ProjectName }}_{{ .Version }}_checksums.txt" # avoid collisions
+  algorithm: sha256
+
+release:
+  github:
+    owner: Halleck45
+    name: ast-metrics
+  draft: false
+  prerelease: false
 
 changelog:
   sort: asc
-  filters:
-    exclude:
-      - "^docs:"
-      - "^test:"
+  use: github
