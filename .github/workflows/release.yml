@@ -90,6 +90,9 @@ jobs:
           
           EOF
 
+      - name: "Debug content of goreleaser file"
+        run: cat "$RUNNER_TEMP/goreleaser.yml"
+
       - name: GoReleaser
         uses: goreleaser/goreleaser-action@v6
         with:
