@@ -11,7 +11,7 @@ func TestItReturnsPath(t *testing.T) {
 	providedPath := storage.WorkDir()
 
 	// providedPath should contain ".ast-metrics-cache" folder
-	expectedPath := "/tmp/ast-metrics-cache"
+	expectedPath := "ast-metrics-cache"
 	if strings.Contains(providedPath, expectedPath) == false {
 		t.Errorf("WorkDir() = %s; want %s", providedPath, expectedPath)
 	}

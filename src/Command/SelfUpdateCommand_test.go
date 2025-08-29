@@ -45,6 +45,9 @@ func TestSelfUpdateExecute(t *testing.T) {
 	  `
 	httpmock.RegisterResponder("GET", "https://api.github.com/repos/Halleck45/ast-metrics/releases/latest", httpmock.NewStringResponder(200, json))
 	httpmock.RegisterResponder("GET", "https://github.com/Halleck45/ast-metrics/releases/download/v0.0.10-alpha/ast-metrics_Linux_x86_64", httpmock.NewStringResponder(200, "binary"))
+	httpmock.RegisterResponder("GET", "https://github.com/Halleck45/ast-metrics/releases/download/v0.0.10-alpha/ast-metrics_Darwin_arm64", httpmock.NewStringResponder(200, "binary"))
+	httpmock.RegisterResponder("GET", "https://github.com/Halleck45/ast-metrics/releases/download/v0.0.10-alpha/ast-metrics_Darwin_x86_64", httpmock.NewStringResponder(200, "binary"))
+	httpmock.RegisterResponder("GET", "https://github.com/Halleck45/ast-metrics/releases/download/v0.0.10-alpha/ast-metrics_Linux_arm64", httpmock.NewStringResponder(200, "binary"))
 
 	// use custom writer to capture output
 	storeStdout := os.Stdout
@@ -62,8 +65,8 @@ func TestSelfUpdateExecute(t *testing.T) {
 	// restore the stdout
 	os.Stdout = storeStdout
 
-	// out should contains Updating to v0.0.10-alpha (Linux_x86_64)
-	assert.Contains(t, string(out), "Updating to v0.0.10-alpha (Linux_x86_64)")
+	// out should contains Updating to v0.0.10-alpha
+	assert.Contains(t, string(out), "Updating to v0.0.10-alpha")
 }
 
 func TestSelfUpdateExecuteWhenNoCompatibleReleaseIsFound(t *testing.T) {

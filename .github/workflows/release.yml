@@ -1,5 +1,4 @@
 name: release
-
 on:
   push:
     tags: ["*"]
@@ -8,42 +7,89 @@ permissions:
   contents: write
 
 jobs:
-  goreleaser:
+  build:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, macos-latest, windows-latest]
+        include:
+          # Linux
+          - os: ubuntu-latest      # x86_64
+            goos: linux
+            goarch: amd64
+          - os: ubuntu-24.04-arm   # arm64 (public repos)
+            goos: linux
+            goarch: arm64
+          # macOS
+          - os: macos-13           # Intel
+            goos: darwin
+            goarch: amd64
+          - os: macos-14           # Apple Silicon
+            goos: darwin
+            goarch: arm64
+          # Windows
+          - os: windows-latest     # x86_64
+            goos: windows
+            goarch: amd64
+          - os: windows-11-arm     # arm64 (public repos)
+            goos: windows
+            goarch: arm64
+
     runs-on: ${{ matrix.os }}
+
     steps:
       - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
+        with: { fetch-depth: 0 }
 
       - uses: actions/setup-go@v5
-        with:
-          go-version: stable
+        with: { go-version: stable }
 
-      - name: Install toolchain (Linux)
+      # Toolchains pour CGO
+      - name: Toolchain (Linux)
         if: startsWith(matrix.os, 'ubuntu')
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y build-essential pkg-config
-
-      - name: Enable MSVC (Windows)
+        run: sudo apt-get update && sudo apt-get install -y build-essential pkg-config
+      - name: Toolchain (Windows)
         if: startsWith(matrix.os, 'windows')
         uses: ilammy/msvc-dev-cmd@v1
 
-      - name: Go tests
+      - name: Tests
         run: go test ./...
-        env:
-          CGO_ENABLED: 1
+        env: { CGO_ENABLED: 1 }
+
+      - name: Génère la config ciblée (hors repo)
+        shell: bash
+        run: |
+          cat > "$RUNNER_TEMP/goreleaser.yml" <<EOF
+          version: 2
+          before:
+            hooks:
+              - go mod tidy
+              - go generate ./...
+          builds:
+            - id: app
+              env: ["CGO_ENABLED=1"]
+              goos: [${{ matrix.goos }}]
+              goarch: [${{ matrix.goarch }}]
+              ldflags: ["-s", "-w"]
+              mod_timestamp: "{{ .CommitTimestamp }}"
+          archives:
+            - formats: [tar.gz]
+              format_overrides:
+                - goos: windows
+                  formats: [zip]
+              name_template: "{{ .ProjectName }}_{{ .Version }}_{{ title .Os }}_{{ if eq .Arch \"amd64\" }}x86_64{{ else }}{{ .Arch }}{{ end }}"
+          changelog:
+            sort: asc
+            filters:
+              exclude:
+                - "^docs:"
+                - "^test:"
+          EOF
 
       - name: GoReleaser
         uses: goreleaser/goreleaser-action@v6
         with:
-          distribution: goreleaser
           version: latest
-          args: release --clean
+          args: release --clean --config "${{ runner.temp }}/goreleaser.yml"
         env:
           CGO_ENABLED: 1
           GITHUB_TOKEN: ${{ secrets.PUSH_TOKEN }}

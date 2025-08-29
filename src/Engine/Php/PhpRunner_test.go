@@ -163,7 +163,6 @@ enum Values {
 }
 `
 	result, err := Engine.CreateTestFileWithCode(&PhpRunner{}, phpSource)
-	fmt.Println(result)
 	// Ensure no error
 	assert.Nil(t, err, "Expected no error, got %s", err)
 
