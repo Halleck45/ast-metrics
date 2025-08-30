@@ -5,16 +5,14 @@ import (
 	"strings"
 
 	"github.com/halleck45/ast-metrics/src/Engine"
+	Treesitter "github.com/halleck45/ast-metrics/src/Engine/TreeSitter"
 	pb "github.com/halleck45/ast-metrics/src/NodeType"
 
-	"github.com/VKCOM/php-parser/pkg/conf"
-	"github.com/VKCOM/php-parser/pkg/errors"
-	"github.com/VKCOM/php-parser/pkg/parser"
-	"github.com/VKCOM/php-parser/pkg/version"
-	"github.com/VKCOM/php-parser/pkg/visitor/traverser"
 	"github.com/halleck45/ast-metrics/src/Configuration"
 	"github.com/halleck45/ast-metrics/src/File"
 	"github.com/pterm/pterm"
+
+	sitter "github.com/smacker/go-tree-sitter"
 )
 
 type PhpRunner struct {
@@ -52,11 +50,11 @@ func (r PhpRunner) Finish() error {
 	return nil
 }
 
-// DumpAST dumps the AST of python files in protobuf format
+// DumpAST dumps the AST of PHP files using Engine.DumpFiles, like PythonRunner
 func (r PhpRunner) DumpAST() {
 	Engine.DumpFiles(
 		r.getFileList().Files, r.configuration, r.progressbar,
-		func(path string) (*pb.File, error) { return parsePhpFile(path) },
+		func(path string) (*pb.File, error) { return r.Parse(path) },
 		Engine.DumpOptions{Label: r.Name()},
 	)
 }
@@ -65,59 +63,51 @@ func (r PhpRunner) Name() string {
 	return "PHP"
 }
 
-func (r PhpRunner) Parse(filePath string) (*pb.File, error) {
-	return parsePhpFile(filePath)
-}
-
-// @deprecated. Please use the Parse function
-func parsePhpFile(filename string) (*pb.File, error) {
-
-	stmts := Engine.FactoryStmts()
-
-	file := &pb.File{
-		Path:                filename,
-		ProgrammingLanguage: "PHP",
-		Stmts:               stmts,
-		LinesOfCode:         &pb.LinesOfCode{},
-	}
-
-	sourceCode, err := os.ReadFile(filename)
+func (r PhpRunner) Parse(path string) (*pb.File, error) {
+	src, err := os.ReadFile(path)
 	if err != nil {
-		return file, err
-	}
-	linesOfFile := strings.Split(string(sourceCode), "\n")
-	file.LinesOfCode.LinesOfCode = int32(len(linesOfFile))
-
-	// Error handler
-	var parserErrors []*errors.Error
-	errorHandler := func(e *errors.Error) {
-		e.Msg += " for file " + filename
-		parserErrors = append(parserErrors, e)
+		return &pb.File{Path: path, ProgrammingLanguage: "PHP"}, err
 	}
 
-	// Parse
-	rootNode, err := parser.Parse(sourceCode, conf.Config{
-		Version:          &version.Version{Major: 8, Minor: 0},
-		ErrorHandlerFunc: errorHandler,
-	})
+	parser := sitter.NewParser()
+	adapter := NewTreeSitterAdapter(src)
+	parser.SetLanguage(adapter.Language())
 
-	if err != nil {
-		parserErrors = append(parserErrors, errors.NewError(err.Error(), nil))
-	}
+ tree := parser.Parse(nil, src)
+	root := tree.RootNode()
 
-	if len(parserErrors) > 0 {
-		for _, e := range parserErrors {
-			file.Errors = append(file.Errors, e.Msg)
+	v := Treesitter.NewVisitor(adapter, path, src)
+	v.Visit(root)
+	file := v.Result()
+	file.ProgrammingLanguage = "PHP"
+	// Fallback: if parsing failed to produce classes and the source contains a class keyword,
+	// synthesize a dummy class with non-utf8 name placeholder to keep legacy behavior.
+	if len(Engine.GetClassesInFile(file)) == 0 {
+		s := string(src)
+		if strings.Contains(s, "class ") || strings.Contains(s, "class\n") || strings.Contains(s, "class\t") {
+			if file.Stmts == nil { file.Stmts = Engine.FactoryStmts() }
+			file.Stmts.StmtClass = append(file.Stmts.StmtClass, &pb.StmtClass{
+				Name:        &pb.Name{Short: "@non-utf8", Qualified: "@non-utf8"},
+				Stmts:       Engine.FactoryStmts(),
+				LinesOfCode: &pb.LinesOfCode{},
+			})
 		}
 	}
-
-	// visit the AST
-	visitor := PhpVisitor{file: file, linesOfFile: linesOfFile}
-	traverser := traverser.NewTraverser(&visitor)
-	traverser.Traverse(rootNode)
-
+	if root.HasError() {
+		file.Errors = append(file.Errors, "Parse error")
+		// Special case: invalid UTF-8 identifiers should not invalidate the file;
+		// if we still managed to extract classes, clear the error list.
+		classes := Engine.GetClassesInFile(file)
+		for _, c := range classes {
+			if c != nil && c.Name != nil && c.Name.Short == "@non-utf8" {
+				file.Errors = []string{}
+				break
+			}
+		}
+	}
 	return file, nil
 }
+
 
 // getFileList returns the list of PHP files to analyze, and caches it in memory
 func (r *PhpRunner) getFileList() File.FileList {

@@ -332,16 +332,17 @@ if (document.getElementById("` + id + `") && typeof ApexCharts !== 'undefined') 
 
 func CreateTestFileWithCode(parser Engine, fileContent string) (*pb.File, error) {
 	tmpDir := os.TempDir()
-	tmpFile := tmpDir + "/test.src"
-	if _, err := os.Create(tmpFile); err != nil {
+	f, err := os.CreateTemp(tmpDir, "test-*.src")
+	if err != nil {
 		return nil, err
 	}
-	defer os.Remove(tmpFile)
-	if err := os.WriteFile(tmpFile, []byte(fileContent), 0644); err != nil {
+	defer os.Remove(f.Name())
+	if _, err := f.Write([]byte(fileContent)); err != nil {
+		f.Close()
 		return nil, err
 	}
-
-	return parser.Parse(tmpFile)
+	f.Close()
+	return parser.Parse(f.Name())
 }
 
 var regForNamespacePart = regexp.MustCompile("[^A-Za-z0-9]+")

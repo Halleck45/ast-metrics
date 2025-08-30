@@ -91,6 +91,12 @@ func (v *Visitor) attachFunction(fn *pb.StmtFunction) {
 	v.file.Stmts.StmtFunction = append(v.file.Stmts.StmtFunction, fn)
 }
 
+// Optional interface support
+// An adapter can implement this to let Visitor create StmtInterface nodes.
+type InterfaceAware interface {
+	IsInterface(*sitter.Node) bool
+}
+
 func (v *Visitor) Visit(node *sitter.Node) {
 	switch {
 	case v.ad.IsModule(node):
@@ -98,11 +104,44 @@ func (v *Visitor) Visit(node *sitter.Node) {
 			v.Visit(node.Child(i))
 		}
 		return
-
-	case v.ad.IsClass(node):
+	case func() bool {
+		if ia, ok := v.ad.(InterfaceAware); ok {
+			return ia.IsInterface(node)
+		}
+		return false
+	}():
 		name := v.ad.NodeName(node)
+		qualified := name
+		if v.ns != nil && v.ns.Name != nil {
+			ns := v.ns.Name.Qualified
+			if ns != "" {
+				qualified = ns + "\\" + name
+			}
+		}
+		itf := &pb.StmtInterface{
+			Name:  &pb.Name{Short: name, Qualified: qualified},
+			Stmts: Engine.FactoryStmts(),
+		}
+		body := v.ad.NodeBody(node)
+		// attach to namespace and file
+		v.ns.Stmts.StmtInterface = append(v.ns.Stmts.StmtInterface, itf)
+		v.file.Stmts.StmtInterface = append(v.file.Stmts.StmtInterface, itf)
+		// visit body
+		v.ad.EachChildBody(body, func(ch *sitter.Node) { v.Visit(ch) })
+		return
+
+ case v.ad.IsClass(node):
+		name := v.ad.NodeName(node)
+		qualified := name
+		// qualify with namespace if provided (PHP namespaces, even single segment)
+		if v.ns != nil && v.ns.Name != nil {
+			ns := v.ns.Name.Qualified
+			if ns != "" {
+				qualified = ns + "\\" + name
+			}
+		}
 		c := &pb.StmtClass{
-			Name:        &pb.Name{Short: name, Qualified: name},
+			Name:        &pb.Name{Short: name, Qualified: qualified},
 			Stmts:       Engine.FactoryStmts(),
 			LinesOfCode: &pb.LinesOfCode{},
 		}
@@ -115,6 +154,14 @@ func (v *Visitor) Visit(node *sitter.Node) {
 		c.LinesOfCode = Engine.GetLocPositionFromSource(v.lines, start, end)
 
 		v.attachClass(c)
+		// Attach any class-level externals provided by adapter
+		if items := v.ad.Imports(node); len(items) > 0 {
+			for _, it := range items {
+				name := it.Name // leave empty for plain module imports (Python expectation)
+				dep := &pb.StmtExternalDependency{ClassName: name, Namespace: it.Module, From: it.Module}
+				c.Stmts.StmtExternalDependencies = append(c.Stmts.StmtExternalDependencies, dep)
+			}
+		}
 		v.pushClass(c)
 		v.ad.EachChildBody(body, func(ch *sitter.Node) { v.Visit(ch) })
 		v.popClass()
@@ -137,29 +184,49 @@ func (v *Visitor) Visit(node *sitter.Node) {
 				fn.Parameters = append(fn.Parameters, &pb.StmtParameter{Name: id})
 			})
 		}
+		body := v.ad.NodeBody(node)
 		start := int(node.StartPoint().Row) + 1
 		end := int(node.EndPoint().Row) + 1
+		if body != nil {
+			start = int(body.StartPoint().Row) + 1
+			end = int(body.EndPoint().Row) + 1
+		}
 		fn.LinesOfCode = Engine.GetLocPositionFromSource(v.lines, start, end)
+		// allow adapter to provide a better comment count
+		if cc, ok := v.ad.(interface{ CountComments([]string, int, int) int }); ok {
+			cs := int(node.StartPoint().Row) + 1
+			ce := int(node.EndPoint().Row) + 1
+			fn.LinesOfCode.CommentLinesOfCode = int32(cc.CountComments(v.lines, cs, ce))
+		}
 
 		v.attachFunction(fn)
-		body := v.ad.NodeBody(node)
 		v.pushFunc(fn)
 		v.ad.EachChildBody(body, func(ch *sitter.Node) { v.Visit(ch) })
+		// optional: extract operators/operands from source per adapter
+		if va, ok := v.ad.(interface{ ExtractOperatorsOperands(src []byte, startLine, endLine int) (ops []string, operands []string) }); ok {
+			ops, opr := va.ExtractOperatorsOperands([]byte(strings.Join(v.lines, "\n")), start, end)
+			for _, o := range ops { fn.Operators = append(fn.Operators, &pb.StmtOperator{Name: o}) }
+			for _, p := range opr { fn.Operands = append(fn.Operands, &pb.StmtOperand{Name: p}) }
+		}
 		v.popFunc()
 		return
 	}
 
-	// Imports
+	// Imports and externals
 	if items := v.ad.Imports(node); len(items) > 0 {
 		st := v.curStmts()
 		for _, it := range items {
+			name := it.Name // keep empty for plain imports
 			dep := &pb.StmtExternalDependency{
-				ClassName:    it.Name,   // symbol if any
-				FunctionName: "",        // unknown here
-				Namespace:    it.Module, // module/package
-				From:         it.Module, // normalized source
+				ClassName:    name,
+				FunctionName: "",
+				Namespace:    it.Module,
+				From:         it.Module,
 			}
-			// attach to current scope and to namespace view
+			// attach to class scope when inside a class to satisfy PHP tests
+			if c := v.curClass(); c != nil {
+				c.Stmts.StmtExternalDependencies = append(c.Stmts.StmtExternalDependencies, dep)
+			}
 			st.StmtExternalDependencies = append(st.StmtExternalDependencies, dep)
 			v.ns.Stmts.StmtExternalDependencies = append(v.ns.Stmts.StmtExternalDependencies, dep)
 		}
@@ -181,8 +248,12 @@ func (v *Visitor) Visit(node *sitter.Node) {
 				k2, b2 := v.ad.Decision(ch)
 				switch k2 {
 				case DecElif:
-					ei := &pb.StmtDecisionElseIf{Stmts: Engine.FactoryStmts()}
-					st.StmtDecisionElseIf = append(st.StmtDecisionElseIf, ei)
+					// If adapter wants elseif to be treated as an if (PHP), record only as if; otherwise record as elseif
+					if x, ok := v.ad.(interface{ CountElseIfAsIf() bool }); ok && x.CountElseIfAsIf() {
+						st.StmtDecisionIf = append(st.StmtDecisionIf, &pb.StmtDecisionIf{Stmts: Engine.FactoryStmts()})
+					} else {
+						st.StmtDecisionElseIf = append(st.StmtDecisionElseIf, &pb.StmtDecisionElseIf{Stmts: Engine.FactoryStmts()})
+					}
 					v.ad.EachChildBody(b2, func(cci *sitter.Node) { v.Visit(cci) })
 				case DecElse:
 					el := &pb.StmtDecisionElse{Stmts: Engine.FactoryStmts()}
@@ -193,8 +264,12 @@ func (v *Visitor) Visit(node *sitter.Node) {
 			return
 
 		case DecElif:
-			ei := &pb.StmtDecisionElseIf{Stmts: Engine.FactoryStmts()}
-			st.StmtDecisionElseIf = append(st.StmtDecisionElseIf, ei)
+			// If adapter wants elseif as if (PHP), record only as if; else record as elseif
+			if x, ok := v.ad.(interface{ CountElseIfAsIf() bool }); ok && x.CountElseIfAsIf() {
+				st.StmtDecisionIf = append(st.StmtDecisionIf, &pb.StmtDecisionIf{Stmts: Engine.FactoryStmts()})
+			} else {
+				st.StmtDecisionElseIf = append(st.StmtDecisionElseIf, &pb.StmtDecisionElseIf{Stmts: Engine.FactoryStmts()})
+			}
 			v.ad.EachChildBody(body, func(ch *sitter.Node) { v.Visit(ch) })
 			return
 

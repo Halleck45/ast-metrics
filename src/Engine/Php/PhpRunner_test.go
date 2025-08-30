@@ -589,3 +589,68 @@ function foo() {
 	func1 := result.Stmts.StmtFunction[0]
 	assert.Equal(t, 1, len(func1.Stmts.StmtDecisionSwitch), "Incorrect number of switch statements")
 }
+
+func TestPhp84SyntaxPropertyHooks(t *testing.T) {
+	phpSource := `<?php
+class HasAuthors
+{
+    public string $credits { get; }
+    public Author $mainAuthor { get; set; }
+}
+`
+	result, err := Engine.CreateTestFileWithCode(&PhpRunner{}, phpSource)
+	assert.Nil(t, err, "Expected no error, got %s", err)
+
+	// Ensure classes
+	assert.Equal(t, 1, len(result.Stmts.StmtClass), "Incorrect number of classes")
+	class1 := result.Stmts.StmtClass[0]
+	assert.Equal(t, "HasAuthors", class1.Name.Short, "Expected class name to be 'HasAuthors', got %s", class1.Name)
+}
+
+func TestPhp84NewIthoutParenthesis(t *testing.T) {
+	phpSource := `<?php
+class A {
+	public function bar() {
+		$name = new ReflectionClass($objectOrClass)->getShortName();
+		$y = new Z;
+		return $name;
+	}
+}
+`
+	result, err := Engine.CreateTestFileWithCode(&PhpRunner{}, phpSource)
+	assert.Nil(t, err, "Expected no error, got %s", err)
+
+	// Ensure functions
+	class1 := result.Stmts.StmtClass[0]
+	assert.Equal(t, 1, len(class1.Stmts.StmtFunction), "Incorrect number of functions")
+	func1 := class1.Stmts.StmtFunction[0]
+	assert.Equal(t, "bar", func1.Name.Short, "Expected function name to be 'bar', got %s", func1.Name)
+
+	dependencies := class1.Stmts.StmtExternalDependencies
+	expected := []string{
+		"ReflectionClass",
+		"Z",
+	}
+
+	found := []string{}
+	for _, dep := range dependencies {
+		found = append(found, dep.ClassName)
+	}
+
+	// Compare the list
+	assert.ElementsMatch(t, expected, found, "Incorrect external dependencies")
+}
+
+func TestReadonlyClass(t *testing.T) {
+	phpSource := `<?php
+readonly class B {
+}
+`
+	result, err := Engine.CreateTestFileWithCode(&PhpRunner{}, phpSource)
+	assert.Nil(t, err, "Expected no error, got %s", err)
+
+	// Ensure classes
+	assert.Equal(t, 1, len(result.Stmts.StmtClass), "Incorrect number of classes")
+	class1 := result.Stmts.StmtClass[0]
+	assert.Equal(t, "B", class1.Name.Short, "Expected class name to be 'B', got %s", class1.Name)
+}
