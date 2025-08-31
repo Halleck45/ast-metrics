@@ -334,6 +334,15 @@ func (a *TreeSitterAdapter) computeExternalDependencies() {
 		if class == "" {
 			return
 		}
+		// Ignore pseudo-class keywords which are not external dependencies
+		last := class
+		if idx := strings.LastIndex(class, "\\"); idx >= 0 {
+			last = class[idx+1:]
+		}
+		switch strings.ToLower(last) {
+		case "self", "static", "parent":
+			return
+		}
 		a.extDeps = append(a.extDeps, Treesitter.ImportItem{Module: class, Name: class})
 	}
 

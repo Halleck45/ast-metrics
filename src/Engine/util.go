@@ -6,6 +6,7 @@ import (
 	"path/filepath"
 	"regexp"
 	"strings"
+	"time"
 
 	"github.com/elliotchance/orderedmap/v2"
 
@@ -395,4 +396,148 @@ func SearchFilesByExtension(dirs []string, ext string) ([]string, error) {
 		}
 	}
 	return files, nil
+}
+
+// in-memory cache for dependencies per file path, invalidated by file mtime
+var depCache = struct{
+	items map[string]struct{
+		mtime time.Time
+		deps  []*pb.StmtExternalDependency
+	}
+}{items: make(map[string]struct{ mtime time.Time; deps []*pb.StmtExternalDependency })}
+
+// GetDependenciesInFile aggregates all dependencies found in a file across namespaces,
+// classes (including extends/implements/uses), traits, and functions. It deduplicates
+// the list and caches results per file path using modification time for invalidation.
+func GetDependenciesInFile(file *pb.File) []*pb.StmtExternalDependency {
+	if file == nil || file.Stmts == nil {
+		return []*pb.StmtExternalDependency{}
+	}
+
+	// Try cache based on file path mtime if path is set
+	var mtime time.Time
+	if file.Path != "" {
+		if fi, err := os.Stat(file.Path); err == nil {
+			mtime = fi.ModTime()
+			if c, ok := depCache.items[file.Path]; ok && c.mtime.Equal(mtime) && c.deps != nil {
+				return c.deps
+			}
+		}
+	}
+
+	uniq := make(map[string]*pb.StmtExternalDependency)
+	add := func(dep *pb.StmtExternalDependency) {
+		if dep == nil {
+			return
+		}
+		k := dep.Namespace + "|" + dep.ClassName + "|" + dep.FunctionName + "|" + dep.From
+		if k == "|||" { // empty
+			return
+		}
+		if _, ok := uniq[k]; ok {
+			return
+		}
+		// Make a shallow copy to avoid accidental mutation
+		cpy := *dep
+		uniq[k] = &cpy
+	}
+
+	// 1) file-level externals
+	for _, d := range file.Stmts.StmtExternalDependencies {
+		add(d)
+	}
+	// 2) namespace-level externals
+	for _, ns := range file.Stmts.StmtNamespace {
+		if ns == nil || ns.Stmts == nil {
+			continue
+		}
+		for _, d := range ns.Stmts.StmtExternalDependencies {
+			add(d)
+		}
+	}
+	// 3) classes/interfaces/traits and their externals
+	classes := GetClassesInFile(file)
+	for _, c := range classes {
+		if c == nil {
+			continue
+		}
+		// explicit externals attached to class stmts
+		if c.Stmts != nil {
+			for _, d := range c.Stmts.StmtExternalDependencies {
+				add(d)
+			}
+		}
+		from := ""
+		if c.Name != nil {
+			from = c.Name.Qualified
+			if from == "" {
+				from = c.Name.Short
+			}
+		}
+		// extends / implements / uses as dependencies
+		for _, p := range c.Extends {
+			if p == nil {
+				continue
+			}
+			add(&pb.StmtExternalDependency{Namespace: p.Qualified, From: from, ClassName: p.Short})
+		}
+		for _, p := range c.Implements {
+			if p == nil {
+				continue
+			}
+			add(&pb.StmtExternalDependency{Namespace: p.Qualified, From: from, ClassName: p.Short})
+		}
+		for _, p := range c.Uses {
+			if p == nil {
+				continue
+			}
+			add(&pb.StmtExternalDependency{Namespace: p.Qualified, From: from, ClassName: p.Short})
+		}
+	}
+	// 4) function-level externals (top-level and in classes)
+	funcs := GetFunctionsInFile(file)
+	for _, f := range funcs {
+		if f == nil {
+			continue
+		}
+		from := ""
+		if f.Name != nil {
+			from = f.Name.Qualified
+			if from == "" {
+				from = f.Name.Short
+			}
+		}
+		for _, n := range f.Externals {
+			if n == nil {
+				continue
+			}
+			ns := n.Qualified
+			if ns == "" {
+				ns = n.Short
+			}
+			add(&pb.StmtExternalDependency{Namespace: ns, From: from, ClassName: n.Short})
+		}
+		// Also account for explicit StmtExternalDependencies attached to function stmts if any
+		if f.Stmts != nil {
+			for _, d := range f.Stmts.StmtExternalDependencies {
+				add(d)
+			}
+		}
+	}
+
+	// Build final list
+	res := make([]*pb.StmtExternalDependency, 0, len(uniq))
+	for _, v := range uniq {
+		res = append(res, v)
+	}
+
+	// Save in cache
+	if file.Path != "" && !mtime.IsZero() {
+		depCache.items[file.Path] = struct {
+			mtime time.Time
+			deps  []*pb.StmtExternalDependency
+		}{mtime: mtime, deps: res}
+	}
+
+	return res
 }

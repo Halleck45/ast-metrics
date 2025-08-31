@@ -81,6 +81,9 @@ type Aggregated struct {
 	TopCommitters                           []TopCommitter
 	ResultOfGitAnalysis                     []ResultOfGitAnalysis
 	PackageRelations                        map[string]map[string]int // counter of dependencies. Ex: A -> B -> 2
+	Graph                                   *pb.Graph
+	Community                               *CommunityMetrics
+	Suggestions                             []string
 }
 
 type ProjectComparaison struct {
@@ -115,10 +118,15 @@ type ResultOfGitAnalysis struct {
 }
 
 func NewAggregator(files []*pb.File, gitSummaries []ResultOfGitAnalysis) *Aggregator {
-	return &Aggregator{
+	a := &Aggregator{
 		files:        files,
 		gitSummaries: gitSummaries,
 	}
+	// Register default analyzers
+	a.WithAggregateAnalyzer(NewGraphAggregator())
+	// Run community detection after graph is built
+	a.WithAggregateAnalyzer(NewCommunityAggregator())
+	return a
 }
 
 type AggregateAnalyzer interface {
@@ -162,6 +170,9 @@ func newAggregated() Aggregated {
 		TopCommitters:                           make([]TopCommitter, 0),
 		ResultOfGitAnalysis:                     nil,
 		PackageRelations:                        make(map[string]map[string]int),
+		Graph:                                   &pb.Graph{Nodes: make(map[string]*pb.Node)},
+		Community:                               nil,
+		Suggestions:                             make([]string, 0),
 	}
 }
 

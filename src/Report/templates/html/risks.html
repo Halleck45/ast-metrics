@@ -10,6 +10,7 @@
 
 {% block content %}
 
+
     <!-- start: language tabs-->
     <div class="flex overflow-x-auto overflow-y-hidden border-b border-gray-200 whitespace-nowrap ">
 
@@ -35,7 +36,7 @@
                 </svg>
     
                 <span class="mx-1 text-sm sm:text-base">
-                    {{ languageName }} <span class="text-xs sm:text-sm">({{ lang.ConcernedFiles|length }} files)
+                    {{ languageName }} <span class="text-xs sm:text-sm">({{ lang.ConcernedFiles|length }} files)</span>
                 </span>
             </a>
             {% endfor %}
@@ -43,6 +44,11 @@
 
     </div>
     <!-- end: language tabs-->
+
+
+    <div class="mt-8">
+        {% include "partials/suggestions.html" with suggestions=currentView.Suggestions subtitle="Automatically inferred from coupling, purity and boundary nodes" emptyText="No suggestions — looks healthy based on current heuristics." %}
+    </div>
 
     <!-- start: line of 1 cards -->
     <div class="grid grid-cols-1 gap-4 mt-4">

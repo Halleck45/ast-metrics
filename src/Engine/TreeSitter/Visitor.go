@@ -158,7 +158,18 @@ func (v *Visitor) Visit(node *sitter.Node) {
 		if items := v.ad.Imports(node); len(items) > 0 {
 			for _, it := range items {
 				name := it.Name // leave empty for plain module imports (Python expectation)
-				dep := &pb.StmtExternalDependency{ClassName: name, Namespace: it.Module, From: it.Module}
+				from := ""
+				if f := v.curFunc(); f != nil && f.Name != nil {
+					from = f.Name.Qualified
+					if from == "" { from = f.Name.Short }
+				} else if c != nil && c.Name != nil {
+					from = c.Name.Qualified
+					if from == "" { from = c.Name.Short }
+				} else if v.ns != nil && v.ns.Name != nil {
+					from = v.ns.Name.Qualified
+					if from == "" { from = v.ns.Name.Short }
+				}
+				dep := &pb.StmtExternalDependency{ClassName: name, Namespace: it.Module, From: from}
 				c.Stmts.StmtExternalDependencies = append(c.Stmts.StmtExternalDependencies, dep)
 			}
 		}
@@ -217,11 +228,22 @@ func (v *Visitor) Visit(node *sitter.Node) {
 		st := v.curStmts()
 		for _, it := range items {
 			name := it.Name // keep empty for plain imports
+			from := ""
+			if f := v.curFunc(); f != nil && f.Name != nil {
+				from = f.Name.Qualified
+				if from == "" { from = f.Name.Short }
+			} else if c := v.curClass(); c != nil && c.Name != nil {
+				from = c.Name.Qualified
+				if from == "" { from = c.Name.Short }
+			} else if v.ns != nil && v.ns.Name != nil {
+				from = v.ns.Name.Qualified
+				if from == "" { from = v.ns.Name.Short }
+			}
 			dep := &pb.StmtExternalDependency{
 				ClassName:    name,
 				FunctionName: "",
 				Namespace:    it.Module,
-				From:         it.Module,
+				From:         from,
 			}
 			// attach to class scope when inside a class to satisfy PHP tests
 			if c := v.curClass(); c != nil {

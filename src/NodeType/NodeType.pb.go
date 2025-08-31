@@ -2184,6 +2184,121 @@ func (x *Coupling) GetInstability() float64 {
 	return 0
 }
 
+// ------------------------------------
+// -- Graph of dependencies
+// ------------------------------------
+// want an Adjacency List/Set Implementation
+// @see https://medium.com/outco/how-to-build-a-graph-data-structure-d779d822f9b4
+type Graph struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	Nodes map[string]*Node `protobuf:"bytes,1,rep,name=nodes,proto3" json:"nodes,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3"` // key is node id
+}
+
+func (x *Graph) Reset() {
+	*x = Graph{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_proto_NodeType_proto_msgTypes[30]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *Graph) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*Graph) ProtoMessage() {}
+
+func (x *Graph) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_NodeType_proto_msgTypes[30]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use Graph.ProtoReflect.Descriptor instead.
+func (*Graph) Descriptor() ([]byte, []int) {
+	return file_proto_NodeType_proto_rawDescGZIP(), []int{30}
+}
+
+func (x *Graph) GetNodes() map[string]*Node {
+	if x != nil {
+		return x.Nodes
+	}
+	return nil
+}
+
+type Node struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	Id    string   `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`       // unique id of node
+	Edges []string `protobuf:"bytes,2,rep,name=edges,proto3" json:"edges,omitempty"` // list of node ids this node points to
+	Name  *Name    `protobuf:"bytes,3,opt,name=name,proto3" json:"name,omitempty"`   // name of the node
+}
+
+func (x *Node) Reset() {
+	*x = Node{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_proto_NodeType_proto_msgTypes[31]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *Node) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*Node) ProtoMessage() {}
+
+func (x *Node) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_NodeType_proto_msgTypes[31]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use Node.ProtoReflect.Descriptor instead.
+func (*Node) Descriptor() ([]byte, []int) {
+	return file_proto_NodeType_proto_rawDescGZIP(), []int{31}
+}
+
+func (x *Node) GetId() string {
+	if x != nil {
+		return x.Id
+	}
+	return ""
+}
+
+func (x *Node) GetEdges() []string {
+	if x != nil {
+		return x.Edges
+	}
+	return nil
+}
+
+func (x *Node) GetName() *Name {
+	if x != nil {
+		return x.Name
+	}
+	return nil
+}
+
 var File_proto_NodeType_proto protoreflect.FileDescriptor
 
 var file_proto_NodeType_proto_rawDesc = []byte{
@@ -2560,10 +2675,24 @@ var file_proto_NodeType_proto_rawDesc = []byte{
 	0x65, 0x6e, 0x74, 0x18, 0x02, 0x20, 0x01, 0x28, 0x05, 0x52, 0x08, 0x65, 0x66, 0x66, 0x65, 0x72,
 	0x65, 0x6e, 0x74, 0x12, 0x20, 0x0a, 0x0b, 0x69, 0x6e, 0x73, 0x74, 0x61, 0x62, 0x69, 0x6c, 0x69,
 	0x74, 0x79, 0x18, 0x03, 0x20, 0x01, 0x28, 0x01, 0x52, 0x0b, 0x69, 0x6e, 0x73, 0x74, 0x61, 0x62,
-	0x69, 0x6c, 0x69, 0x74, 0x79, 0x42, 0x2b, 0x5a, 0x29, 0x67, 0x69, 0x74, 0x68, 0x75, 0x62, 0x2e,
-	0x63, 0x6f, 0x6d, 0x2f, 0x68, 0x61, 0x6c, 0x6c, 0x65, 0x63, 0x6b, 0x34, 0x35, 0x2f, 0x61, 0x73,
-	0x74, 0x2d, 0x6d, 0x65, 0x74, 0x72, 0x69, 0x63, 0x73, 0x2f, 0x4e, 0x6f, 0x64, 0x65, 0x54, 0x79,
-	0x70, 0x65, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
+	0x69, 0x6c, 0x69, 0x74, 0x79, 0x22, 0x83, 0x01, 0x0a, 0x05, 0x47, 0x72, 0x61, 0x70, 0x68, 0x12,
+	0x30, 0x0a, 0x05, 0x6e, 0x6f, 0x64, 0x65, 0x73, 0x18, 0x01, 0x20, 0x03, 0x28, 0x0b, 0x32, 0x1a,
+	0x2e, 0x4e, 0x6f, 0x64, 0x65, 0x54, 0x79, 0x70, 0x65, 0x2e, 0x47, 0x72, 0x61, 0x70, 0x68, 0x2e,
+	0x4e, 0x6f, 0x64, 0x65, 0x73, 0x45, 0x6e, 0x74, 0x72, 0x79, 0x52, 0x05, 0x6e, 0x6f, 0x64, 0x65,
+	0x73, 0x1a, 0x48, 0x0a, 0x0a, 0x4e, 0x6f, 0x64, 0x65, 0x73, 0x45, 0x6e, 0x74, 0x72, 0x79, 0x12,
+	0x10, 0x0a, 0x03, 0x6b, 0x65, 0x79, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x03, 0x6b, 0x65,
+	0x79, 0x12, 0x24, 0x0a, 0x05, 0x76, 0x61, 0x6c, 0x75, 0x65, 0x18, 0x02, 0x20, 0x01, 0x28, 0x0b,
+	0x32, 0x0e, 0x2e, 0x4e, 0x6f, 0x64, 0x65, 0x54, 0x79, 0x70, 0x65, 0x2e, 0x4e, 0x6f, 0x64, 0x65,
+	0x52, 0x05, 0x76, 0x61, 0x6c, 0x75, 0x65, 0x3a, 0x02, 0x38, 0x01, 0x22, 0x50, 0x0a, 0x04, 0x4e,
+	0x6f, 0x64, 0x65, 0x12, 0x0e, 0x0a, 0x02, 0x69, 0x64, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52,
+	0x02, 0x69, 0x64, 0x12, 0x14, 0x0a, 0x05, 0x65, 0x64, 0x67, 0x65, 0x73, 0x18, 0x02, 0x20, 0x03,
+	0x28, 0x09, 0x52, 0x05, 0x65, 0x64, 0x67, 0x65, 0x73, 0x12, 0x22, 0x0a, 0x04, 0x6e, 0x61, 0x6d,
+	0x65, 0x18, 0x03, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x0e, 0x2e, 0x4e, 0x6f, 0x64, 0x65, 0x54, 0x79,
+	0x70, 0x65, 0x2e, 0x4e, 0x61, 0x6d, 0x65, 0x52, 0x04, 0x6e, 0x61, 0x6d, 0x65, 0x42, 0x2b, 0x5a,
+	0x29, 0x67, 0x69, 0x74, 0x68, 0x75, 0x62, 0x2e, 0x63, 0x6f, 0x6d, 0x2f, 0x68, 0x61, 0x6c, 0x6c,
+	0x65, 0x63, 0x6b, 0x34, 0x35, 0x2f, 0x61, 0x73, 0x74, 0x2d, 0x6d, 0x65, 0x74, 0x72, 0x69, 0x63,
+	0x73, 0x2f, 0x4e, 0x6f, 0x64, 0x65, 0x54, 0x79, 0x70, 0x65, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74,
+	0x6f, 0x33,
 }
 
 var (
@@ -2578,7 +2707,7 @@ func file_proto_NodeType_proto_rawDescGZIP() []byte {
 	return file_proto_NodeType_proto_rawDescData
 }
 
-var file_proto_NodeType_proto_msgTypes = make([]protoimpl.MessageInfo, 30)
+var file_proto_NodeType_proto_msgTypes = make([]protoimpl.MessageInfo, 33)
 var file_proto_NodeType_proto_goTypes = []interface{}{
 	(*Name)(nil),                   // 0: NodeType.Name
 	(*Stmts)(nil),                  // 1: NodeType.Stmts
@@ -2610,6 +2739,9 @@ var file_proto_NodeType_proto_goTypes = []interface{}{
 	(*Commit)(nil),                 // 27: NodeType.Commit
 	(*Risk)(nil),                   // 28: NodeType.Risk
 	(*Coupling)(nil),               // 29: NodeType.Coupling
+	(*Graph)(nil),                  // 30: NodeType.Graph
+	(*Node)(nil),                   // 31: NodeType.Node
+	nil,                            // 32: NodeType.Graph.NodesEntry
 }
 var file_proto_NodeType_proto_depIdxs = []int32{
 	22, // 0: NodeType.Stmts.analyze:type_name -> NodeType.Analyze
@@ -2681,11 +2813,14 @@ var file_proto_NodeType_proto_depIdxs = []int32{
 	28, // 66: NodeType.Analyze.risk:type_name -> NodeType.Risk
 	29, // 67: NodeType.Analyze.coupling:type_name -> NodeType.Coupling
 	27, // 68: NodeType.Commits.commits:type_name -> NodeType.Commit
-	69, // [69:69] is the sub-list for method output_type
-	69, // [69:69] is the sub-list for method input_type
-	69, // [69:69] is the sub-list for extension type_name
-	69, // [69:69] is the sub-list for extension extendee
-	0,  // [0:69] is the sub-list for field type_name
+	32, // 69: NodeType.Graph.nodes:type_name -> NodeType.Graph.NodesEntry
+	0,  // 70: NodeType.Node.name:type_name -> NodeType.Name
+	31, // 71: NodeType.Graph.NodesEntry.value:type_name -> NodeType.Node
+	72, // [72:72] is the sub-list for method output_type
+	72, // [72:72] is the sub-list for method input_type
+	72, // [72:72] is the sub-list for extension type_name
+	72, // [72:72] is the sub-list for extension extendee
+	0,  // [0:72] is the sub-list for field type_name
 }
 
 func init() { file_proto_NodeType_proto_init() }
@@ -3054,6 +3189,30 @@ func file_proto_NodeType_proto_init() {
 				return nil
 			}
 		}
+		file_proto_NodeType_proto_msgTypes[30].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*Graph); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_proto_NodeType_proto_msgTypes[31].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*Node); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
 	}
 	file_proto_NodeType_proto_msgTypes[23].OneofWrappers = []interface{}{}
 	file_proto_NodeType_proto_msgTypes[24].OneofWrappers = []interface{}{}
@@ -3064,7 +3223,7 @@ func file_proto_NodeType_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: file_proto_NodeType_proto_rawDesc,
 			NumEnums:      0,
-			NumMessages:   30,
+			NumMessages:   33,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

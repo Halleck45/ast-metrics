@@ -71,7 +71,7 @@ func (v *RiskAnalyzer) Analyze(project ProjectAggregated) {
 			risk := v.GetRisk(int32(maxCommits), maxComplexity, nbCommits, int(128-*class.Stmts.Analyze.Maintainability.MaintainabilityIndex))
 			file.Stmts.Analyze.Risk.Score += float64(risk)
 		}
-
+		
 		// Procedural file. We put risk on the file itself, according to the cyclomatic complexity.
 		if file.Stmts == nil || file.Stmts.Analyze == nil || file.Stmts.Analyze.Complexity == nil {
 			continue
@@ -80,6 +80,64 @@ func (v *RiskAnalyzer) Analyze(project ProjectAggregated) {
 		cyclo := *file.Stmts.Analyze.Complexity.Cyclomatic
 		risk := v.GetRisk(int32(maxCommits), float64(maxCyclomatic), nbCommits, int(cyclo))
 		file.Stmts.Analyze.Risk.Score += float64(risk)
+	}
+
+	// Build suggestions for Combined and per language
+	build := func(agg Aggregated) []string {
+		sugs := make([]string, 0)
+		seen := make(map[string]bool)
+		for _, f := range agg.ConcernedFiles {
+			if f == nil || f.Stmts == nil || f.Stmts.Analyze == nil || f.Stmts.Analyze.Risk == nil {
+				continue
+			}
+			risk := f.Stmts.Analyze.Risk.Score
+			commits := 0
+			if f.Commits != nil {
+				commits = len(f.Commits.Commits)
+			}
+			// Suggest hotspots
+			if risk >= 0.7 && commits >= 3 {
+				msg := "Refactor hotspot: " + f.Path
+				if !seen[msg] {
+					sugs = append(sugs, msg)
+					seen[msg] = true
+				}
+			}
+			// Suggest MI improvements per class
+			for _, cls := range Engine.GetClassesInFile(f) {
+				if cls.Stmts == nil || cls.Stmts.Analyze == nil || cls.Stmts.Analyze.Maintainability == nil || cls.Stmts.Analyze.Maintainability.MaintainabilityIndex == nil {
+					continue
+				}
+				if *cls.Stmts.Analyze.Maintainability.MaintainabilityIndex < 65 {
+					name := cls.Name.GetQualified()
+					msg := "Improve maintainability of " + name
+					if !seen[msg] {
+						sugs = append(sugs, msg)
+						seen[msg] = true
+					}
+				}
+			}
+			// Suggest splitting when cyclomatic is high
+			if f.Stmts.Analyze.Complexity != nil && f.Stmts.Analyze.Complexity.Cyclomatic != nil {
+				if *f.Stmts.Analyze.Complexity.Cyclomatic > 50 && commits >= 3 {
+					msg := "Split complex functions in " + f.Path
+					if !seen[msg] {
+						sugs = append(sugs, msg)
+						seen[msg] = true
+					}
+				}
+			}
+			if len(sugs) >= 10 {
+				break
+			}
+		}
+		return sugs
+	}
+	project.Combined.Suggestions = build(project.Combined)
+	for lng, agg := range project.ByProgrammingLanguage {
+		a := agg
+		a.Suggestions = build(agg)
+		project.ByProgrammingLanguage[lng] = a
 	}
 }
 

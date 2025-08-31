@@ -1,0 +1,1588 @@
+{% extends "layout.html" %}
+{% block pageTitle %}Communities - {{ currentLanguage }}{% endblock %}
+{% block content %}
+
+
+{% set cm = currentView.Community %}
+{% if not cm %}
+<div class="text-gray-600">No community data available.</div>
+{% else %}
+
+<div class="bg-white p-4 rounded shadow mb-8">
+    <h2 class="leading-none text-3xl font-bold text-gray-900 pb-2">Communities - Help</h2>
+    <p class="text-gray-600">Graph communities detected via label propagation on the dependency graph.</p>
+
+    <div class="mt-4 mb-4">
+        <img src="images/help-community.png" alt="Help on communities" loading="lazy" class="mx-auto" />
+    </div>
+</div>
+
+
+
+<!-- Metrics -->
+<div class="grid grid-cols-5 gap-4 mb-8">
+    <div class="bg-white p-4 rounded shadow">
+        <div class="leading-none text-3xl font-bold text-gray-900 pb-2">{{ cm.CommunitiesCount }}</div>
+        <div class="text-base font-normal text-gray-500 ">Number of detected communities (modules)</div>
+        <div class="mt-2 text-xs text-gray-400">communities_count</div>
+    </div>
+    <div class="bg-white p-4 rounded shadow">
+        <div class="leading-none text-3xl font-bold text-gray-900 pb-2">{{ cm.ModularityQ|floatformat:2 }}</div>
+        <div class="text-base font-normal text-gray-500">Community separation quality (0–1)</div>
+        <div class="mt-2 text-xs text-gray-400">modularity_q</div>
+    </div>
+    <div class="bg-white p-4 rounded shadow">
+        <div class="leading-none text-3xl font-bold text-gray-900 pb-2">{{ cm.AvgSize|floatformat:1 }}</div>
+        <div class="text-base font-normal text-gray-500">Average number of nodes per community</div>
+        <div class="mt-2 text-xs text-gray-400">avg_size</div>
+    </div>
+    <div class="bg-white p-4 rounded shadow">
+        <div class="leading-none text-3xl font-bold text-gray-900 pb-2">{{ cm.MaxSize }}</div>
+        <div class="text-base font-normal text-gray-500">Largest community size (nodes)</div>
+        <div class="mt-2 text-xs text-gray-400">max_size</div>
+    </div>
+    <div class="bg-white p-4 rounded shadow">
+        <div class="leading-none text-3xl font-bold text-gray-900 pb-2">{{ cm.GraphDensity|floatformat:3 }}</div>
+        <div class="text-base font-normal text-gray-500">Edge density of the dependency graph</div>
+        <div class="mt-2 text-xs text-gray-400">graph_density</div>
+    </div>
+</div>
+
+
+<!-- Graph view: one circle per community, sized by number of nodes, colored by dominant namespace -->
+<div class="bg-white p-4 rounded shadow mb-8">
+
+
+    <div class="f">
+        <h2 class="leading-none text-3xl font-bold text-gray-900 pb-2">Graph view</h2>
+        <div class="text-sm text-gray-600 flex items-center gap-4  rounded mb-2">
+            <label class="flex items-center gap-1"><input id="only-critical-comms" type="checkbox" class="mr-1"> Only
+                critical</label>
+            <label class="flex items-center gap-1">Search <input id="graph-search" type="text"
+                                                                 placeholder="namespace or name"
+                                                                 class="border px-1 py-0.5 rounded w-44"></label>
+        </div>
+    </div>
+
+    <!-- Optimized: compact JSON payloads instead of thousands of hidden DOM nodes -->
+    <script id="data-communities" type="application/json">[
+        {% for id, nodes in cm.Communities %}
+        {"id":"{{ id|escapejs }}",
+         "size":{{ nodes|length }},
+         "purity":{% for k, v in cm.PurityPerCommunity %}{% if k == id %}{{ v }}{% endif %}{% endfor %},
+         "level":{% for k, lvl in cm.Levels %}{% if k == id %}{{ lvl }}{% endif %}{% endfor %},
+         "betweenness":{% for k, b in cm.BetweennessPerComm %}{% if k == id %}{{ b }}{% endif %}{% endfor %},
+         "coupling":{% for k, c in cm.CouplingRatioPerComm %}{% if k == id %}{{ c }}{% endif %}{% endfor %},
+         "topNamespaces":[{% for k, ns in cm.TopNamespacesPerComm %}{% if k == id %}{% for s in ns %}"{{ s|escapejs }}"{% if not forloop.Last %},{% endif %}{% endfor %}{% endif %}{% endfor %}],
+         "topClasses":[{% for k, cls in cm.TopClassesPerComm %}{% if k == id %}{% for s in cls %}"{{ s|escapejs }}"{% if not forloop.Last %},{% endif %}{% endfor %}{% endif %}{% endfor %}]
+        }{% if not forloop.Last %},{% endif %}
+        {% endfor %}
+    ]</script>
+    <script id="data-comm-members" type="application/json">[
+        {% for id, nodes in cm.Communities %}
+        {"comm":"{{ id|escapejs }}","nodes":[{% for n in nodes %}"{{ n|escapejs }}"{% if not forloop.Last %},{% endif %}{% endfor %}]}
+        {% if not forloop.Last %},{% endif %}
+        {% endfor %}
+    ]</script>
+    <script id="data-graph" type="application/json">[
+        {% for nid, n in currentView.Graph.Nodes %}
+        {"id":"{{ nid|escapejs }}",
+         "namespace":"{% if n.Name and n.Name.Package %}{{ n.Name.Package|escapejs }}{% else %}{% if n.Name and n.Name.Qualified %}{{ n.Name.Qualified|escapejs }}{% else %}{% endif %}{% endif %}",
+         "edges":[{% for v in n.Edges %}"{{ v|escapejs }}"{% if not forloop.Last %},{% endif %}{% endfor %}]}
+        {% if not forloop.Last %},{% endif %}
+        {% endfor %}
+    ]</script>
+    <script id="data-edges-between-comms" type="application/json">[
+        {% for e in cm.EdgesBetweenCommunities %}
+        {"from":"{{ e.From|escapejs }}","to":"{{ e.To|escapejs }}","edges":{{ e.Edges }}}
+        {% if not forloop.Last %},{% endif %}
+        {% endfor %}
+    ]</script>
+    <script id="data-matrix-order" type="application/json">[
+        {% for id in cm.MatrixOrder %}"{{ id|escapejs }}"{% if not forloop.Last %},{% endif %}{% endfor %}
+    ]</script>
+    <script id="data-boundary" type="application/json">[
+        {% for b in cm.BoundaryNodes %}"{{ b|escapejs }}"{% if not forloop.Last %},{% endif %}{% endfor %}
+    ]</script>
+
+    {% if cm.Communities|length == 0 %}
+    <div class="text-gray-600">No communities to display.</div>
+    {% else %}
+    <div class="grid grid-cols-12 gap-4">
+        <div class="col-span-9">
+            <svg id="comm-graph" viewBox="0 0 900 500" class="w-full h-[500px] border border-gray-200 rounded"></svg>
+        </div>
+        <div class="col-span-3">
+            <div id="drilldown" class="hidden bg-gray-50 border rounded p-3 h-[500px] overflow-auto">
+                <div class="flex justify-between items-center mb-2">
+                    <h3 id="dd-title" class="font-semibold">Community</h3>
+                    <button id="dd-close" class="text-xs text-gray-600 hover:text-black">close</button>
+                </div>
+                <div id="dd-meta" class="text-sm text-gray-700 mb-2"></div>
+                <table class="min-w-full text-xs">
+                    <thead>
+                    <tr>
+                        <th class="text-left p-1">node</th>
+                        <th class="text-left p-1">namespace</th>
+                        <th class="text-left p-1">boundary</th>
+                        <th class="text-left p-1">in</th>
+                        <th class="text-left p-1">out</th>
+                    </tr>
+                    </thead>
+                    <tbody id="dd-body"></tbody>
+                </table>
+            </div>
+            <div id="legend" class="text-xs text-gray-700">
+                <div class="font-semibold mb-1">Legend</div>
+                <div>Size = nb of nodes</div>
+                <div>Color = top namespace</div>
+                <div>Edge thickness = nb of calls between communities</div>
+                <div><span class="inline-block w-3 h-3 rounded-full mr-1" style="border:2px solid #dc2626"></span> Red
+                    ring = community contains critical nodes
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            // Global tooltip element and helpers for all views (Graph, Layered, Sankey)
+            (function ensureGlobalGraphTooltip(){
+                if (!document.getElementById('graph-tooltip')) {
+                    const tip = document.createElement('div');
+                    tip.id = 'graph-tooltip';
+                    tip.className = 'graph-tooltip';
+                    tip.style.display = 'none';
+                    document.body.appendChild(tip);
+                }
+                if (!window.graphTooltip) {
+                    const __tooltip = () => document.getElementById('graph-tooltip');
+                    window.graphTooltip = {
+                        show(html, event){
+                            const el = __tooltip(); if (!el) return;
+                            el.innerHTML = html; el.style.display = 'block'; el.classList.add('visible');
+                            this.move(event);
+                        },
+                        move(event){
+                            const el = __tooltip(); if (!el) return;
+                            el.style.left = (event.clientX) + 'px';
+                            el.style.top = (event.clientY) + 'px';
+                        },
+                        hide(){
+                            const el = __tooltip(); if (!el) return;
+                            el.classList.remove('visible'); el.style.display = 'none';
+                        }
+                    };
+                }
+            })();
+            (function waitForD3() {
+                if (!(window.d3 && typeof d3.forceSimulation === 'function')) {
+                    return setTimeout(waitForD3, 50);
+                }
+                (function () {
+                    // Build data from compact JSON payloads
+                    const communities = JSON.parse(document.getElementById('data-communities').textContent || '[]');
+                    const commMembers = JSON.parse(document.getElementById('data-comm-members').textContent || '[]');
+                    const nodeToCommunity = {};
+                    commMembers.forEach(e => { (e.nodes||[]).forEach(n => nodeToCommunity[n] = e.comm); });
+                    const boundarySet = new Set(JSON.parse(document.getElementById('data-boundary').textContent || '[]'));
+                    const nodes = JSON.parse(document.getElementById('data-graph').textContent || '[]');
+                    // Build quick maps
+                    const nodeMap = new Map(nodes.map(n => [n.id, n]));
+                    // in-degree map
+                    const indeg = new Map();
+                    const outdeg = new Map();
+                    nodes.forEach(n => {
+                        outdeg.set(n.id, (n.edges || []).length);
+                        (n.edges || []).forEach(v => indeg.set(v, (indeg.get(v) || 0) + 1));
+                    });
+
+                    // Map top namespace to color (consistent colors by namespace)
+                    const allTopNS = Array.from(new Set(communities.flatMap(c => (c.topNamespaces && c.topNamespaces.length ? [c.topNamespaces[0]] : [""]))))
+                        .sort();
+                    const colorScale = d3.scaleOrdinal(d3.schemeTableau10).domain(allTopNS);
+                    // Fallback: infer dominant namespace per community when absent; else deterministic hash color by id
+                    const nsByCommunity = new Map();
+                    // Precompute mapping community -> dominant namespace
+                    (function computeDominantNs() {
+                        const commMembers = new Map();
+                        Object.entries(nodeToCommunity).forEach(([nid, cid]) => {
+                            if (!commMembers.has(cid)) commMembers.set(cid, []);
+                            commMembers.get(cid).push(nid);
+                        });
+                        commMembers.forEach((ids, cid) => {
+                            // count namespaces
+                            const counts = new Map();
+                            ids.forEach(nid => {
+                                const ns = (nodeMap.get(nid)?.namespace || '').trim();
+                                if (!ns) return;
+                                counts.set(ns, (counts.get(ns) || 0) + 1);
+                            });
+                            let best = '';
+                            let bestC = -1;
+                            counts.forEach((c, ns) => {
+                                if (c > bestC) {
+                                    bestC = c;
+                                    best = ns;
+                                }
+                            });
+                            if (best) nsByCommunity.set(cid, best);
+                        });
+                    })();
+
+                    function hashColorFromId(id) {
+                        // simple hash -> pick from schemeTableau10 deterministically
+                        const palette = d3.schemeTableau10;
+                        let h = 0;
+                        for (let i = 0; i < id.length; i++) {
+                            h = ((h << 5) - h) + id.charCodeAt(i);
+                            h |= 0;
+                        }
+                        const idx = Math.abs(h) % palette.length;
+                        return palette[idx];
+                    }
+
+                    const fillColor = (d) => {
+                        // prefer explicit topNamespaces
+                        const ns = (d && d.topNamespaces && d.topNamespaces.length) ? d.topNamespaces[0] : null;
+                        if (ns) return colorScale(ns);
+                        // try inferred dominant ns
+                        const inferred = nsByCommunity.get(d.id);
+                        if (inferred) return colorScale(inferred);
+                        // fallback: deterministic color by id (no longer gray)
+                        return hashColorFromId(String(d.id || ''));
+                    };
+                    // Build namespace legend with color swatches
+                    (function buildNsLegend() {
+                        const legend = document.getElementById('legend');
+                        if (!legend) return;
+                        // remove previous ns legend if any
+                        const old = legend.querySelector('.ns-legend');
+                        if (old) old.remove();
+                        const wrap = document.createElement('div');
+                        wrap.className = 'ns-legend mt-1 overflow-auto max-h-96';
+                        const title = document.createElement('div');
+                        title.className = 'font-semibold mt-2';
+                        title.textContent = 'Namespaces:';
+                        wrap.appendChild(title);
+                        const list = document.createElement('div');
+                        list.className = 'flex flex-wrap gap-2 mt-1';
+                        const nsList = allTopNS.filter(ns => ns && ns.trim().length > 0);
+                        if (nsList.length === 0) {
+                            const i = document.createElement('div');
+                            i.className = 'text-gray-500';
+                            i.textContent = '(no namespace data)';
+                            list.appendChild(i);
+                        } else {
+                            nsList.forEach(ns => {
+                                const item = document.createElement('div');
+                                item.className = 'flex items-center';
+                                const dot = document.createElement('span');
+                                dot.className = 'inline-block w-3 h-3 rounded-full mr-1';
+                                dot.style.background = colorScale(ns);
+                                dot.style.border = '1px solid rgba(0,0,0,0.2)';
+                                const label = document.createElement('span');
+                                label.textContent = ns;
+                                item.appendChild(dot);
+                                item.appendChild(label);
+                                list.appendChild(item);
+                            });
+                        }
+                        // Add hint for communities without namespace: color by id
+                        const noNsSwatch = document.createElement('div');
+                        noNsSwatch.className = 'flex items-center mt-1';
+                        const dot2 = document.createElement('span');
+                        dot2.className = 'inline-block w-3 h-3 rounded-full mr-1';
+                        dot2.style.background = '#9ca3af';
+                        dot2.style.border = '1px solid rgba(0,0,0,0.2)';
+                        const label2 = document.createElement('span');
+                        label2.textContent = 'No namespace: colored deterministically by community id';
+                        noNsSwatch.appendChild(dot2);
+                        noNsSwatch.appendChild(label2);
+                        list.appendChild(noNsSwatch);
+                        wrap.appendChild(list);
+                        legend.appendChild(wrap);
+                    })();
+
+                    // Build inter-community matrix and metrics before drawing
+                    const commIds = communities.map(c => c.id);
+                    const idIndex = new Map(commIds.map((id, i) => [id, i]));
+                    const nComm = commIds.length;
+                    const mat = Array.from({length: nComm}, () => Array(nComm).fill(0));
+                    nodes.forEach(u => {
+                        const cu = nodeToCommunity[u.id];
+                        (u.edges || []).forEach(v => {
+                            const cv = nodeToCommunity[v];
+                            if (!cu || !cv) return;
+                            const i = idIndex.get(cu), j = idIndex.get(cv);
+                            if (i == null || j == null) return;
+                            mat[i][j] += 1;
+                        });
+                    });
+                    const commStats = new Map(); // id -> {inbound,outbound,internal,total,coupling}
+                    for (let i = 0; i < nComm; i++) {
+                        const outbound = d3.sum(mat[i].filter((_, j) => j !== i));
+                        let inbound = 0;
+                        for (let r = 0; r < nComm; r++) {
+                            if (r !== i) inbound += mat[r][i];
+                        }
+                        const internal = mat[i][i];
+                        const total = inbound + outbound + internal;
+                        const coupling = total > 0 ? (outbound / total) : 0;
+                        commStats.set(commIds[i], {inbound, outbound, internal, total, coupling});
+                    }
+
+                    // Graph view: draw circles and links with force-directed layout
+                    const W = 900, H = 500;
+                    const svg = d3.select('#comm-graph');
+                    svg.selectAll('*').remove();
+
+                    const maxSize = d3.max(communities, d => d.size) || 1;
+                    const rScale = d3.scaleSqrt().domain([0, maxSize]).range([10, 60]);
+
+                    const nodesSim = communities.map((d, i) => ({
+                        ...d,
+                        x: Math.random() * W,
+                        y: Math.random() * H,
+                        r: rScale(d.size)
+                    }));
+
+                    // Build inter-community links with weights from matrix (exclude self)
+                    const links = [];
+                    for (let i = 0; i < nComm; i++) {
+                        for (let j = 0; j < nComm; j++) {
+                            if (i === j) continue;
+                            const w = mat[i][j] + mat[j][i]; // undirected weight as sum
+                            if (w > 0) {
+                                links.push({source: commIds[i], target: commIds[j], weight: w});
+                            }
+                        }
+                    }
+                    const maxW = d3.max(links, l => l.weight) || 1;
+                    const widthScale = d3.scaleSqrt().domain([1, maxW]).range([0.5, 8]);
+
+                    const sim = d3.forceSimulation(nodesSim)
+                        .force('center', d3.forceCenter(W / 2, H / 2))
+                        .force('link', d3.forceLink(links).id(d => d.id).distance(d => 170).strength(d => Math.min(0.5, 0.05 + (d.weight / maxW) * 0.2)))
+                        .force('collide', d3.forceCollide(d => d.r + 10))
+                        .force('charge', d3.forceManyBody().strength(2))
+                        .stop();
+                    for (let i = 0; i < 300; i++) sim.tick();
+
+                    const g = svg.append('g');
+                    // Zoom/pan
+                    const zoomG = d3.zoom().scaleExtent([0.5, 8]).on('zoom', (event) => {
+                        g.attr('transform', event.transform);
+                    });
+                    svg.call(zoomG);
+                    // If no links, show a subtle note
+                    if (links.length === 0) {
+                        g.append('text').attr('x', 12).attr('y', 18).attr('fill', '#6b7280').attr('font-size', 12).text('No inter-community links in data');
+                    }
+                    // Build adjacency for hover highlighting
+                    const neighbors = new Map();
+                    nodesSim.forEach(n => neighbors.set(n.id, new Set([n.id]))); // include self
+                    links.forEach(l => {
+                        const s = (typeof l.source === 'object') ? l.source.id : l.source;
+                        const t = (typeof l.target === 'object') ? l.target.id : l.target;
+                        if (!neighbors.has(s)) neighbors.set(s, new Set([s]));
+                        if (!neighbors.has(t)) neighbors.set(t, new Set([t]));
+                        neighbors.get(s).add(t);
+                        neighbors.get(t).add(s);
+                    });
+
+                    // draw links first
+                    function getX(nodeRef) {
+                        if (nodeRef && typeof nodeRef === 'object') return nodeRef.x || 0;
+                        const n = nodesSim.find(n => n.id === nodeRef);
+                        return (n && n.x) || 0;
+                    }
+
+                    function getY(nodeRef) {
+                        if (nodeRef && typeof nodeRef === 'object') return nodeRef.y || 0;
+                        const n = nodesSim.find(n => n.id === nodeRef);
+                        return (n && n.y) || 0;
+                    }
+
+                    const linkSel = g.selectAll('line.link').data(links).enter().append('line')
+                        .attr('class', 'link')
+                        .attr('x1', d => getX(d.source))
+                        .attr('y1', d => getY(d.source))
+                        .attr('x2', d => getX(d.target))
+                        .attr('y2', d => getY(d.target))
+                        .attr('stroke', '#9ca3af')
+                        .attr('stroke-opacity', 0.8)
+                        .attr('stroke-width', d => widthScale(d.weight));
+
+                    const nodeG = g.selectAll('g.comm').data(nodesSim).enter().append('g').attr('class', 'comm')
+                        .attr('transform', d => `translate(${d.x},${d.y})`)
+                        .style('cursor', 'pointer');
+
+                    nodeG.append('circle')
+                        .attr('class', 'graph-hover')
+                        .attr('r', d => d.r)
+                        .attr('fill', d => fillColor(d))
+                        .attr('fill-opacity', 0.85)
+                        .attr('stroke', '#333').attr('stroke-width', 0.5)
+                        .on('mouseenter', function(event, d){
+                            const tns = (d.topNamespaces || []).slice(0, 3).join(', ');
+                            const tcs = (d.topClasses || []).slice(0, 5).join(', ');
+                            const stat = commStats.get(d.id) || {coupling: 0};
+                            const p = Math.round((d.purity || 0) * 100);
+                            const coup = Math.round((stat.coupling || 0) * 100);
+                            const html = `<strong>${d.id}</strong><br><span style='opacity:.85'>Purity: ${p}% · Coupling: ${coup}%</span>${tns?`<br>Top ns: ${tns}`:''}${tcs?`<br>Top nodes: ${tcs}`:''}`;
+                            if (window.graphTooltip) window.graphTooltip.show(html, event);
+                        })
+                        .on('mousemove', function(event){ if (window.graphTooltip) window.graphTooltip.move(event); })
+                        .on('mouseleave', function(){ if (window.graphTooltip) window.graphTooltip.hide(); });
+
+                    // Focus & hover state + unified visibility
+                    let currentFocusId = null;
+                    let hoverId = null;
+
+                    function computeBaseVisible() {
+                        const onlyCrit = document.getElementById('only-critical-comms')?.checked;
+                        if (!onlyCrit) {
+                            return new Set(nodesSim.map(n => n.id));
+                        }
+                        const visible = new Set();
+                        criticalSet.forEach(cid => {
+                            visible.add(cid);
+                            const nbrs = neighbors.get(cid);
+                            if (nbrs) nbrs.forEach(x => visible.add(x));
+                        });
+                        return visible;
+                    }
+
+                    function applyVisibility() {
+                        const q = (document.getElementById('graph-search')?.value || '').trim().toLowerCase();
+                        const base = computeBaseVisible();
+
+                        // Show note if critical mode and nothing to show
+                        const critCb = document.getElementById('only-critical-comms');
+                        const none = critCb?.checked && base.size === 0;
+                        d3.select('#crit-note').style('display', none ? null : 'none');
+
+                        // Focus has priority over hover
+                        let activeSet = base;
+                        // Apply text search to base set: keep communities whose id or top namespace or top classes matches
+                        if (q) {
+                            const lowered = q;
+                            const matchIds = new Set();
+                            nodesSim.forEach(n => {
+                                const idStr = String(n.id || '').toLowerCase();
+                                const nsStr = (n.topNamespaces || []).join(' ').toLowerCase();
+                                const clsStr = (n.topClasses || []).join(' ').toLowerCase();
+                                if (idStr.includes(lowered) || nsStr.includes(lowered) || clsStr.includes(lowered)) {
+                                    matchIds.add(n.id);
+                                }
+                            });
+                            activeSet = new Set([...activeSet].filter(x => matchIds.has(x)));
+                        }
+                        const activeId = currentFocusId || (hoverId && !currentFocusId ? hoverId : null);
+                        if (activeId) {
+                            const nbrs = neighbors.get(activeId) || new Set([activeId]);
+                            activeSet = new Set([...nbrs].filter(x => base.has(x)));
+                        }
+
+                        nodeG.attr('display', d => {
+                            if (none) return 'none';
+                            return activeSet.has(d.id) ? null : 'none';
+                        });
+                        // Highlight matches when a query is present
+                        nodeG.select('circle')
+                            .attr('stroke', d => {
+                                if (!q) return '#333';
+                                const idStr = String(d.id || '').toLowerCase();
+                                const nsStr = (d.topNamespaces || []).join(' ').toLowerCase();
+                                const clsStr = (d.topClasses || []).join(' ').toLowerCase();
+                                return (idStr.includes(q) || nsStr.includes(q) || clsStr.includes(q)) ? '#10b981' : '#bbb';
+                            })
+                            .attr('stroke-width', d => {
+                                if (!q) return 0.5;
+                                const idStr = String(d.id || '').toLowerCase();
+                                const nsStr = (d.topNamespaces || []).join(' ').toLowerCase();
+                                const clsStr = (d.topClasses || []).join(' ').toLowerCase();
+                                return (idStr.includes(q) || nsStr.includes(q) || clsStr.includes(q)) ? 2.5 : 0.5;
+                            });
+
+                        linkSel.attr('display', l => {
+                            if (none) return 'none';
+                            const s = (typeof l.source === 'object') ? l.source.id : l.source;
+                            const t = (typeof l.target === 'object') ? l.target.id : l.target;
+                            return (activeSet.has(s) && activeSet.has(t)) ? null : 'none';
+                        });
+                    }
+
+                    // Hover handlers: restrict to hovered + neighbors unless a focus is set
+                    nodeG.on('mouseenter', (event, d) => {
+                        if (currentFocusId) return;
+                        hoverId = d.id;
+                        applyVisibility();
+                    }).on('mouseleave', () => {
+                        if (currentFocusId) return;
+                        hoverId = null;
+                        applyVisibility();
+                    });
+
+                    // Click on background to clear focus/hover
+                    svg.on('click', () => {
+                        currentFocusId = null;
+                        hoverId = null;
+                        applyVisibility();
+                    });
+
+                    // Bind search input
+                    const gSearch = document.getElementById('graph-search');
+                    if (gSearch) {
+                        gSearch.addEventListener('input', applyVisibility);
+                    }
+
+                    // Critical filter visibility handling
+                    let criticalSet = new Set(); // filled after criticality computation
+                    const critNote = g.append('text')
+                        .attr('x', 12).attr('y', 36)
+                        .attr('fill', '#6b7280').attr('font-size', 12)
+                        .attr('id', 'crit-note')
+                        .style('display', 'none')
+                        .text('No critical data to display');
+
+                    function updateCriticalVisibility() {
+                        applyVisibility();
+                    }
+
+                    // Label: Ck (N nodes, purity P%)
+                    nodeG.append('text')
+                        .attr('y', d => d.r + 12)
+                        .attr('text-anchor', 'middle')
+                        .attr('font-size', 11)
+                        .attr('fill', '#374151')
+                        .text(d => {
+                            const p = Math.round((d.purity || 0) * 100);
+                            return `${d.id} (${d.size} nodes, purity ${p}%)`;
+                        })
+                        .each(function (d) {
+                            // hide label if circle too small to avoid clutter
+                            const el = this;
+                            if (d.r < 18) el.setAttribute('display', 'none');
+                        });
+
+                    // Drill-down panel
+                    const dd = document.getElementById('drilldown');
+                    const ddTitle = document.getElementById('dd-title');
+                    const ddMeta = document.getElementById('dd-meta');
+                    const ddBody = document.getElementById('dd-body');
+                    document.getElementById('dd-close').addEventListener('click', () => {
+                        dd.classList.add('hidden');
+                    });
+
+                    nodeG.on('click', (event, d) => {
+                        // Prevent background click from firing
+                        event.stopPropagation();
+
+                        // Toggle focus and apply visibility
+                        currentFocusId = (currentFocusId === d.id) ? null : d.id;
+                        applyVisibility();
+
+                        // Drill-down content
+                        ddTitle.textContent = `Community ${d.id}`;
+                        const p = Math.round((d.purity || 0) * 100);
+                        const stat = commStats.get(d.id) || {coupling: 0};
+                        const coup = Math.round((stat.coupling || 0) * 100);
+                        ddMeta.textContent = `${d.size} nodes — purity ${p}% — coupling ${coup}% — Top ns: ${(d.topNamespaces || []).slice(0, 3).join(', ') || 'n/a'}`;
+                        ddBody.innerHTML = '';
+                        // collect node ids in this community
+                        const nodeIds = Object.keys(nodeToCommunity).filter(nid => nodeToCommunity[nid] === d.id);
+                        nodeIds.sort();
+                        const frag = document.createDocumentFragment();
+                        nodeIds.forEach(nid => {
+                            const n = nodeMap.get(nid) || {edges: [], namespace: ''};
+                            const tr = document.createElement('tr');
+                            tr.className = 'border-t';
+                            const td0 = document.createElement('td');
+                            td0.className = 'p-1';
+                            td0.textContent = nid;
+                            tr.appendChild(td0);
+                            const td1 = document.createElement('td');
+                            td1.className = 'p-1';
+                            td1.textContent = n.namespace || '';
+                            tr.appendChild(td1);
+                            const td2 = document.createElement('td');
+                            td2.className = 'p-1';
+                            td2.textContent = boundarySet.has(nid) ? 'yes' : '';
+                            tr.appendChild(td2);
+                            const td3 = document.createElement('td');
+                            td3.className = 'p-1';
+                            td3.textContent = indeg.get(nid) || 0;
+                            tr.appendChild(td3);
+                            const td4 = document.createElement('td');
+                            td4.className = 'p-1';
+                            td4.textContent = outdeg.get(nid) || 0;
+                            tr.appendChild(td4);
+                            frag.appendChild(tr);
+                        });
+                        ddBody.appendChild(frag);
+                        if (currentFocusId === null) {
+                            dd.classList.add('hidden');
+                        } else {
+                            dd.classList.remove('hidden');
+                        }
+                    });
+
+                    // Criticality metrics: betweenness centrality, articulation points, boundary nodes and suggestions
+                    (function computeCriticality() {
+                        // Build undirected adjacency
+                        const adj = new Map();
+
+                        function addEdge(a, b) {
+                            if (!adj.has(a)) adj.set(a, new Set());
+                            adj.get(a).add(b);
+                        }
+
+                        nodes.forEach(u => {
+                            (u.edges || []).forEach(v => {
+                                addEdge(u.id, v);
+                                addEdge(v, u.id);
+                            });
+                        });
+                        // Ensure all nodes existing in adj
+                        nodes.forEach(u => {
+                            if (!adj.has(u.id)) adj.set(u.id, new Set());
+                        });
+
+                        // Brandes betweenness centrality (sample for big graphs)
+                        const V = Array.from(adj.keys());
+                        const bet = new Map(V.map(v => [v, 0]));
+                        const SAMPLE_LIMIT = 800;
+                        const srcs = V.length > SAMPLE_LIMIT ? V.slice().sort(() => Math.random() - 0.5).slice(0, SAMPLE_LIMIT) : V;
+                        srcs.forEach(s => {
+                            const S = [];
+                            const P = new Map();
+                            V.forEach(v => P.set(v, []));
+                            const sigma = new Map(V.map(v => [v, 0]));
+                            sigma.set(s, 1);
+                            const dist = new Map(V.map(v => [v, -1]));
+                            dist.set(s, 0);
+                            const Q = [s];
+                            while (Q.length) {
+                                const v = Q.shift();
+                                S.push(v);
+                                (adj.get(v) || []).forEach(w => {
+                                    if (dist.get(w) < 0) {
+                                        Q.push(w);
+                                        dist.set(w, dist.get(v) + 1);
+                                    }
+                                    if (dist.get(w) === dist.get(v) + 1) {
+                                        sigma.set(w, sigma.get(w) + sigma.get(v));
+                                        P.get(w).push(v);
+                                    }
+                                });
+                            }
+                            const delta = new Map(V.map(v => [v, 0]));
+                            while (S.length) {
+                                const w = S.pop();
+                                (P.get(w) || []).forEach(v => {
+                                    delta.set(v, delta.get(v) + (sigma.get(v) / sigma.get(w)) * (1 + delta.get(w)));
+                                });
+                                if (w !== s) {
+                                    bet.set(w, bet.get(w) + delta.get(w));
+                                }
+                            }
+                        });
+                        // Normalize for undirected graph
+                        const norm = (V.length > 2) ? (1 / ((V.length - 1) * (V.length - 2))) : 1;
+                        V.forEach(v => bet.set(v, bet.get(v) * norm));
+
+                        // Articulation points via DFS (Tarjan)
+                        const disc = new Map(), low = new Map(), parent = new Map();
+                        const art = new Set();
+                        let time = 0;
+
+                        function APUtil(u) {
+                            disc.set(u, ++time);
+                            low.set(u, disc.get(u));
+                            let children = 0;
+                            (adj.get(u) || []).forEach(v => {
+                                if (!disc.has(v)) {
+                                    parent.set(v, u);
+                                    children++;
+                                    APUtil(v);
+                                    low.set(u, Math.min(low.get(u), low.get(v)));
+                                    if ((parent.get(u) == null && children > 1) || (parent.get(u) != null && low.get(v) >= disc.get(u))) art.add(u);
+                                } else if (v !== parent.get(u)) {
+                                    low.set(u, Math.min(low.get(u), disc.get(v)));
+                                }
+                            });
+                        }
+
+                        V.forEach(u => {
+                            if (!disc.has(u)) APUtil(u);
+                        });
+
+                        // Boundary nodes from backend already in boundarySet
+                        const boundary = boundarySet;
+
+                        // Community centrality (sum of member betweenness) and ranks
+                        const commCentrality = new Map(commIds.map(id => [id, 0]));
+                        Object.entries(nodeToCommunity).forEach(([nid, cid]) => {
+                            commCentrality.set(cid, (commCentrality.get(cid) || 0) + (bet.get(nid) || 0));
+                        });
+                        const ranked = commIds
+                            .map(id => ({id, score: commCentrality.get(id) || 0}))
+                            .sort((a, b) => b.score - a.score);
+                        const commRank = new Map(ranked.map((d, i) => [d.id, i + 1]));
+
+                        // Update Communities table columns: coupling and criticality rank and update hints
+                        commIds.forEach(cid => {
+                            const stat = commStats.get(cid) || {coupling: 0};
+                            const tdCoup = document.querySelector(`.comm-coupling[data-comm="${cid}"]`);
+                            const tdRank = document.querySelector(`.comm-crit-rank[data-comm="${cid}"]`);
+                            if (tdCoup) tdCoup.textContent = `${Math.round((stat.coupling || 0) * 100)}%`;
+                            if (tdRank) tdRank.textContent = String(commRank.get(cid) || '-');
+                            // Suggestions per community
+                            const commObj = communities.find(c => c.id === cid) || {size: 0, purity: 0};
+                            const hints = [];
+                            if ((stat.coupling || 0) > 0.7) hints.push('introduce façade');
+                            if ((commObj.size || 0) > 50 && (commObj.purity || 0) < 0.6) hints.push('split module');
+                            const tdHint = document.querySelector(`.comm-hint[data-comm="${cid}"]`);
+                            if (tdHint) tdHint.textContent = hints.join(' | ');
+                        });
+
+                        // Critical nodes: top 10 by centrality
+                        const topNodes = Array.from(bet.entries())
+                            .sort((a, b) => b[1] - a[1])
+                            .slice(0, 10);
+                        const listEl = document.getElementById('critical-nodes-list');
+                        if (listEl) {
+                            listEl.innerHTML = '';
+                            topNodes.forEach(([nid, score]) => {
+                                const li = document.createElement('li');
+                                li.className = 'rounded border border-gray-200 p-2 text-xs bg-gray-50 hover:bg-white transition';
+                                const isArt = art.has(nid);
+                                const isBoundary = boundary.has(nid);
+                                const comm = nodeToCommunity[nid] || '?';
+                                li.innerHTML = `
+                                    <div class="flex items-center justify-between gap-2">
+                                        <div class="min-w-0">
+                                            <div class="font-medium text-gray-800 truncate">${nid}</div>
+                                            <div class="text-[11px] text-gray-500">comm ${comm} · centrality ${score.toFixed(3)}</div>
+                                        </div>
+                                        <div class="flex items-center gap-1 shrink-0">
+                                            ${isArt ? '<span title="articulation" class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-amber-50 text-amber-700 ring-1 ring-amber-200">★</span>' : ''}
+                                            ${isBoundary ? '<span title="boundary" class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-sky-50 text-sky-700 ring-1 ring-sky-200">B</span>' : ''}
+                                        </div>
+                                    </div>`;
+                                listEl.appendChild(li);
+                            });
+                        }
+
+                        // Highlight communities containing critical nodes
+                        const criticalComms = new Map();
+                        topNodes.forEach(([nid]) => {
+                            const cid = nodeToCommunity[nid];
+                            if (cid) criticalComms.set(cid, (criticalComms.get(cid) || 0) + 1);
+                        });
+                        // Fill criticalSet for filter toggle
+                        criticalSet = new Set(Array.from(criticalComms.keys()));
+                        // Listen to checkbox
+                        const critCb = document.getElementById('only-critical-comms');
+                        if (critCb) {
+                            critCb.addEventListener('change', updateCriticalVisibility);
+                            // Apply initial state in case user toggled earlier or default on
+                            updateCriticalVisibility();
+                        }
+                        // Ensure initial visibility even before criticals computed
+                        applyVisibility();
+                        nodeG.append('circle')
+                            .attr('r', d => d.r + (criticalComms.has(d.id) ? 4 : 0))
+                            .attr('fill', 'none')
+                            .attr('stroke', d => criticalComms.has(d.id) ? '#dc2626' : 'none')
+                            .attr('stroke-width', 3)
+                            .attr('opacity', 0.9);
+                        // mini count label
+                        nodeG.filter(d => criticalComms.has(d.id)).append('text')
+                            .attr('y', d => -d.r - 6)
+                            .attr('text-anchor', 'middle')
+                            .attr('font-size', 10)
+                            .attr('fill', '#dc2626')
+                            .text(d => `hot:${criticalComms.get(d.id)}`);
+
+                        // Global suggestions list
+                        const sugEl = document.getElementById('suggestions-list');
+                        if (sugEl) {
+                            let suggestions = [];
+                            // introduce façade
+                            commIds.forEach(cid => {
+                                const st = commStats.get(cid);
+                                if (st && st.coupling > 0.7) suggestions.push(`Introduce façade for community ${cid} (coupling ${(st.coupling * 100).toFixed(0)}%)`);
+                            });
+                            // split module
+                            communities.forEach(c => {
+                                if (c.size > 50 && c.purity < 0.6) suggestions.push(`Split module for community ${c.id} (size ${c.size}, purity ${(c.purity * 100).toFixed(0)}%)`);
+                            });
+                            // refactor boundary node
+                            topNodes.slice(0, 5).forEach(([nid]) => {
+                                if (boundary.has(nid)) suggestions.push(`Refactor boundary node ${nid} (high centrality + boundary)`);
+                            });
+                            // unique + sorted
+                            suggestions = Array.from(new Set(suggestions)).sort();
+                            sugEl.innerHTML = '';
+                            if (suggestions.length === 0) {
+                                document.getElementById('suggestions-empty')?.classList.remove('hidden');
+                            }
+                            suggestions.forEach(t => {
+                                const li = document.createElement('li');
+                                li.className = 'p-2 border rounded flex items-start gap-2';
+                                const badge = document.createElement('span');
+                                badge.className = 'inline-block text-[10px] px-1 py-0.5 rounded bg-gray-100 border';
+                                if (t.toLowerCase().startsWith('introduce façade')) {
+                                    badge.textContent = 'Coupling';
+                                    badge.className += ' border-amber-300 bg-amber-50';
+                                } else if (t.toLowerCase().startsWith('split module')) {
+                                    badge.textContent = 'Purity';
+                                    badge.className += ' border-blue-300 bg-blue-50';
+                                } else {
+                                    badge.textContent = 'Boundary';
+                                    badge.className += ' border-purple-300 bg-purple-50';
+                                }
+                                const span = document.createElement('span');
+                                span.textContent = t;
+                                li.appendChild(badge);
+                                li.appendChild(span);
+                                sugEl.appendChild(li);
+                            });
+                        }
+                    })();
+
+                })();
+            })();
+        });
+    </script>
+    {% endif %}
+</div>
+
+<!-- Architecture-oriented views -->
+<div class="bg-white p-4 rounded shadow mb-8">
+    <div class="flex items-center justify-between mb-2">
+            <style>
+                .graph-tooltip { position: fixed; pointer-events: none; z-index: 50; background: rgba(17,24,39,0.95); color: #f9fafb; font-size: 12px; line-height: 1.2; padding: 6px 8px; border-radius: 6px; box-shadow: 0 6px 18px rgba(0,0,0,0.25); transform: translate(-50%, calc(-100% - 10px)); opacity: 0; transition: opacity 120ms ease, transform 120ms ease; white-space: nowrap; }
+                .graph-tooltip.visible { opacity: 1; transform: translate(-50%, calc(-100% - 6px)); }
+                .graph-hover { transition: transform 120ms ease, filter 120ms ease; }
+                .graph-hover:hover { transform: scale(1.06); filter: drop-shadow(0 2px 6px rgba(0,0,0,0.2)); }
+                /* Disable scaling for Sankey nodes to avoid pointer loss on hover */
+                #sankey .sankey-node:hover { transform: none !important; filter: drop-shadow(0 1px 4px rgba(0,0,0,0.18)); }
+            </style>
+        <h2 class="leading-none text-3xl font-bold text-gray-900 pb-2">Architecture</h2>
+        <div class="text-sm text-gray-600">Export:
+            <button id="export-layered" class="px-2 py-1 border rounded mr-1">Layered PNG</button>
+            <button id="export-sankey" class="px-2 py-1 border rounded mr-1">Sankey PNG</button>
+        </div>
+    </div>
+    <div class="grid grid-cols-12 gap-4">
+        <div class="col-span-8">
+            <div class="">
+                <h3 class="font-semibold">Layered dependency map</h3>
+                <div class="text-xs text-gray-600 flex items-center gap-4 mb-2">
+                    <label>Min edge % <input id="min-edge-slider" type="range" min="0" max="50" value="0"
+                                             class="align-middle"></label>
+                    <label><input id="highlight-bottlenecks" type="checkbox" checked="checked" class="mr-1"> Highlight
+                        bottlenecks</label>
+                    <label><input id="only-cross-layer" type="checkbox" class="mr-1"> Only cross-layer</label>
+                    <label><input id="bundle-edges" type="checkbox" class="mr-1"> Edge bundling</label>
+                    <label>Search <input id="search-comm" type="text" placeholder="name"
+                                         class="border px-1 py-0.5 rounded w-28"></label>
+                </div>
+            </div>
+            <svg id="layered-map" viewBox="0 0 900 420" class="w-full h-[420px] border border-gray-200 rounded"></svg>
+            <div class="text-xs text-gray-600 mt-1">Legend: Size = nb nodes, Color = coupling ratio (green→red), Width =
+                calls
+            </div>
+        </div>
+        <div class="col-span-4">
+            <h3 class="font-semibold mb-1">Sankey</h3>
+            <svg id="sankey" viewBox="0 0 500 420" class="w-full h-[420px] border border-gray-200 rounded"></svg>
+        </div>
+
+    </div>
+
+
+    <script>
+        // Ensure D3 v4+ is available, then ensure d3-sankey and d3-sankey-circular are loaded, then init
+        (function ensureD3AndSankey() {
+            function loadScript(src, onload) {
+                const s = document.createElement('script');
+                s.src = src;
+                s.async = true;
+                if (onload) {
+                    s.onload = onload;
+                    s.onerror = onload;
+                }
+                document.head.appendChild(s);
+            }
+
+            function hasD3v4plus() {
+                return !!(window.d3 && typeof d3.scaleOrdinal === 'function');
+            }
+
+            function ensureSankey(next) {
+                function ensureCircular() {
+                    if (window.d3 && window.d3.sankeyCircular) {
+                        console.debug('sankey-circular already present');
+                        return next();
+                    }
+
+                    // Try multiple sources for d3-sankey-circular
+                    function tryUnpkg() {
+                        loadScript('https://unpkg.com/d3-sankey-circular@0.30.0/build/d3-sankey-circular.min.js', finalize);
+                    }
+
+                    function tryGist() {
+                        loadScript('https://gist.githubusercontent.com/tomshanley/b82d9aede85694b1422786ef41536ec5/raw/fc0dec24324374d687068157d0f8a0f269e51dd4/d3-sankey-circular.js', finalize);
+                    }
+
+                    function finalize() {
+                        // Some bundles attach differently; normalize detection
+                        const ok = !!(window.d3 && (d3.sankeyCircular || (d3.sankey && d3.sankey.circular)));
+                        console.debug('sankey-circular loaded?', ok);
+                        next();
+                    }
+
+                    loadScript('https://cdn.jsdelivr.net/npm/d3-sankey-circular@0.30.0/build/d3-sankey-circular.min.js', () => {
+                        if (!(window.d3 && (d3.sankeyCircular || (d3.sankey && d3.sankey.circular)))) return tryUnpkg();
+                        finalize();
+                    });
+                }
+
+                if (window.d3 && window.d3.sankey) {
+                    return ensureCircular();
+                }
+                loadScript('https://cdn.jsdelivr.net/npm/d3-sankey@0.12.3/dist/d3-sankey.min.js', ensureCircular);
+            }
+
+            function start() {
+                ensureSankey(() => {
+                    window.d3sankeyLoaded = true;
+                    console.debug('d3-sankey loaded; circular:', !!(window.d3 && (d3.sankeyCircular || (d3.sankey && d3.sankey.circular))));
+                    initArchViews();
+                });
+            }
+
+            if (!hasD3v4plus()) {
+                loadScript('https://cdn.jsdelivr.net/npm/d3@7', start);
+            } else {
+                start();
+            }
+        })();
+
+        function initArchViews() {
+            const communities = JSON.parse(document.getElementById('data-communities').textContent || '[]');
+            const ebc = JSON.parse(document.getElementById('data-edges-between-comms').textContent || '[]');
+            const order = JSON.parse(document.getElementById('data-matrix-order').textContent || '[]');
+
+            // Tooltip helpers
+            const __tooltip = document.getElementById('graph-tooltip');
+            function showTooltip(html, event) {
+                if (!__tooltip) return;
+                __tooltip.innerHTML = html;
+                __tooltip.style.display = 'block';
+                __tooltip.classList.add('visible');
+                moveTooltip(event);
+            }
+            function moveTooltip(event) {
+                if (!__tooltip) return;
+                const x = event.clientX;
+                const y = event.clientY;
+                __tooltip.style.left = x + 'px';
+                __tooltip.style.top = y + 'px';
+            }
+            function hideTooltip() {
+                if (!__tooltip) return;
+                __tooltip.classList.remove('visible');
+                __tooltip.style.display = 'none';
+            }
+
+            const colorScaleNs = d3.scaleOrdinal(d3.schemeTableau10)
+                .domain(Array.from(new Set(communities.map(c => (c.topNamespaces[0] || '')))));
+            const colorCoupling = (c) => d3.interpolateRdYlGn(1 - Math.max(0, Math.min(1, c || 0)));
+
+            //  Layered dependency map
+            (function () {
+                const svg = d3.select('#layered-map');
+                svg.selectAll('*').remove();
+                const W = 900, H = 420, padX = 100, padY = 50;
+                // Persistent zoom layer
+                const gZoom = svg.append('g').attr('class', 'zoom-layer');
+                const zoom = d3.zoom().scaleExtent([0.5, 8]).on('zoom', (event) => {
+                    gZoom.attr('transform', event.transform);
+                });
+                svg.call(zoom);
+                const levels = d3.group(communities, d => d.level);
+                const maxSize = d3.max(communities, d => d.size) || 1;
+                const rScale = d3.scaleSqrt().domain([1, maxSize]).range([6, 34]);
+                const maxEdges = d3.max(ebc, d => d.edges) || 1;
+                const wScale = d3.scaleSqrt().domain([1, maxEdges]).range([0.5, 8]);
+                // compute positions
+                const levelKeys = Array.from(levels.keys()).sort((a, b) => a - b);
+                const pos = new Map();
+                levelKeys.forEach((lv, li) => {
+                    const arr = levels.get(lv).slice().sort((a, b) => d3.ascending(a.id, b.id));
+                    const y = padY + li * ((H - 2 * padY) / Math.max(1, levelKeys.length - 1));
+                    arr.forEach((d, i) => {
+                        const x = padX + (i + 1) * ((W - 2 * padX) / (arr.length + 1));
+                        pos.set(d.id, {x, y, r: rScale(d.size)});
+                    });
+                });
+                // normalized edges percentage by source
+                const totalOut = d3.rollup(ebc, v => d3.sum(v, d => d.edges), d => d.from);
+                let minPct = 0;
+
+                function draw() {
+                    gZoom.selectAll('*').remove();
+                    // links
+                    const links = ebc.filter(d => (totalOut.get(d.from) || 0) > 0)
+                        .map(d => ({...d, pct: d.edges / (totalOut.get(d.from) || 1)}))
+                        .filter(d => d.pct * 100 >= minPct);
+                    const onlyCross = document.getElementById('only-cross-layer').checked;
+                    const links2 = links.filter(d => !onlyCross || ((communities.find(c => c.id === d.from)?.level) !== (communities.find(c => c.id === d.to)?.level)));
+                    gZoom.append('g').selectAll('path').data(links2).enter().append('path')
+                        .attr('d', d => {
+                            const s = pos.get(d.from), t = pos.get(d.to);
+                            if (!s || !t) return '';
+                            const bundle = document.getElementById('bundle-edges').checked;
+                            const mx = bundle ? (s.x * 0.6 + t.x * 0.4) : (s.x + t.x) / 2;
+                            const my = bundle ? (s.y * 0.6 + t.y * 0.4) : s.y;
+                            const my2 = bundle ? (s.y * 0.4 + t.y * 0.6) : t.y;
+                            return `M${s.x},${s.y} C${mx},${my} ${mx},${my2} ${t.x},${t.y}`;
+                        })
+                        .attr('fill', 'none')
+                        .attr('stroke', '#9ca3af')
+                        .attr('stroke-width', d => wScale(d.edges))
+                        .attr('stroke-opacity', 0.7)
+                        .on('mouseenter', function(event, d){ showTooltip(`${d.from} → ${d.to}: ${d.edges} (${(d.pct * 100).toFixed(1)}%)`, event); })
+                        .on('mousemove', function(event){ moveTooltip(event); })
+                        .on('mouseleave', function(){ hideTooltip(); });
+                    // nodes
+                    const nodeG = gZoom.append('g').selectAll('g').data(communities).enter().append('g')
+                        .attr('transform', d => {
+                            const p = pos.get(d.id) || {x: 0, y: 0, r: 10};
+                            return `translate(${p.x},${p.y})`;
+                        });
+                    nodeG.append('circle')
+                        .attr('class', 'graph-hover')
+                        .attr('r', d => (pos.get(d.id)?.r) || 10)
+                        .attr('fill', d => colorCoupling(d.coupling))
+                        .attr('fill-opacity', 0.9)
+                        .attr('stroke', d => document.getElementById('highlight-bottlenecks').checked ? (isBottleneck(d.id) ? '#dc2626' : '#333') : '#333')
+                        .attr('stroke-width', d => document.getElementById('highlight-bottlenecks').checked && isBottleneck(d.id) ? 3 : 0.5)
+                        .on('mouseenter', function(event, d){
+                            const html = `${d.id}<br><span style='opacity:.8'>size:${d.size} pur:${Math.round((d.purity||0) * 100)}% coup:${Math.round((d.coupling||0) * 100)}% bet:${(d.betweenness||0).toFixed(3)}</span>`;
+                            showTooltip(html, event);
+                        })
+                        .on('mousemove', function(event){ moveTooltip(event); })
+                        .on('mouseleave', function(){ hideTooltip(); });
+                    nodeG.append('text')
+                        .attr('y', d => (pos.get(d.id)?.r || 10) + 12)
+                        .attr('text-anchor', 'middle').attr('font-size', 11).attr('fill', '#374151')
+                        .text(d => `${d.id}`)
+                        .each(function (d) {
+                            if ((pos.get(d.id)?.r || 10) < 14) this.setAttribute('display', 'none');
+                        });
+                }
+
+                function isBottleneck(id) {
+                    const vals = communities.map(c => c.betweenness).sort((a, b) => b - a);
+                    const cutoff = vals[Math.min(9, vals.length - 1)] || 0;
+                    const v = (communities.find(c => c.id === id)?.betweenness) || 0;
+                    return v >= cutoff;
+                }
+
+                draw();
+                document.getElementById('min-edge-slider').addEventListener('input', (e) => {
+                    minPct = parseInt(e.target.value || '0', 10);
+                    draw();
+                });
+                document.getElementById('highlight-bottlenecks').addEventListener('change', draw);
+                document.getElementById('only-cross-layer').addEventListener('change', draw);
+                document.getElementById('bundle-edges').addEventListener('change', draw);
+                document.getElementById('search-comm').addEventListener('input', () => {
+                    const v = (document.getElementById('search-comm').value || '').trim();
+                    d3.select('#layered-map').selectAll('circle')
+                        .attr('stroke', d => {
+                            if (!v) return (document.getElementById('highlight-bottlenecks').checked ? (isBottleneck(d.id) ? '#dc2626' : '#333') : '#333');
+                            return String(d.id).includes(v) ? '#10b981' : '#bbb';
+                        })
+                        .attr('stroke-width', d => {
+                            if (!v) return (document.getElementById('highlight-bottlenecks').checked && isBottleneck(d.id) ? 3 : 0.5);
+                            return String(d.id).includes(v) ? 3 : 0.5;
+                        });
+                });
+                document.getElementById('export-layered').addEventListener('click', () => exportSvgAsPng('#layered-map'));
+            })();
+
+            // 2) Sankey
+            (function () {
+                const svg = d3.select('#sankey');
+                svg.selectAll('*').remove();
+                const W = 500, H = 420;
+                const g = svg.append('g');
+                // Zoom/pan
+                const zoomS = d3.zoom().scaleExtent([0.5, 8]).on('zoom', (event) => {
+                    g.attr('transform', event.transform);
+                });
+                svg.call(zoomS);
+                // Build node ids from edges; fallback to communities when ebc is empty
+                const edgeIds = Array.from(new Set(ebc.flatMap(e => [e.from, e.to])));
+                const ids = edgeIds.length ? edgeIds : communities.map(c => c.id);
+                const idIndex = new Map(ids.map((id, i) => [id, i]));
+                const nodes = ids.map(id => ({
+                    name: id,
+                    level: Number(communities.find(c => c.id === id)?.level) || 0
+                }));
+                // Map and validate links
+                const linksRaw = ebc.map(e => ({
+                    source: idIndex.get(e.from),
+                    target: idIndex.get(e.to),
+                    value: Number(e.edges)
+                }));
+                let links = linksRaw.filter(l => Number.isFinite(l.source) && Number.isFinite(l.target) && Number.isFinite(l.value) && l.value > 0);
+                // Remove self-loops (they create circular link errors in d3-sankey)
+                links = links.filter(l => l.source !== l.target);
+                // Remove simple 2-cycles by keeping only the stronger direction per pair
+                (function removeTwoCycles() {
+                    const best = new Map(); // key "min-max" => {dir: 's->t'|'t->s', value}
+                    for (const l of links) {
+                        const a = Math.min(l.source, l.target);
+                        const b = Math.max(l.source, l.target);
+                        const key = a + "-" + b;
+                        const dir = (l.source === a && l.target === b) ? 'ab' : 'ba';
+                        const cur = best.get(key);
+                        if (!cur || l.value > cur.value) {
+                            best.set(key, {dir, value: l.value});
+                        }
+                    }
+                    links = links.filter(l => {
+                        const a = Math.min(l.source, l.target);
+                        const b = Math.max(l.source, l.target);
+                        const key = a + "-" + b;
+                        const keep = best.get(key);
+                        if (!keep) return false;
+                        const dir = (l.source === a && l.target === b) ? 'ab' : 'ba';
+                        return dir === keep.dir; // keep only the strongest direction
+                    });
+                })();
+                // If circular plugin is missing, break remaining cycles so classic sankey can work
+                if (!(d3 && d3.sankeyCircular)) {
+                    (function breakCyclesToDAG() {
+                        const n = nodes.length;
+                        // Build adjacency and indegree
+                        const outAdj = Array.from({length: n}, () => []);
+                        const inDeg = new Array(n).fill(0);
+                        links.forEach((l, i) => {
+                            outAdj[l.source].push(i);
+                            inDeg[l.target]++;
+                        });
+                        // Kahn to remove acyclic nodes
+                        const q = [];
+                        for (let i = 0; i < n; i++) if (inDeg[i] === 0) q.push(i);
+                        const removed = new Array(n).fill(false);
+                        while (q.length) {
+                            const u = q.shift();
+                            removed[u] = true;
+                            for (const ei of outAdj[u]) {
+                                const v = links[ei].target;
+                                if (--inDeg[v] === 0) q.push(v);
+                            }
+                        }
+                        // Remaining edges might be in cycles. Greedily remove smallest edges until none remain.
+                        const removedEdgesLog = [];
+
+                        function recomputeRemaining() {
+                            const rem = new Set();
+                            // Recompute reachability via Kahn each iteration
+                            const inDeg2 = new Array(n).fill(0);
+                            const outAdj2 = Array.from({length: n}, () => []);
+                            links.forEach((l, i) => {
+                                if (!l._removed) {
+                                    outAdj2[l.source].push(i);
+                                    inDeg2[l.target]++;
+                                }
+                            });
+                            const q2 = [];
+                            const removed2 = new Array(n).fill(false);
+                            for (let i = 0; i < n; i++) if (inDeg2[i] === 0) q2.push(i);
+                            while (q2.length) {
+                                const u = q2.shift();
+                                removed2[u] = true;
+                                for (const ei of outAdj2[u]) {
+                                    const v = links[ei].target;
+                                    if (--inDeg2[v] === 0) q2.push(v);
+                                }
+                            }
+                            for (let i = 0; i < links.length; i++) if (!links[i]._removed) {
+                                const l = links[i];
+                                if (!removed2[l.source] && !removed2[l.target]) rem.add(i);
+                            }
+                            return {rem, inDeg2, outAdj2, removed2};
+                        }
+
+                        let pass = recomputeRemaining();
+                        while (pass.rem.size) {
+                            let minIdx = null, minVal = Infinity;
+                            for (const i of pass.rem) {
+                                const v = Number(links[i].value) || 0;
+                                if (v < minVal) {
+                                    minVal = v;
+                                    minIdx = i;
+                                }
+                            }
+                            if (minIdx == null) break;
+                            removedEdgesLog.push({
+                                source: links[minIdx].source,
+                                target: links[minIdx].target,
+                                value: links[minIdx].value
+                            });
+                            links[minIdx]._removed = true;
+                            pass = recomputeRemaining();
+                        }
+                        if (removedEdgesLog.length) {
+                            console.warn('Sankey cycles broken (edges removed):', removedEdgesLog);
+                        }
+                        links = links.filter(l => !l._removed);
+                    })();
+                }
+                // If we don't have enough data for a real Sankey, render a simple list so the panel isn't empty
+                if (nodes.length === 0) {
+                    // Nothing to show at all
+                    g.append('text').attr('x', 20).attr('y', 24).attr('fill', '#6b7280').text('No community data');
+                    return;
+                }
+
+                const colorScale = d3.scaleOrdinal(d3.schemeTableau10)
+                    .domain(Array.from(new Set(communities.map(c => (c.topNamespaces[0] || '')))));
+
+                if (links.length === 0) {
+                    // Fallback: draw nodes as a simple vertical list with colors, and a note explaining no inter-community edges
+                    const padX = 16, padY = 20, h = 16, gap = 10;
+                    g.append('text').attr('x', padX).attr('y', padY - 6).attr('fill', '#6b7280').attr('font-size', 12).text('No inter-community edges — showing communities only');
+                    nodes.forEach((d, i) => {
+                        const y = padY + i * (h + gap);
+                        g.append('rect')
+                            .attr('x', padX)
+                            .attr('y', y)
+                            .attr('width', 140)
+                            .attr('height', h)
+                            .attr('fill', colorScale((communities.find(c => c.id === d.name)?.topNamespaces[0] || '')));
+                        g.append('text')
+                            .attr('x', padX + 6)
+                            .attr('y', y + h * 0.72)
+                            .attr('fill', '#111827')
+                            .attr('font-size', 12)
+                            .text(`${d.name}`);
+                    });
+                    return;
+                }
+                // Prefer circular sankey if available to support cyclic graphs
+                const sankey = ((d3.sankeyCircular || (d3.sankey && d3.sankey.circular)) ? (d3.sankeyCircular ? d3.sankeyCircular() : d3.sankey.circular()) : d3.sankey())
+                    .nodeWidth(12)
+                    .nodePadding(12)
+                    .extent([[10, 10], [W - 10, H - 10]]);
+                if (sankey.circularLinkGap) sankey.circularLinkGap(2);
+                if (sankey.circularLinkMinWidth) sankey.circularLinkMinWidth(1);
+                // Sorting can produce issues if levels are equal/undefined; keep stable by guarding values
+                sankey.nodeSort((a, b) => d3.ascending(Number(a.level) || 0, Number(b.level) || 0));
+                let graph;
+                try {
+                    graph = sankey({nodes: nodes.map(d => ({...d})), links: links.map(d => ({...d}))});
+                } catch (e) {
+                    // Safety: if sankey crashes (e.g., circular links detected), do not break the page
+                    console.warn('Sankey layout error (fallback to list):', e);
+                    // Fallback: show simple list like the no-links case
+                    const padX = 16, padY = 20, h = 16, gap = 10;
+                    g.append('text').attr('x', padX).attr('y', padY - 6).attr('fill', '#6b7280').attr('font-size', 12).text('Unable to render Sankey — showing communities only');
+                    nodes.forEach((d, i) => {
+                        const y = padY + i * (h + gap);
+                        g.append('rect')
+                            .attr('x', padX)
+                            .attr('y', y)
+                            .attr('width', 140)
+                            .attr('height', h)
+                            .attr('fill', colorScale((communities.find(c => c.id === d.name)?.topNamespaces[0] || '')));
+                        g.append('text')
+                            .attr('x', padX + 6)
+                            .attr('y', y + h * 0.72)
+                            .attr('fill', '#111827')
+                            .attr('font-size', 12)
+                            .text(`${d.name}`);
+                    });
+                    return;
+                }
+
+                g.append('g').selectAll('path').data(graph.links).enter().append('path')
+                    .attr('d', d3.sankeyLinkHorizontal())
+                    .attr('fill', 'none')
+                    .attr('stroke', '#9ca3af')
+                    .attr('stroke-opacity', 0.5)
+                    .attr('stroke-width', d => Math.max(1, d.width || 1))
+                    .on('mouseenter', function(event, d){
+                        const sIndex = (typeof d.source === 'object') ? d.source.index : d.source;
+                        const tIndex = (typeof d.target === 'object') ? d.target.index : d.target;
+                        const so = graph.nodes[sIndex] || {name: '?'};
+                        const ta = graph.nodes[tIndex] || {name: '?'};
+                        const tot = d3.sum(links.filter(l => l.source === sIndex).map(l => l.value)) || 1;
+                        const pct = (Number(d.value) || 0) * 100 / tot;
+                        showTooltip(`${so.name} → ${ta.name}: ${d.value} (${pct.toFixed(1)}%)`, event);
+                    })
+                    .on('mousemove', function(event){ moveTooltip(event); })
+                    .on('mouseleave', function(){ hideTooltip(); })
+                    .on('click', function(event, d){
+                        // prevent background reset
+                        event.stopPropagation();
+                        // find index of this link among graph.links
+                        const idx = graph.links.indexOf(d);
+                        sankeyFocus = {type: 'link', index: idx};
+                        updateSankeyVisibility();
+                    });
+                // Interaction state for Sankey focus (node or link)
+                let sankeyFocus = null; // {type:'node', index} or {type:'link', index}
+
+                function updateSankeyVisibility() {
+                    // When focused, hide unrelated links and dim unrelated nodes; also toggle labels
+                    const linkSel = g.selectAll('path');
+                    const nodeSel = g.selectAll('rect.sankey-node');
+                    const textSel = g.selectAll('text.sankey-label');
+                    if (!sankeyFocus) {
+                        linkSel.attr('display', null).attr('stroke-opacity', 0.5);
+                        nodeSel.attr('display', null).attr('opacity', 1);
+                        textSel.attr('display', function(){ return this.getAttribute('data-size-hidden') === '1' ? 'none' : null; });
+                        return;
+                    }
+                    if (sankeyFocus.type === 'node') {
+                        const i = sankeyFocus.index;
+                        linkSel.each(function(d){
+                            const s = (typeof d.source === 'object') ? d.source.index : d.source;
+                            const t = (typeof d.target === 'object') ? d.target.index : d.target;
+                            const keep = (s === i || t === i);
+                            d3.select(this).attr('display', keep ? null : 'none').attr('stroke-opacity', keep ? 0.7 : 0.1);
+                        });
+                        nodeSel.each(function(nd, idx){
+                            const keep = (idx === i) || g.selectAll('path').filter(l => {
+                                const s = (typeof l.source === 'object') ? l.source.index : l.source;
+                                const t = (typeof l.target === 'object') ? l.target.index : l.target;
+                                return (s === i && t === idx) || (t === i && s === idx);
+                            }).size() > 0;
+                            d3.select(this).attr('opacity', keep ? 1 : 0.1);
+                        });
+                        textSel.each(function(nd){
+                            const idx = nd.index;
+                            const keep = (idx === i) || g.selectAll('path').filter(l => {
+                                const s = (typeof l.source === 'object') ? l.source.index : l.source;
+                                const t = (typeof l.target === 'object') ? l.target.index : l.target;
+                                return (s === i && t === idx) || (t === i && s === idx);
+                            }).size() > 0;
+                            d3.select(this).attr('display', keep ? (this.getAttribute('data-size-hidden') === '1' ? 'none' : null) : 'none');
+                        });
+                    } else if (sankeyFocus.type === 'link') {
+                        const li = sankeyFocus.index;
+                        linkSel.each(function(d, i){
+                            const keep = (i === li);
+                            d3.select(this).attr('display', keep ? null : 'none').attr('stroke-opacity', keep ? 0.8 : 0.1);
+                        });
+                        const focused = graph.links[li];
+                        const s = (typeof focused.source === 'object') ? focused.source.index : focused.source;
+                        const t = (typeof focused.target === 'object') ? focused.target.index : focused.target;
+                        nodeSel.each(function(nd, idx){
+                            const keep = (idx === s || idx === t);
+                            d3.select(this).attr('opacity', keep ? 1 : 0.25);
+                        });
+                        textSel.each(function(nd){
+                            const idx = nd.index;
+                            const keep = (idx === s || idx === t);
+                            d3.select(this).attr('display', keep ? (this.getAttribute('data-size-hidden') === '1' ? 'none' : null) : 'none');
+                        });
+                    }
+                }
+
+                // Clicking on empty space resets focus
+                svg.on('click', function(event){
+                    // Only reset if the click target is the SVG itself (not a node/text/path)
+                    if (event.target === svg.node()) {
+                        sankeyFocus = null;
+                        updateSankeyVisibility();
+                    }
+                });
+
+                const n = g.append('g').selectAll('g').data(graph.nodes).enter().append('g');
+                n.append('rect')
+                    .attr('class', 'sankey-node')
+                    .attr('x', d => d.x0)
+                    .attr('y', d => d.y0)
+                    .attr('width', d => Math.max(1, (d.x1 || 0) - (d.x0 || 0)))
+                    .attr('height', d => Math.max(1, (d.y1 || 0) - (d.y0 || 0)))
+                    .attr('fill', d => colorScale((communities.find(c => c.id === d.name)?.topNamespaces[0] || '')))
+                    .on('mouseenter', function(event, d){
+                        d3.select(this).attr('stroke', '#111827').attr('stroke-width', 2);
+                        showTooltip(`${d.name}`, event);
+                    })
+                    .on('mousemove', function(event){ moveTooltip(event); })
+                    .on('mouseleave', function(){
+                        d3.select(this).attr('stroke', null).attr('stroke-width', null);
+                        hideTooltip();
+                    })
+                    .on('click', function(event, d){
+                        event.stopPropagation();
+                        sankeyFocus = {type: 'node', index: d.index};
+                        updateSankeyVisibility();
+                    });
+                n.append('text')
+                    .attr('class', 'sankey-label')
+                    .attr('x', d => (d.x0 || 0) - 4)
+                    .attr('y', d => ((d.y0 || 0) + (d.y1 || 0)) / 2)
+                    .attr('dy', '0.35em')
+                    .attr('text-anchor', 'end')
+                    .text(d => `${d.name}`)
+                    .each(function (d) {
+                        if (((d.y1 || 0) - (d.y0 || 0)) < 16) { this.setAttribute('display', 'none'); this.setAttribute('data-size-hidden', '1'); }
+                    });
+                document.getElementById('export-sankey').addEventListener('click', () => exportSvgAsPng('#sankey'));
+                // Reset focus when pressing Escape
+                d3.select(window).on('keydown.sankeyFocus', (event) => {
+                    if (event.key === 'Escape') { sankeyFocus = null; updateSankeyVisibility(); }
+                });
+            })();
+
+
+            function exportSvgAsPng(sel) {
+                const svg = document.querySelector(sel);
+                const xml = new XMLSerializer().serializeToString(svg);
+                const svg64 = btoa(unescape(encodeURIComponent(xml)));
+                const img = new Image();
+                img.onload = function () {
+                    const canvas = document.createElement('canvas');
+                    canvas.width = svg.viewBox.baseVal.width;
+                    canvas.height = svg.viewBox.baseVal.height;
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(img, 0, 0);
+                    const a = document.createElement('a');
+                    a.download = sel.replace('#', '') + '.png';
+                    a.href = canvas.toDataURL('image/png');
+                    a.click();
+                };
+                img.src = 'data:image/svg+xml;base64,' + svg64;
+            }
+        }
+    </script>
+</div>
+
+
+
+
+{% include "partials/suggestions.html" with suggestions=currentView.Suggestions subtitle="Automatically inferred from coupling, purity and boundary nodes" emptyText="No suggestions — architecture looks healthy based on current heuristics." %}
+
+
+
+
+<!-- Critical nodes -->
+<div class="bg-white p-4 rounded shadow mb-8" id="critical-nodes-section">
+    <div class="flex items-center justify-between mb-4">
+        <h2 class="leading-none text-3xl font-bold text-gray-900 pb-2">Critical nodes</h2>
+        <div class="flex items-center gap-3 text-xs">
+            <span class="inline-flex items-center gap-1"><span class="inline-block w-2 h-2 rounded-full bg-amber-500"></span> articulation</span>
+            <span class="inline-flex items-center gap-1"><span class="inline-block w-2 h-2 rounded-full bg-sky-500"></span> boundary</span>
+        </div>
+    </div>
+    <div class="text-gray-600 text-sm mb-2">Top 10 nodes by betweenness centrality.</div>
+    <ol id="critical-nodes-list" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2"></ol>
+    <div class="text-gray-600 text-sm mt-4 mb-1">Boundary nodes</div>
+    <div class="flex flex-wrap gap-2 text-xs" id="boundary-nodes-text">
+        {% for n in cm.BoundaryNodes %}
+        <span class="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-sky-50 text-sky-700 ring-1 ring-sky-200">{{ n }}</span>
+        {% endfor %}
+    </div>
+</div>
+
+
+<!-- Purity per community -->
+<div class="bg-white p-4 rounded shadow mb-8">
+    <h2 class="leading-none text-3xl font-bold text-gray-900 pb-2">Purity per community</h2>
+    <table class="min-w-full text-sm">
+        <thead>
+        <tr>
+            <th class="text-left p-2">Community</th>
+            <th class="text-left p-2">Purity</th>
+            <th class="text-left p-2">Top namespace</th>
+        </tr>
+        </thead>
+        <tbody>
+        {% for id, purity in cm.PurityPerCommunity %}
+        <tr class="border-t">
+            <td class="p-2">{{ id }}</td>
+            {% set purity_pct = purity * 100 %}
+            <td class="p-2">{{ purity_pct|floatformat:1 }}%</td>
+            <td class="p-2">{% for k, ns in cm.TopNamespacesPerComm %}{% if k == id %}{{ ns|join:", " }}{% endif %}{% endfor %}
+            </td>
+        </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+
+
+
+<!-- Communities table -->
+<div class="bg-white p-4 rounded shadow mb-8">
+    <h2 class="leading-none text-3xl font-bold text-gray-900 pb-2">Communities</h2>
+    <table class="min-w-full text-sm sortable">
+        <thead>
+        <tr>
+            <th class="text-left p-2">id</th>
+            <th class="text-left p-2">size</th>
+            <th class="text-left p-2">density</th>
+            <th class="text-left p-2">purity</th>
+            <th class="text-left p-2">inbound_edges</th>
+            <th class="text-left p-2">outbound_edges</th>
+            <th class="text-left p-2">coupling</th>
+            <th class="text-left p-2">criticality_rank</th>
+            <th class="text-left p-2">top_namespaces</th>
+            <th class="text-left p-2">top_classes</th>
+            <th class="text-left p-2">action_hints</th>
+        </tr>
+        </thead>
+        <tbody>
+        {% for id, nodes in cm.Communities %}
+        {% set size = nodes|length %}
+        {% set purity = 0 %}
+        {% for k, pv in cm.PurityPerCommunity %}{% if k == id %}{% set purity = pv %}{% endif %}{% endfor %}
+        {% set inbound = 0 %}
+        {% for k, iv in cm.InboundEdgesPerComm %}{% if k == id %}{% set inbound = iv %}{% endif %}{% endfor %}
+        {% set outbound = 0 %}
+        {% for k, ov in cm.OutboundEdgesPerComm %}{% if k == id %}{% set outbound = ov %}{% endif %}{% endfor %}
+        {% if size > 50 and purity < 0.6 %}
+        {% set hint = "split_candidate" %}
+        {% else %}
+        {% set hint = "" %}
+        {% endif %}
+        <tr class="border-t">
+            <td class="p-2">{{ id }}</td>
+            <td class="p-2">{{ size }}</td>
+            <td class="p-2">-</td>
+            {% set purity_pct = purity * 100 %}
+            <td class="p-2">{{ purity_pct|floatformat:1 }}%</td>
+            <td class="p-2">{{ inbound }}</td>
+            <td class="p-2">{{ outbound }}</td>
+            <td class="p-2 comm-coupling" data-comm="{{ id }}">-</td>
+            <td class="p-2 comm-crit-rank" data-comm="{{ id }}">-</td>
+            <td class="p-2">{% set printed = false %}{% for k, ns in cm.TopNamespacesPerComm %}{% if k == id %}{{ ns|join:", " }}{% set printed = true %}{% endif %}{% endfor %}{% if not printed %}{% endif %}
+            </td>
+            <td class="p-2">{% set printed2 = false %}{% for k, cls in cm.TopClassesPerComm %}{% if k == id %}{{ cls|join:", " }}{% set printed2 = true %}{% endif %}{% endfor %}{% if not printed2 %}{% endif %}
+            </td>
+            <td class="p-2 comm-hint" data-comm="{{ id }}">{{ hint }}</td>
+        </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+
+{% endif %}
+{% endblock %}

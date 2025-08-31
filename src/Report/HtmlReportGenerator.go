@@ -47,9 +47,14 @@ func (v *HtmlReportGenerator) Generate(files []*pb.File, projectAggregated Analy
 	}
 
 	// copy the templates from embed, to temporary folder
-	templateDir := fmt.Sprintf("%s/templates", os.TempDir())
-	err = os.MkdirAll(templateDir, os.ModePerm)
+	baseTemplateDir := fmt.Sprintf("%s/templates", os.TempDir())
+	err = os.MkdirAll(baseTemplateDir, os.ModePerm)
 	if err != nil {
+		return nil, err
+	}
+	// ensure partials subfolder exists under base
+	partialsDir := fmt.Sprintf("%s/partials", baseTemplateDir)
+	if err := os.MkdirAll(partialsDir, os.ModePerm); err != nil {
 		return nil, err
 	}
 
@@ -70,23 +75,32 @@ func (v *HtmlReportGenerator) Generate(files []*pb.File, projectAggregated Analy
 		"componentDependencyDiagram.html",
 		"componentComparaisonBadge.html",
 		"componentComparaisonOperator.html",
+		"communities.html",
+		"partials/suggestions.html",
 	} {
 		// read the file
-		htmlContent, err := htmlContent.ReadFile(fmt.Sprintf("templates/html/%s", file))
+		bytes, err := htmlContent.ReadFile(fmt.Sprintf("templates/html/%s", file))
 		if err != nil {
 			return nil, err
 		}
 
-		// write the file to temporary folder (/tmp)
-		err = os.WriteFile(fmt.Sprintf("%s/%s", templateDir, file), htmlContent, 0644)
+		// write the file to temporary folder (/tmp) preserving subpaths under baseTemplateDir
+		outPath := fmt.Sprintf("%s/%s", baseTemplateDir, file)
+		// ensure parent directory exists (e.g., for partials)
+		if dir := outPath[:len(outPath)-len(file)]; dir != "" {
+			if err := os.MkdirAll(strings.TrimRight(dir, "/"), os.ModePerm); err != nil {
+				return nil, err
+			}
+		}
+		err = os.WriteFile(outPath, bytes, 0644)
 		if err != nil {
 			return nil, err
 		}
 	}
 
-	// Define loader in order to retrieve templates in the Report/Html/templates folder
-	loader := pongo2.MustNewLocalFileSystemLoader(templateDir)
-	pongo2.DefaultSet = pongo2.NewSet(templateDir, loader)
+	// Define loader rooted at the base template directory
+	loader := pongo2.MustNewLocalFileSystemLoader(baseTemplateDir)
+	pongo2.DefaultSet = pongo2.NewSet(baseTemplateDir, loader)
 
 	// Custom filters
 	v.RegisterFilters()
@@ -112,8 +126,37 @@ func (v *HtmlReportGenerator) Generate(files []*pb.File, projectAggregated Analy
 		v.GenerateLanguagePage("compare.html", language, currentView, files, projectAggregated)
 	}
 
+	// Communities page
+	v.GenerateLanguagePage("communities.html", "All", projectAggregated.Combined, files, projectAggregated)
+	for language, currentView := range projectAggregated.ByProgrammingLanguage {
+		v.GenerateLanguagePage("communities.html", language, currentView, files, projectAggregated)
+	}
+
+    // copy images
+    err = v.EnsureFolder(fmt.Sprintf("%s/images", v.ReportPath))
+    if err != nil {
+        return nil, err
+    }
+
+    // copy each image
+    for _, file := range []string{
+        "help-community.png",
+    } {
+        // read the file
+        htmlContent, err := htmlContent.ReadFile(fmt.Sprintf("templates/html/images/%s", file))
+        if err != nil {
+            return nil, err
+        }
+
+        // write the file to temporary folder
+        err = os.WriteFile(fmt.Sprintf("%s/images/%s", v.ReportPath, file), htmlContent, 0644)
+        if err != nil {
+            return nil, err
+        }
+    }
+
 	// cleanup temporary folder
-	err = os.RemoveAll(templateDir)
+	err = os.RemoveAll(baseTemplateDir)
 	if err != nil {
 		return nil, err
 	}
@@ -136,12 +179,14 @@ func (v *HtmlReportGenerator) GenerateLanguagePage(template string, language str
 	tpl, err := pongo2.DefaultSet.FromFile(template)
 	if err != nil {
 		log.Error(err)
+		return err
 	}
 	// Render it, passing projectAggregated and files as context
 	datetime := time.Now().Format("2006-01-02 15:04")
 	out, err := tpl.Execute(pongo2.Context{"datetime": datetime, "page": template, "currentLanguage": language, "currentView": currentView, "projectAggregated": projectAggregated, "files": files})
 	if err != nil {
 		log.Error(err)
+		return err
 	}
 
 	// Write the result to the file
