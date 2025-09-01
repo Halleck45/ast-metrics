@@ -1,5 +1,5 @@
 sources: 
-  - ./src
+  - ./internal
 exclude: []
 
 reports:

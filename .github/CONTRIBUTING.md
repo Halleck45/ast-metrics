@@ -37,10 +37,10 @@ go test ./...
 
 The main directories of the application are as follows:
 
-+ `src/Analyzer`: contains everything related to AST analysis (complexity, volume, etc.)
-+ `src/Configuration`: manages configuration (loading files, validation, etc.)
-+ `src/Engine`: contains various engines that convert source code (Python, Golang, PHP...) into an AST
-+ `src/Report`: generates reports (HTML, markdown, etc.)
++ `internal/analyzer`: contains everything related to AST analysis (complexity, volume, etc.)
++ `internal/configuration`: manages configuration (loading files, validation, etc.)
++ `internal/engine`: contains various engines that convert source code (Python, Golang, PHP...) into an AST
++ `internal/report`: generates reports (HTML, markdown, etc.)
 
 The `NodeType` structure is the most important part of the project. It's the data structure that will be used to store the AST of the source code, and analysis results. This structure is automatically generated from the `proto/NodeType.proto` file.
 
@@ -59,7 +59,7 @@ In all case, each statement has at least the following properties:
 + `Analyze`: a list of analysis results (Volume, complexity, etc.)
 + (optional) `StmtLocationInFile`: tracks the location of the statement in the source code
 
-The role of each `Engine` consists in parsing the source code, and creating the corresponding `Stmt*` statement(s).
+The role of each `engine` consists in parsing the source code, and creating the corresponding `Stmt*` statement(s).
 
 Then, each `Analyzer` will then traverse the AST, and compute analysis results (like cyclomatic complexity, volume, etc.) filling the `Analyze` property of each statement.
 
@@ -89,7 +89,7 @@ To add a new report, you need to create a structure that implements the `Reporte
 ```go
 type Reporter interface {
 	// generates a report based on the files and the project aggregated data
-	Generate(files []*pb.File, projectAggregated Analyzer.ProjectAggregated) ([]GeneratedReport, error)
+	Generate(files []*pb.File, projectAggregated analyzer.ProjectAggregated) ([]GeneratedReport, error)
 }
 ```
 
@@ -101,10 +101,10 @@ Finally, add a CLI option (e.g., `--report-myreport=file1.foo`) to activate this
 
 Language agnosticism in the analysis is achieved by using protobuf files that act as intermediaries between the parsed file (an AST) and the analysis engine.
 
-To add support for a new programming language, you need to declare a new Engine that implements the `Engine` interface defined in `src/Engine/Engine.go`.
+To add support for a new programming language, you need to declare a new engine that implements the `engine` interface defined in `src/engine/engine.go`.
 
 ```go
-type Engine interface {
+type engine interface {
     // Returns true when analyzed files are concerned by the programming language
 	IsRequired() bool
 
@@ -121,7 +121,7 @@ type Engine interface {
 	SetProgressbar(progressbar *pterm.SpinnerPrinter)
 
 	// Give the configuration to the engine
-	SetConfiguration(configuration *Configuration.Configuration)
+	SetConfiguration(configuration *configuration.Configuration)
 
 	// Parse a file and return a protobuff compatible AST object
 	Parse(filepath string) (*pb.File, error)

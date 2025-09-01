@@ -66,6 +66,7 @@ jobs:
               - go generate ./...
           builds:
             - id: app
+              main: ./cmd/ast-metrics
               env: ["CGO_ENABLED=1"]
               goos: [${{ matrix.goos }}]
               goarch: [${{ matrix.goarch }}]
