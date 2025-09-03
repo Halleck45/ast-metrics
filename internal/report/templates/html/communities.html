@@ -8,7 +8,43 @@
 <div class="text-gray-600">No community data available.</div>
 {% else %}
 
-<div class="bg-white p-4 rounded shadow mb-8">
+
+<!-- start: language tabs-->
+<div class="flex overflow-x-auto overflow-y-hidden border-b border-gray-200 whitespace-nowrap ">
+
+    <a
+            href="communities.html"
+            class="inline-flex items-center h-10 px-2 py-2 -mb-px text-center {% if currentLanguage == "All" %}text-blue-600 border-blue-500{% endif %} bg-transparent border-b-2 sm:px-4 -px-1 focus:outline-none">
+    <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 mx-1 sm:w-6 sm:h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z" />
+    </svg>
+
+    <span class="mx-1 text-sm sm:text-base">
+                All languages <span class="text-xs sm:text-sm">({{ projectAggregated.Combined.ConcernedFiles|length }} files)</span>
+            </span>
+    </a>
+
+    <!-- start: language tab -->
+    {% for languageName, lang in projectAggregated.ByProgrammingLanguage %}
+    <a
+            href="communities_{{ languageName }}.html"
+            class="inline-flex items-center h-10 px-2 py-2 -mb-px text-center bg-transparent border-b-2 {% if currentLanguage == languageName %}text-blue-600 border-blue-500{% else %}text-gray-700   border-transparent{% endif %} sm:px-4 -px-1 hover:border-gray-400">
+        <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 mx-1 sm:w-6 sm:h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z" />
+        </svg>
+
+        <span class="mx-1 text-sm sm:text-base">
+                    {{ languageName }} <span class="text-xs sm:text-sm">({{ lang.ConcernedFiles|length }} files)</span>
+                </span>
+    </a>
+    {% endfor %}
+    <!-- end: language tab -->
+
+</div>
+<!-- end: language tabs-->
+
+
+<div class="bg-white p-4 rounded shadow mb-8 mt-8">
     <h2 class="leading-none text-3xl font-bold text-gray-900 pb-2">Communities - Help</h2>
     <p class="text-gray-600">Graph communities detected via label propagation on the dependency graph.</p>
 
