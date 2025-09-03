@@ -26,7 +26,7 @@ jobs:
         run: go version
 
       - name: Install dependencies
-        run: go get .
+        run: go mod tidy
 
       - name: Test with the Go CLI
         run: go test -race -coverprofile=coverage.txt -covermode=atomic ./...
