@@ -8,6 +8,7 @@
 
 
 AST Metrics is a **multi-language static code analyzer**.  
+
 It provides **architectural insights**, **complexity metrics**, and **activity analysis**—all in a **fast, standalone binary** ready for CI/CD.
 
 [Documentation](https://halleck45.github.io/ast-metrics/) | [Contributing](.github/CONTRIBUTING.md) | [Twitter](https://twitter.com/Halleck45)
@@ -17,7 +18,26 @@ It provides **architectural insights**, **complexity metrics**, and **activity a
 
 ## Preview
 
-![HTML report](./docs/preview-html-report.png)
+<table>
+    <tr>
+        <td width="50%" style="text-align:center">
+            HTML Report
+        </td>
+        <td width="50%" style="text-align:center">
+            CLI
+        </td>
+    </tr>
+    <tr>
+        <td width="50%" style="text-align:center">
+            <img src="./docs/preview-ast-metrics.gif" alt="AST Metrics HTML report"/>
+        </td>
+        <td width="50%" style="text-align:center">
+            <img src="./docs/preview.gif" alt="AST Metrics CLI report"/>
+        </td>
+    </tr>
+</table>
+
+
 
 ## Quick start
 
@@ -28,6 +48,7 @@ curl -s https://raw.githubusercontent.com/Halleck45/ast-metrics/main/scripts/dow
 
 ./ast-metrics analyze --report-html=<directory> /path/to/your/code
 ```
+
 > AST Metrics is a standalone package. It does not require any other software to be installed.
 > To install it manually follow the detailled [installation instructions](https://halleck45.github.io/ast-metrics/getting-started/install/).
 
