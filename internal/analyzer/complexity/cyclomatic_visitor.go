@@ -46,6 +46,14 @@ func (v *CyclomaticComplexityVisitor) Calculate(stmts *pb.Stmts) int32 {
 		len(stmts.StmtDecisionSwitch) +
 		len(stmts.StmtFunction)) // +1 for the function itself
 	// else is not a decision point for ccn
+	// However, in some languages (e.g., Go via tree-sitter), an "else if" can be represented
+	// as an else branch that contains an if-statement inside its body. In that case, count
+	// one extra decision to align with expected CCN.
+	for _, el := range stmts.StmtDecisionElse {
+		if el != nil && el.Stmts != nil && len(el.Stmts.StmtDecisionIf) > 0 {
+			ccn++
+		}
+	}
 	// class is not a decision point for ccn
 
 	// iterate over children

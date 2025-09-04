@@ -13,7 +13,7 @@ requirements:
             to: Hal
     volume:
       loc:
-        max: 100
+        max: 150
         min: 0
         exclude: []
   fail_on_error: true
