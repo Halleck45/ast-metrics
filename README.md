@@ -4,9 +4,12 @@
 
 [![CI](https://github.com/Halleck45/ast-metrics/actions/workflows/test.yml/badge.svg)](https://github.com/Halleck45/ast-metrics/actions/workflows/test.yml)
 ![GitHub Release](https://img.shields.io/github/v/release/Halleck45/ast-metrics)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 
-AST Metrics is a blazing-fast static code analyzer. It provides metrics about your code, and helps you to identify potential problems early on. 
+AST Metrics is a **multi-language static code analyzer**.  
+
+It provides **architectural insights**, **complexity metrics**, and **activity analysis**—all in a **fast, standalone binary** ready for CI/CD.
 
 [Documentation](https://halleck45.github.io/ast-metrics/) | [Contributing](.github/CONTRIBUTING.md) | [Twitter](https://twitter.com/Halleck45)
 
@@ -15,61 +18,58 @@ AST Metrics is a blazing-fast static code analyzer. It provides metrics about yo
 
 ## Preview
 
-![HTML report](./docs/preview-html-report.png)
+<table>
+    <tr>
+        <td width="50%" style="text-align:center">
+            HTML Report
+        </td>
+        <td width="50%" style="text-align:center">
+            CLI
+        </td>
+    </tr>
+    <tr>
+        <td width="50%" style="text-align:center">
+            <img src="./docs/preview-ast-metrics.gif" alt="AST Metrics HTML report"/>
+        </td>
+        <td width="50%" style="text-align:center">
+            <img src="./docs/preview.gif" alt="AST Metrics CLI report"/>
+        </td>
+    </tr>
+</table>
+
+
 
 ## Quick start
 
 Open your terminal and run the following command:
 
 ```console
-ast-metrics analyze --report-html=<directory> /path/to/your/code
-```
-
-## Installation
-
-AST Metrics is a standalone package. It does not require any other software to be installed.
-
-```console
 curl -s https://raw.githubusercontent.com/Halleck45/ast-metrics/main/scripts/download.sh|bash
+
+./ast-metrics analyze --report-html=<directory> /path/to/your/code
 ```
 
-or follow the detailled [installation instructions](https://halleck45.github.io/ast-metrics/getting-started/install/).
+> AST Metrics is a standalone package. It does not require any other software to be installed.
+> To install it manually follow the detailled [installation instructions](https://halleck45.github.io/ast-metrics/getting-started/install/).
 
-> [!IMPORTANT]
-> Please always read any script found on the internet before running it, and never use privileged access to run it.
+## Why AST Metrics?
 
-## Why?
-
-Static code analysis is a game-changer for improving code quality. It helps you catch potential issues early, enforce coding standards, and gain deeper insights into your codebase.
-
-With **AST Metrics**, you can:
-
-- **Get a bird's-eye view of your project**: Quickly identify overly complex code or tightly coupled classes that could slow down your development or introduce bugs.  
-- **Enforce architectural coherence**: Ensure your code structure aligns with best practices—for instance, making sure your service layer doesn’t depend on your data access layer.
-
-Whether you're maintaining an existing codebase or building a new one, AST Metrics empowers you to write better, more maintainable code.
+- **Catch issues early**: detect complex or tightly coupled code.
+- **Ensure architectural coherence**: validate dependencies and layering.
+- **Understand your project at scale**: from cyclomatic complexity to bus factor.
 
 ## Features
 
-+ **Designed for CI/CD**. You can integrate it into your pipeline to check that your code meets your quality standards, You can integrate it into your CI pipelines, whether you're using [GitHub Actions](https://halleck45.github.io/ast-metrics/ci/github-actions/) or [GitLab CI](https://halleck45.github.io/ast-metrics/ci/gitlab-ci/).
-+ **Fast and efficient**.
-+ Provides simple and detailed reports.
-+ **Code analysis**: *cyclomatic complexity, maintainability, size...*
-+ **Coupling analysis**: *instability, afferent coupling...*
-+ **Activity analysis**: *number of commits, bus factor...*
-+ **Easy to install**: *no dependencies, no configuration needed*.
++ **CI/CD ready**: plug into GitHub Actions, GitLab CI, or any pipeline.
++ **Fast & dependency-free**: single binary, no setup required.
++ **Architectural analysis**: community detection, coupling, instability.
++ **Code metrics**: complexity, maintainability, size.
++ **Activity metrics**: commits, bus factor.
++ **Readable reports**: detailed HTML dashboards.
 
 [Read more in the documentation](https://halleck45.github.io/ast-metrics/)
 
-## Contributing
-
-AST Metrics is experimental and actively developed. We welcome contributions.
-
-Feel free to [open a discussion](https://github.com/Halleck45/ast-metrics/discussions). We love suggestions, ideas, bug reports, and other contributions.
-
-If you'd like to contribute to the codebase, **check out the [contributing guide](.github/CONTRIBUTING.md) to get started.**
-
-We are looking for help to support new programming languages, stabilize the tool, and enrich it. Here is the list of supported languages:
+## Supported languages
 
 + ✅ **PHP** `<= PHP 8.4`
 + ✅ **Golang** `any version`
@@ -83,3 +83,12 @@ We are looking for help to support new programming languages, stabilize the tool
 ## License
 
 AST Metrics is open-source software [licensed under the MIT license](LICENSE)
+
+
+## Contributing
+
+AST Metrics is an actively evolving project.
+
+We welcome discussions, bug reports, and pull requests.
+
+➡️ Start [contributing here](.github/CONTRIBUTING.md)

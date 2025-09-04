@@ -250,3 +250,17 @@ message Coupling {
   int32 efferent = 2; // number of classes that this class depends on
   double instability = 3; // instability of the class
 }
+
+// ------------------------------------
+// -- Graph of dependencies
+// ------------------------------------
+// want an Adjacency List/Set Implementation
+// @see https://medium.com/outco/how-to-build-a-graph-data-structure-d779d822f9b4
+message Graph {
+  map<string, Node> nodes = 1; // key is node id
+}
+message Node {
+  string id = 1; // unique id of node
+  repeated string edges = 2; // list of node ids this node points to
+  Name name = 3; // name of the node
+}

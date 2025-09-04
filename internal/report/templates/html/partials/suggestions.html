@@ -1,0 +1,19 @@
+
+<div class="bg-white p-4 rounded shadow mb-8">
+  <div class="flex items-center justify-between mb-2">
+    <h2 class="leading-none text-3xl font-bold text-gray-900 pb-2">Suggestions</h2>
+    {% if subtitle %}<div class="text-xs text-gray-500">{{ subtitle }}</div>{% endif %}
+  </div>
+  {% if not suggestions or suggestions|length == 0 %}
+    <div class="text-sm text-gray-500">{{ emptyText|default:"No suggestions available." }}</div>
+  {% else %}
+    <ul class="text-sm space-y-2">
+      {% for s in suggestions %}
+      <li class="p-2 border rounded flex items-start gap-2">
+        <span class="inline-block text-[10px] px-1 py-0.5 rounded bg-gray-100 border">Tip</span>
+        <span>{{ s }}</span>
+      </li>
+      {% endfor %}
+    </ul>
+  {% endif %}
+</div>
