@@ -314,6 +314,44 @@ func main() {
 				},
 			},
 			{
+				Name:  "ruleset",
+				Usage: "Manage requirement rulesets",
+				Subcommands: []*cli.Command{
+					{
+						Name:  "list",
+						Usage: "List available rulesets",
+						Action: func(cCtx *cli.Context) error {
+							command := Command.NewRulesetListCommand()
+							return command.Execute()
+						},
+					},
+					{
+						Name:  "show",
+						Usage: "Show rules inside a ruleset",
+						Action: func(cCtx *cli.Context) error {
+							if cCtx.Args().Len() == 0 {
+								return fmt.Errorf("usage: ast-metrics ruleset show <name>")
+							}
+							name := cCtx.Args().First()
+							command := Command.NewRulesetShowCommand(name)
+							return command.Execute()
+						},
+					},
+					{
+						Name:  "add",
+						Usage: "Add all rules from a ruleset to the configuration file",
+						Action: func(cCtx *cli.Context) error {
+							if cCtx.Args().Len() == 0 {
+								return fmt.Errorf("usage: ast-metrics ruleset add <name>")
+							}
+							name := cCtx.Args().First()
+							command := Command.NewRulesetAddCommand(name)
+							return command.Execute()
+						},
+					},
+				},
+			},
+			{
 				Name:    "version",
 				Aliases: []string{"v"},
 				Usage:   "Print version information",

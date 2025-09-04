@@ -6,6 +6,7 @@ import (
 	"sync"
 
 	engine "github.com/halleck45/ast-metrics/internal/engine"
+	requirement "github.com/halleck45/ast-metrics/internal/analyzer/requirement"
 	pb "github.com/halleck45/ast-metrics/internal/nodetype"
 	Scm "github.com/halleck45/ast-metrics/internal/scm"
 )
@@ -16,7 +17,7 @@ type ProjectAggregated struct {
 	Combined              Aggregated
 	ByProgrammingLanguage map[string]Aggregated
 	ErroredFiles          []*pb.File
-	Evaluation            *EvaluationResult
+	Evaluation            *requirement.EvaluationResult
 	Comparaison           *ProjectComparaison
 }
 

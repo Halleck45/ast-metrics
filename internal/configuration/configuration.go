@@ -15,27 +15,27 @@ type Configuration struct {
 	ExcludePatterns []string `yaml:"exclude"`
 
 	// Reports
-	Reports ConfigurationReport `yaml:"reports"`
+	Reports ConfigurationReport `yaml:"reports,omitempty"`
 
 	// Requirements
-	Requirements *ConfigurationRequirements `yaml:"requirements"`
+	Requirements *ConfigurationRequirements `yaml:"requirements,omitempty"`
 
-	Watching bool
+	Watching bool `yaml:"watching,omitempty"`
 
 	// if not empty, compare the current analysis with the one in this branch / commit
-	CompareWith string
+	CompareWith string `yaml:"comparewith,omitempty"`
 
 	// Location of cache files
-	Storage *storage.Workdir
+	Storage *storage.Workdir `yaml:"-"`
 
-	IsComingFromConfigFile bool
+	IsComingFromConfigFile bool `yaml:"-"`
 }
 
 type ConfigurationReport struct {
-	Html        string `yaml:"html"`
-	Markdown    string `yaml:"markdown"`
-	Json        string `yaml:"json"`
-	OpenMetrics string `yaml:"openmetrics"`
+	Html        string `yaml:"html,omitempty"`
+	Markdown    string `yaml:"markdown,omitempty"`
+	Json        string `yaml:"json,omitempty"`
+	OpenMetrics string `yaml:"openmetrics,omitempty"`
 }
 
 // function HasReports() bool {
@@ -44,19 +44,46 @@ func (c *ConfigurationReport) HasReports() bool {
 }
 
 type ConfigurationRequirements struct {
-	Rules *struct {
-		CyclomaticComplexity *ConfigurationDefaultRule `yaml:"cyclomatic_complexity"`
-		Loc                  *ConfigurationDefaultRule `yaml:"loc"`
-		Maintainability      *ConfigurationDefaultRule `yaml:"maintainability"`
-		Coupling             *struct {
-			Forbidden []struct {
-				From string `yaml:"from"`
-				To   string `yaml:"to"`
-			} `yaml:"forbidden"`
-		} `yaml:"coupling"`
-	} `yaml:"rules"`
+	Rules *ConfigurationRequirementsRules `yaml:"rules"`
 
 	FailOnError bool `yaml:"fail_on_error"`
+}
+
+type ConfigurationCouplingRule struct {
+	Forbidden []struct {
+		From string `yaml:"from"`
+		To   string `yaml:"to"`
+	} `yaml:"forbidden,omitempty"`
+}
+
+type ConfigurationArchitectureRules struct {
+	Coupling *ConfigurationCouplingRule `yaml:"coupling,omitempty"`
+}
+
+type ConfigurationVolumeRules struct {
+	Loc *ConfigurationDefaultRule `yaml:"loc,omitempty"`
+}
+
+type ConfigurationComplexityRules struct {
+	Cyclomatic *ConfigurationDefaultRule `yaml:"cyclomatic_complexity,omitempty"`
+}
+
+type ConfigurationOOPRules struct {
+	Maintainability *ConfigurationDefaultRule `yaml:"maintainability,omitempty"`
+}
+
+type ConfigurationRequirementsRules struct {
+	// New nested rulesets
+	Architecture              *ConfigurationArchitectureRules `yaml:"architecture,omitempty"`
+	Volume                    *ConfigurationVolumeRules       `yaml:"volume,omitempty"`
+	Complexity                *ConfigurationComplexityRules   `yaml:"complexity,omitempty"`
+	ObjectOrientedProgramming *ConfigurationOOPRules          `yaml:"object-oriented-programming,omitempty"`
+
+	// Legacy flat rules (backward compatibility)
+	CyclomaticComplexity *ConfigurationDefaultRule  `yaml:"cyclomatic_complexity,omitempty"`
+	Loc                  *ConfigurationDefaultRule  `yaml:"loc,omitempty"`
+	Maintainability      *ConfigurationDefaultRule  `yaml:"maintainability,omitempty"`
+	Coupling             *ConfigurationCouplingRule `yaml:"coupling,omitempty"`
 }
 
 type ConfigurationDefaultRule struct {
@@ -73,6 +100,18 @@ func NewConfiguration() *Configuration {
 		CompareWith:            "",
 		Storage:                storage.Default(),
 		IsComingFromConfigFile: false,
+		Requirements:           &ConfigurationRequirements{FailOnError: true},
+	}
+}
+
+func NewConfigurationRequirements() *ConfigurationRequirements {
+	return &ConfigurationRequirements{
+		Rules: &ConfigurationRequirementsRules{
+			Architecture:              &ConfigurationArchitectureRules{},
+			Volume:                    &ConfigurationVolumeRules{},
+			Complexity:                &ConfigurationComplexityRules{},
+			ObjectOrientedProgramming: &ConfigurationOOPRules{},
+		},
 	}
 }
 
