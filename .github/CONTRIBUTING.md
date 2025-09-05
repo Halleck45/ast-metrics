@@ -9,6 +9,7 @@ I hope these informations will help you:
 > - [How to run automated tests?](#-how-to-run-automated-tests)
 > - [How is the source code organized?](#-how-is-the-source-code-organized)
 > - [I want to add or modify a report](#-i-want-to-add-or-modify-a-report)
+> - [Add a new rule to the ruleset](#-add-a-new-rule-to-the-ruleset)
 > - [My contribution is about supporting a new programming language](#-my-contribution-is-about-supporting-a-new-programming-language)
 > - [My contribution involves updating the data structure (protobuf)](#-my-contribution-involves-updating-the-data-structure-protobuf)
 > - [How to release new version?](#-how-to-release-new-version)
@@ -97,6 +98,73 @@ Then, register this new `Reporter` in the list of available reporters in the fil
 
 Finally, add a CLI option (e.g., `--report-myreport=file1.foo`) to activate this report by modifying the `main.go` file.
 
+## ➕ Add a new rule to the ruleset
+
+Want to add a new validation rule? Here’s a step‑by‑step guide, with a concrete example based on the LLOC rule: `internal/analyzer/ruleset/rule_volume_lloc.go`.
+
+**Where to create the rule?**
+
+- Put your file in `internal/analyzer/ruleset/`.
+- Name it explicitly, for example `rule_<category>_<name>.go` (e.g., `rule_volume_lloc.go`). The “category” corresponds to the ruleset (volume, complexity, architecture, etc.).
+
+**Implement the Rule interface**
+- Every rule must implement the `Rule` interface defined in `internal/analyzer/ruleset/rule.go`:
+  - `Name() string`
+  - `Description() string`
+  - `CheckFile(file *pb.File, addError func(string), addSuccess func(string))`
+- Use `llocRule` as a reference:
+  - Declare a struct that holds the configuration (often `*configuration.ConfigurationDefaultRule`).
+  - Provide a constructor `New<Name>Rule(cfg *configuration.ConfigurationDefaultRule) Rule`.
+  - In `CheckFile`, read the metric computed in `file.Stmts.Analyze` (e.g., `file.Stmts.Analyze.Volume.Lloc`) and compare it to min/max bounds. Use `addError(...)` to report a violation and `addSuccess(...)` to validate.
+  - Handle exclusions with regex patterns if `cfg.ExcludePatterns` is set.
+
+**Register the rule in the ruleset**
+- Open the corresponding ruleset file, e.g., `internal/analyzer/ruleset/ruleset_volume.go`.
+- Add the rule in both `All()` (complete list) and `Enabled()` (list activated by config). Simplified example:
+
+```go
+func (v *volumeRuleset) All() []Rule {
+    return []Rule{
+        NewLocRule(v.cfg.Rules.Volume.Loc),
+        NewLlocRule(v.cfg.Rules.Volume.Lloc),
+        // NewMyNewRule(v.cfg.Rules.Volume.MyNewRule),
+    }
+}
+
+func (v *volumeRuleset) Enabled() []Rule {
+    rules := []Rule{}
+    if v.cfg.Rules.Volume != nil {
+        if v.cfg.Rules.Volume.Lloc != nil {
+            rules = append(rules, NewLlocRule(v.cfg.Rules.Volume.Lloc))
+        }
+        // if v.cfg.Rules.Volume.MyNewRule != nil {
+        //     rules = append(rules, NewMyNewRule(v.cfg.Rules.Volume.MyNewRule))
+        // }
+    }
+    return rules
+}
+```
+
+**Add configuration**
+- Declare the configuration field in `internal/configuration/configuration.go` at the appropriate place (e.g., in `ConfigurationVolumeRules` for a volume rule). Simple rules generally use `*ConfigurationDefaultRule` (with `min`, `max`, `exclude`).
+- Make the rule configurable via YAML. Minimal example in `.ast-metrics.dist.yaml`:
+
+```yaml
+requirements:
+  rules:
+    volume:
+      lloc:
+        max: 250
+        exclude:
+          - "vendor/"
+```
+
+**Test**
+- Run tests: `go test ./...`
+- Run the tool on a small sample project to ensure the rule triggers as expected.
+
+Reference example: `internal/analyzer/ruleset/rule_volume_lloc.go`.
+
 ## 🔥 My contribution is about supporting a new programming language
 
 Language agnosticism in the analysis is achieved by using protobuf files that act as intermediaries between the parsed file (an AST) and the analysis engine.
@@ -156,11 +224,7 @@ First ensure tests pass:
 make test
 ```
 
-Then release new version:
-
-```bash
-make build
-```
+Then release new tag on github. This will trigger a new release on github.
 
 ## 🌐 How to improve the website?
 

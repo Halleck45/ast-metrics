@@ -1,8 +1,7 @@
 package analyzer
 
 import (
-	"fmt"
-	"math"
+    	"math"
 	"runtime"
 	"sync"
 
@@ -929,8 +928,6 @@ func (r *Aggregator) mapCoupling(aggregated *Aggregated) Aggregated {
 				// This code cannot work in a no-oop context
 				// => we cannot use afferent coupling of file itself, only the coupling of the class
 				fromFile.Stmts.Analyze.Coupling.Afferent++
-			} else {
-				fmt.Println("Not found for ", namespaceFrom)
 			}
 
 			// create the map if not exists

@@ -57,11 +57,17 @@ type ConfigurationCouplingRule struct {
 }
 
 type ConfigurationArchitectureRules struct {
-	Coupling *ConfigurationCouplingRule `yaml:"coupling,omitempty"`
+	Coupling        *ConfigurationCouplingRule `yaml:"coupling,omitempty"`
+	AfferentCoupling *ConfigurationDefaultRule `yaml:"afferent_coupling,omitempty"`
+	EfferentCoupling *ConfigurationDefaultRule `yaml:"efferent_coupling,omitempty"`
+	Maintainability  *ConfigurationDefaultRule `yaml:"maintainability,omitempty"`
 }
 
 type ConfigurationVolumeRules struct {
-	Loc *ConfigurationDefaultRule `yaml:"loc,omitempty"`
+	Loc           *ConfigurationDefaultRule `yaml:"loc,omitempty"`
+	Lloc          *ConfigurationDefaultRule `yaml:"lloc,omitempty"`
+	LocByMethod   *ConfigurationDefaultRule `yaml:"loc_by_method,omitempty"`
+	LlocByMethod  *ConfigurationDefaultRule `yaml:"lloc_by_method,omitempty"`
 }
 
 type ConfigurationComplexityRules struct {

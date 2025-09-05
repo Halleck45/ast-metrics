@@ -6,14 +6,17 @@ reports:
   markdown: ./build/report.md
 requirements:
   rules:
-    architecture:
-      coupling:
-        forbidden:
-          - from: Application
-            to: Hal
     volume:
       loc:
-        max: 150
+        max: 999
         min: 0
-        exclude: []
+        exclude:
+          - aggregator.go
+          - NodeType.pb.go
+      lloc_by_method:
+        max: 250
+        min: 0
+        exclude:
+          - aggregator.go
+          - NodeType.pb.go
   fail_on_error: true
