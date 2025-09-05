@@ -42,20 +42,34 @@ func GetLocPositionFromSource(sourceCode []string, start int, end int) *pb.Lines
 		clean := stripQuotes(line)
 
 		if inBlock {
-			cloc++
+			// Inside a block comment: count only interior lines that begin with '*'
+			// Do not count the opening or closing delimiter lines.
 			if strings.Contains(clean, "*/") {
 				inBlock = false
+				continue
+			}
+			if strings.HasPrefix(strings.TrimSpace(line), "*") {
+				cloc++
 			}
 			continue
 		}
 
-		if strings.HasPrefix(clean, "//") || strings.HasPrefix(clean, "#") {
+		// line comments: count if present anywhere on the line (after stripping strings)
+		if strings.Contains(clean, "//") || strings.HasPrefix(clean, "#") || strings.Contains(clean, "# ") {
 			cloc++
 			continue
 		}
 		if strings.HasPrefix(clean, "/*") {
-			cloc++
-			if !strings.Contains(clean, "*/") {
+			// If block opens and closes on the same line, count it as one comment line if there is any comment content before */
+			if strings.Contains(clean, "*/") {
+				idx := strings.Index(clean, "*/")
+				commentContent := strings.TrimSpace(strings.TrimPrefix(clean[:idx], "/*"))
+				if commentContent != "" {
+					cloc++
+				}
+				// block closes on same line; do not enter inBlock
+			} else {
+				// Do not count the opening delimiter line; count only inner lines
 				inBlock = true
 			}
 			continue

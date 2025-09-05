@@ -566,30 +566,60 @@ func (a *TreeSitterAdapter) ExtractOperatorsOperands(src []byte, startLine, endL
 // CountComments counts PHP-style comment lines in the given range
 func (a *TreeSitterAdapter) CountComments(lines []string, start, end int) int {
 	cnt := 0
-	// 1) inside node range
+	inBlock := false
 	for i := start - 1; i < end && i < len(lines); i++ {
-		ln := strings.TrimSpace(lines[i])
-		if ln == "" {
+		line := strings.TrimSpace(lines[i])
+		if line == "" {
 			continue
 		}
-		clean := stripStrings(ln)
-		if strings.HasPrefix(clean, "//") || strings.HasPrefix(clean, "/*") || strings.HasPrefix(clean, "*/") || strings.HasPrefix(clean, "*") || strings.HasPrefix(clean, "#") || strings.Contains(clean, "//") {
-			cnt++
-		}
-	}
-	// 2) contiguous docblock immediately above start
-	for i := start - 2; i >= 0 && i < len(lines); i-- {
-		ln := strings.TrimSpace(lines[i])
-		if ln == "" { // allow blank line within block? stop at first blank
-			break
-		}
-		clean := stripStrings(ln)
-		if strings.HasPrefix(clean, "*/") || strings.HasPrefix(clean, "*") || strings.HasPrefix(clean, "/*") || strings.HasPrefix(clean, "//") || strings.HasPrefix(clean, "#") {
-			cnt++
-			// continue upward until non-comment line
+		clean := stripStrings(line)
+
+		if inBlock {
+			if strings.Contains(clean, "*/") {
+				// closing delimiter on this line; do not count the delimiter line itself
+				// but if there is an inline comment after it (e.g., // ...), count that as one
+				after := strings.TrimSpace(clean[strings.Index(clean, "*/")+2:])
+				if strings.Contains(after, "//") || strings.HasPrefix(after, "#") || strings.Contains(after, "# ") {
+					cnt++
+				}
+				inBlock = false
+				continue
+			}
+			// count only interior lines that begin with '*'
+			if strings.HasPrefix(strings.TrimSpace(line), "*") {
+				cnt++
+			}
 			continue
 		}
-		break
+
+		if strings.HasPrefix(clean, "/*") {
+			// If it's a docblock opener "/**", count the opening line as a comment line
+			isDocblock := strings.HasPrefix(clean, "/**")
+			if strings.Contains(clean, "*/") {
+				// block opens and closes on the same line
+				if isDocblock {
+					cnt++ // count the opener line for docblock
+				}
+				// also count inline // or # after the closing delimiter
+				after := strings.TrimSpace(clean[strings.Index(clean, "*/")+2:])
+				if strings.Contains(after, "//") || strings.HasPrefix(after, "#") || strings.Contains(after, "# ") {
+					cnt++
+				}
+				// do not enter block since it closes here
+			} else {
+				if isDocblock {
+					cnt++ // count the opener line for docblock
+				}
+				inBlock = true
+			}
+			continue
+		}
+
+		// line comments anywhere on the line
+		if strings.Contains(clean, "//") || strings.HasPrefix(clean, "#") || strings.Contains(clean, "# ") {
+			cnt++
+			continue
+		}
 	}
 	return cnt
 }

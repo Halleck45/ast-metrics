@@ -9,14 +9,17 @@ import (
 
 const sampleGo = `package main
 
+// a comment is here
 import (
     "fmt"
 )
 
 type C struct{}
 
+/* another comment is here */
 func (c C) M(x int) int {
-    if x > 0 {
+	// a comment in the function itself
+    if x > 0 { // an inlined comment
         fmt.Println("pos")
     } else {
         fmt.Println("other")

@@ -1,0 +1,3723 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
+  <title>
+    AST Metrics - Overview
+</title>
+
+  <style>
+    .card-graph  {
+        height: 135px;
+    }
+    .sortable th {
+        cursor: pointer;
+    }
+    .progress {
+        height: 10px;
+        background-color: #e4e4e4;
+        border-radius: 20px;
+        overflow: hidden;
+    }
+    
+</style>
+</head>
+<body>
+
+    <div class="grid grid-cols-7">
+        <aside class="self-start sticky top-0 col-span-1 flex flex-col h-screen px-4 py-8 overflow-y-auto bg-white border-r rtl:border-r-0 rtl:border-l ">
+            <a href="https://github.com/Halleck45/ast-metrics">
+                AST Metrics
+            </a>
+        
+            <div class="flex flex-col justify-between flex-1 mt-6">
+                <nav role="menu">
+                    <a 
+                        role="menuitem"
+                        aria-label="Dashboard"
+                        tabindex="0"
+                        href="index.html"
+                        class="flex items-center px-4 py-2 text-gray-700 bg-gray-100 rounded-md">
+                        <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path
+                                d="M19 11H5M19 11C20.1046 11 21 11.8954 21 13V19C21 20.1046 20.1046 21 19 21H5C3.89543 21 3 20.1046 3 19V13C3 11.8954 3.89543 11 5 11M19 11V9C19 7.89543 18.1046 7 17 7M5 11V9C5 7.89543 5.89543 7 7 7M7 7V5C7 3.89543 7.89543 3 9 3H15C16.1046 3 17 3.89543 17 5V7M7 7H17"
+                                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                        </svg>
+        
+                        <span class="mx-4 font-medium">Dashboard</span>
+                    </a>
+        
+                    <a 
+                    role="menuitem"
+                    aria-label="Metrics"
+                    tabindex="0"
+                    href="risks.html"
+                    class="flex items-center px-4 py-2 mt-5 text-gray-600 transition-colors duration-300 transform rounded-md">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M3.375 19.5h17.25m-17.25 0a1.125 1.125 0 0 1-1.125-1.125M3.375 19.5h7.5c.621 0 1.125-.504 1.125-1.125m-9.75 0V5.625m0 12.75v-1.5c0-.621.504-1.125 1.125-1.125m18.375 2.625V5.625m0 12.75c0 .621-.504 1.125-1.125 1.125m1.125-1.125v-1.5c0-.621-.504-1.125-1.125-1.125m0 3.75h-7.5A1.125 1.125 0 0 1 12 18.375m9.75-12.75c0-.621-.504-1.125-1.125-1.125H3.375c-.621 0-1.125.504-1.125 1.125m19.5 0v1.5c0 .621-.504 1.125-1.125 1.125M2.25 5.625v1.5c0 .621.504 1.125 1.125 1.125m0 0h17.25m-17.25 0h7.5c.621 0 1.125.504 1.125 1.125M3.375 8.25c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125m17.25-3.75h-7.5c-.621 0-1.125.504-1.125 1.125m8.625-1.125c.621 0 1.125.504 1.125 1.125v1.5c0 .621-.504 1.125-1.125 1.125m-17.25 0h7.5m-7.5 0c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125M12 10.875v-1.5m0 1.5c0 .621-.504 1.125-1.125 1.125M12 10.875c0 .621.504 1.125 1.125 1.125m-2.25 0c.621 0 1.125.504 1.125 1.125M13.125 12h7.5m-7.5 0c-.621 0-1.125.504-1.125 1.125M20.625 12c.621 0 1.125.504 1.125 1.125v1.5c0 .621-.504 1.125-1.125 1.125m-17.25 0h7.5M12 14.625v-1.5m0 1.5c0 .621-.504 1.125-1.125 1.125M12 14.625c0 .621.504 1.125 1.125 1.125m-2.25 0c.621 0 1.125.504 1.125 1.125m0 1.5v-1.5m0 0c0-.621.504-1.125 1.125-1.125m0 0h7.5" />
+                        </svg>
+                        <span class="mx-4 font-medium">Refactoring candidates</span>
+                    </a>
+
+                    
+
+                    <a 
+                    role="menuitem"
+                    aria-label="Communities"
+                    tabindex="0"
+                    href="communities.html"
+                    class="flex items-center px-4 py-2 mt-5 text-gray-600 transition-colors duration-300 transform rounded-md">
+
+                    <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="#000000"><path d="M480-80q-50 0-85-35t-35-85q0-5 .5-11t1.5-11l-83-47q-16 14-36 21.5t-43 7.5q-50 0-85-35t-35-85q0-50 35-85t85-35q24 0 45 9t38 25l119-60q-3-23 2.5-45t19.5-41l-34-52q-7 2-14.5 3t-15.5 1q-50 0-85-35t-35-85q0-50 35-85t85-35q50 0 85 35t35 85q0 20-6.5 38.5T456-688l35 52q8-2 15-3t15-1q17 0 32 4t29 12l66-54q-4-10-6-20.5t-2-21.5q0-50 35-85t85-35q50 0 85 35t35 85q0 50-35 85t-85 35q-17 0-32-4.5T699-617l-66 55q4 10 6 20.5t2 21.5q0 50-35 85t-85 35q-24 0-45.5-9T437-434l-118 59q2 9 1.5 18t-2.5 18l84 48q16-14 35.5-21.5T480-320q50 0 85 35t35 85q0 50-35 85t-85 35ZM200-320q17 0 28.5-11.5T240-360q0-17-11.5-28.5T200-400q-17 0-28.5 11.5T160-360q0 17 11.5 28.5T200-320Zm160-400q17 0 28.5-11.5T400-760q0-17-11.5-28.5T360-800q-17 0-28.5 11.5T320-760q0 17 11.5 28.5T360-720Zm120 560q17 0 28.5-11.5T520-200q0-17-11.5-28.5T480-240q-17 0-28.5 11.5T440-200q0 17 11.5 28.5T480-160Zm40-320q17 0 28.5-11.5T560-520q0-17-11.5-28.5T520-560q-17 0-28.5 11.5T480-520q0 17 11.5 28.5T520-480Zm240-200q17 0 28.5-11.5T800-720q0-17-11.5-28.5T760-760q-17 0-28.5 11.5T720-720q0 17 11.5 28.5T760-680Z"/></svg>
+                        <span class="mx-4 font-medium">Communities</span>
+                    </a>
+
+                    <a 
+                    tabindex="0"
+                    role="menuitem"
+                    aria-label="Help"
+                    href="https://halleck45.github.io/ast-metrics/"
+                    class="flex items-center px-4 py-2 mt-5 text-gray-600 transition-colors duration-300 transform rounded-md hover:text-gray-700">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M16.712 4.33a9.027 9.027 0 0 1 1.652 1.306c.51.51.944 1.064 1.306 1.652M16.712 4.33l-3.448 4.138m3.448-4.138a9.014 9.014 0 0 0-9.424 0M19.67 7.288l-4.138 3.448m4.138-3.448a9.014 9.014 0 0 1 0 9.424m-4.138-5.976a3.736 3.736 0 0 0-.88-1.388 3.737 3.737 0 0 0-1.388-.88m2.268 2.268a3.765 3.765 0 0 1 0 2.528m-2.268-4.796a3.765 3.765 0 0 0-2.528 0m4.796 4.796c-.181.506-.475.982-.88 1.388a3.736 3.736 0 0 1-1.388.88m2.268-2.268 4.138 3.448m0 0a9.027 9.027 0 0 1-1.306 1.652c-.51.51-1.064.944-1.652 1.306m0 0-3.448-4.138m3.448 4.138a9.014 9.014 0 0 1-9.424 0m5.976-4.138a3.765 3.765 0 0 1-2.528 0m0 0a3.736 3.736 0 0 1-1.388-.88 3.737 3.737 0 0 1-.88-1.388m2.268 2.268L7.288 19.67m0 0a9.024 9.024 0 0 1-1.652-1.306 9.027 9.027 0 0 1-1.306-1.652m0 0 4.138-3.448M4.33 16.712a9.014 9.014 0 0 1 0-9.424m4.138 5.976a3.765 3.765 0 0 1 0-2.528m0 0c.181-.506.475-.982.88-1.388a3.736 3.736 0 0 1 1.388-.88m-2.268 2.268L4.33 7.288m6.406 1.18L7.288 4.33m0 0a9.024 9.024 0 0 0-1.652 1.306A9.025 9.025 0 0 0 4.33 7.288" />
+                        </svg>
+                        <span class="mx-4 font-medium">Help</span>
+                    </a>
+
+                </nav>
+            </div>
+        </aside>
+
+        <main class="col-span-6">
+            <div class="bg-gray-100 py-8 px-8">
+
+                <!-- start: share buttons -->
+                <div id="share-container" class="w-16 absolute right-10 grid grid-cols-2 gap-0">
+                    <div class="rounded px-1 py-1 hover:bg-gray-200">
+                        <a
+                            aria-label="Visit Github repository of AST Metrics"
+                                href="https://github.com/Halleck45/ast-metrics/">
+                            <svg viewBox="0 0 24 24" aria-hidden="true" class="h-6 w-6 fill-slate-900"><path fill-rule="evenodd" clip-rule="evenodd" d="M12 2C6.477 2 2 6.463 2 11.97c0 4.404 2.865 8.14 6.839 9.458.5.092.682-.216.682-.48 0-.236-.008-.864-.013-1.695-2.782.602-3.369-1.337-3.369-1.337-.454-1.151-1.11-1.458-1.11-1.458-.908-.618.069-.606.069-.606 1.003.07 1.531 1.027 1.531 1.027.892 1.524 2.341 1.084 2.91.828.092-.643.35-1.083.636-1.332-2.22-.251-4.555-1.107-4.555-4.927 0-1.088.39-1.979 1.029-2.675-.103-.252-.446-1.266.098-2.638 0 0 .84-.268 2.75 1.022A9.607 9.607 0 0 1 12 6.82c.85.004 1.705.114 2.504.336 1.909-1.29 2.747-1.022 2.747-1.022.546 1.372.202 2.386.1 2.638.64.696 1.028 1.587 1.028 2.675 0 3.83-2.339 4.673-4.566 4.92.359.307.678.915.678 1.846 0 1.332-.012 2.407-.012 2.734 0 .267.18.577.688.48 3.97-1.32 6.833-5.054 6.833-9.458C22 6.463 17.522 2 12 2Z"></path></svg>
+                        </a>
+                    </div>
+                    <div class="rounded px-1 py-1 hover:bg-gray-200">
+                        <a id="share-twitter" class="cursor-pointer" >
+                            <svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" id="Layer_1" width="22px" height="22px" viewBox="0 0 22 22" style="enable-background:new 0 0 24 24;" xml:space="preserve"><path d="M14.095479,10.316482L22.286354,1h-1.940718l-7.115352,8.087682L7.551414,1H1l8.589488,12.231093L1,23h1.940717  l7.509372-8.542861L16.448587,23H23L14.095479,10.316482z M11.436522,13.338465l-0.871624-1.218704l-6.924311-9.68815h2.981339  l5.58978,7.82155l0.867949,1.218704l7.26506,10.166271h-2.981339L11.436522,13.338465z"/></svg>
+                        </a>
+                    </div>
+                </div>
+                <!-- end: share buttons -->
+
+                
+
+    <!-- start: language tabs-->
+    <div class="flex overflow-x-auto overflow-y-hidden border-b border-gray-200 whitespace-nowrap ">
+
+        <a 
+            tabindex="-1"
+            href="index.html"
+            class="inline-flex items-center h-10 px-2 py-2 -mb-px text-center text-blue-600 border-blue-500 bg-transparent border-b-2 sm:px-4 -px-1 focus:outline-none">
+            <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 mx-1 sm:w-6 sm:h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z" />
+            </svg>
+
+            <span class="mx-1 text-sm sm:text-base">
+                All languages <span class="text-xs sm:text-sm">(125 files)</span>
+            </span>
+        </a>
+
+        <!-- start: language tab -->
+            
+            <a 
+                tabindex="0"
+                href="index_Golang.html"
+                class="inline-flex items-center h-10 px-2 py-2 -mb-px text-center bg-transparent border-b-2 text-gray-700   border-transparent sm:px-4 -px-1 hover:border-gray-400">
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 mx-1 sm:w-6 sm:h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z" />
+                </svg>
+    
+                <span class="mx-1 text-sm sm:text-base">
+                    Golang <span class="text-xs sm:text-sm">(125 files)
+                </span>
+            </a>
+            
+        <!-- end: language tab -->
+
+    </div>
+    <!-- end: language tabs-->
+
+    <!-- start alert -->
+    
+    <!-- end alert -->
+
+    <!-- start: line of 4 cards -->
+    <div class="grid grid-cols-4 gap-4 mt-4">
+
+        <!-- start: card -->
+        <div class="max-w-2xl px-8 py-4 bg-white rounded-lg shadow-md ">
+            <div class="mt-2">
+                <div>
+                    <h5 class="leading-none text-3xl font-bold text-gray-900 pb-2">
+                        19.9 K
+                    </h5>
+                    <p class="text-base font-normal text-gray-500 ">
+                        
+                        Lines of code
+                    </p>
+                </div>
+                <div class="mt-4 chart-container" >
+                    <script id="chart_loc_data" type="application/json">
+    [
+        
+                {
+                    "name": "/home/jflepine/Personnel/Projets/ast-metrics/internal/file/finder_test.go",
+                    "loc": 60
+                },
+                {
+                    "name": "/home/jflepine/Personnel/Projets/ast-metrics/internal/command/init_configuration_command.go",
+                    "loc": 28
+                },
+                {
+                    "name": "/home/jflepine/Personnel/Projets/ast-metrics/internal/analyzer/ast_node.go",
+                    "loc": 23
+                },
+                {
+                    "name": "/home/jflepine/Personnel/Projets/ast-metrics/internal/report/reporter.go",
+                    "loc": 12
+                },
+                {
+                    "name": "/home/jflepine/Personnel/Projets/ast-metrics/internal/ui/component_barchart_cyclomatic_by_method_repartition.go",
+                    "loc": 67
+                },
+                {
+                    "name": "/home/jflepine/Personnel/Projets/ast-metrics/internal/analyzer/ruleset/ruleset.go",
+                    "loc": 10
+                },
+                {
+                    "name": "/home/jflepine/Personnel/Projets/ast-metrics/internal/command/ruleset_show_command.go",
+                    "loc": 51
+                },
+                {
+                    "name": "/home/jflepine/Personnel/Projets/ast-metrics/internal/analyzer/activity/bus_factor.go",
+                    "loc": 94
+                },
+                {
+                    "name": "/home/jflepine/Personnel/Projets/ast-metrics/internal/analyzer/ruleset/ruleset_complexity.go",
+                    "loc": 36
+                },
+                {
+                    "name": "/home/jflepine/Personnel/Projets/ast-metrics/internal/analyzer/ruleset/rule_maintainability.go",
+                    "loc": 51
+                },
+                {
+                    "name": "/home/jflepine/Personnel/Projets/ast-metrics/internal/engine/golang/golang_maintainability_test.go",
+                    "loc": 119
+                },
+                {
+                    "name": "/home/jflepine/Personnel/Projets/ast-metrics/internal/analyzer/requirement/requirements_evaluator.go",
+                    "loc": 67
+                },
+                {
+                    "name": "/home/jflepine/Personnel/Projets/ast-metrics/internal/cli/styles_test.go",
+                    "loc": 50
+                },
+                {
+                    "name": "/home/jflepine/Personnel/Projets/ast-metrics/internal/analyzer/ruleset/rule_coupling.go",
+                    "loc": 53
+                },
+                {
+                    "name": "/home/jflepine/Personnel/Projets/ast-metrics/internal/analyzer/comparator_test.go",
+                    "loc": 29
+                },
+                {
+                    "name": "/home/jflepine/Personnel/Projets/ast-metrics/internal/analyzer/ruleset/registry.go",
+                    "loc": 36
+                },
+                {
+                    "name": "/home/jflepine/Personnel/Projets/ast-metrics/internal/analyzer/graph/community_detection.go",
+                    "loc": 130
+                },
+                {
+                    "name": "/home/jflepine/Personnel/Projets/ast-metrics/internal/analyzer/ruleset/rule.go",
+                    "loc": 12
+                },
+                {
+                    "name": "/home/jflepine/Personnel/Projets/ast-metrics/internal/scm/commit.go",
+                    "loc": 9
+                },
+                {
+                    "name": "/home/jflepine/Personnel/Projets/ast-metrics/internal/command/version_command.go",
+                    "loc": 38
+                },
+                {
+                    "name": "/home/jflepine/Personnel/Projets/ast-metrics/internal/engine/php/php_self_static_test.go",
+                    "loc": 60
+                },
+                {
+                    "name": "/home/jflepine/Personnel/Projets/ast-metrics/internal/storage/workdir_test.go",
+                    "loc": 40
+                },
+                {
+                    "name": "/home/jflepine/Personnel/Projets/ast-metrics/internal/analyzer/component/maintainability_index_visitor.go",
+                    "loc": 106
+                },
+                {
+                    "name": "/home/jflepine/Personnel/Projets/ast-metrics/internal/ui/component_barchart.go",
+                    "loc": 47
+                },
+                {
+                    "name": "/home/jflepine/Personnel/Projets/ast-metrics/internal/cli/screen_end.go",
+                    "loc": 93
+                },
+                {
+                    "name": "/home/jflepine/Personnel/Projets/ast-metrics/internal/report/open_metrics_generator.go",
+                    "loc": 148
+                },
+                {
+                    "name": "/home/jflepine/Personnel/Projets/ast-metrics/internal/report/open_metrics_generator_test.go",
+                    "loc": 77
+                },
+                {
+                    "name": "/home/jflepine/Personnel/Projets/ast-metrics/internal/watcher/command_watcher.go",
+                    "loc": 103
+                },
+                {
+                    "name": "/home/jflepine/Personnel/Projets/ast-metrics/internal/cli/screen_home_test.go",
+                    "loc": 50
+                },
+                {
+                    "name": "/home/jflepine/Personnel/Projets/ast-metrics/internal/analyzer/ruleset/ruleset_objectoriented.go",
+                    "loc": 36
+                },
+                {
+                    "name": "/home/jflepine/Personnel/Projets/ast-metrics/internal/command/self_update_command_test.go",
+                    "loc": 108
+                },
+                {
+                    "name": "/home/jflepine/Personnel/Projets/ast-metrics/internal/command/clean_command_test.go",
+                    "loc": 41
+                },
+                {
+                    "name": "/home/jflepine/Personnel/Projets/ast-metrics/internal/command/clean_command.go",
+                    "loc": 23
+                },
+                {
+                    "name": "/home/jflepine/Personnel/Projets/ast-metrics/internal/configuration/configuration.go",
+                    "loc": 158
+                },
+                {
+                    "name": "/home/jflepine/Personnel/Projets/ast-metrics/internal/cli/screen_by_programming_language_test.go",
+                    "loc": 82
+                },
+                {
+                    "name": "/home/jflepine/Personnel/Projets/ast-metrics/internal/engine/golang/golang_runner.go",
+                    "loc": 143
+                },
+                {
+                    "name": "/home/jflepine/Personnel/Projets/ast-metrics/internal/file/finder.go",
+                    "loc": 71
+                },
+                {
+                    "name": "/home/jflepine/Personnel/Projets/ast-metrics/internal/analyzer/ast_analyzer.go",
+                    "loc": 201
+                },
+                {
+                    "name": "/home/jflepine/Personnel/Projets/ast-metrics/internal/command/version_command_test.go",
+                    "loc": 29
+                },
+                {
+                    "name": "/home/jflepine/Personnel/Projets/ast-metrics/internal/cli/screen_table_class.go",
+                    "loc": 69
+                },
+                {
+                    "name": "/home/jflepine/Personnel/Projets/ast-metrics/internal/analyzer/volume/loc_visitor.go",
+                    "loc": 156
+                },
+                {
+                    "name": "/home/jflepine/Personnel/Projets/ast-metrics/internal/analyzer/risk_analyzer.go",
+                    "loc": 162
+                },
+                {
+                    "name": "/home/jflepine/Personnel/Projets/ast-metrics/internal/report/reporters_factory_test.go",
+                    "loc": 58
+                },
+                {
+                    "name": "/home/jflepine/Personnel/Projets/ast-metrics/internal/report/mardown_report_generator_test.go",
+                    "loc": 93
+                },
+                {
+                    "name": "/home/jflepine/Personnel/Projets/ast-metrics/internal/analyzer/requirement/requirements_evaluator_test.go",
+                    "loc": 107
+                },
+                {
+                    "name": "/home/jflepine/Personnel/Projets/ast-metrics/internal/cli/styles.go",
+                    "loc": 136
+                },
+                {
+                    "name": "/home/jflepine/Personnel/Projets/ast-metrics/internal/report/json_report_generator.go",
+                    "loc": 183
+                },
+                {
+                    "name": "/home/jflepine/Personnel/Projets/ast-metrics/internal/analyzer/complexity/cyclomatic_visitor_test.go",
+                    "loc": 189
+                },
+                {
+                    "name": "/home/jflepine/Personnel/Projets/ast-metrics/internal/command/ruleset_list_command.go",
+                    "loc": 34
+                },
+                {
+                    "name": "/home/jflepine/Personnel/Projets/ast-metrics/internal/command/analyze_command_test.go",
+                    "loc": 78
+                },
+                {
+                    "name": "/home/jflepine/Personnel/Projets/ast-metrics/internal/analyzer/complexity/cyclomatic_visitor.go",
+                    "loc": 101
+                },
+                {
+                    "name": "/home/jflepine/Personnel/Projets/ast-metrics/internal/engine/python/python_runner.go",
+                    "loc": 93
+                },
+                {
+                    "name": "/home/jflepine/Personnel/Projets/ast-metrics/internal/engine/treesitter/runner.go",
+                    "loc": 58
+                },
+                {
+                    "name": "/home/jflepine/Personnel/Projets/ast-metrics/internal/analyzer/ast_node_test.go",
+                    "loc": 53
+                },
+                {
+                    "name": "/home/jflepine/Personnel/Projets/ast-metrics/internal/storage/workdir.go",
+                    "loc": 97
+                },
+                {
+                    "name": "/home/jflepine/Personnel/Projets/ast-metrics/internal/cli/screen_summary_test.go",
+                    "loc": 68
+                },
+                {
+                    "name": "/home/jflepine/Personnel/Projets/ast-metrics/internal/cli/screen.go",
+                    "loc": 19
+                },
+                {
+                    "name": "/home/jflepine/Personnel/Projets/ast-metrics/internal/analyzer/volume/halstead_metrics_visitor_test.go",
+                    "loc": 182
+                },
+                {
+                    "name": "/home/jflepine/Personnel/Projets/ast-metrics/internal/analyzer/component/maintainability_index_visitor_test.go",
+                    "loc": 52
+                },
+                {
+                    "name": "/home/jflepine/Personnel/Projets/ast-metrics/internal/cli/screen_by_programming_langage.go",
+                    "loc": 115
+                },
+                {
+                    "name": "/home/jflepine/Personnel/Projets/ast-metrics/internal/analyzer/graph_aggregator.go",
+                    "loc": 131
+                },
+                {
+                    "name": "/home/jflepine/Personnel/Projets/ast-metrics/internal/analyzer/git_analyzer.go",
+                    "loc": 181
+                },
+                {
+                    "name": "/home/jflepine/Personnel/Projets/ast-metrics/internal/analyzer/ruleset/rule_volume_loc.go",
+                    "loc": 53
+                },
+                {
+                    "name": "/home/jflepine/Personnel/Projets/ast-metrics/internal/command/ruleset_add.go",
+                    "loc": 115
+                },
+                {
+                    "name": "/home/jflepine/Personnel/Projets/ast-metrics/internal/ui/component_line_chart_git_activity.go",
+                    "loc": 73
+                },
+                {
+                    "name": "/home/jflepine/Personnel/Projets/ast-metrics/internal/cli/component_table_class_test.go",
+                    "loc": 184
+                },
+                {
+                    "name": "/home/jflepine/Personnel/Projets/ast-metrics/internal/cli/screen_table_class_test.go",
+                    "loc": 47
+                },
+                {
+                    "name": "/home/jflepine/Personnel/Projets/ast-metrics/internal/engine/rust/rust_runner.go",
+                    "loc": 74
+                },
+                {
+                    "name": "/home/jflepine/Personnel/Projets/ast-metrics/internal/report/generated_report.go",
+                    "loc": 16
+                },
+                {
+                    "name": "/home/jflepine/Personnel/Projets/ast-metrics/internal/analyzer/volume/loc_visitor_test.go",
+                    "loc": 102
+                },
+                {
+                    "name": "/home/jflepine/Personnel/Projets/ast-metrics/internal/engine/golang/golang_operators_test.go",
+                    "loc": 62
+                },
+                {
+                    "name": "/home/jflepine/Personnel/Projets/ast-metrics/internal/analyzer/ruleset/ruleset_volume.go",
+                    "loc": 38
+                },
+                {
+                    "name": "/home/jflepine/Personnel/Projets/ast-metrics/internal/engine/ast_dumper.go",
+                    "loc": 100
+                },
+                {
+                    "name": "/home/jflepine/Personnel/Projets/ast-metrics/internal/engine/node_type_ensurer.go",
+                    "loc": 83
+                },
+                {
+                    "name": "/home/jflepine/Personnel/Projets/ast-metrics/internal/engine/cleaner.go",
+                    "loc": 73
+                },
+                {
+                    "name": "/home/jflepine/Personnel/Projets/ast-metrics/internal/analyzer/ast_analyzer_test.go",
+                    "loc": 90
+                },
+                {
+                    "name": "/home/jflepine/Personnel/Projets/ast-metrics/internal/configuration/configuration_loader.go",
+                    "loc": 127
+                },
+                {
+                    "name": "/home/jflepine/Personnel/Projets/ast-metrics/internal/report/reporters_factory.go",
+                    "loc": 30
+                },
+                {
+                    "name": "/home/jflepine/Personnel/Projets/ast-metrics/internal/report/json_report_generator_test.go",
+                    "loc": 107
+                },
+                {
+                    "name": "/home/jflepine/Personnel/Projets/ast-metrics/internal/report/markdown_report_generator.go",
+                    "loc": 177
+                },
+                {
+                    "name": "/home/jflepine/Personnel/Projets/ast-metrics/internal/configuration/configuration_test.go",
+                    "loc": 46
+                },
+                {
+                    "name": "/home/jflepine/Personnel/Projets/ast-metrics/internal/cli/component_search.go",
+                    "loc": 120
+                },
+                {
+                    "name": "/home/jflepine/Personnel/Projets/ast-metrics/internal/analyzer/visitor.go",
+                    "loc": 66
+                },
+                {
+                    "name": "/home/jflepine/Personnel/Projets/ast-metrics/internal/engine/engine.go",
+                    "loc": 35
+                },
+                {
+                    "name": "/home/jflepine/Personnel/Projets/ast-metrics/internal/scm/git_repository.go",
+                    "loc": 170
+                },
+                {
+                    "name": "/home/jflepine/Personnel/Projets/ast-metrics/internal/command/analyze_command.go",
+                    "loc": 318
+                },
+                {
+                    "name": "/home/jflepine/Personnel/Projets/ast-metrics/internal/command/self_update_command.go",
+                    "loc": 102
+                },
+                {
+                    "name": "/home/jflepine/Personnel/Projets/ast-metrics/internal/cli/component.go",
+                    "loc": 13
+                },
+                {
+                    "name": "/home/jflepine/Personnel/Projets/ast-metrics/internal/engine/util_test.go",
+                    "loc": 29
+                },
+                {
+                    "name": "/home/jflepine/Personnel/Projets/ast-metrics/internal/storage/file_hash.go",
+                    "loc": 51
+                },
+                {
+                    "name": "/home/jflepine/Personnel/Projets/ast-metrics/internal/ui/ui_component.go",
+                    "loc": 7
+                },
+                {
+                    "name": "/home/jflepine/Personnel/Projets/ast-metrics/internal/analyzer/ruleset/ruleset_architecture.go",
+                    "loc": 36
+                },
+                {
+                    "name": "/home/jflepine/Personnel/Projets/ast-metrics/internal/cli/screen_risks.go",
+                    "loc": 70
+                },
+                {
+                    "name": "/home/jflepine/Personnel/Projets/ast-metrics/internal/engine/php/php_runner_test.go",
+                    "loc": 657
+                },
+                {
+                    "name": "/home/jflepine/Personnel/Projets/ast-metrics/internal/engine/php/php_runner.go",
+                    "loc": 126
+                },
+                {
+                    "name": "/home/jflepine/Personnel/Projets/ast-metrics/internal/cli/screen_home.go",
+                    "loc": 251
+                },
+                {
+                    "name": "/home/jflepine/Personnel/Projets/ast-metrics/internal/report/html_report_generator.go",
+                    "loc": 455
+                },
+                {
+                    "name": "/home/jflepine/Personnel/Projets/ast-metrics/internal/engine/treesitter/lang_adapter.go",
+                    "loc": 47
+                },
+                {
+                    "name": "/home/jflepine/Personnel/Projets/ast-metrics/internal/cli/component_statistics_overview.go",
+                    "loc": 69
+                },
+                {
+                    "name": "/home/jflepine/Personnel/Projets/ast-metrics/internal/ui/component_barchart_maintainability_index_repartition.go",
+                    "loc": 79
+                },
+                {
+                    "name": "/home/jflepine/Personnel/Projets/ast-metrics/internal/analyzer/activity/bus_factor_test.go",
+                    "loc": 104
+                },
+                {
+                    "name": "/home/jflepine/Personnel/Projets/ast-metrics/internal/engine/golang/golang_runner_test.go",
+                    "loc": 165
+                },
+                {
+                    "name": "/home/jflepine/Personnel/Projets/ast-metrics/internal/scm/git_repository_test.go",
+                    "loc": 54
+                },
+                {
+                    "name": "/home/jflepine/Personnel/Projets/ast-metrics/internal/cli/screen_file_selection.go",
+                    "loc": 101
+                },
+                {
+                    "name": "/home/jflepine/Personnel/Projets/ast-metrics/internal/engine/python/python_runner_test.go",
+                    "loc": 192
+                },
+                {
+                    "name": "/home/jflepine/Personnel/Projets/ast-metrics/internal/ui/component_barchart_loc_by_method_repartition.go",
+                    "loc": 65
+                },
+                {
+                    "name": "/home/jflepine/Personnel/Projets/ast-metrics/internal/report/types.go",
+                    "loc": 109
+                },
+                {
+                    "name": "/home/jflepine/Personnel/Projets/ast-metrics/internal/cli/screen_summary.go",
+                    "loc": 120
+                },
+                {
+                    "name": "/home/jflepine/Personnel/Projets/ast-metrics/internal/configuration/configuration_loader_test.go",
+                    "loc": 105
+                },
+                {
+                    "name": "/home/jflepine/Personnel/Projets/ast-metrics/internal/cli/screen_html_report.go",
+                    "loc": 96
+                },
+                {
+                    "name": "/home/jflepine/Personnel/Projets/ast-metrics/internal/analyzer/volume/halstead_metrics_visitor.go",
+                    "loc": 290
+                },
+                {
+                    "name": "/home/jflepine/Personnel/Projets/ast-metrics/internal/cli/component_class_table.go",
+                    "loc": 296
+                },
+                {
+                    "name": "/home/jflepine/Personnel/Projets/ast-metrics/internal/cli/component_file_table.go",
+                    "loc": 245
+                },
+                {
+                    "name": "/home/jflepine/Personnel/Projets/ast-metrics/internal/analyzer/comparator.go",
+                    "loc": 314
+                },
+                {
+                    "name": "/home/jflepine/Personnel/Projets/ast-metrics/internal/analyzer/ruleset/rule_cyclomatic.go",
+                    "loc": 52
+                },
+                {
+                    "name": "/home/jflepine/Personnel/Projets/ast-metrics/internal/analyzer/aggregator_test.go",
+                    "loc": 449
+                },
+                {
+                    "name": "/home/jflepine/Personnel/Projets/ast-metrics/internal/engine/util.go",
+                    "loc": 595
+                },
+                {
+                    "name": "/home/jflepine/Personnel/Projets/ast-metrics/internal/engine/treesitter/visitor.go",
+                    "loc": 376
+                },
+                {
+                    "name": "/home/jflepine/Personnel/Projets/ast-metrics/internal/analyzer/community_aggregator.go",
+                    "loc": 813
+                },
+                {
+                    "name": "/home/jflepine/Personnel/Projets/ast-metrics/internal/engine/rust/tree_sitter_rust_adapter.go",
+                    "loc": 327
+                },
+                {
+                    "name": "/home/jflepine/Personnel/Projets/ast-metrics/internal/engine/golang/tree_sitter_go_adapter.go",
+                    "loc": 430
+                },
+                {
+                    "name": "/home/jflepine/Personnel/Projets/ast-metrics/internal/engine/python/tree_sitter_python_adapter.go",
+                    "loc": 376
+                },
+                {
+                    "name": "/home/jflepine/Personnel/Projets/ast-metrics/internal/engine/php/tree_sitter_php_adapter.go",
+                    "loc": 674
+                },
+                {
+                    "name": "/home/jflepine/Personnel/Projets/ast-metrics/internal/analyzer/aggregator.go",
+                    "loc": 1040
+                },
+                {
+                    "name": "/home/jflepine/Personnel/Projets/ast-metrics/internal/nodetype/NodeType.pb.go",
+                    "loc": 3239
+                },]
+</script>
+
+<div id="chart_bar_loc" style="overflow:hidden"></div>
+<script type="text/javascript">
+
+    // avoid blinking
+    var element = document.getElementById("chart_bar_loc");
+    if (element){
+        var elementWidth = document.getElementById("chart_bar_loc").clientWidth;
+        element.style.height = elementWidth + "px";
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+        let json = document.getElementById("chart_loc_data").textContent;
+        const domElement = document.getElementById("chart_bar_loc");
+        json = json.replace(/},]/g, '}]'); // remove },]
+        let data = JSON.parse(json);
+
+        // find parent .chart-container element
+        const parent = domElement.closest(".chart-container");
+
+        const width = parent.clientWidth;
+        const padding = 0;
+        const height = width;
+        const innerRadius = 50;
+        const outerRadius = Math.min(width, height) * 0.40;
+
+        domElement.innerHTML = "";
+        domElement.style.width = (width + padding) + "px";
+        domElement.style.height = (height + padding) + "px";
+
+        // Create series from the data. Not stacked
+        const series = d3.stack()
+            .keys(["loc"])
+            .offset(d3.stackOffsetNone)
+            (data);
+
+        const arc = d3.arc()
+            .innerRadius(d => y(d[0]))
+            .outerRadius(d => y(d[1]))
+            .startAngle(d => x(d.data.name))
+            .endAngle(d => x(d.data.name) + x.bandwidth())
+            .padAngle(0.01)
+            .padRadius(innerRadius);
+
+        // Place bars all around a circle
+        const numBars = data.length;
+        const desiredBandwidth = numBars / (2 * Math.PI) ;
+        const x = d3.scaleBand()
+            .domain(data.map(d => d.name))
+            .range([0, desiredBandwidth])
+            .align(0);
+
+        // A radial y-scale maintains area proportionality of radial bars
+        const y = d3.scaleRadial()
+            .domain([0, d3.max(series, d => d3.max(d, d => d[1]))])
+            .range([innerRadius, outerRadius]);
+
+
+        const color = d3.scaleOrdinal()
+            .domain(series.map(d => d.key))
+            .range(d3.schemeCategory10);
+
+        // use only #1A56DB
+        color.range(["#1A56DB"]);
+
+        // A function to format the value in the tooltip
+        const formatValue = x => isNaN(x) ? "N/A" : x.toLocaleString("en")
+
+        const svg = d3.create("svg")
+            .attr("width", width )
+            .attr("height", height)
+            .attr("viewBox", [-(width + padding)/ 2, -height * 0.40, width, height])
+            .attr("style", "width: 100%; height: auto; font: 10px sans-serif;");
+
+        // A rect for each element in the series
+        svg.append("g")
+            .selectAll("g")
+            .data(series)
+            .join("g")
+            .attr("fill", d => color(d.key))
+            // animate on hover
+            .selectAll("path")
+            .data(d => d)
+            .join("path")
+            .attr("d", arc)
+            .append("title")
+            .text(function(d) {
+                return `${d.data.name}\nLines of code: ${formatValue(d.data.loc)}`;
+            });
+
+        // animate on hover
+        svg.selectAll("path")
+            .on("mouseover", function(e, d) {
+
+                
+
+                d3.select(this)
+                    .transition()
+                    .duration(100)
+                    .attr("fill", "#0ea5e9");
+            })
+            .on("mouseout", function() {
+
+                
+
+                d3.select(this)
+                    .transition()
+                    .duration(100)
+                    .attr("fill", color);
+            });
+
+
+        // x axis
+        // only if we have less than 500 elements
+        if (data.length < 300) {
+            svg.append("g")
+                .attr("text-anchor", "middle")
+                // width and height
+                .attr("width", width)
+                .attr("height", height)
+                .selectAll()
+                .data(x.domain())
+                .join("g")
+                .attr("transform", d => `
+                rotate(${((x(d) + x.bandwidth() / 2) * 180 / Math.PI - 90)})
+                translate(${innerRadius},0)
+              `)
+                .call(g => g.append("line")
+                    .attr("x2", -5)
+                    .attr("stroke", "#000"))
+        }
+
+        // y axis
+        svg.append("g")
+            .attr("text-anchor", "end")
+            .call(g => g.selectAll("g")
+                .data(y.ticks(10).slice(1))
+                .join("g")
+                .attr("fill", "none")
+                .call(g => g.append("circle")
+                    .attr("stroke", "#CCC")
+                    .attr("stroke-opacity", 0.5)
+                    .attr("r", y))
+                .call(g => g.append("text")
+                    .attr("x", -6)
+                    .attr("y", d => -y(d))
+                    .attr("dy", "0.35em")
+                    .attr("stroke", "#fff")
+                    .attr("stroke-width", 5)
+                    .text(y.tickFormat(10, "s"))
+                    .clone(true)
+                    .attr("fill", "#000")
+                    .attr("stroke", "none")));
+
+        // color legend
+        svg.append("g")
+            .selectAll()
+            .data(color.domain())
+            .join("g")
+            .attr("transform", (d, i, nodes) => `translate(-40,${(nodes.length / 2 - i - 1) * 20})`)
+            .call(g => g.append("rect")
+                .attr("width", 18)
+                .attr("height", 18)
+                .attr("fill", color))
+            .call(g => g.append("text")
+                .attr("x", 24)
+                .attr("y", 9)
+                .attr("dy", "0.35em")
+                // .text(d => d));
+                .text("Lines of code"));
+
+        // Click to zoom
+        let currentScale = 1;
+        const zoom = d3.zoom()
+            .scaleExtent([1, 8], [width, height])
+            .on("zoom", function(event) {
+                svg.attr("transform", event.transform);
+            });
+        svg.on("mousedown", function(event) {
+
+            // detect right click
+            if (event.button === 2) {
+                currentScale--;
+                if (currentScale < 1) {
+                    currentScale = 1;
+                }
+            } else {
+                currentScale++;
+            }
+
+            // detect position of the mouse
+            const [x, y] = d3.pointer(event);
+            svg.transition()
+                .duration(750)
+                .call(zoom.scaleTo, currentScale, [x, y]);
+        });
+
+        // zoom out on scroll
+        svg.on("wheel", function(event) {
+
+            // only if currentScale is greater than 1 and if we are zooming out
+            if (currentScale === 1 && event.deltaY < 0) {
+                return;
+            }
+
+            event.preventDefault();
+            const [x, y] = d3.pointer(event);
+            currentScale--;
+            if (currentScale < 1) {
+                currentScale = 1;
+            }
+            svg.transition()
+                .duration(750)
+                .call(zoom.scaleTo, currentScale, [x, y]);
+        });
+
+        // add magnifier cursor
+        svg.style("cursor", "zoom-in");
+
+        const n = svg.node();
+        domElement.appendChild(n);
+    });
+
+</script>
+                </div>
+                <p class="border-t border-gray-200 mt-2 italic text-sm text-gray-600 pt-4 text-justify">
+                    The total number of lines of code.
+                </p>
+            </div>
+        </div>
+        <!-- end: card -->
+
+        <!-- start: card -->
+        <div class="max-w-2xl px-8 py-4 bg-white rounded-lg shadow-md ">
+            <div class="mt-2">
+                <div>
+                    <h5 class="leading-none text-3xl font-bold text-gray-900 pb-2">
+                        2.23
+                    </h5>
+                    <p class="text-base font-normal text-gray-500 ">
+                        
+                        Cycl. complexity per method
+                    </p>
+                </div>
+                <div class="card-graph">
+                    
+	<div id="chart-loc"></div>
+	<script type="text/javascript">
+var options = {
+  colors: ["#1A56DB"],
+  series: [
+    {
+      name: "Number of files",
+      color: "#1A56DB",
+      data: [{ x: "0-5", y: 1432.000000},{ x: "5-20", y: 148.000000},{ x: "> 20", y: 32.000000},],
+    },
+  ],
+  chart: {
+    type: "bar",
+    height: "120px",
+    fontFamily: "Inter, sans-serif",
+    toolbar: {
+      show: false,
+    },
+  },
+  plotOptions: {
+    bar: {
+      horizontal: false,
+      columnWidth: "70%",
+      borderRadiusApplication: "end",
+      borderRadius: 8,
+    },
+  },
+  tooltip: {
+    shared: true,
+    intersect: false,
+    style: {
+      fontFamily: "Inter, sans-serif",
+    },
+  },
+  states: {
+    hover: {
+      filter: {
+        type: "darken",
+        value: 1,
+      },
+    },
+  },
+  stroke: {
+    show: true,
+    width: 0,
+    colors: ["transparent"],
+  },
+  grid: {
+    show: false,
+    strokeDashArray: 4,
+    padding: {
+      left: 2,
+      right: 2,
+      top: -14
+    },
+  },
+  dataLabels: {
+    enabled: false,
+  },
+  legend: {
+    show: false,
+  },
+  xaxis: {
+    floating: false,
+    labels: {
+      show: true,
+      style: {
+        fontFamily: "Inter, sans-serif",
+        cssClass: 'text-xs font-normal fill-gray-500 dark:fill-gray-400'
+      }
+    },
+    axisBorder: {
+      show: false,
+    },
+    axisTicks: {
+      show: false,
+    },
+  },
+  yaxis: {
+    show: false,
+  },
+  fill: {
+    opacity: 1,
+  },
+}
+
+
+if (document.getElementById("chart-loc") && typeof ApexCharts !== 'undefined') {
+  const chart = new ApexCharts(document.getElementById("chart-loc"), options);
+  chart.render();
+}
+</script>
+                </div>
+                <p class="border-t border-gray-200 mt-2 italic text-sm text-gray-600 pt-4 text-justify">
+                    The average complexity of the code, measured by the number of possible execution paths. Lower is better.
+                </p>
+            </div>
+        </div>
+        <!-- end: card -->
+
+
+        <!-- start: card -->
+        <div class="max-w-2xl px-8 py-4 bg-white rounded-lg shadow-md ">
+            <div class="mt-2">
+                <div>
+                    <h5 class="leading-none text-3xl font-bold text-gray-900 pb-2">
+                        
+                        
+                        <span class="text-red-900 bg-red-400 rounded px-3 py-1">52</span>
+                    </h5>
+                    <p class="text-base font-normal text-gray-500 ">
+                        
+                        Maintainability index
+                    </p>
+                </div>
+                <div class="card-graph">
+                    
+	<div id="chart-mi"></div>
+	<script type="text/javascript">
+var options = {
+  colors: ["#1A56DB"],
+  series: [
+    {
+      name: "Number of files",
+      color: "#1A56DB",
+      data: [{ x: "🔴 < 64", y: 341.000000},{ x: "🟡 < 85", y: 9.000000},{ x: "🟢 > 85", y: 0.000000},],
+    },
+  ],
+  chart: {
+    type: "bar",
+    height: "120px",
+    fontFamily: "Inter, sans-serif",
+    toolbar: {
+      show: false,
+    },
+  },
+  plotOptions: {
+    bar: {
+      horizontal: false,
+      columnWidth: "70%",
+      borderRadiusApplication: "end",
+      borderRadius: 8,
+    },
+  },
+  tooltip: {
+    shared: true,
+    intersect: false,
+    style: {
+      fontFamily: "Inter, sans-serif",
+    },
+  },
+  states: {
+    hover: {
+      filter: {
+        type: "darken",
+        value: 1,
+      },
+    },
+  },
+  stroke: {
+    show: true,
+    width: 0,
+    colors: ["transparent"],
+  },
+  grid: {
+    show: false,
+    strokeDashArray: 4,
+    padding: {
+      left: 2,
+      right: 2,
+      top: -14
+    },
+  },
+  dataLabels: {
+    enabled: false,
+  },
+  legend: {
+    show: false,
+  },
+  xaxis: {
+    floating: false,
+    labels: {
+      show: true,
+      style: {
+        fontFamily: "Inter, sans-serif",
+        cssClass: 'text-xs font-normal fill-gray-500 dark:fill-gray-400'
+      }
+    },
+    axisBorder: {
+      show: false,
+    },
+    axisTicks: {
+      show: false,
+    },
+  },
+  yaxis: {
+    show: false,
+  },
+  fill: {
+    opacity: 1,
+  },
+}
+
+
+if (document.getElementById("chart-mi") && typeof ApexCharts !== 'undefined') {
+  const chart = new ApexCharts(document.getElementById("chart-mi"), options);
+  chart.render();
+}
+</script>
+                </div>
+                <p class="border-t border-gray-200 mt-2 italic text-sm text-gray-600 pt-4 text-justify">
+                    Based on the volume, the complexity of operators and the complexity of the code.
+                    Ideally, should be higher than 85.
+                </p>
+            </div>
+        </div>
+        <!-- end: card -->
+
+        <!-- start: card -->
+        <div class="max-w-2xl px-8 py-4 bg-white rounded-lg shadow-md ">
+            <div class="mt-2">
+                <div>
+                    <h5 class="leading-none text-3xl font-bold text-gray-900 pb-2">
+                        19
+                    </h5>
+                    <p class="text-base font-normal text-gray-500 ">
+                        
+                        Average lines of code per method
+                    </p>
+                </div>
+                <div class="card-graph">
+                    
+	<div id="chart-loc-by-method"></div>
+	<script type="text/javascript">
+var options = {
+  colors: ["#1A56DB"],
+  series: [
+    {
+      name: "Number of files",
+      color: "#1A56DB",
+      data: [{ x: "< 15", y: 1172.000000},{ x: "< 35", y: 212.000000},{ x: "< 50", y: 82.000000},{ x: "> 50", y: 146.000000},],
+    },
+  ],
+  chart: {
+    type: "bar",
+    height: "120px",
+    fontFamily: "Inter, sans-serif",
+    toolbar: {
+      show: false,
+    },
+  },
+  plotOptions: {
+    bar: {
+      horizontal: false,
+      columnWidth: "70%",
+      borderRadiusApplication: "end",
+      borderRadius: 8,
+    },
+  },
+  tooltip: {
+    shared: true,
+    intersect: false,
+    style: {
+      fontFamily: "Inter, sans-serif",
+    },
+  },
+  states: {
+    hover: {
+      filter: {
+        type: "darken",
+        value: 1,
+      },
+    },
+  },
+  stroke: {
+    show: true,
+    width: 0,
+    colors: ["transparent"],
+  },
+  grid: {
+    show: false,
+    strokeDashArray: 4,
+    padding: {
+      left: 2,
+      right: 2,
+      top: -14
+    },
+  },
+  dataLabels: {
+    enabled: false,
+  },
+  legend: {
+    show: false,
+  },
+  xaxis: {
+    floating: false,
+    labels: {
+      show: true,
+      style: {
+        fontFamily: "Inter, sans-serif",
+        cssClass: 'text-xs font-normal fill-gray-500 dark:fill-gray-400'
+      }
+    },
+    axisBorder: {
+      show: false,
+    },
+    axisTicks: {
+      show: false,
+    },
+  },
+  yaxis: {
+    show: false,
+  },
+  fill: {
+    opacity: 1,
+  },
+}
+
+
+if (document.getElementById("chart-loc-by-method") && typeof ApexCharts !== 'undefined') {
+  const chart = new ApexCharts(document.getElementById("chart-loc-by-method"), options);
+  chart.render();
+}
+</script>
+                </div>
+                <p class="border-t border-gray-200 mt-2 italic text-sm text-gray-600 pt-4 text-justify">
+                    Long methods are hard to maintain and understand. Ideally, should be lower than 20.
+                </p>
+            </div>
+        </div>
+        <!-- end: card -->
+    </div>
+    <!-- end: line of 4 cards -->
+
+     <!-- start: line -->
+    <div class="grid grid-cols-4 gap-4 mt-4">
+
+         <!-- start: card -->
+         <div class="max-w-2xl px-8 py-4 bg-white rounded-lg shadow-md ">
+            <div class="mt-2">
+                
+                    <div>
+                        <h5 class="leading-none text-3xl font-bold text-gray-900 pb-2">
+                            8
+                        </h5>
+                        <p class="text-base font-normal text-gray-500 ">
+                            Commits on analyzed code
+                        </p>
+                    </div>
+                    <div class="card-graph">
+                        
+	<div id="chart-git"></div>
+	<script type="text/javascript">
+	var options = {
+		chart: {
+		  height: "100%",
+		  maxWidth: "100%",
+		  type: "area",
+		  fontFamily: "Inter, sans-serif",
+		  dropShadow: {
+			enabled: false,
+		  },
+		  toolbar: {
+			show: false,
+		  },
+		},
+		tooltip: {
+		  enabled: true,
+		  x: {
+			show: false,
+		  },
+		},
+		fill: {
+		  type: "gradient",
+		  gradient: {
+			opacityFrom: 0.55,
+			opacityTo: 0,
+			shade: "#1C64F2",
+			gradientToColors: ["#1C64F2"],
+		  },
+		},
+		dataLabels: {
+		  enabled: false,
+		},
+		stroke: {
+		  width: 6,
+		},
+		grid: {
+		  show: false,
+		  strokeDashArray: 4,
+		  padding: {
+			left: 2,
+			right: 2,
+			top: 0
+		  },
+		},
+		series: [
+		  {
+			name: "Number of commits",
+			data: [0.000000,0.000000,0.000000,0.000000,0.000000,0.000000,0.000000,0.000000,0.000000,0.000000,0.000000,152.000000,],
+			color: "#1A56DB",
+		  },
+		],
+		xaxis: {
+		  categories: ["Oct","Nov","Dec","Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep",],
+		  labels: {
+			show: false,
+		  },
+		  axisBorder: {
+			show: false,
+		  },
+		  axisTicks: {
+			show: false,
+		  },
+		},
+		yaxis: {
+		  show: false,
+		},
+	  }
+
+
+if (document.getElementById("chart-git") && typeof ApexCharts !== 'undefined') {
+  const chart = new ApexCharts(document.getElementById("chart-git"), options);
+  chart.render();
+}
+</script>
+                    </div>
+                    <table class="sortable w-full mt-2 min-w-full divide-y divide-gray-200 ">
+                        <thead class="uppercase bg-gray-50 ">
+                            <tr>
+                                <th scope="col" class="py-2 px-2 text-sm font-normal text-left rtl:text-right text-gray-500 "></th>
+                                <th scope="col" class="py-2 px-2 text-sm font-normal text-left rtl:text-right text-gray-500 ">
+                                    <acronym title="Total commits in the analyzed period">Total</acronym>
+                                </th>
+                                <th scope="col" class="py-2 px-2 text-sm font-normal text-left rtl:text-right text-gray-500 ">
+                                    <acronym title="Commits on analyzed files">
+                                        Impacting
+                                    </acronym>
+                                </th>
+                                <th scope="col" class="py-2 px-2 text-sm font-normal text-left rtl:text-right text-gray-500 ">
+                                    <acronym title="Commits on files ignored by the analysis, or merge commits">
+                                        Ignored
+                                    </acronym>
+                                </th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            
+                                <tr class="text-sm odd:bg-white odd:">
+                                    <td class="px-2 py-1 text-sm font-medium whitespace-nowrap">
+                                        <acronym
+                                        class="cursor-help"
+                                            title="/home/jflepine/Personnel/Projets/ast-metrics">
+                                            <svg 
+                                                title="/home/jflepine/Personnel/Projets/ast-metrics"
+                                                xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6">
+                                                <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 12.75V12A2.25 2.25 0 0 1 4.5 9.75h15A2.25 2.25 0 0 1 21.75 12v.75m-8.69-6.44-2.12-2.12a1.5 1.5 0 0 0-1.061-.44H4.5A2.25 2.25 0 0 0 2.25 6v12a2.25 2.25 0 0 0 2.25 2.25h15A2.25 2.25 0 0 0 21.75 18V9a2.25 2.25 0 0 0-2.25-2.25h-5.379a1.5 1.5 0 0 1-1.06-.44Z" />
+                                          </svg>
+                                        </acronym>
+                                    </td>
+                                    <td class="px-2 py-1 text-sm whitespace-nowrap">
+                                        80
+                                    </td>
+                                    <td class="px-2 py-1 text-sm f whitespace-nowrap">
+                                        8
+                                    </td>
+                                    <td class="px-2 py-1 text-sm  whitespace-nowrap">
+                                        72
+                                    </td>
+                                </tr>
+                            
+                        </tbody>
+                    </table>
+                    <p class="border-t border-gray-200 mt-2 italic text-sm text-gray-600 pt-4 text-justify">
+                        The number of commits over the last 12 months. Only commits on current programming language are counted.
+                    </p>
+                
+            </div>
+        </div>
+        <!-- end: card -->
+
+
+         <!-- start: card -->
+         <div class="px-8 py-4 bg-white rounded-lg shadow-md ">
+            <div class="mt-2">
+                <div>
+                    <h5 class="leading-none text-3xl font-bold text-gray-900 pb-2">
+                        1
+                    </h5>
+                    <p class="text-base font-normal text-gray-500 ">
+                        Bus factor
+                    </p>
+                </div>
+                <div class="card-graph h-48">
+                    <table class="w-full mt-2 divide-y divide-gray-200 ">
+                        <thead class="uppercase bg-gray-50 ">
+                            <tr>
+                                <th scope="col" class="py-2 px-4 text-sm font-normal text-left rtl:text-right text-gray-500 ">
+                                    Top committers
+                                </th>
+                                    Top committers
+                                </td>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            
+                                <tr class="odd:bg-white odd:">
+                                    <td class="px-4 py-1 text-xs whitespace-nowrap">
+                                        <acronym title="152 commits">
+                                            Jean-François Lépine
+                                        </acronym>
+                                    </td>
+                                </tr>
+                            
+                    </table>
+                </div>
+                <p class="border-t border-gray-200 mt-2 italic text-sm text-gray-600 pt-4 text-justify">
+                    The bus factor is the number of developers that would need to be incapacitated before a project would stall due to insufficient knowledge or skills.
+                    Ideally, should be higher than 3.
+                </p>
+            </div>
+        </div>
+        <!-- end: card -->
+
+
+        <!-- start: card about files with low maintenability -->
+        <div class="px-8 py-4 bg-white rounded-lg shadow-md col-span-2">
+            <div class="mt-2">
+                <a href="risks.html" class="text-xl font-bold text-gray-700 role="link">
+                    Top candidates for refactoring <span class="text-sm font-normal hover:underline text-blue-600 ">(more)</span>
+                </a>
+                <p class="mt-2 text-sm text-gray-600 ">
+                    These components have a low maintainability index and have been recently modified. They are good candidates for refactoring.
+                </p>
+            </div>
+            <div>
+                <table class="sortable w-full mt-2 min-w-full divide-y divide-gray-200 ">
+    <thead class="uppercase bg-gray-50 ">
+        <tr>
+            
+            <th scope="col" class="py-2 px-4 text-sm font-normal text-left rtl:text-right text-gray-500 ">Component</th>
+            <th scope="col" class="py-2 px-4 text-sm font-normal text-left rtl:text-right text-gray-500 ">
+                <acronym title="Risk score is calculated as the average risk of the component.">
+                    Risk
+                </acronym>
+            </th>
+            <th scope="col" class="py-2 px-4 text-sm font-normal text-left rtl:text-right text-gray-500 ">
+                <acronym title="Maintainability index is based on the complexity of operators, operands, and cyclomatic complexity.">
+                    Maint.
+                </acronym>
+            </th>
+            <th scope="col" class="py-2 px-4 text-sm font-normal text-left rtl:text-right text-gray-500 ">
+                <acronym title="Number of recents commits (12 month)">
+                    Commits
+                </acronym>
+            </th>
+            
+        </tr>
+    </thead>
+    <tbody>
+        
+        
+
+        
+
+
+            
+                
+                
+            
+            
+            
+        
+
+
+            
+                
+                
+            
+            
+            
+            <tr class="odd:bg-white odd:">
+                
+                <td class="px-4 py-1 text-xs font-medium whitespace-nowrap">
+                    <div class="truncate w-72">
+                        <acronym title="init_configuration_command\InitConfigurationCommand" class="text-xs font-bold text-gray-600 ">
+                            init_configuration_command\InitConfigurationCommand
+                        </acronym>
+                    </div>
+                </td>
+                <td  class="px-4 py-1 text-xs font-medium whitespace-nowrap text-center"  width="60">
+                    <span class="text-sm font-normal text-gray-600 ">
+                        0.00
+                    </span>
+                </td>
+                <td class="px-4 py-1 text-xs font-medium whitespace-nowrap text-center" width="60">
+                    <span class="text-xs font-normal text-gray-600 ">
+                        0
+                    </span>
+                </td>
+                <td  class="px-4 py-1 text-xs font-medium whitespace-nowrap text-center"  width="60">
+                    <span class="text-xs font-normal text-gray-600 ">
+                        1
+                    </span>
+                </td>
+                
+            </tr>
+            
+        
+
+
+            
+                
+                
+            
+            
+            
+            <tr class="odd:bg-white odd:">
+                
+                <td class="px-4 py-1 text-xs font-medium whitespace-nowrap">
+                    <div class="truncate w-72">
+                        <acronym title="ast_node\ASTNode" class="text-xs font-bold text-gray-600 ">
+                            ast_node\ASTNode
+                        </acronym>
+                    </div>
+                </td>
+                <td  class="px-4 py-1 text-xs font-medium whitespace-nowrap text-center"  width="60">
+                    <span class="text-sm font-normal text-gray-600 ">
+                        0.00
+                    </span>
+                </td>
+                <td class="px-4 py-1 text-xs font-medium whitespace-nowrap text-center" width="60">
+                    <span class="text-xs font-normal text-gray-600 ">
+                        0
+                    </span>
+                </td>
+                <td  class="px-4 py-1 text-xs font-medium whitespace-nowrap text-center"  width="60">
+                    <span class="text-xs font-normal text-gray-600 ">
+                        1
+                    </span>
+                </td>
+                
+            </tr>
+            
+        
+
+
+            
+                
+                
+            
+            
+            
+        
+
+
+            
+                
+                
+            
+            
+            
+            <tr class="odd:bg-white odd:">
+                
+                <td class="px-4 py-1 text-xs font-medium whitespace-nowrap">
+                    <div class="truncate w-72">
+                        <acronym title="component_barchart_cyclomatic_by_method_repartition\ComponentBarchartCyclomaticByMethodRepartition" class="text-xs font-bold text-gray-600 ">
+                            component_barchart_cyclomatic_by_method_repartition\ComponentBarchartCyclomaticByMethodRepartition
+                        </acronym>
+                    </div>
+                </td>
+                <td  class="px-4 py-1 text-xs font-medium whitespace-nowrap text-center"  width="60">
+                    <span class="text-sm font-normal text-gray-600 ">
+                        0.00
+                    </span>
+                </td>
+                <td class="px-4 py-1 text-xs font-medium whitespace-nowrap text-center" width="60">
+                    <span class="text-xs font-normal text-gray-600 ">
+                        0
+                    </span>
+                </td>
+                <td  class="px-4 py-1 text-xs font-medium whitespace-nowrap text-center"  width="60">
+                    <span class="text-xs font-normal text-gray-600 ">
+                        1
+                    </span>
+                </td>
+                
+            </tr>
+            
+        
+
+
+            
+                
+                
+            
+            
+            
+        
+
+
+            
+                
+                
+            
+            
+            
+            <tr class="odd:bg-white odd:">
+                
+                <td class="px-4 py-1 text-xs font-medium whitespace-nowrap">
+                    <div class="truncate w-72">
+                        <acronym title="ruleset_show_command\RulesetShowCommand" class="text-xs font-bold text-gray-600 ">
+                            ruleset_show_command\RulesetShowCommand
+                        </acronym>
+                    </div>
+                </td>
+                <td  class="px-4 py-1 text-xs font-medium whitespace-nowrap text-center"  width="60">
+                    <span class="text-sm font-normal text-gray-600 ">
+                        0.00
+                    </span>
+                </td>
+                <td class="px-4 py-1 text-xs font-medium whitespace-nowrap text-center" width="60">
+                    <span class="text-xs font-normal text-gray-600 ">
+                        0
+                    </span>
+                </td>
+                <td  class="px-4 py-1 text-xs font-medium whitespace-nowrap text-center"  width="60">
+                    <span class="text-xs font-normal text-gray-600 ">
+                        1
+                    </span>
+                </td>
+                
+            </tr>
+            
+        
+
+
+            
+                
+                
+            
+            
+            
+            <tr class="odd:bg-white odd:">
+                
+                <td class="px-4 py-1 text-xs font-medium whitespace-nowrap">
+                    <div class="truncate w-72">
+                        <acronym title="bus_factor\BusFactor" class="text-xs font-bold text-gray-600 ">
+                            bus_factor\BusFactor
+                        </acronym>
+                    </div>
+                </td>
+                <td  class="px-4 py-1 text-xs font-medium whitespace-nowrap text-center"  width="60">
+                    <span class="text-sm font-normal text-gray-600 ">
+                        0.00
+                    </span>
+                </td>
+                <td class="px-4 py-1 text-xs font-medium whitespace-nowrap text-center" width="60">
+                    <span class="text-xs font-normal text-gray-600 ">
+                        0
+                    </span>
+                </td>
+                <td  class="px-4 py-1 text-xs font-medium whitespace-nowrap text-center"  width="60">
+                    <span class="text-xs font-normal text-gray-600 ">
+                        1
+                    </span>
+                </td>
+                
+            </tr>
+            
+        
+
+
+            
+                
+                
+            
+            
+            
+            <tr class="odd:bg-white odd:">
+                
+                <td class="px-4 py-1 text-xs font-medium whitespace-nowrap">
+                    <div class="truncate w-72">
+                        <acronym title="ruleset_complexity\complexityRuleset" class="text-xs font-bold text-gray-600 ">
+                            ruleset_complexity\complexityRuleset
+                        </acronym>
+                    </div>
+                </td>
+                <td  class="px-4 py-1 text-xs font-medium whitespace-nowrap text-center"  width="60">
+                    <span class="text-sm font-normal text-gray-600 ">
+                        0.00
+                    </span>
+                </td>
+                <td class="px-4 py-1 text-xs font-medium whitespace-nowrap text-center" width="60">
+                    <span class="text-xs font-normal text-gray-600 ">
+                        0
+                    </span>
+                </td>
+                <td  class="px-4 py-1 text-xs font-medium whitespace-nowrap text-center"  width="60">
+                    <span class="text-xs font-normal text-gray-600 ">
+                        1
+                    </span>
+                </td>
+                
+            </tr>
+            
+        
+
+
+            
+                
+                
+            
+            
+            
+            <tr class="odd:bg-white odd:">
+                
+                <td class="px-4 py-1 text-xs font-medium whitespace-nowrap">
+                    <div class="truncate w-72">
+                        <acronym title="rule_maintainability\maintainabilityRule" class="text-xs font-bold text-gray-600 ">
+                            rule_maintainability\maintainabilityRule
+                        </acronym>
+                    </div>
+                </td>
+                <td  class="px-4 py-1 text-xs font-medium whitespace-nowrap text-center"  width="60">
+                    <span class="text-sm font-normal text-gray-600 ">
+                        0.00
+                    </span>
+                </td>
+                <td class="px-4 py-1 text-xs font-medium whitespace-nowrap text-center" width="60">
+                    <span class="text-xs font-normal text-gray-600 ">
+                        0
+                    </span>
+                </td>
+                <td  class="px-4 py-1 text-xs font-medium whitespace-nowrap text-center"  width="60">
+                    <span class="text-xs font-normal text-gray-600 ">
+                        1
+                    </span>
+                </td>
+                
+            </tr>
+            
+        
+    </tbody>
+</table>
+            </div>
+        </div>
+        <!-- end: card about files with low maintenability -->
+    </div>
+    <!-- end: line -->
+
+<!-- start: line  -->
+<div class="grid grid-cols-4 gap-4 mt-4">
+
+    <!-- start: card -->
+    <div class="col-span-2 px-8 py-4 bg-white rounded-lg shadow-md ">
+        <div class="mt-2">
+            <div>
+                <h5 class="leading-none text-3xl font-bold text-gray-900 pb-2">
+                    Packages
+                </h5>
+                <p class="text-base font-normal text-gray-500 ">
+                    Relations between packages
+                </p>
+            </div>
+            <div class="mt-4 chart-container" >
+                <script type="application/json" id="data_dependency_diagram">
+    [{ "source": "ruleset_complexity", "target": "github.com/halleck45/ast", "value": 1 },{ "source": "registry", "target": "github.com/halleck45/ast", "value": 1 },{ "source": "version_command", "target": "github.com/pterm/pterm", "value": 1 },{ "source": "version_command", "target": "github.com/stretchr/testify", "value": 1 },{ "source": "maintainability_index", "target": "github.com/halleck45/ast", "value": 2 },{ "source": "golang_runner", "target": "github.com/smacker/go", "value": 1 },{ "source": "golang_runner", "target": "github.com/halleck45/ast", "value": 1 },{ "source": "ruleset_add", "target": "gopkg.in", "value": 1 },{ "source": "component_table", "target": "github.com/stretchr/testify", "value": 1 },{ "source": "ruleset_volume", "target": "github.com/halleck45/ast", "value": 1 },{ "source": "finder_test", "target": "github.com/halleck45/ast", "value": 1 },{ "source": "workdir_test", "target": "testing", "value": 1 },{ "source": "ruleset_list", "target": "github.com/pterm/pterm", "value": 1 },{ "source": "ruleset_architecture", "target": "github.com/halleck45/ast", "value": 1 },{ "source": "php_runner", "target": "github.com/stretchr/testify", "value": 1 },{ "source": "php_runner", "target": "github.com/smacker/go", "value": 1 },{ "source": "component_statistics", "target": "github.com/halleck45/ast", "value": 1 },{ "source": "screen_file", "target": "github.com/charmbracelet/bubbletea", "value": 1 },{ "source": "rule_cyclomatic", "target": "github.com/halleck45/ast", "value": 1 },{ "source": "json_report", "target": "github.com/halleck45/ast", "value": 1 },{ "source": "json_report", "target": "github.com/stretchr/testify", "value": 1 },{ "source": "python_runner", "target": "github.com/smacker/go", "value": 1 },{ "source": "python_runner", "target": "github.com/halleck45/ast", "value": 1 },{ "source": "screen", "target": "github.com/halleck45/ast", "value": 1 },{ "source": "ast_dumper", "target": "github.com/pterm/pterm", "value": 1 },{ "source": "component_file", "target": "github.com/halleck45/ast", "value": 1 },{ "source": "rule", "target": "github.com/halleck45/ast", "value": 1 },{ "source": "command_watcher", "target": "github.com/sirupsen/logrus", "value": 1 },{ "source": "ast_analyzer", "target": "google.golang", "value": 1 },{ "source": "ast_analyzer", "target": "github.com/stretchr/testify", "value": 1 },{ "source": "component_line", "target": "github.com/halleck45/ast", "value": 1 },{ "source": "util_test", "target": "github.com/stretchr/testify", "value": 1 },{ "source": "html_report", "target": "github.com/halleck45/ast", "value": 1 },{ "source": "ast_node", "target": "github.com/halleck45/ast", "value": 2 },{ "source": "risk_analyzer", "target": "github.com/halleck45/ast", "value": 1 },{ "source": "aggregator_test", "target": "google.golang", "value": 1 },{ "source": "component_barchart", "target": "github.com/halleck45/ast", "value": 3 },{ "source": "component_barchart", "target": "github.com/evandro/slv", "value": 1 },{ "source": "community_detection", "target": "github.com/halleck45/ast", "value": 1 },{ "source": "self_update", "target": "github.com/stretchr/testify", "value": 1 },{ "source": "self_update", "target": "github.com/minio/selfupdate", "value": 1 },{ "source": "finder", "target": "github.com/yargevad/filepathx", "value": 1 },{ "source": "git_analyzer", "target": "github.com/sirupsen/logrus", "value": 1 },{ "source": "rust_runner", "target": "github.com/smacker/go", "value": 1 },{ "source": "component", "target": "github.com/charmbracelet/bubbletea", "value": 1 },{ "source": "file_hash", "target": "github.com/halleck45/ast", "value": 1 },{ "source": "ruleset_show", "target": "github.com/pterm/pterm", "value": 1 },{ "source": "requirements_evaluator", "target": "github.com/halleck45/ast", "value": 1 },{ "source": "requirements_evaluator", "target": "github.com/stretchr/testify", "value": 1 },{ "source": "bus_factor", "target": "github.com/halleck45/ast", "value": 2 },{ "source": "styles_test", "target": "testing", "value": 1 },{ "source": "comparator_test", "target": "testing", "value": 1 },{ "source": "runner", "target": "github.com/smacker/go", "value": 1 },{ "source": "configuration_test", "target": "testing", "value": 1 },{ "source": "lang_adapter", "target": "github.com/smacker/go", "value": 1 },{ "source": "screen_html", "target": "github.com/halleck45/ast", "value": 1 },{ "source": "component_class", "target": "github.com/halleck45/ast", "value": 1 },{ "source": "loc_visitor", "target": "github.com/halleck45/ast", "value": 1 },{ "source": "loc_visitor", "target": "github.com/stretchr/testify", "value": 1 },{ "source": "reporters_factory", "target": "github.com/stretchr/testify", "value": 1 },{ "source": "reporters_factory", "target": "github.com/halleck45/ast", "value": 1 },{ "source": "community_aggregator", "target": "github.com/halleck45/ast", "value": 1 },{ "source": "rule_maintainability", "target": "github.com/halleck45/ast", "value": 1 },{ "source": "golang_maintainability", "target": "github.com/stretchr/testify", "value": 1 },{ "source": "rule_coupling", "target": "github.com/halleck45/ast", "value": 1 },{ "source": "php_self", "target": "github.com/stretchr/testify", "value": 1 },{ "source": "screen_table", "target": "github.com/halleck45/ast", "value": 2 },{ "source": "graph_aggregator", "target": "sort", "value": 1 },{ "source": "golang_operators", "target": "github.com/halleck45/ast", "value": 1 },{ "source": "markdown_report", "target": "github.com/halleck45/ast", "value": 1 },{ "source": "reporter", "target": "github.com/halleck45/ast", "value": 1 },{ "source": "screen_end", "target": "github.com/halleck45/ast", "value": 1 },{ "source": "ruleset_objectoriented", "target": "github.com/halleck45/ast", "value": 1 },{ "source": "mardown_report", "target": "github.com/stretchr/testify", "value": 1 },{ "source": "styles", "target": "golang.org", "value": 1 },{ "source": "tree_sitter", "target": "github.com/smacker/go", "value": 4 },{ "source": "aggregator", "target": "github.com/halleck45/ast", "value": 1 },{ "source": "clean_command", "target": "github.com/halleck45/ast", "value": 1 },{ "source": "clean_command", "target": "github.com/pterm/pterm", "value": 1 },{ "source": "workdir", "target": "github.com/google/uuid", "value": 1 },{ "source": "rule_volume", "target": "github.com/halleck45/ast", "value": 1 },{ "source": "node_type", "target": "github.com/halleck45/ast", "value": 1 },{ "source": "visitor", "target": "github.com/golang/protobuf", "value": 1 },{ "source": "visitor", "target": "github.com/smacker/go", "value": 1 },{ "source": "screen_risks", "target": "github.com/halleck45/ast", "value": 1 },{ "source": "NodeType.pb", "target": "sync", "value": 1 },{ "source": "configuration", "target": "github.com/halleck45/ast", "value": 1 },{ "source": "cyclomatic_visitor", "target": "github.com/stretchr/testify", "value": 1 },{ "source": "cyclomatic_visitor", "target": "github.com/halleck45/ast", "value": 1 },{ "source": "screen_summary", "target": "github.com/stretchr/testify", "value": 1 },{ "source": "screen_summary", "target": "github.com/halleck45/ast", "value": 1 },{ "source": "git_repository", "target": "strings", "value": 1 },{ "source": "git_repository", "target": "testing", "value": 1 },{ "source": "util", "target": "google.golang", "value": 1 },{ "source": "init_configuration", "target": "github.com/pterm/pterm", "value": 1 },{ "source": "open_metrics", "target": "github.com/halleck45/ast", "value": 2 },{ "source": "screen_home", "target": "github.com/stretchr/testify", "value": 1 },{ "source": "screen_home", "target": "github.com/muesli/termenv", "value": 1 },{ "source": "screen_by", "target": "github.com/halleck45/ast", "value": 2 },{ "source": "comparator", "target": "github.com/halleck45/ast", "value": 1 },{ "source": "cleaner", "target": "reflect", "value": 1 },{ "source": "component_search", "target": "github.com/charmbracelet/lipgloss", "value": 1 },{ "source": "analyze_command", "target": "github.com/pterm/pterm", "value": 1 },{ "source": "analyze_command", "target": "github.com/sirupsen/logrus", "value": 1 },{ "source": "halstead_metrics", "target": "google.golang", "value": 1 },{ "source": "halstead_metrics", "target": "github.com/halleck45/ast", "value": 1 },{ "source": "configuration_loader", "target": "gopkg.in", "value": 1 },{ "source": "configuration_loader", "target": "github.com/stretchr/testify", "value": 1 },{ "source": "engine", "target": "github.com/pterm/pterm", "value": 1 }]
+</script>
+<div id="chart_dependency_diagram_help" class="mb-2 italic text-sm text-gray-600 pt-4 bg-white text-center h-16 z-10 "></div>
+
+<div id="chart_dependency_diagram" class="mt-2"></div>
+
+<script type="application/javascript">
+    document.addEventListener('DOMContentLoaded', function () {
+        // From https://observablehq.com/@d3/chord-dependency-diagram/2
+        var data = JSON.parse(document.getElementById('data_dependency_diagram').innerHTML);
+        
+        const width = 1080;
+        const height = width;
+        const innerRadius = Math.min(width, height) * 0.5 - 90;
+        const outerRadius = innerRadius + 10;
+
+        // Compute a dense matrix from the weighted links in data.
+        const names = d3.sort(d3.union(data.map(d => d.source), data.map(d => d.target)));
+        const index = new Map(names.map((name, i) => [name, i]));
+        const matrix = Array.from(index, () => new Array(names.length).fill(0));
+        for (const {source, target, value} of data) matrix[index.get(source)][index.get(target)] += value;
+
+        const chord = d3.chordDirected()
+            .padAngle(10 / innerRadius)
+            .sortSubgroups(d3.descending)
+            .sortChords(d3.descending);
+
+        const arc = d3.arc()
+            .innerRadius(innerRadius)
+            .outerRadius(outerRadius);
+
+        const ribbon = d3.ribbonArrow()
+            .radius(innerRadius - 1)
+            .padAngle(1 / innerRadius);
+
+        const colors = d3.quantize(d3.interpolateRainbow, names.length);
+
+        const svg = d3.create("svg")
+            .attr("width", width)
+            .attr("height", height)
+            .attr("viewBox", [-width / 2, -height / 2, width, height])
+            .attr("style", "width: 100%; height: auto; font: 10px sans-serif;");
+
+        const chords = chord(matrix);
+
+        const group = svg.append("g")
+            .selectAll()
+            .data(chords.groups)
+            .join("g");
+
+        group.append("path")
+            .attr("fill", d => colors[d.index])
+            .attr("d", arc);
+
+        // animate on hover
+        group.on("mouseover", function(d, e) {
+            // get the data associated with the hovered element
+            data = d3.select(this).data()[0];
+            document.getElementById('chart_dependency_diagram_help').innerHTML = `
+            <b>${names[data.index]}</b>
+            <br>Outgoing relations ➡ : ${d3.sum(chords, c => (c.source.index === data.index) * c.source.value)}
+            <br>Incoming relations ⬅ : ${d3.sum(chords, c => (c.target.index === data.index) * c.source.value)}
+            `;
+
+            d3.select(this).select("path").transition()
+                .duration(100)
+                .attr("fill", d => d3.color(colors[d.index]).darker(0.5));
+        }).on("mouseout", function() {
+            document.getElementById('chart_dependency_diagram_help').innerHTML = '';
+            d3.select(this).select("path").transition()
+                .duration(100)
+                .attr("fill", d => colors[d.index]);
+        });
+
+        group.append("text")
+            .each(d => (d.angle = (d.startAngle + d.endAngle) / 2))
+            .attr("dy", "0.35em")
+            .attr("transform", d => `
+                rotate(${(d.angle * 180 / Math.PI - 90)})
+                translate(${outerRadius + 5})
+                ${d.angle > Math.PI ? "rotate(180)" : ""}
+            `)
+            .attr("text-anchor", d => d.angle > Math.PI ? "end" : null)
+            .text(d => names[d.index]);
+
+        group.append("title")
+            .text(d => `${names[d.index]}
+        ${d3.sum(chords, c => (c.source.index === d.index) * c.source.value)} outgoing →
+        ${d3.sum(chords, c => (c.target.index === d.index) * c.source.value)} incoming ←`);
+
+        svg.append("g")
+            .attr("fill-opacity", 0.75)
+            .selectAll()
+            .data(chords)
+            .join("path")
+            .style("mix-blend-mode", "multiply")
+            .attr("fill", d => colors[d.target.index])
+            .attr("d", ribbon)
+            .append("title")
+            .text(d => `${names[d.source.index]} → ${names[d.target.index]} ${d.source.value}`);
+
+        // on hover
+        svg.selectAll("path")
+            .on("mouseover", function(d, e) {
+                // get the data associated with the hovered element
+                data = d3.select(this).data()[0];
+                document.getElementById('chart_dependency_diagram_help').innerHTML = `
+                <b>${names[data.source.index]}</b> <br> ➡ ${data.source.value} relations with ${names[data.target.index]}
+                `;
+            }).on("mouseout", function() {
+                document.getElementById('chart_dependency_diagram_help').innerHTML = '';
+            });
+        
+        document.getElementById('chart_dependency_diagram').replaceWith(svg.node());
+    });
+</script>
+            </div>
+        </div>
+    </div>
+    <!-- end: card -->
+
+    <!-- start: card -->
+    <div class="col-span-2 px-8 py-4 bg-white rounded-lg shadow-md ">
+        <div class="mt-2">
+            <div>
+                <h5 class="leading-none text-3xl font-bold text-gray-900 pb-2">
+                    
+                        -
+                    
+                </h5>
+                <p class="text-base font-normal text-gray-500 ">
+                    Average <acronym title="The higher the number, the more difficult the refactoring becomes because it impacts other components that depend on it.">
+                         Instability
+                    </acronym>
+                </p>
+            </div>
+            
+                <div class="text-sm text-gray-600 mt-4 ">
+                    Instability is not available. This is likely due to a lack of classes (for example, only interfaces are present, or language is not object oriented).
+                </div>
+            
+        </div>
+    </div>
+    <!-- end: card -->
+
+
+     <!-- start: card -->
+     <div class="col-span-1 px-8 py-4 bg-white rounded-lg shadow-md ">
+        <div class="mt-2">
+            <div>
+                <h5 class="leading-none text-3xl font-bold text-gray-900 pb-2">
+                    2.23
+                </h5>
+                <p class="text-base font-normal text-gray-500 ">
+                    Average complexity per method (cyclomatic)
+                </p>
+            </div>
+            <div class="mt-4 chart-container" >
+                <script id="chart_cyclo_data" type="application/json">
+    [
+        
+        {
+            "name": "TestFinder_Search",
+            "cyclomatic": 6
+        },
+        {
+            "name": "init_configuration_command\\InitConfigurationCommand",
+            "cyclomatic": 0
+        },{
+            "name": "init_configuration_command\\InitConfigurationCommand",
+            "cyclomatic": 0
+        },
+        {
+            "name": "ast_node\\ASTNode",
+            "cyclomatic": 0
+        },{
+            "name": "ast_node\\ASTNode",
+            "cyclomatic": 0
+        },
+        
+        {
+            "name": "component_barchart_cyclomatic_by_method_repartition\\ComponentBarchartCyclomaticByMethodRepartition",
+            "cyclomatic": 0
+        },{
+            "name": "component_barchart_cyclomatic_by_method_repartition\\ComponentBarchartCyclomaticByMethodRepartition",
+            "cyclomatic": 0
+        },
+        
+        {
+            "name": "ruleset_show_command\\RulesetShowCommand",
+            "cyclomatic": 0
+        },{
+            "name": "ruleset_show_command\\RulesetShowCommand",
+            "cyclomatic": 0
+        },
+        {
+            "name": "bus_factor\\BusFactor",
+            "cyclomatic": 0
+        },{
+            "name": "bus_factor\\kv",
+            "cyclomatic": 0
+        },{
+            "name": "bus_factor\\BusFactor",
+            "cyclomatic": 0
+        },
+        {
+            "name": "ruleset_complexity\\complexityRuleset",
+            "cyclomatic": 0
+        },{
+            "name": "ruleset_complexity\\complexityRuleset",
+            "cyclomatic": 0
+        },
+        {
+            "name": "rule_maintainability\\maintainabilityRule",
+            "cyclomatic": 0
+        },{
+            "name": "rule_maintainability\\maintainabilityRule",
+            "cyclomatic": 0
+        },
+        {
+            "name": "Test_FileLevel_Maintainability_And_Halstead_IsComputed_ForProceduralGo",
+            "cyclomatic": 8
+        },{
+            "name": "Test_FileLevel_Maintainability_SampleGo",
+            "cyclomatic": 9
+        },{
+            "name": "Test_FileLevel_Loc_SampleGo",
+            "cyclomatic": 7
+        },
+        {
+            "name": "requirements_evaluator\\RequirementsEvaluator",
+            "cyclomatic": 0
+        },{
+            "name": "requirements_evaluator\\EvaluationResult",
+            "cyclomatic": 0
+        },{
+            "name": "requirements_evaluator\\ProjectAggregated",
+            "cyclomatic": 0
+        },{
+            "name": "requirements_evaluator\\BoundariesRule",
+            "cyclomatic": 0
+        },{
+            "name": "requirements_evaluator\\RequirementsEvaluator",
+            "cyclomatic": 0
+        },{
+            "name": "requirements_evaluator\\EvaluationResult",
+            "cyclomatic": 0
+        },{
+            "name": "requirements_evaluator\\ProjectAggregated",
+            "cyclomatic": 0
+        },{
+            "name": "requirements_evaluator\\BoundariesRule",
+            "cyclomatic": 0
+        },
+        {
+            "name": "TestStyleTitle",
+            "cyclomatic": 1
+        },{
+            "name": "TestDecorateMaintainabilityIndex",
+            "cyclomatic": 3
+        },{
+            "name": "TestRound",
+            "cyclomatic": 2
+        },{
+            "name": "TestToFixed",
+            "cyclomatic": 2
+        },
+        {
+            "name": "rule_coupling\\couplingRule",
+            "cyclomatic": 0
+        },{
+            "name": "rule_coupling\\couplingRule",
+            "cyclomatic": 0
+        },
+        {
+            "name": "TestComparator_Compare",
+            "cyclomatic": 2
+        },
+        {
+            "name": "registry\\RegistryImpl",
+            "cyclomatic": 0
+        },{
+            "name": "registry\\RegistryImpl",
+            "cyclomatic": 0
+        },
+        {
+            "name": "community_detection\\LPAOptions",
+            "cyclomatic": 0
+        },{
+            "name": "community_detection\\LPAOptions",
+            "cyclomatic": 0
+        },
+        
+        {
+            "name": "commit\\Commit",
+            "cyclomatic": 0
+        },{
+            "name": "commit\\Commit",
+            "cyclomatic": 0
+        },
+        {
+            "name": "version_command\\VersionCommand",
+            "cyclomatic": 0
+        },{
+            "name": "version_command\\VersionCommand",
+            "cyclomatic": 0
+        },
+        {
+            "name": "TestPhpSelfAndStaticNotExternalDependencies",
+            "cyclomatic": 4
+        },{
+            "name": "eqIgnoreCase",
+            "cyclomatic": 1
+        },{
+            "name": "lastLastIndex",
+            "cyclomatic": 0
+        },
+        {
+            "name": "TestItReturnsPath",
+            "cyclomatic": 1
+        },{
+            "name": "TestItCreatesPath",
+            "cyclomatic": 2
+        },
+        {
+            "name": "maintainability_index_visitor\\MaintainabilityIndexVisitor",
+            "cyclomatic": 0
+        },{
+            "name": "maintainability_index_visitor\\MaintainabilityIndexVisitor",
+            "cyclomatic": 0
+        },
+        {
+            "name": "component_barchart\\ComponentBarchart",
+            "cyclomatic": 0
+        },{
+            "name": "component_barchart\\ComponentBarchart",
+            "cyclomatic": 0
+        },
+        {
+            "name": "screen_end\\ScreenEnd",
+            "cyclomatic": 0
+        },{
+            "name": "screen_end\\modelEnd",
+            "cyclomatic": 0
+        },{
+            "name": "screen_end\\ScreenEnd",
+            "cyclomatic": 0
+        },{
+            "name": "screen_end\\modelEnd",
+            "cyclomatic": 0
+        },
+        {
+            "name": "open_metrics_generator\\OpenMetricsReportGenerator",
+            "cyclomatic": 0
+        },{
+            "name": "open_metrics_generator\\OpenMetricsReportGenerator",
+            "cyclomatic": 0
+        },
+        {
+            "name": "TestGenerateOpenMetricsReports",
+            "cyclomatic": 0
+        },
+        {
+            "name": "command_watcher\\CommandWatcher",
+            "cyclomatic": 0
+        },{
+            "name": "command_watcher\\CommandWatcher",
+            "cyclomatic": 0
+        },
+        {
+            "name": "TestNewScreenHome",
+            "cyclomatic": 2
+        },{
+            "name": "TestGetModel",
+            "cyclomatic": 0
+        },{
+            "name": "TestInit",
+            "cyclomatic": 1
+        },
+        {
+            "name": "ruleset_objectoriented\\oopRuleset",
+            "cyclomatic": 0
+        },{
+            "name": "ruleset_objectoriented\\oopRuleset",
+            "cyclomatic": 0
+        },
+        {
+            "name": "TestSelfUpdateExecute",
+            "cyclomatic": 1
+        },{
+            "name": "TestSelfUpdateExecuteWhenNoCompatibleReleaseIsFound",
+            "cyclomatic": 1
+        },
+        {
+            "name": "TestCommandCleanupWorkspace",
+            "cyclomatic": 3
+        },
+        {
+            "name": "clean_command\\CleanCommand",
+            "cyclomatic": 0
+        },{
+            "name": "clean_command\\CleanCommand",
+            "cyclomatic": 0
+        },
+        {
+            "name": "configuration\\Configuration",
+            "cyclomatic": 0
+        },{
+            "name": "configuration\\ConfigurationReport",
+            "cyclomatic": 0
+        },{
+            "name": "configuration\\ConfigurationRequirements",
+            "cyclomatic": 0
+        },{
+            "name": "configuration\\ConfigurationCouplingRule",
+            "cyclomatic": 0
+        },{
+            "name": "configuration\\ConfigurationArchitectureRules",
+            "cyclomatic": 0
+        },{
+            "name": "configuration\\ConfigurationVolumeRules",
+            "cyclomatic": 0
+        },{
+            "name": "configuration\\ConfigurationComplexityRules",
+            "cyclomatic": 0
+        },{
+            "name": "configuration\\ConfigurationOOPRules",
+            "cyclomatic": 0
+        },{
+            "name": "configuration\\ConfigurationRequirementsRules",
+            "cyclomatic": 0
+        },{
+            "name": "configuration\\ConfigurationDefaultRule",
+            "cyclomatic": 0
+        },{
+            "name": "configuration\\Configuration",
+            "cyclomatic": 0
+        },{
+            "name": "configuration\\ConfigurationReport",
+            "cyclomatic": 0
+        },{
+            "name": "configuration\\ConfigurationRequirements",
+            "cyclomatic": 0
+        },{
+            "name": "configuration\\ConfigurationCouplingRule",
+            "cyclomatic": 0
+        },{
+            "name": "configuration\\ConfigurationArchitectureRules",
+            "cyclomatic": 0
+        },{
+            "name": "configuration\\ConfigurationVolumeRules",
+            "cyclomatic": 0
+        },{
+            "name": "configuration\\ConfigurationComplexityRules",
+            "cyclomatic": 0
+        },{
+            "name": "configuration\\ConfigurationOOPRules",
+            "cyclomatic": 0
+        },{
+            "name": "configuration\\ConfigurationRequirementsRules",
+            "cyclomatic": 0
+        },{
+            "name": "configuration\\ConfigurationDefaultRule",
+            "cyclomatic": 0
+        },
+        {
+            "name": "TestScreenByProgrammingLanguageGetScreenName",
+            "cyclomatic": 1
+        },{
+            "name": "TestScreenByProgrammingLanguageGetModel",
+            "cyclomatic": 1
+        },{
+            "name": "TestScreenByProgrammingLanguageModelByProgrammingLanguageUpdate",
+            "cyclomatic": 1
+        },{
+            "name": "TestModelByProgrammingLanguageView",
+            "cyclomatic": 1
+        },
+        {
+            "name": "golang_runner\\GolangRunner",
+            "cyclomatic": 0
+        },{
+            "name": "golang_runner\\GolangRunner",
+            "cyclomatic": 0
+        },
+        {
+            "name": "finder\\FileList",
+            "cyclomatic": 0
+        },{
+            "name": "finder\\Finder",
+            "cyclomatic": 0
+        },{
+            "name": "finder\\FileList",
+            "cyclomatic": 0
+        },{
+            "name": "finder\\Finder",
+            "cyclomatic": 0
+        },
+        {
+            "name": "Start",
+            "cyclomatic": 7
+        },{
+            "name": "executeFileAnalysis",
+            "cyclomatic": 6
+        },{
+            "name": "AnalyzeFile",
+            "cyclomatic": 0
+        },{
+            "name": "consolidateLoc",
+            "cyclomatic": 11
+        },
+        {
+            "name": "TestVersionExecute",
+            "cyclomatic": 0
+        },
+        {
+            "name": "screen_table_class\\ScreenTableClass",
+            "cyclomatic": 0
+        },{
+            "name": "screen_table_class\\model",
+            "cyclomatic": 0
+        },{
+            "name": "screen_table_class\\ScreenTableClass",
+            "cyclomatic": 0
+        },{
+            "name": "screen_table_class\\model",
+            "cyclomatic": 0
+        },
+        {
+            "name": "loc_visitor\\LocVisitor",
+            "cyclomatic": 0
+        },{
+            "name": "loc_visitor\\LocVisitor",
+            "cyclomatic": 0
+        },
+        {
+            "name": "risk_analyzer\\RiskAnalyzer",
+            "cyclomatic": 0
+        },{
+            "name": "risk_analyzer\\RiskAnalyzer",
+            "cyclomatic": 0
+        },
+        {
+            "name": "TestShouldAbleToFactoryReporters",
+            "cyclomatic": 0
+        },
+        {
+            "name": "TestGenerate",
+            "cyclomatic": 3
+        },{
+            "name": "TestGenerateWithTemplateFiles",
+            "cyclomatic": 1
+        },
+        {
+            "name": "TestEvaluationResult",
+            "cyclomatic": 0
+        },{
+            "name": "TestEvaluationResultSuccess",
+            "cyclomatic": 0
+        },
+        {
+            "name": "windowWidth",
+            "cyclomatic": 0
+        },{
+            "name": "StyleTitle",
+            "cyclomatic": 0
+        },{
+            "name": "StyleHowToQuit",
+            "cyclomatic": 1
+        },{
+            "name": "StyleSubTitle",
+            "cyclomatic": 0
+        },{
+            "name": "StyleUrl",
+            "cyclomatic": 0
+        },{
+            "name": "StyleHelp",
+            "cyclomatic": 0
+        },{
+            "name": "StyleChoices",
+            "cyclomatic": 0
+        },{
+            "name": "StyleCommand",
+            "cyclomatic": 0
+        },{
+            "name": "StyleScreen",
+            "cyclomatic": 0
+        },{
+            "name": "StyleNumberBox",
+            "cyclomatic": 0
+        },{
+            "name": "DecorateMaintainabilityIndex",
+            "cyclomatic": 3
+        },{
+            "name": "Round",
+            "cyclomatic": 0
+        },{
+            "name": "ToFixed",
+            "cyclomatic": 0
+        },
+        {
+            "name": "json_report_generator\\JsonReportGenerator",
+            "cyclomatic": 0
+        },{
+            "name": "json_report_generator\\JsonReportGenerator",
+            "cyclomatic": 0
+        },
+        {
+            "name": "TestItCalculateCyclomaticComplexityForGoLang",
+            "cyclomatic": 0
+        },{
+            "name": "TestItCalculateCyclomaticComplexityForPhp",
+            "cyclomatic": 0
+        },{
+            "name": "TestItCalculateCyclomaticComplexityForComplexPhp",
+            "cyclomatic": 0
+        },{
+            "name": "TestItCalculateCyclomaticComplexityForMethodItself",
+            "cyclomatic": 0
+        },{
+            "name": "TestItCalculateCyclomaticComplexityForAllDecisionPoints",
+            "cyclomatic": 0
+        },
+        {
+            "name": "ruleset_list_command\\RulesetListCommand",
+            "cyclomatic": 0
+        },{
+            "name": "ruleset_list_command\\RulesetListCommand",
+            "cyclomatic": 0
+        },
+        {
+            "name": "TestAnalyzeCommand_Execute",
+            "cyclomatic": 4
+        },
+        {
+            "name": "cyclomatic_visitor\\CyclomaticComplexityVisitor",
+            "cyclomatic": 0
+        },{
+            "name": "cyclomatic_visitor\\CyclomaticComplexityVisitor",
+            "cyclomatic": 0
+        },
+        {
+            "name": "python_runner\\PythonRunner",
+            "cyclomatic": 0
+        },{
+            "name": "python_runner\\PythonRunner",
+            "cyclomatic": 0
+        },
+        {
+            "name": "runner\\Runner",
+            "cyclomatic": 0
+        },{
+            "name": "runner\\Runner",
+            "cyclomatic": 0
+        },
+        {
+            "name": "ast_node_test\\MockVisitor",
+            "cyclomatic": 0
+        },{
+            "name": "ast_node_test\\MockVisitor",
+            "cyclomatic": 0
+        },
+        {
+            "name": "workdir\\Workdir",
+            "cyclomatic": 0
+        },{
+            "name": "workdir\\Workdir",
+            "cyclomatic": 0
+        },
+        {
+            "name": "TestScreenSummaryNewScreenSummary",
+            "cyclomatic": 0
+        },{
+            "name": "TestScreenSummaryGetScreenName",
+            "cyclomatic": 0
+        },{
+            "name": "TestScreenSummaryGetModel",
+            "cyclomatic": 0
+        },{
+            "name": "TestScreenSummaryModelScreenSummaryInit",
+            "cyclomatic": 0
+        },{
+            "name": "TestScreenSummaryModelScreenSummaryUpdate",
+            "cyclomatic": 0
+        },{
+            "name": "TestScreenSummaryModelScreenSummaryView",
+            "cyclomatic": 0
+        },
+        
+        {
+            "name": "TestHalsteadMetricsVisitor",
+            "cyclomatic": 6
+        },{
+            "name": "TestHalsteadMetricsVisitor_LeaveNode",
+            "cyclomatic": 7
+        },
+        {
+            "name": "TestItCalculateMaintainabilityIndex",
+            "cyclomatic": 3
+        },
+        {
+            "name": "screen_by_programming_langage\\ScreenByProgrammingLanguage",
+            "cyclomatic": 0
+        },{
+            "name": "screen_by_programming_langage\\modelByProgrammingLanguage",
+            "cyclomatic": 0
+        },{
+            "name": "screen_by_programming_langage\\ScreenByProgrammingLanguage",
+            "cyclomatic": 0
+        },{
+            "name": "screen_by_programming_langage\\modelByProgrammingLanguage",
+            "cyclomatic": 0
+        },
+        {
+            "name": "graph_aggregator\\GraphAggregator",
+            "cyclomatic": 0
+        },{
+            "name": "graph_aggregator\\pair",
+            "cyclomatic": 0
+        },{
+            "name": "graph_aggregator\\GraphAggregator",
+            "cyclomatic": 0
+        },
+        {
+            "name": "git_analyzer\\GitAnalyzer",
+            "cyclomatic": 0
+        },{
+            "name": "git_analyzer\\gitLogOutput",
+            "cyclomatic": 0
+        },{
+            "name": "git_analyzer\\GitAnalyzer",
+            "cyclomatic": 0
+        },{
+            "name": "git_analyzer\\gitLogOutput",
+            "cyclomatic": 0
+        },
+        {
+            "name": "rule_volume_loc\\locRule",
+            "cyclomatic": 0
+        },{
+            "name": "rule_volume_loc\\locRule",
+            "cyclomatic": 0
+        },
+        {
+            "name": "ruleset_add\\RulesetAddCommand",
+            "cyclomatic": 0
+        },{
+            "name": "ruleset_add\\RulesetAddCommand",
+            "cyclomatic": 0
+        },
+        {
+            "name": "component_line_chart_git_activity\\ComponentLineChartGitActivity",
+            "cyclomatic": 0
+        },{
+            "name": "component_line_chart_git_activity\\ComponentLineChartGitActivity",
+            "cyclomatic": 0
+        },
+        {
+            "name": "TestNewComponentTableClass",
+            "cyclomatic": 5
+        },{
+            "name": "TestComponentTableClass_Render",
+            "cyclomatic": 0
+        },{
+            "name": "TestComponentTableClass_Sort",
+            "cyclomatic": 0
+        },
+        {
+            "name": "TestScreenTableClassNewScreenTableClass",
+            "cyclomatic": 2
+        },{
+            "name": "TestScreenTableClassGetScreenName",
+            "cyclomatic": 1
+        },{
+            "name": "TestScreenTableClassGetModel",
+            "cyclomatic": 1
+        },
+        {
+            "name": "rust_runner\\RustRunner",
+            "cyclomatic": 0
+        },{
+            "name": "rust_runner\\RustRunner",
+            "cyclomatic": 0
+        },
+        {
+            "name": "generated_report\\GeneratedReport",
+            "cyclomatic": 0
+        },{
+            "name": "generated_report\\GeneratedReport",
+            "cyclomatic": 0
+        },
+        {
+            "name": "TestLocVisitorVisit",
+            "cyclomatic": 6
+        },{
+            "name": "TestLocVisitorCountWithoutClasses",
+            "cyclomatic": 0
+        },
+        {
+            "name": "TestGoOperatorsAndOperandsExtraction",
+            "cyclomatic": 7
+        },
+        {
+            "name": "ruleset_volume\\volumeRuleset",
+            "cyclomatic": 0
+        },{
+            "name": "ruleset_volume\\volumeRuleset",
+            "cyclomatic": 0
+        },
+        {
+            "name": "ast_dumper\\DumpOptions",
+            "cyclomatic": 0
+        },{
+            "name": "ast_dumper\\DumpOptions",
+            "cyclomatic": 0
+        },
+        {
+            "name": "EnsureNodeTypeIsComplete",
+            "cyclomatic": 13
+        },
+        {
+            "name": "CleanVal",
+            "cyclomatic": 1
+        },{
+            "name": "clean",
+            "cyclomatic": 2
+        },{
+            "name": "cleanStruct",
+            "cyclomatic": 1
+        },{
+            "name": "cleanSlice",
+            "cyclomatic": 1
+        },{
+            "name": "cleanField",
+            "cyclomatic": 1
+        },
+        {
+            "name": "TestAnalyzerStart",
+            "cyclomatic": 2
+        },
+        {
+            "name": "configuration_loader\\ConfigurationLoader",
+            "cyclomatic": 0
+        },{
+            "name": "configuration_loader\\ConfigurationLoader",
+            "cyclomatic": 0
+        },
+        {
+            "name": "reporters_factory\\ReportersFactory",
+            "cyclomatic": 0
+        },{
+            "name": "reporters_factory\\ReportersFactory",
+            "cyclomatic": 0
+        },
+        {
+            "name": "TestGenerateJson",
+            "cyclomatic": 9
+        },
+        {
+            "name": "markdown_report_generator\\MarkdownReportGenerator",
+            "cyclomatic": 0
+        },{
+            "name": "markdown_report_generator\\MarkdownReportGenerator",
+            "cyclomatic": 0
+        },
+        {
+            "name": "TestConfigurationAcceptsSourcesToAnalyzePath",
+            "cyclomatic": 4
+        },{
+            "name": "TestConfigurationAcceptsExcludePatterns",
+            "cyclomatic": 1
+        },
+        {
+            "name": "component_search\\ComponentSearch",
+            "cyclomatic": 0
+        },{
+            "name": "component_search\\ComponentSearch",
+            "cyclomatic": 0
+        },
+        {
+            "name": "visitor\\HelperRecursionVisitor",
+            "cyclomatic": 0
+        },{
+            "name": "visitor\\HelperRecursionVisitor",
+            "cyclomatic": 0
+        },
+        
+        {
+            "name": "git_repository\\GitRepository",
+            "cyclomatic": 0
+        },{
+            "name": "git_repository\\GitRepository",
+            "cyclomatic": 0
+        },
+        {
+            "name": "analyze_command\\AnalyzeCommand",
+            "cyclomatic": 0
+        },{
+            "name": "analyze_command\\AnalyzeCommand",
+            "cyclomatic": 0
+        },
+        {
+            "name": "self_update_command\\SelfUpdateCommand",
+            "cyclomatic": 0
+        },{
+            "name": "self_update_command\\GithubAsset",
+            "cyclomatic": 0
+        },{
+            "name": "self_update_command\\GithubRelease",
+            "cyclomatic": 0
+        },{
+            "name": "self_update_command\\SelfUpdateCommand",
+            "cyclomatic": 0
+        },{
+            "name": "self_update_command\\GithubAsset",
+            "cyclomatic": 0
+        },{
+            "name": "self_update_command\\GithubRelease",
+            "cyclomatic": 0
+        },
+        
+        {
+            "name": "TestNamespacesParsing",
+            "cyclomatic": 0
+        },
+        {
+            "name": "GetFileHash",
+            "cyclomatic": 2
+        },{
+            "name": "UnmarshalProtobuf",
+            "cyclomatic": 3
+        },
+        
+        {
+            "name": "ruleset_architecture\\architectureRuleset",
+            "cyclomatic": 0
+        },{
+            "name": "ruleset_architecture\\architectureRuleset",
+            "cyclomatic": 0
+        },
+        {
+            "name": "screen_risks\\ScreenRisks",
+            "cyclomatic": 0
+        },{
+            "name": "screen_risks\\modelRisks",
+            "cyclomatic": 0
+        },{
+            "name": "screen_risks\\ScreenRisks",
+            "cyclomatic": 0
+        },{
+            "name": "screen_risks\\modelRisks",
+            "cyclomatic": 0
+        },
+        {
+            "name": "TestPhpRunner",
+            "cyclomatic": 0
+        },{
+            "name": "TestPhpLoops",
+            "cyclomatic": 0
+        },{
+            "name": "TestEnumWithoutNamespace",
+            "cyclomatic": 0
+        },{
+            "name": "TestTrait",
+            "cyclomatic": 0
+        },{
+            "name": "TestPhpInterface",
+            "cyclomatic": 0
+        },{
+            "name": "TestPhpOperators",
+            "cyclomatic": 0
+        },{
+            "name": "TestPhpIfCases",
+            "cyclomatic": 0
+        },{
+            "name": "TestNamesapceWithoutName",
+            "cyclomatic": 0
+        },{
+            "name": "TestNonValidFile",
+            "cyclomatic": 0
+        },{
+            "name": "TestNonUtf8Classnames",
+            "cyclomatic": 0
+        },{
+            "name": "TestExternalCallsInNamespace",
+            "cyclomatic": 1
+        },{
+            "name": "TestExternalCallsInRootNamespace",
+            "cyclomatic": 1
+        },{
+            "name": "TestSwitchCasesAreCorrectlyParser",
+            "cyclomatic": 0
+        },{
+            "name": "TestPhp84SyntaxPropertyHooks",
+            "cyclomatic": 0
+        },{
+            "name": "TestPhp84NewIthoutParenthesis",
+            "cyclomatic": 1
+        },{
+            "name": "TestReadonlyClass",
+            "cyclomatic": 0
+        },
+        {
+            "name": "php_runner\\PhpRunner",
+            "cyclomatic": 0
+        },{
+            "name": "php_runner\\PhpRunner",
+            "cyclomatic": 0
+        },
+        {
+            "name": "screen_home\\ScreenHome",
+            "cyclomatic": 0
+        },{
+            "name": "screen_home\\modelChoices",
+            "cyclomatic": 0
+        },{
+            "name": "screen_home\\DoRefreshModel",
+            "cyclomatic": 0
+        },{
+            "name": "screen_home\\ScreenHome",
+            "cyclomatic": 0
+        },{
+            "name": "screen_home\\modelChoices",
+            "cyclomatic": 0
+        },{
+            "name": "screen_home\\DoRefreshModel",
+            "cyclomatic": 0
+        },
+        {
+            "name": "html_report_generator\\HtmlReportGenerator",
+            "cyclomatic": 0
+        },{
+            "name": "html_report_generator\\HtmlReportGenerator",
+            "cyclomatic": 0
+        },
+        {
+            "name": "lang_adapter\\ImportItem",
+            "cyclomatic": 0
+        },{
+            "name": "lang_adapter\\ImportItem",
+            "cyclomatic": 0
+        },
+        {
+            "name": "component_statistics_overview\\ComponentStatisticsOverview",
+            "cyclomatic": 0
+        },{
+            "name": "component_statistics_overview\\ComponentStatisticsOverview",
+            "cyclomatic": 0
+        },
+        {
+            "name": "component_barchart_maintainability_index_repartition\\ComponentBarchartMaintainabilityIndexRepartition",
+            "cyclomatic": 0
+        },{
+            "name": "component_barchart_maintainability_index_repartition\\ComponentBarchartMaintainabilityIndexRepartition",
+            "cyclomatic": 0
+        },
+        {
+            "name": "TestBusFactorCalculate",
+            "cyclomatic": 3
+        },
+        {
+            "name": "TestGoParser_TreeSitter_Basics",
+            "cyclomatic": 21
+        },{
+            "name": "TestGoParser_TreeSitter_Imports",
+            "cyclomatic": 9
+        },
+        {
+            "name": "TestFindGitRoot",
+            "cyclomatic": 7
+        },
+        {
+            "name": "screen_file_selection\\modelFileSelection",
+            "cyclomatic": 0
+        },{
+            "name": "screen_file_selection\\clearErrorMsg",
+            "cyclomatic": 0
+        },{
+            "name": "screen_file_selection\\modelFileSelection",
+            "cyclomatic": 0
+        },{
+            "name": "screen_file_selection\\clearErrorMsg",
+            "cyclomatic": 0
+        },
+        {
+            "name": "TestPythonParser_TreeSitter_Decisions",
+            "cyclomatic": 24
+        },{
+            "name": "TestPythonParser_TreeSitter_Imports",
+            "cyclomatic": 14
+        },
+        {
+            "name": "component_barchart_loc_by_method_repartition\\ComponentBarchartLocByMethodRepartition",
+            "cyclomatic": 0
+        },{
+            "name": "component_barchart_loc_by_method_repartition\\ComponentBarchartLocByMethodRepartition",
+            "cyclomatic": 0
+        },
+        {
+            "name": "types\\report",
+            "cyclomatic": 0
+        },{
+            "name": "types\\contributor",
+            "cyclomatic": 0
+        },{
+            "name": "types\\gitAnalysis",
+            "cyclomatic": 0
+        },{
+            "name": "types\\file",
+            "cyclomatic": 0
+        },{
+            "name": "types\\complexity",
+            "cyclomatic": 0
+        },{
+            "name": "types\\risk",
+            "cyclomatic": 0
+        },{
+            "name": "types\\coupling",
+            "cyclomatic": 0
+        },{
+            "name": "types\\maintainability",
+            "cyclomatic": 0
+        },{
+            "name": "types\\volume",
+            "cyclomatic": 0
+        },{
+            "name": "types\\report",
+            "cyclomatic": 0
+        },{
+            "name": "types\\contributor",
+            "cyclomatic": 0
+        },{
+            "name": "types\\gitAnalysis",
+            "cyclomatic": 0
+        },{
+            "name": "types\\file",
+            "cyclomatic": 0
+        },{
+            "name": "types\\complexity",
+            "cyclomatic": 0
+        },{
+            "name": "types\\risk",
+            "cyclomatic": 0
+        },{
+            "name": "types\\coupling",
+            "cyclomatic": 0
+        },{
+            "name": "types\\maintainability",
+            "cyclomatic": 0
+        },{
+            "name": "types\\volume",
+            "cyclomatic": 0
+        },
+        {
+            "name": "screen_summary\\ScreenSummary",
+            "cyclomatic": 0
+        },{
+            "name": "screen_summary\\modelScreenSummary",
+            "cyclomatic": 0
+        },{
+            "name": "screen_summary\\ScreenSummary",
+            "cyclomatic": 0
+        },{
+            "name": "screen_summary\\modelScreenSummary",
+            "cyclomatic": 0
+        },
+        {
+            "name": "TestLoadsFileExists",
+            "cyclomatic": 0
+        },{
+            "name": "TestLoadsFileDoesNotExist",
+            "cyclomatic": 0
+        },{
+            "name": "TestLoadsErrorDecodingYAML",
+            "cyclomatic": 0
+        },{
+            "name": "TestCreateDefaultFile",
+            "cyclomatic": 0
+        },
+        {
+            "name": "screen_html_report\\ScreenHtmlReport",
+            "cyclomatic": 0
+        },{
+            "name": "screen_html_report\\modelScreenHtmlReport",
+            "cyclomatic": 0
+        },{
+            "name": "screen_html_report\\ScreenHtmlReport",
+            "cyclomatic": 0
+        },{
+            "name": "screen_html_report\\modelScreenHtmlReport",
+            "cyclomatic": 0
+        },
+        {
+            "name": "halstead_metrics_visitor\\HalsteadMetricsVisitor",
+            "cyclomatic": 0
+        },{
+            "name": "halstead_metrics_visitor\\HalsteadMetricsVisitor",
+            "cyclomatic": 0
+        },
+        {
+            "name": "component_class_table\\ComponentTableClass",
+            "cyclomatic": 0
+        },{
+            "name": "component_class_table\\ComponentTableClass",
+            "cyclomatic": 0
+        },
+        {
+            "name": "component_file_table\\ComponentFileTable",
+            "cyclomatic": 0
+        },{
+            "name": "component_file_table\\ComponentFileTable",
+            "cyclomatic": 0
+        },
+        {
+            "name": "comparator\\Comparator",
+            "cyclomatic": 0
+        },{
+            "name": "comparator\\ChangedFile",
+            "cyclomatic": 0
+        },{
+            "name": "comparator\\Comparaison",
+            "cyclomatic": 0
+        },{
+            "name": "comparator\\Comparator",
+            "cyclomatic": 0
+        },{
+            "name": "comparator\\ChangedFile",
+            "cyclomatic": 0
+        },{
+            "name": "comparator\\Comparaison",
+            "cyclomatic": 0
+        },
+        {
+            "name": "rule_cyclomatic\\cyclomaticRule",
+            "cyclomatic": 0
+        },{
+            "name": "rule_cyclomatic\\cyclomaticRule",
+            "cyclomatic": 0
+        },
+        {
+            "name": "TestConsolidate",
+            "cyclomatic": 0
+        },{
+            "name": "TestCalculate",
+            "cyclomatic": 0
+        },{
+            "name": "TestAggregates",
+            "cyclomatic": 0
+        },{
+            "name": "TestCalculateMaintainabilityIndex",
+            "cyclomatic": 0
+        },{
+            "name": "TestFIlesWithErrorAreDetected",
+            "cyclomatic": 0
+        },
+        {
+            "name": "GetLocPositionFromSource",
+            "cyclomatic": 11
+        },{
+            "name": "stripQuotes",
+            "cyclomatic": 6
+        },{
+            "name": "DumpProtobuf",
+            "cyclomatic": 3
+        },{
+            "name": "FactoryStmts",
+            "cyclomatic": 0
+        },{
+            "name": "GetClassesInFile",
+            "cyclomatic": 3
+        },{
+            "name": "GetFunctionsInFile",
+            "cyclomatic": 5
+        },{
+            "name": "HtmlChartLine",
+            "cyclomatic": 1
+        },{
+            "name": "HtmlChartArea",
+            "cyclomatic": 1
+        },{
+            "name": "CreateTestFileWithCode",
+            "cyclomatic": 2
+        },{
+            "name": "ReduceDepthOfNamespace",
+            "cyclomatic": 5
+        },{
+            "name": "SearchFilesByExtension",
+            "cyclomatic": 4
+        },{
+            "name": "GetDependenciesInFile",
+            "cyclomatic": 34
+        },
+        {
+            "name": "visitor\\Visitor",
+            "cyclomatic": 0
+        },{
+            "name": "visitor\\Visitor",
+            "cyclomatic": 0
+        },
+        {
+            "name": "community_aggregator\\CommunityMetrics",
+            "cyclomatic": 0
+        },{
+            "name": "community_aggregator\\EdgeBetweenCommunities",
+            "cyclomatic": 0
+        },{
+            "name": "community_aggregator\\CommunityPath",
+            "cyclomatic": 0
+        },{
+            "name": "community_aggregator\\pair",
+            "cyclomatic": 0
+        },{
+            "name": "community_aggregator\\CommunityAggregator",
+            "cyclomatic": 0
+        },{
+            "name": "community_aggregator\\nxt",
+            "cyclomatic": 0
+        },{
+            "name": "community_aggregator\\CommunityMetrics",
+            "cyclomatic": 0
+        },{
+            "name": "community_aggregator\\EdgeBetweenCommunities",
+            "cyclomatic": 0
+        },{
+            "name": "community_aggregator\\CommunityPath",
+            "cyclomatic": 0
+        },{
+            "name": "community_aggregator\\CommunityAggregator",
+            "cyclomatic": 0
+        },
+        {
+            "name": "tree_sitter_rust_adapter\\TreeSitterAdapter",
+            "cyclomatic": 0
+        },{
+            "name": "tree_sitter_rust_adapter\\TreeSitterAdapter",
+            "cyclomatic": 0
+        },
+        {
+            "name": "tree_sitter_go_adapter\\TreeSitterAdapter",
+            "cyclomatic": 0
+        },{
+            "name": "tree_sitter_go_adapter\\TreeSitterAdapter",
+            "cyclomatic": 0
+        },
+        {
+            "name": "tree_sitter_python_adapter\\TreeSitterAdapter",
+            "cyclomatic": 0
+        },{
+            "name": "tree_sitter_python_adapter\\TreeSitterAdapter",
+            "cyclomatic": 0
+        },
+        {
+            "name": "tree_sitter_php_adapter\\TreeSitterAdapter",
+            "cyclomatic": 0
+        },{
+            "name": "tree_sitter_php_adapter\\TreeSitterAdapter",
+            "cyclomatic": 0
+        },
+        {
+            "name": "aggregator\\ProjectAggregated",
+            "cyclomatic": 0
+        },{
+            "name": "aggregator\\AggregateResult",
+            "cyclomatic": 0
+        },{
+            "name": "aggregator\\Aggregated",
+            "cyclomatic": 0
+        },{
+            "name": "aggregator\\ProjectComparaison",
+            "cyclomatic": 0
+        },{
+            "name": "aggregator\\Aggregator",
+            "cyclomatic": 0
+        },{
+            "name": "aggregator\\TopCommitter",
+            "cyclomatic": 0
+        },{
+            "name": "aggregator\\ResultOfGitAnalysis",
+            "cyclomatic": 0
+        },{
+            "name": "aggregator\\ProjectAggregated",
+            "cyclomatic": 0
+        },{
+            "name": "aggregator\\AggregateResult",
+            "cyclomatic": 0
+        },{
+            "name": "aggregator\\Aggregated",
+            "cyclomatic": 0
+        },{
+            "name": "aggregator\\ProjectComparaison",
+            "cyclomatic": 0
+        },{
+            "name": "aggregator\\Aggregator",
+            "cyclomatic": 0
+        },{
+            "name": "aggregator\\TopCommitter",
+            "cyclomatic": 0
+        },{
+            "name": "aggregator\\ResultOfGitAnalysis",
+            "cyclomatic": 0
+        },
+        {
+            "name": "NodeType.pb\\Name",
+            "cyclomatic": 0
+        },{
+            "name": "NodeType.pb\\Stmts",
+            "cyclomatic": 0
+        },{
+            "name": "NodeType.pb\\File",
+            "cyclomatic": 0
+        },{
+            "name": "NodeType.pb\\StmtLocationInFile",
+            "cyclomatic": 0
+        },{
+            "name": "NodeType.pb\\StmtNamespace",
+            "cyclomatic": 0
+        },{
+            "name": "NodeType.pb\\StmtUse",
+            "cyclomatic": 0
+        },{
+            "name": "NodeType.pb\\StmtClass",
+            "cyclomatic": 0
+        },{
+            "name": "NodeType.pb\\StmtFunction",
+            "cyclomatic": 0
+        },{
+            "name": "NodeType.pb\\StmtParameter",
+            "cyclomatic": 0
+        },{
+            "name": "NodeType.pb\\StmtExternalDependency",
+            "cyclomatic": 0
+        },{
+            "name": "NodeType.pb\\StmtInterface",
+            "cyclomatic": 0
+        },{
+            "name": "NodeType.pb\\StmtTrait",
+            "cyclomatic": 0
+        },{
+            "name": "NodeType.pb\\StmtDecisionIf",
+            "cyclomatic": 0
+        },{
+            "name": "NodeType.pb\\StmtDecisionElseIf",
+            "cyclomatic": 0
+        },{
+            "name": "NodeType.pb\\StmtDecisionElse",
+            "cyclomatic": 0
+        },{
+            "name": "NodeType.pb\\StmtDecisionCase",
+            "cyclomatic": 0
+        },{
+            "name": "NodeType.pb\\StmtDecisionSwitch",
+            "cyclomatic": 0
+        },{
+            "name": "NodeType.pb\\StmtLoop",
+            "cyclomatic": 0
+        },{
+            "name": "NodeType.pb\\StmtComment",
+            "cyclomatic": 0
+        },{
+            "name": "NodeType.pb\\StmtOperator",
+            "cyclomatic": 0
+        },{
+            "name": "NodeType.pb\\StmtOperand",
+            "cyclomatic": 0
+        },{
+            "name": "NodeType.pb\\LinesOfCode",
+            "cyclomatic": 0
+        },{
+            "name": "NodeType.pb\\Analyze",
+            "cyclomatic": 0
+        },{
+            "name": "NodeType.pb\\Complexity",
+            "cyclomatic": 0
+        },{
+            "name": "NodeType.pb\\Volume",
+            "cyclomatic": 0
+        },{
+            "name": "NodeType.pb\\Maintainability",
+            "cyclomatic": 0
+        },{
+            "name": "NodeType.pb\\Commits",
+            "cyclomatic": 0
+        },{
+            "name": "NodeType.pb\\Commit",
+            "cyclomatic": 0
+        },{
+            "name": "NodeType.pb\\Risk",
+            "cyclomatic": 0
+        },{
+            "name": "NodeType.pb\\Coupling",
+            "cyclomatic": 0
+        },{
+            "name": "NodeType.pb\\Graph",
+            "cyclomatic": 0
+        },{
+            "name": "NodeType.pb\\Node",
+            "cyclomatic": 0
+        },{
+            "name": "NodeType.pb\\x",
+            "cyclomatic": 0
+        },{
+            "name": "NodeType.pb\\Name",
+            "cyclomatic": 0
+        },{
+            "name": "NodeType.pb\\Stmts",
+            "cyclomatic": 0
+        },{
+            "name": "NodeType.pb\\File",
+            "cyclomatic": 0
+        },{
+            "name": "NodeType.pb\\StmtLocationInFile",
+            "cyclomatic": 0
+        },{
+            "name": "NodeType.pb\\StmtNamespace",
+            "cyclomatic": 0
+        },{
+            "name": "NodeType.pb\\StmtUse",
+            "cyclomatic": 0
+        },{
+            "name": "NodeType.pb\\StmtClass",
+            "cyclomatic": 0
+        },{
+            "name": "NodeType.pb\\StmtFunction",
+            "cyclomatic": 0
+        },{
+            "name": "NodeType.pb\\StmtParameter",
+            "cyclomatic": 0
+        },{
+            "name": "NodeType.pb\\StmtExternalDependency",
+            "cyclomatic": 0
+        },{
+            "name": "NodeType.pb\\StmtInterface",
+            "cyclomatic": 0
+        },{
+            "name": "NodeType.pb\\StmtTrait",
+            "cyclomatic": 0
+        },{
+            "name": "NodeType.pb\\StmtDecisionIf",
+            "cyclomatic": 0
+        },{
+            "name": "NodeType.pb\\StmtDecisionElseIf",
+            "cyclomatic": 0
+        },{
+            "name": "NodeType.pb\\StmtDecisionElse",
+            "cyclomatic": 0
+        },{
+            "name": "NodeType.pb\\StmtDecisionCase",
+            "cyclomatic": 0
+        },{
+            "name": "NodeType.pb\\StmtDecisionSwitch",
+            "cyclomatic": 0
+        },{
+            "name": "NodeType.pb\\StmtLoop",
+            "cyclomatic": 0
+        },{
+            "name": "NodeType.pb\\StmtComment",
+            "cyclomatic": 0
+        },{
+            "name": "NodeType.pb\\StmtOperator",
+            "cyclomatic": 0
+        },{
+            "name": "NodeType.pb\\StmtOperand",
+            "cyclomatic": 0
+        },{
+            "name": "NodeType.pb\\LinesOfCode",
+            "cyclomatic": 0
+        },{
+            "name": "NodeType.pb\\Analyze",
+            "cyclomatic": 0
+        },{
+            "name": "NodeType.pb\\Complexity",
+            "cyclomatic": 0
+        },{
+            "name": "NodeType.pb\\Volume",
+            "cyclomatic": 0
+        },{
+            "name": "NodeType.pb\\Maintainability",
+            "cyclomatic": 0
+        },{
+            "name": "NodeType.pb\\Commits",
+            "cyclomatic": 0
+        },{
+            "name": "NodeType.pb\\Commit",
+            "cyclomatic": 0
+        },{
+            "name": "NodeType.pb\\Risk",
+            "cyclomatic": 0
+        },{
+            "name": "NodeType.pb\\Coupling",
+            "cyclomatic": 0
+        },{
+            "name": "NodeType.pb\\Graph",
+            "cyclomatic": 0
+        },{
+            "name": "NodeType.pb\\Node",
+            "cyclomatic": 0
+        },]
+</script>
+
+<div id="chart_bar_complexity_help" class="mb-2 italic text-sm text-gray-600 pt-4 bg-white text-center h-16 z-10 "></div>
+
+<div id="chart_bar_complexity" style="overflow:hidden"></div>
+<script type="text/javascript">
+
+    // avoid blinking
+    var element = document.getElementById("chart_bar_complexity");
+    if (element){
+        var elementWidth = document.getElementById("chart_bar_complexity").clientWidth;
+        element.style.height = elementWidth + "px";
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+        let json = document.getElementById("chart_cyclo_data").textContent;
+        const domElement = document.getElementById("chart_bar_complexity");
+        json = json.replace(/},]/g, '}]'); // remove },]
+        let data = JSON.parse(json);
+
+        // find parent .chart-container element
+        const parent = domElement.closest(".chart-container");
+
+        const width = parent.clientWidth;
+        const padding = 0;
+        const height = width;
+        const innerRadius = 50;
+        const outerRadius = Math.min(width, height) * 0.40;
+
+        domElement.innerHTML = "";
+        domElement.style.width = (width + padding) + "px";
+        domElement.style.height = (height + padding) + "px";
+
+        // Create series from the data. Not stacked
+        const series = d3.stack()
+            .keys(["cyclomatic"])
+            .offset(d3.stackOffsetNone)
+            (data);
+
+        const arc = d3.arc()
+            .innerRadius(d => y(d[0]))
+            .outerRadius(d => y(d[1]))
+            .startAngle(d => x(d.data.name))
+            .endAngle(d => x(d.data.name) + x.bandwidth())
+            .padAngle(0.01)
+            .padRadius(innerRadius);
+
+        // Place bars all around a circle
+        const numBars = data.length;
+        const desiredBandwidth = numBars / (2 * Math.PI) ;
+        const x = d3.scaleBand()
+            .domain(data.map(d => d.name))
+            .range([0, desiredBandwidth])
+            .align(0);
+
+        // A radial y-scale maintains area proportionality of radial bars
+        const y = d3.scaleRadial()
+            .domain([0, d3.max(series, d => d3.max(d, d => d[1]))])
+            .range([innerRadius, outerRadius]);
+
+
+        const color = d3.scaleOrdinal()
+            .domain(series.map(d => d.key))
+            .range(d3.schemeCategory10);
+
+        // use only #1A56DB
+        color.range(["#1A56DB"]);
+
+        // A function to format the value in the tooltip
+        const formatValue = x => isNaN(x) ? "N/A" : x.toLocaleString("en")
+
+        const svg = d3.create("svg")
+            .attr("width", width )
+            .attr("height", height)
+            .attr("viewBox", [-(width + padding)/ 2, -height * 0.40, width, height])
+            .attr("style", "width: 100%; height: auto; font: 10px sans-serif;");
+
+        // A rect for each element in the series
+        svg.append("g")
+            .selectAll("g")
+            .data(series)
+            .join("g")
+            .attr("fill", d => color(d.key))
+            // animate on hover
+            .selectAll("path")
+            .data(d => d)
+            .join("path")
+            .attr("d", arc)
+            .append("title")
+            .text(function(d) {
+                return `${d.data.name}\nComplexity: ${formatValue(d.data.cyclomatic)}`;
+            });
+
+        // animate on hover
+        svg.selectAll("path")
+            .on("mouseover", function(e, d) {
+
+                
+                // add help
+                const help = document.getElementById("chart_bar_complexity_help");
+                help.innerHTML = `<b>${d.data.name}</b><br>Complexity: ${formatValue(d.data.cyclomatic)}`;
+                
+
+                d3.select(this)
+                    .transition()
+                    .duration(100)
+                    .attr("fill", "#0ea5e9");
+            })
+            .on("mouseout", function() {
+
+                
+                // clean help
+                const help = document.getElementById("chart_bar_complexity_help");
+                help.innerHTML = "";
+                
+
+                d3.select(this)
+                    .transition()
+                    .duration(100)
+                    .attr("fill", color);
+            });
+
+
+        // x axis
+        // only if we have less than 500 elements
+        if (data.length < 300) {
+            svg.append("g")
+                .attr("text-anchor", "middle")
+                // width and height
+                .attr("width", width)
+                .attr("height", height)
+                .selectAll()
+                .data(x.domain())
+                .join("g")
+                .attr("transform", d => `
+                rotate(${((x(d) + x.bandwidth() / 2) * 180 / Math.PI - 90)})
+                translate(${innerRadius},0)
+              `)
+                .call(g => g.append("line")
+                    .attr("x2", -5)
+                    .attr("stroke", "#000"))
+        }
+
+        // y axis
+        svg.append("g")
+            .attr("text-anchor", "end")
+            .call(g => g.selectAll("g")
+                .data(y.ticks(10).slice(1))
+                .join("g")
+                .attr("fill", "none")
+                .call(g => g.append("circle")
+                    .attr("stroke", "#CCC")
+                    .attr("stroke-opacity", 0.5)
+                    .attr("r", y))
+                .call(g => g.append("text")
+                    .attr("x", -6)
+                    .attr("y", d => -y(d))
+                    .attr("dy", "0.35em")
+                    .attr("stroke", "#fff")
+                    .attr("stroke-width", 5)
+                    .text(y.tickFormat(10, "s"))
+                    .clone(true)
+                    .attr("fill", "#000")
+                    .attr("stroke", "none")));
+
+        // color legend
+        svg.append("g")
+            .selectAll()
+            .data(color.domain())
+            .join("g")
+            .attr("transform", (d, i, nodes) => `translate(-40,${(nodes.length / 2 - i - 1) * 20})`)
+            .call(g => g.append("rect")
+                .attr("width", 18)
+                .attr("height", 18)
+                .attr("fill", color))
+            .call(g => g.append("text")
+                .attr("x", 24)
+                .attr("y", 9)
+                .attr("dy", "0.35em")
+                // .text(d => d));
+                .text("Complexity"));
+
+        // Click to zoom
+        let currentScale = 1;
+        const zoom = d3.zoom()
+            .scaleExtent([1, 8], [width, height])
+            .on("zoom", function(event) {
+                svg.attr("transform", event.transform);
+            });
+        svg.on("mousedown", function(event) {
+
+            // detect right click
+            if (event.button === 2) {
+                currentScale--;
+                if (currentScale < 1) {
+                    currentScale = 1;
+                }
+            } else {
+                currentScale++;
+            }
+
+            // detect position of the mouse
+            const [x, y] = d3.pointer(event);
+            svg.transition()
+                .duration(750)
+                .call(zoom.scaleTo, currentScale, [x, y]);
+        });
+
+        // zoom out on scroll
+        svg.on("wheel", function(event) {
+
+            // only if currentScale is greater than 1 and if we are zooming out
+            if (currentScale === 1 && event.deltaY < 0) {
+                return;
+            }
+
+            event.preventDefault();
+            const [x, y] = d3.pointer(event);
+            currentScale--;
+            if (currentScale < 1) {
+                currentScale = 1;
+            }
+            svg.transition()
+                .duration(750)
+                .call(zoom.scaleTo, currentScale, [x, y]);
+        });
+
+        // add magnifier cursor
+        svg.style("cursor", "zoom-in");
+
+        const n = svg.node();
+        domElement.appendChild(n);
+    });
+
+</script>
+            </div>
+            <p class="border-t border-gray-200 mt-2 italic text-sm text-gray-600 pt-4 text-justify">
+                The average complexity of the code, measured by the number of possible execution paths. Lower is better. 
+                This metrics includes interfaces and abstract classes, and may be lower than 1.
+            </p>
+        </div>
+    </div>
+    <!-- end: card -->
+
+
+</div>
+<!-- end: line -->
+
+
+    
+
+            </div>
+
+            <footer class="bg-white ">
+                <div class="container flex flex-col items-center justify-end p-6 mx-auto space-y-4 sm:space-y-0 sm:flex-row">
+                    <div class="flex -mx-2">
+
+                        <a
+                            aria-label="Visit Twitter account of Halleck45"
+                            href="https://twitter.com/Halleck45" class="mx-2 text-gray-600 transition-colors duration-300" aria-label="Twitter">
+                            <svg class="w-5 h-5 fill-current" xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor"  viewBox="0 0 16 16">
+                                <path d="M12.6.75h2.454l-5.36 6.142L16 15.25h-4.937l-3.867-5.07-4.425 5.07H.316l5.733-6.57L0 .75h5.063l3.495 4.633L12.601.75Zm-.86 13.028h1.36L4.323 2.145H2.865z"/>
+                              </svg>
+                        </a>
+            
+                        <a
+                            aria-label="Visit LinkedIn account of Jean-François Lépine"
+                            href="https://www.linkedin.com/in/jean-fran%C3%A7ois-l%C3%A9pine-6a122726" class="mx-2 text-gray-600 transition-colors duration-300" aria-label="Facebook">
+                            <svg class="w-5 h-5 fill-current" role="img" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><title>LinkedIn</title><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/></svg>
+                        </a>
+            
+                        <a 
+                            aria-label="Visit Github repository of AST Metrics"
+                            href="https://github.com/Halleck45/ast-metrics/" class="mx-2 text-gray-600 transition-colors duration-300" aria-label="Github">
+                            <svg class="w-5 h-5 fill-current" viewBox="0 0 24 24" fill="none"
+                                xmlns="http://www.w3.org/2000/svg">
+                                <path
+                                    d="M12.026 2C7.13295 1.99937 2.96183 5.54799 2.17842 10.3779C1.395 15.2079 4.23061 19.893 8.87302 21.439C9.37302 21.529 9.55202 21.222 9.55202 20.958C9.55202 20.721 9.54402 20.093 9.54102 19.258C6.76602 19.858 6.18002 17.92 6.18002 17.92C5.99733 17.317 5.60459 16.7993 5.07302 16.461C4.17302 15.842 5.14202 15.856 5.14202 15.856C5.78269 15.9438 6.34657 16.3235 6.66902 16.884C6.94195 17.3803 7.40177 17.747 7.94632 17.9026C8.49087 18.0583 9.07503 17.99 9.56902 17.713C9.61544 17.207 9.84055 16.7341 10.204 16.379C7.99002 16.128 5.66202 15.272 5.66202 11.449C5.64973 10.4602 6.01691 9.5043 6.68802 8.778C6.38437 7.91731 6.42013 6.97325 6.78802 6.138C6.78802 6.138 7.62502 5.869 9.53002 7.159C11.1639 6.71101 12.8882 6.71101 14.522 7.159C16.428 5.868 17.264 6.138 17.264 6.138C17.6336 6.97286 17.6694 7.91757 17.364 8.778C18.0376 9.50423 18.4045 10.4626 18.388 11.453C18.388 15.286 16.058 16.128 13.836 16.375C14.3153 16.8651 14.5612 17.5373 14.511 18.221C14.511 19.555 14.499 20.631 14.499 20.958C14.499 21.225 14.677 21.535 15.186 21.437C19.8265 19.8884 22.6591 15.203 21.874 10.3743C21.089 5.54565 16.9181 1.99888 12.026 2Z">
+                                </path>
+                            </svg>
+                        </a>
+                    </div>
+                </div>
+                <div class="text-sm text-right text-gray-600 p-6">
+                    at 2025-09-05 09:05 by <a href="https://github.com/Halleck45/ast-metrics">AST Metrics</a>
+                </div>
+            </footer>
+        </main>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tablesort/5.2.1/tablesort.min.js" integrity="sha512-F/gIMdDfda6OD2rnzt/Iyp2V9JLHlFQ+EUyixDg9+rkwjqgW1snpkpx7FD5FV1+gG2fmFj7I3r6ReQDUidHelA==" crossorigin="anonymous" referrerpolicy="no-referrer" defer></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tablesort/5.2.1/sorts/tablesort.number.min.js" integrity="sha512-dRD755QRxlybm0h3LXXIGrFcjNakuxW3reZqnPtUkMv6YsSWoJf+slPjY5v4lZvx2ss+wBZQFegepmA7a2W9eA==" crossorigin="anonymous" referrerpolicy="no-referrer" defer></script>
+    <script src="https://cdn.jsdelivr.net/npm/d3@7" defer></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js" integrity="sha512-BNaRQnYJYiPSqHHDb58B0yaPfCu+Wgds8Gp/gU33kqBtgNS4tSPHuGibyoeqMV/TJlSKda6FXzoEyYGjTe+vXA==" crossorigin="anonymous" referrerpolicy="no-referrer" defer></script>
+    <script type="text/javascript">
+        document.addEventListener('DOMContentLoaded', function() {
+            // get .sortable tables
+            const tables = document.querySelectorAll('.sortable');
+            tables.forEach(function(table) {
+                new Tablesort(table);
+            });
+
+
+            // Share buttons
+            const shareButton = document.getElementById('share-twitter');
+            shareButton.addEventListener('click', function(event) {
+
+                event.preventDefault();
+
+                html2canvas(document.body).then(function(canvas) {
+                    // Get image as base64
+                    let img = canvas.toDataURL('image/png');
+                    img = img.replace('data:image/png;base64,', '');
+
+                    // Upload image to imgbb
+                    const imgbbKey = '1dc935a4acbf4c4afb9e42a9cc315691';
+                    const formData = new FormData();
+                    formData.append('image', img);
+                    formData.append('name', 'ast-metrics-report.png');
+
+                    fetch('https://api.imgbb.com/1/upload?key=' + imgbbKey, {
+                        method: 'POST',
+                        body: formData
+                    })
+                        .then(response => response.json())
+                        .then(data => {
+                            const imageUrl = data.data.url_viewer;
+                            const text = `Check out my code analysis report, generated by AST Metrics ! #code #analysis #dev`;
+                            const url = 'https://twitter.com/intent/tweet?text=' + encodeURIComponent(text) + '&url=' + encodeURIComponent(imageUrl);
+                            window.open(url, '_blank');
+                        });
+                });
+            });
+        });
+    </script>
+    
+</body>
+</html>

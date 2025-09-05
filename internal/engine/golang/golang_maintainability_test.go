@@ -5,6 +5,7 @@ import (
 
 	"github.com/halleck45/ast-metrics/internal/analyzer"
 	enginePkg "github.com/halleck45/ast-metrics/internal/engine"
+	"github.com/stretchr/testify/assert"
 )
 
 const proceduralGo = `package main
@@ -58,9 +59,6 @@ func Test_FileLevel_Maintainability_SampleGo(t *testing.T) {
 	if file.Stmts.Analyze.Volume == nil {
 		t.Fatalf("missing Volume on sampleGo file")
 	}
-	if *file.Stmts.Analyze.Volume.Loc != int32(15) {
-		t.Fatalf("incorrect Loc on sampleGo file, got %d", *file.Stmts.Analyze.Volume.Loc)
-	}
 	if *file.Stmts.Analyze.Volume.HalsteadVocabulary != int32(15) {
 		t.Fatalf("incorrect halstead volume on file")
 	}
@@ -84,4 +82,37 @@ func Test_FileLevel_Maintainability_SampleGo(t *testing.T) {
 	if mi == 171 {
 		t.Fatalf("MI should not be the constant 171 for non-empty file; got %v", mi)
 	}
+}
+
+func Test_FileLevel_Loc_SampleGo(t *testing.T) {
+	r := &GolangRunner{}
+	file, _ := enginePkg.CreateTestFileWithCode(r, sampleGo)
+	analyzer.AnalyzeFile(file)
+
+	if file.Stmts.Analyze == nil {
+		t.Fatalf("missing Analyze on sampleGo file")
+	}
+	if file.Stmts.Analyze.Volume == nil {
+		t.Fatalf("missing Volume on sampleGo file")
+	}
+	if *file.Stmts.Analyze.Volume.Loc != int32(28) {
+		t.Fatalf("incorrect Loc on sampleGo file, got %d", *file.Stmts.Analyze.Volume.Loc)
+	}
+	if *file.Stmts.Analyze.Volume.Lloc != int32(20) {
+		t.Fatalf("incorrect logical Loc on sampleGo file, got %d", *file.Stmts.Analyze.Volume.Lloc)
+	}
+	if *file.Stmts.Analyze.Volume.Cloc != int32(3) {
+		t.Fatalf("incorrect comment Loc on sampleGo file, got %d", *file.Stmts.Analyze.Volume.Cloc)
+	}
+
+	if len(file.Stmts.StmtFunction) != 2 {
+		t.Fatal("functions not found in gofile")
+	}
+	function1 := file.Stmts.StmtFunction[0]
+	assert.Equal(t, "M", function1.Name.Short)
+	expected := int32(1)
+	if *function1.Stmts.Analyze.Volume.Cloc != expected {
+		t.Fatalf("incorrect comment lines of code for function, got %d", *function1.Stmts.Analyze.Volume.Cloc)
+	}
+
 }

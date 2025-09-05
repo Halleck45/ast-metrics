@@ -128,7 +128,6 @@ func (r *GolangRunner) Parse(path string) (*pb.File, error) {
 	return file, nil
 }
 
-
 // getFileList returns the list of PHP files to analyze, and caches it in memory
 func (r *GolangRunner) getFileList() File.FileList {
 

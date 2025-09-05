@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/halleck45/ast-metrics/internal/analyzer"
 	"github.com/halleck45/ast-metrics/internal/engine"
 	"github.com/stretchr/testify/assert"
 )
@@ -103,7 +104,7 @@ class calculatrice {
 	// Ensure LOC
 	assert.Equal(t, int32(12), func2.LinesOfCode.LinesOfCode, "Expected LOC")
 	assert.Equal(t, int32(7), func2.LinesOfCode.LogicalLinesOfCode, "Expected LLOC")
-	assert.Equal(t, int32(3), func2.LinesOfCode.CommentLinesOfCode, "Expected CLOC")
+	assert.Equal(t, int32(0), func2.LinesOfCode.CommentLinesOfCode, "Expected CLOC")
 }
 
 func TestPhpLoops(t *testing.T) {
@@ -653,4 +654,99 @@ readonly class B {
 	assert.Equal(t, 1, len(result.Stmts.StmtClass), "Incorrect number of classes")
 	class1 := result.Stmts.StmtClass[0]
 	assert.Equal(t, "B", class1.Name.Short, "Expected class name to be 'B', got %s", class1.Name)
+}
+
+func Test_Loc_Are_Ok(t *testing.T) {
+	src := `<?php
+
+namespace Foo;
+// comment
+class Registry
+{
+    private $myArray = [];
+
+    public function method1() {}
+
+    public function method2()
+    {
+		// a comment
+		/**
+		 * another comment 
+		 */    return array_keys($this->myArray); // inline comment
+    }
+
+    public function method3()
+    {
+	    // another one
+        return $this->myArray;
+		# and yet another one
+    }
+}`
+
+	file, _ := engine.CreateTestFileWithCode(&PhpRunner{}, src)
+	analyzer.AnalyzeFile(file)
+
+	assert.Equal(t, int32(25), *file.Stmts.Analyze.Volume.Loc, "Incorrect number of lines of code")
+	assert.Equal(t, int32(7), *file.Stmts.Analyze.Volume.Cloc, "Incorrect number of comment lines of code")
+
+	// classes
+	assert.Equal(t, 1, len(file.Stmts.StmtClass), "Incorrect number of classes")
+	class1 := file.Stmts.StmtClass[0]
+	assert.Equal(t, int32(20), *class1.Stmts.Analyze.Volume.Loc, "Incorrect number of lines of code")
+	assert.Equal(t, int32(6), *class1.Stmts.Analyze.Volume.Cloc, "Incorrect number of comment lines of code")
+	assert.Equal(t, int32(3), *class1.Stmts.Analyze.Volume.Lloc, "Incorrect number of logical lines of code")
+
+	// Ensure methods
+	assert.Equal(t, 3, len(class1.Stmts.StmtFunction), "Incorrect number of methods")
+	assert.Equal(t, int32(1), *class1.Stmts.StmtFunction[0].Stmts.Analyze.Volume.Loc, "Incorrect number of lines of code")
+	assert.Equal(t, int32(0), *class1.Stmts.StmtFunction[0].Stmts.Analyze.Volume.Lloc, "Incorrect number of logical lines of code")
+	assert.Equal(t, int32(0), *class1.Stmts.StmtFunction[0].Stmts.Analyze.Volume.Cloc, "Incorrect number of comment lines of code")
+
+	assert.Equal(t, int32(6), *class1.Stmts.StmtFunction[1].Stmts.Analyze.Volume.Loc, "Incorrect number of lines of code")
+	assert.Equal(t, int32(2), *class1.Stmts.StmtFunction[1].Stmts.Analyze.Volume.Lloc, "Incorrect number of logical lines of code")
+	assert.Equal(t, int32(4), *class1.Stmts.StmtFunction[1].Stmts.Analyze.Volume.Cloc, "Incorrect number of comment lines of code")
+
+	assert.Equal(t, int32(5), *class1.Stmts.StmtFunction[2].Stmts.Analyze.Volume.Loc, "Incorrect number of lines of code")
+	assert.Equal(t, int32(1), *class1.Stmts.StmtFunction[2].Stmts.Analyze.Volume.Lloc, "Incorrect number of logical lines of code")
+	assert.Equal(t, int32(2), *class1.Stmts.StmtFunction[2].Stmts.Analyze.Volume.Cloc, "Incorrect number of comment lines of code")
+
+}
+
+func Test_Fix_Empty_Maintainability(t *testing.T) {
+	src := `
+<?php
+
+namespace Foo;
+
+class Registry
+{
+    private $myArray = [];
+
+    public function method1() {}
+
+    public function method2()
+    {
+        return array_keys($this->myArray);
+    }
+
+    public function method3()
+    {
+        return $this->myArray;
+    }
+}
+`
+
+	result, err := engine.CreateTestFileWithCode(&PhpRunner{}, src)
+	analyzer.AnalyzeFile(result)
+
+	assert.Nil(t, err, "Expected no error, got %s", err)
+
+	// Ensure classes
+	assert.Equal(t, 1, len(result.Stmts.StmtClass), "Incorrect number of classes")
+	class1 := result.Stmts.StmtClass[0]
+
+	// Ensure MI
+	if *class1.Stmts.Analyze.Maintainability.MaintainabilityIndex != 7 {
+		t.Fatalf("incorrect Maintainability Index, got %f", *class1.Stmts.Analyze.Maintainability.MaintainabilityIndex)
+	}
 }

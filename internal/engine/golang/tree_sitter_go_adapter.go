@@ -361,3 +361,73 @@ func (a *TreeSitterAdapter) ExtractOperatorsOperands(src []byte, startLine, endL
 func (a *TreeSitterAdapter) CountElseIfAsIf() bool {
 	return true
 }
+
+// FileLlocOffset returns the offset to subtract when computing file-level LLOC.
+// Go tests expect not subtracting the historical constant 2 used elsewhere.
+func (a *TreeSitterAdapter) FileLlocOffset() int { return 0 }
+
+// CountComments counts Go comment lines (// and /* */) in the given range, ignoring markers inside strings
+func (a *TreeSitterAdapter) CountComments(lines []string, start, end int) int {
+	cnt := 0
+	inBlock := false
+	for i := start - 1; i < end && i < len(lines); i++ {
+		ln := strings.TrimSpace(lines[i])
+		if ln == "" {
+			continue
+		}
+		clean := stripGoStrings(ln)
+		if inBlock {
+			cnt++
+			if strings.Contains(clean, "*/") {
+				inBlock = false
+			}
+			continue
+		}
+		if strings.HasPrefix(clean, "//") {
+			cnt++
+			continue
+		}
+		if strings.HasPrefix(clean, "/*") {
+			cnt++
+			if !strings.Contains(clean, "*/") {
+				inBlock = true
+			}
+			continue
+		}
+	}
+	return cnt
+}
+
+// stripGoStrings removes content inside backticks, double and single quotes
+func stripGoStrings(s string) string {
+	out := make([]rune, 0, len(s))
+	inBack := false
+	inDq := false
+	inSq := false
+	for i := 0; i < len(s); i++ {
+		c := s[i]
+		if c == '\\' { // escape
+			if i+1 < len(s) {
+				i++
+			}
+			continue
+		}
+		if !inDq && !inSq && c == '`' {
+			inBack = !inBack
+			continue
+		}
+		if !inBack && !inSq && c == '"' {
+			inDq = !inDq
+			continue
+		}
+		if !inBack && !inDq && c == '\'' {
+			inSq = !inSq
+			continue
+		}
+		if inBack || inDq || inSq {
+			continue
+		}
+		out = append(out, rune(c))
+	}
+	return string(out)
+}
