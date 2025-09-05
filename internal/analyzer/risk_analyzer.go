@@ -52,6 +52,13 @@ func (v *RiskAnalyzer) Analyze(project ProjectAggregated) {
 	// From https://github.com/bmitch/churn-php/blob/master/src/Result/Result.php
 	for _, file := range project.Combined.ConcernedFiles {
 
+		// Ensure analysis structures exist
+		if file.Stmts == nil {
+			file.Stmts = &pb.Stmts{}
+		}
+		if file.Stmts.Analyze == nil {
+			file.Stmts.Analyze = &pb.Analyze{}
+		}
 		if file.Stmts.Analyze.Risk == nil {
 			file.Stmts.Analyze.Risk = &pb.Risk{Score: float64(0)}
 		}
@@ -141,21 +148,44 @@ func (v *RiskAnalyzer) Analyze(project ProjectAggregated) {
 	}
 }
 
+func clamp01(v float64) float64 {
+	if v < 0 {
+		return 0
+	}
+	if v > 1 {
+		return 1
+	}
+	return v
+}
+
 func (v *RiskAnalyzer) GetRisk(maxCommits int32, maxComplexity float64, nbCommits int, complexity int) float64 {
+	// Guard against invalid bounds
+	mc := float64(maxCommits)
+	mx := maxComplexity
 
-	// Calculate the horizontal and vertical distance from the "top right" corner.
-	horizontalDistance := float64(maxCommits) - float64(nbCommits)
-	verticalDistance := maxComplexity - float64(complexity)
+	// Calculate distances from the top-right corner only on available axes
+	var normalizedHorizontalDistance float64
+	if mc > 0 {
+		h := mc - float64(nbCommits)
+		normalizedHorizontalDistance = h / mc
+	}
+	var normalizedVerticalDistance float64
+	if mx > 0 {
+		v := mx - float64(complexity)
+		normalizedVerticalDistance = v / mx
+	}
 
-	// Normalize these values over time, we first divide by the maximum values, to always end up with distances between 0 and 1.
-	normalizedHorizontalDistance := horizontalDistance / float64(maxCommits)
-	normalizedVerticalDistance := verticalDistance / maxComplexity
+	// Clamp to [0,1]
+	normalizedHorizontalDistance = clamp01(normalizedHorizontalDistance)
+	normalizedVerticalDistance = clamp01(normalizedVerticalDistance)
 
-	// Calculate the distance of this class from the "top right" corner, using the simple formula A^2 + B^2 = C^2; or: C = sqrt(A^2 + B^2)).
-	distanceFromTopRightCorner := math.Sqrt(math.Pow(float64(normalizedHorizontalDistance), 2) + math.Pow(float64(normalizedVerticalDistance), 2))
+	// Euclidean distance in normalized space
+	distanceFromTopRightCorner := math.Sqrt(normalizedHorizontalDistance*normalizedHorizontalDistance + normalizedVerticalDistance*normalizedVerticalDistance)
 
-	// The resulting value will be between 0 and sqrt(2). A short distance is bad, so in order to end up with a high score, we invert the value by subtracting it from 1.
+	// Invert and clamp to [0,1]
 	risk := 1 - distanceFromTopRightCorner
-
-	return float64(risk)
+	if math.IsNaN(risk) || math.IsInf(risk, 0) {
+		return 0
+	}
+	return clamp01(risk)
 }

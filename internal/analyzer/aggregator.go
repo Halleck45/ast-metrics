@@ -379,13 +379,13 @@ func (r *Aggregator) executeAggregationOnFiles(files []*pb.File) ProjectAggregat
 	projectAggregated.ByClass = r.mapCoupling(&projectAggregated.ByClass)
 	projectAggregated.ByFile = r.mapCoupling(&projectAggregated.ByFile)
 
+	// For all languages (set Combined before running analyzers that rely on it)
+	projectAggregated.Combined = projectAggregated.ByFile
+	projectAggregated.ErroredFiles = projectAggregated.ByFile.ErroredFiles
+
 	// Risks
 	riskAnalyzer := NewRiskAnalyzer()
 	riskAnalyzer.Analyze(projectAggregated)
-
-	// For all languages
-	projectAggregated.Combined = projectAggregated.ByFile
-	projectAggregated.ErroredFiles = projectAggregated.ByFile.ErroredFiles
 
 	return projectAggregated
 }
