@@ -9,12 +9,7 @@ import (
 )
 
 func Test_Cyclomatic_Complexity_Is_Correct(t *testing.T) {
-	src := `
-package foo
-	func M() {
-	// a comment
-}
-	`
+	src := sampleGo
 	r := &GolangRunner{}
 	file, _ := enginePkg.CreateTestFileWithCode(r, src)
 	analyzer.AnalyzeFile(file)

@@ -1,12 +1,13 @@
 package analyzer
 
 import (
+	"fmt"
 	"math"
 	"runtime"
 	"sync"
 
-	engine "github.com/halleck45/ast-metrics/internal/engine"
 	requirement "github.com/halleck45/ast-metrics/internal/analyzer/requirement"
+	engine "github.com/halleck45/ast-metrics/internal/engine"
 	pb "github.com/halleck45/ast-metrics/internal/nodetype"
 	Scm "github.com/halleck45/ast-metrics/internal/scm"
 )
@@ -614,7 +615,6 @@ func (r *Aggregator) mapSums(file *pb.File, specificAggregation Aggregated) Aggr
 			result.EfferentCoupling.Counter++
 			result.AfferentCoupling.Sum += float64(class.Stmts.Analyze.Coupling.Afferent)
 			result.AfferentCoupling.Counter++
-
 			// Instability for class
 			if class.Stmts.Analyze.Coupling.Efferent > 0 {
 				class.Stmts.Analyze.Coupling.Instability = float64(class.Stmts.Analyze.Coupling.Efferent) / float64(class.Stmts.Analyze.Coupling.Efferent+class.Stmts.Analyze.Coupling.Afferent)
@@ -881,6 +881,19 @@ func (r *Aggregator) mapCoupling(aggregated *Aggregated) Aggregated {
 		files[namespace] = fileItem
 	}
 
+	// populate the classmap
+	for _, file := range aggregated.ConcernedFiles {
+		if file == nil || file.Stmts == nil {
+			continue
+		}
+		for _, class := range engine.GetClassesInFile(file) {
+			if class == nil || class.Name == nil || class.Name.Qualified == "" {
+				continue
+			}
+			classesMap[class.Name.Qualified] = class
+		}
+	}
+
 	for _, file := range aggregated.ConcernedFiles {
 
 		if file == nil || file.Stmts == nil || file.Stmts.StmtExternalDependencies == nil {
@@ -916,6 +929,8 @@ func (r *Aggregator) mapCoupling(aggregated *Aggregated) Aggregated {
 				// This code cannot work in a no-oop context
 				// => we cannot use afferent coupling of file itself, only the coupling of the class
 				fromFile.Stmts.Analyze.Coupling.Afferent++
+			} else {
+				fmt.Println("Not found for ", namespaceFrom)
 			}
 
 			// create the map if not exists
@@ -937,11 +952,6 @@ func (r *Aggregator) mapCoupling(aggregated *Aggregated) Aggregated {
 
 			if class == nil || class.Name == nil || class.Name.Qualified == "" {
 				continue
-			}
-
-			// first we create the hashmap if not exists
-			if _, ok := classesMap[class.Name.Qualified]; !ok {
-				classesMap[class.Name.Qualified] = class
 			}
 
 			if class.Stmts == nil || class.Stmts.StmtExternalDependencies == nil {
@@ -970,9 +980,16 @@ func (r *Aggregator) mapCoupling(aggregated *Aggregated) Aggregated {
 
 				result.ClassesAfferentCoupling[dependencyName]++
 
-				fromClass := classesMap[dependencyName]
+				// Use the qualified namespace to find the target class in the classesMap
+				fromClass := classesMap[dependency.Namespace]
 				if fromClass != nil {
 
+					if fromClass.Stmts == nil {
+						fromClass.Stmts = &pb.Stmts{}
+					}
+					if fromClass.Stmts.Analyze == nil {
+						fromClass.Stmts.Analyze = &pb.Analyze{}
+					}
 					if fromClass.Stmts.Analyze.Coupling == nil {
 						fromClass.Stmts.Analyze.Coupling = &pb.Coupling{
 							Efferent: 0,
