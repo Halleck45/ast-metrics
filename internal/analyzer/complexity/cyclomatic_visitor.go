@@ -25,6 +25,13 @@ func (v *CyclomaticComplexityVisitor) Visit(stmts *pb.Stmts, parents *pb.Stmts) 
 }
 
 func (v *CyclomaticComplexityVisitor) LeaveNode(stmts *pb.Stmts) {
+    if stmts == nil {
+        return
+    }
+    ccn := v.Calculate(stmts)
+    if stmts.Analyze == nil { stmts.Analyze = &pb.Analyze{} }
+    if stmts.Analyze.Complexity == nil { stmts.Analyze.Complexity = &pb.Complexity{} }
+    stmts.Analyze.Complexity.Cyclomatic = &ccn
 }
 
 /**

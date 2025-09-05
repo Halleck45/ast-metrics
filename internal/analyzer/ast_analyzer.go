@@ -114,7 +114,15 @@ func executeFileAnalysis(file string, channelResult chan<- *pb.File) error {
 		return err
 	}
 
-	root := &ASTNode{children: pbFile.Stmts}
+	// Start analyse
+	AnalyzeFile(pbFile)
+
+	channelResult <- pbFile
+	return nil
+}
+
+func AnalyzeFile(file *pb.File) {
+	root := &ASTNode{children: file.Stmts}
 
 	// register visitors
 	cyclomaticVisitor := &Complexity.CyclomaticComplexityVisitor{}
@@ -132,9 +140,50 @@ func executeFileAnalysis(file string, channelResult chan<- *pb.File) error {
 	// visit AST
 	root.Visit()
 
-	// Ensure structure is complete
-	engine.EnsureNodeTypeIsComplete(pbFile)
+	// // After visitors, ensure file-level Volume metrics exist and are coherent
+	// if file != nil {
+	// 	if file.Stmts == nil {
+	// 		file.Stmts = &pb.Stmts{}
+	// 	}
+	// 	if file.Stmts.Analyze == nil {
+	// 		file.Stmts.Analyze = &pb.Analyze{}
+	// 	}
+	// 	if file.Stmts.Analyze.Volume == nil {
+	// 		file.Stmts.Analyze.Volume = &pb.Volume{}
+	// 	}
+	// 	// Prefer full file LOC for file-level Loc
+	// 	if file.LinesOfCode != nil {
+	// 		v := file.LinesOfCode.LinesOfCode
+	// 		file.Stmts.Analyze.Volume.Loc = &v
+	// 	}
+	// 	// Aggregate LLOC/CLOC from functions if missing or zero
+	// 	var sumLloc int32
+	// 	var sumCloc int32
+	// 	funcs := engine.GetFunctionsInFile(file)
+	// 	for _, fn := range funcs {
+	// 		if fn == nil || fn.LinesOfCode == nil {
+	// 			continue
+	// 		}
+	// 		ll := fn.LinesOfCode.LogicalLinesOfCode
+	// 		if ll == 0 {
+	// 			// Consider at least one logical line per function when compacted on one line
+	// 			ll = 1
+	// 		}
+	// 		sumLloc += ll
+	// 		sumCloc += fn.LinesOfCode.CommentLinesOfCode
+	// 	}
+	// 	if file.Stmts.Analyze.Volume.Lloc == nil || *file.Stmts.Analyze.Volume.Lloc == 0 {
+	// 		file.Stmts.Analyze.Volume.Lloc = &sumLloc
+	// 	}
+	// 	if file.Stmts.Analyze.Volume.Cloc == nil || *file.Stmts.Analyze.Volume.Cloc == 0 {
+	// 		file.Stmts.Analyze.Volume.Cloc = &sumCloc
+	// 	}
+	// }
 
-	channelResult <- pbFile
-	return nil
+	// Recompute Maintainability Index at file level after adjustments
+	mi2 := &Component.MaintainabilityIndexVisitor{}
+	mi2.Calculate(file.Stmts)
+
+	// Ensure structure is complete
+	engine.EnsureNodeTypeIsComplete(file)
 }

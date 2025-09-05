@@ -45,19 +45,33 @@ func (v *Visitor) Result() *pb.File {
 	if len(v.file.Stmts.StmtNamespace) == 0 {
 		v.file.Stmts.StmtNamespace = append(v.file.Stmts.StmtNamespace, v.ns)
 	}
+
 	return v.file
 }
 
-func (v *Visitor) pushClass(c *pb.StmtClass) { v.classStk = append(v.classStk, c) }
-func (v *Visitor) popClass()                 { v.classStk = v.classStk[:len(v.classStk)-1] }
+func (v *Visitor) pushClass(c *pb.StmtClass) {
+	v.classStk = append(v.classStk, c)
+}
+
+func (v *Visitor) popClass() {
+	v.classStk = v.classStk[:len(v.classStk)-1]
+}
+
 func (v *Visitor) curClass() *pb.StmtClass {
 	if len(v.classStk) == 0 {
 		return nil
 	}
 	return v.classStk[len(v.classStk)-1]
 }
-func (v *Visitor) pushFunc(f *pb.StmtFunction) { v.funcStk = append(v.funcStk, f) }
-func (v *Visitor) popFunc()                    { v.funcStk = v.funcStk[:len(v.funcStk)-1] }
+
+func (v *Visitor) pushFunc(f *pb.StmtFunction) {
+	v.funcStk = append(v.funcStk, f)
+}
+
+func (v *Visitor) popFunc() {
+	v.funcStk = v.funcStk[:len(v.funcStk)-1]
+}
+
 func (v *Visitor) curFunc() *pb.StmtFunction {
 	if len(v.funcStk) == 0 {
 		return nil
@@ -209,11 +223,13 @@ func (v *Visitor) Visit(node *sitter.Node) {
 			end = int(body.EndPoint().Row) + 1
 		}
 		fn.LinesOfCode = engine.GetLocPositionFromSource(v.lines, start, end)
+
 		// allow adapter to provide a better comment count
 		if cc, ok := v.ad.(interface{ CountComments([]string, int, int) int }); ok {
 			cs := int(node.StartPoint().Row) + 1
 			ce := int(node.EndPoint().Row) + 1
-			fn.LinesOfCode.CommentLinesOfCode = int32(cc.CountComments(v.lines, cs, ce))
+			newC := int32(cc.CountComments(v.lines, cs, ce))
+			fn.LinesOfCode.CommentLinesOfCode = newC
 		}
 
 		v.attachFunction(fn)

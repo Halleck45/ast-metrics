@@ -10,7 +10,26 @@ func EnsureNodeTypeIsComplete(file *pb.File) {
 		file.Stmts.Analyze = &pb.Analyze{}
 	}
 
-	if file.LinesOfCode == nil && file.Stmts.Analyze.Volume != nil {
+	// Ensure file-level Volume is populated from file.LinesOfCode when missing
+	if file.Stmts.Analyze.Volume == nil {
+		file.Stmts.Analyze.Volume = &pb.Volume{}
+	}
+	if file.LinesOfCode != nil {
+		if file.Stmts.Analyze.Volume.Loc == nil || *file.Stmts.Analyze.Volume.Loc == 0 {
+			v := file.LinesOfCode.LinesOfCode
+			file.Stmts.Analyze.Volume.Loc = &v
+		}
+		if file.Stmts.Analyze.Volume.Lloc == nil || *file.Stmts.Analyze.Volume.Lloc == 0 {
+			v := file.LinesOfCode.LogicalLinesOfCode
+			file.Stmts.Analyze.Volume.Lloc = &v
+		}
+		if file.Stmts.Analyze.Volume.Cloc == nil || *file.Stmts.Analyze.Volume.Cloc == 0 {
+			v := file.LinesOfCode.CommentLinesOfCode
+			file.Stmts.Analyze.Volume.Cloc = &v
+		}
+	}
+
+	if file.LinesOfCode == nil && file.Stmts.Analyze.Volume != nil && file.Stmts.Analyze.Volume.Loc != nil && file.Stmts.Analyze.Volume.Lloc != nil && file.Stmts.Analyze.Volume.Cloc != nil {
 		file.LinesOfCode = &pb.LinesOfCode{
 			LinesOfCode:        *file.Stmts.Analyze.Volume.Loc,
 			CommentLinesOfCode: *file.Stmts.Analyze.Volume.Cloc,
