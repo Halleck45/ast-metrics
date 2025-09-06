@@ -5,6 +5,7 @@
 [![CI](https://github.com/Halleck45/ast-metrics/actions/workflows/test.yml/badge.svg)](https://github.com/Halleck45/ast-metrics/actions/workflows/test.yml)
 ![GitHub Release](https://img.shields.io/github/v/release/Halleck45/ast-metrics)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![](https://img.shields.io/static/v1?label=Sponsor&message=%E2%9D%A4&logo=GitHub&color=%23fe8e86)](https://github.com/sponsors/Halleck45)
 
 
 AST Metrics is a **multi-language static code analyzer**.  
@@ -79,6 +80,32 @@ curl -s https://raw.githubusercontent.com/Halleck45/ast-metrics/main/scripts/dow
 + 🕛 **Flutter**
 + 🕛 **TypeScript**
 + 🕛 **Java**
+
+## Rule sets: validate your architecture automatically
+
+AST Metrics supports **rulesets**  
+You can declare thresholds in your YAML config (Lines of code, Logical lines of code, Coupling, Maintainability...) and AST-Metrics will **fail or succeed the build automatically**.
+
+Example:
+
+```yaml
+requirements:
+  rules:
+    volume:
+      loc: { max: 500 }
+      lloc_by_method: { max: 30 }
+    architecture:
+      efferent_coupling: { max: 20 }
+      maintainability: { min: 60 }
+      coupling:
+        forbidden:
+          - from: Service
+            to: Controller
+```
+
+This makes it **easy to enforce architecture and quality at scale**.
+
+Run `ast-metrics ruleset list` to see the list of available rulesets. Then `ast-metrics ruleset add <ruleset-name>` to apply a ruleset to your project.
 
 ## License
 

@@ -15,7 +15,9 @@ func NewConfigurationLoader() *ConfigurationLoader {
 	return &ConfigurationLoader{
 		FilenameToChecks: []string{
 			".ast-metrics.yaml",
+			".ast-metrics.yml",
 			".ast-metrics.dist.yaml",
+			".ast-metrics.dist.yml",
 		},
 	}
 }
@@ -93,27 +95,27 @@ requirements:
   rules:
     fail_on_error: true
 
-    # Maintainability of the code
-    maintainability:
-      min: 85
-
-    # Complexity of the code
-    cyclomatic_complexity:
-      max: 10
-      exclude: []
-
-    # Number of lines of code
-    loc:
-      max: 100
-      exclude: []
-
-    # Coupling between components
-    coupling:
-      forbidden: 
+    architecture:
+      # Coupling between components
+      coupling:
+        forbidden: 
           # Fails if a Model is used in a Controller
-        # Regular expression is used
-        - from: "Model"
-          to: "Controller"
+          # Regular expression is used
+          - from: "Model"
+            to: "Controller"
+
+    volume:
+      # Number of lines of code
+      loc:
+        max: 100
+        exclude: []
+
+    # Legacy flat rules still supported for compatibility
+    # maintainability:
+    #   min: 85
+    # cyclomatic_complexity:
+    #   max: 10
+    #   exclude: []
 `)
 
 	if err != nil {

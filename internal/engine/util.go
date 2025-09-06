@@ -15,53 +15,115 @@ import (
 )
 
 func GetLocPositionFromSource(sourceCode []string, start int, end int) *pb.LinesOfCode {
+	// Normalize boundaries
+	if start < 1 {
+		start = 1
+	}
+	if end < start {
+		end = start
+	}
+	if end > len(sourceCode) {
+		end = len(sourceCode)
+	}
 
-	var loc, cloc, lloc, blankLines int
+	loc := end - start + 1
+	cloc := 0
+	blank := 0
 
-	// Count lines of code
-	loc = end - start + 1
-	cloc = 0 //countComments(x)
-	lloc = loc
-	blankLines = 0
-
-	// get blank lines (line breaks) and declaration line
-	for i := start - 1; i < end; i++ {
-
-		// if line exceeds source code length, skip it
-		if i >= len(sourceCode) {
+	inBlock := false // for /* ... */
+	for i := start - 1; i < end && i < len(sourceCode); i++ {
+		line := strings.TrimSpace(sourceCode[i])
+		if line == "" {
+			blank++
 			continue
 		}
 
-		// trim it
-		sourceCode[i] = strings.TrimSpace(sourceCode[i])
+		// remove contents inside quotes to avoid counting comment markers in strings
+		clean := stripQuotes(line)
 
-		if sourceCode[i] == "" {
-			lloc--
-			blankLines++
+		if inBlock {
+			// Inside a block comment: count only interior lines that begin with '*'
+			// Do not count the opening or closing delimiter lines.
+			if strings.Contains(clean, "*/") {
+				inBlock = false
+				continue
+			}
+			if strings.HasPrefix(strings.TrimSpace(line), "*") {
+				cloc++
+			}
+			continue
 		}
 
-		// if beginning of line is not a comment, it's a declaration line
-		if strings.HasPrefix(sourceCode[i], "//") ||
-			strings.HasPrefix(sourceCode[i], "/*") ||
-			strings.HasPrefix(sourceCode[i], "*/") ||
-			strings.HasPrefix(sourceCode[i], "*") ||
-			strings.HasPrefix(sourceCode[i], "\"") ||
-			strings.HasPrefix(sourceCode[i], "#") {
-			// @todo issue here.
-			// Please update it using the countComments() function
-			lloc--
+		// line comments: count if present anywhere on the line (after stripping strings)
+		if strings.Contains(clean, "//") || strings.HasPrefix(clean, "#") || strings.Contains(clean, "# ") {
 			cloc++
+			continue
 		}
+		if strings.HasPrefix(clean, "/*") {
+			// If block opens and closes on the same line, count it as one comment line if there is any comment content before */
+			if strings.Contains(clean, "*/") {
+				idx := strings.Index(clean, "*/")
+				commentContent := strings.TrimSpace(strings.TrimPrefix(clean[:idx], "/*"))
+				if commentContent != "" {
+					cloc++
+				}
+				// block closes on same line; do not enter inBlock
+			} else {
+				// Do not count the opening delimiter line; count only inner lines
+				inBlock = true
+			}
+			continue
+		}
+		// not a comment line here
+	}
+
+	// Keep historical behavior for logical lines to match existing tests:
+	// LLOC = LOC - (CLOC + BLANK + 2)
+	ncloc := loc - cloc
+	lloc := loc - (cloc + blank + 2)
+	if lloc < 0 {
+		lloc = 0
 	}
 
 	linesOfCode := pb.LinesOfCode{}
 	linesOfCode.LinesOfCode = int32(loc)
 	linesOfCode.CommentLinesOfCode = int32(cloc)
-	// lloc = loc - (clocl + blank lines + declaration line)
-	lloc = loc - (cloc + blankLines + 2)
+	linesOfCode.NonCommentLinesOfCode = int32(ncloc)
 	linesOfCode.LogicalLinesOfCode = int32(lloc)
-
 	return &linesOfCode
+}
+
+// stripQuotes removes content inside single or double quotes (non-escaped) to avoid counting comment tokens inside strings
+func stripQuotes(s string) string {
+	inSingle := false
+	inDouble := false
+	res := make([]rune, 0, len(s))
+	for i := 0; i < len(s); i++ {
+		c := s[i]
+		if c == '\\' { // escape next
+			if i+1 < len(s) {
+				res = append(res, ' ')
+				i++
+			}
+			continue
+		}
+		if !inDouble && c == '\'' {
+			inSingle = !inSingle
+			res = append(res, ' ')
+			continue
+		}
+		if !inSingle && c == '"' {
+			inDouble = !inDouble
+			res = append(res, ' ')
+			continue
+		}
+		if inSingle || inDouble {
+			res = append(res, ' ')
+			continue
+		}
+		res = append(res, rune(c))
+	}
+	return string(res)
 }
 
 func DumpProtobuf(file *pb.File, binPath string) error {

@@ -8,6 +8,7 @@ import (
 	"github.com/fsnotify/fsnotify"
 	"github.com/halleck45/ast-metrics/internal/analyzer"
 	Activity "github.com/halleck45/ast-metrics/internal/analyzer/activity"
+	requirement "github.com/halleck45/ast-metrics/internal/analyzer/requirement"
 	"github.com/halleck45/ast-metrics/internal/cli"
 	"github.com/halleck45/ast-metrics/internal/configuration"
 	"github.com/halleck45/ast-metrics/internal/engine"
@@ -195,8 +196,8 @@ func (v *AnalyzeCommand) Execute() error {
 	// Evaluate requirements
 	shouldFail := false
 	if v.Configuration.Requirements != nil {
-		requirementsEvaluator := analyzer.NewRequirementsEvaluator(*v.Configuration.Requirements)
-		evaluation := requirementsEvaluator.Evaluate(allResults, projectAggregated)
+		requirementsEvaluator := requirement.NewRequirementsEvaluator(*v.Configuration.Requirements)
+		evaluation := requirementsEvaluator.Evaluate(allResults, requirement.ProjectAggregated{})
 		projectAggregated.Evaluation = &evaluation
 
 		if evaluation.Succeeded {

@@ -394,6 +394,7 @@ func (v *HtmlReportGenerator) RegisterFilters() {
 			Aggregated: aggregated,
 			Files:      files,
 		}
+
 		return pongo2.AsSafeValue(comp.AsHtml()), nil
 	})
 

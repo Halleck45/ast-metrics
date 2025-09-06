@@ -50,7 +50,7 @@ func (r PhpRunner) Finish() error {
 	return nil
 }
 
-// DumpAST dumps the AST of PHP files using engine.DumpFiles, like PythonRunner
+// DumpAST dumps the AST of PHP files using engine.DumpFiles,
 func (r PhpRunner) DumpAST() {
 	engine.DumpFiles(
 		r.getFileList().Files, r.Configuration, r.progressbar,
@@ -80,8 +80,9 @@ func (r PhpRunner) Parse(path string) (*pb.File, error) {
 	v.Visit(root)
 	file := v.Result()
 	file.ProgrammingLanguage = "PHP"
+
 	// Fallback: if parsing failed to produce classes and the source contains a class keyword,
-	// synthesize a dummy class with non-utf8 name placeholder to keep legacy behavior.
+	// synthesize a dummy class with non-utf8 name placeholder
 	if len(engine.GetClassesInFile(file)) == 0 {
 		s := string(src)
 		if strings.Contains(s, "class ") || strings.Contains(s, "class\n") || strings.Contains(s, "class\t") {

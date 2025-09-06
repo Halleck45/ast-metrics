@@ -1,0 +1,11 @@
+package ruleset
+
+import (
+	pb "github.com/halleck45/ast-metrics/internal/nodetype"
+)
+
+type Rule interface {
+	Name() string
+	Description() string
+	CheckFile(file *pb.File, addError func(string), addSuccess func(string))
+}

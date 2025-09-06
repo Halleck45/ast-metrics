@@ -1,7 +1,22 @@
-sources: 
+sources:
   - ./internal
 exclude: []
-
 reports:
   html: ./build/report
   markdown: ./build/report.md
+requirements:
+  rules:
+    volume:
+      loc:
+        max: 999
+        min: 0
+        exclude:
+          - aggregator.go
+          - NodeType.pb.go
+      lloc_by_method:
+        max: 250
+        min: 0
+        exclude:
+          - aggregator.go
+          - NodeType.pb.go
+  fail_on_error: true

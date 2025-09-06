@@ -1,6 +1,7 @@
-package analyzer
+package requirement
 
 import (
+	"fmt"
 	"testing"
 
 	"github.com/halleck45/ast-metrics/internal/configuration"
@@ -38,15 +39,16 @@ func TestEvaluationResult(t *testing.T) {
 	configInYaml := `
 requirements:
   rules:
-    cyclomatic_complexity:
-      max: 5
-`
+    complexity:
+      cyclomatic_complexity:
+        max: 5`
 
 	loader := configuration.NewConfigurationLoader()
-	configuration, err := loader.Import(configInYaml)
+	config, err := loader.Import(configInYaml)
 	assert.Nil(t, err)
+	fmt.Println(config)
 
-	evaluator := NewRequirementsEvaluator(*configuration.Requirements)
+	evaluator := NewRequirementsEvaluator(*config.Requirements)
 	evaluation := evaluator.Evaluate(files, ProjectAggregated{})
 
 	assert.Equal(t, files, evaluation.Files)

@@ -5,7 +5,7 @@ import (
 	"strings"
 	"unicode/utf8"
 
- Treesitter "github.com/halleck45/ast-metrics/internal/engine/treesitter"
+	Treesitter "github.com/halleck45/ast-metrics/internal/engine/treesitter"
 	sitter "github.com/smacker/go-tree-sitter"
 	tsPhp "github.com/smacker/go-tree-sitter/php"
 )
@@ -156,7 +156,7 @@ func (a *TreeSitterAdapter) Decision(n *sitter.Node) (Treesitter.DecisionKind, *
 			return Treesitter.DecIf, b
 		}
 		return Treesitter.DecIf, nil
- case "else_clause":
+	case "else_clause":
 		// Some grammars may represent "else if" as an else_clause containing an if_statement
 		if ifn := firstChildOfType(n, "if_statement"); ifn != nil {
 			if b := firstChildOfType(ifn, "compound_statement"); b != nil {
@@ -175,7 +175,7 @@ func (a *TreeSitterAdapter) Decision(n *sitter.Node) (Treesitter.DecisionKind, *
 		return Treesitter.DecElif, nil
 	case "switch_statement":
 		return Treesitter.DecSwitch, n
- case "switch_block":
+	case "switch_block":
 		// Do not count an extra switch; cases will be visited from switch_statement
 		return Treesitter.DecNone, nil
 	case "case_statement":
@@ -232,7 +232,7 @@ func (a *TreeSitterAdapter) Imports(n *sitter.Node) []Treesitter.ImportItem {
 	if n.Type() == "class_declaration" {
 		return a.extDeps
 	}
- return nil
+	return nil
 }
 
 // computeExternalDependencies scans the whole source and fills a.extDeps with external classes used within class bodies.
@@ -275,17 +275,29 @@ func (a *TreeSitterAdapter) computeExternalDependencies() {
 			// Traverse to collect any use_as_clause (aliases)
 			var collect func(*sitter.Node)
 			collect = func(x *sitter.Node) {
-				if x == nil { return }
+				if x == nil {
+					return
+				}
 				if x.Type() == "use_as_clause" {
 					var base, alias string
-					if q := firstChildOfType(x, "qualified_name"); q != nil { base = a.text(q) }
-					if base == "" {
-						if nm := firstChildOfType(x, "name"); nm != nil { base = a.text(nm) }
+					if q := firstChildOfType(x, "qualified_name"); q != nil {
+						base = a.text(q)
 					}
-					if aliasNode := x.Child(int(x.ChildCount()-1)); aliasNode != nil { alias = a.text(aliasNode) }
-					if base != "" && alias != "" { a.aliases[alias] = base }
+					if base == "" {
+						if nm := firstChildOfType(x, "name"); nm != nil {
+							base = a.text(nm)
+						}
+					}
+					if aliasNode := x.Child(int(x.ChildCount() - 1)); aliasNode != nil {
+						alias = a.text(aliasNode)
+					}
+					if base != "" && alias != "" {
+						a.aliases[alias] = base
+					}
 				}
-				for i := 0; i < int(x.ChildCount()); i++ { collect(x.Child(i)) }
+				for i := 0; i < int(x.ChildCount()); i++ {
+					collect(x.Child(i))
+				}
 			}
 			collect(n)
 			// simple import without alias: use A\B; alias is short name or single name
@@ -293,12 +305,16 @@ func (a *TreeSitterAdapter) computeExternalDependencies() {
 				base := a.text(q)
 				if base != "" {
 					short := base
-					if idx := strings.LastIndex(base, "\\"); idx >= 0 { short = base[idx+1:] }
+					if idx := strings.LastIndex(base, "\\"); idx >= 0 {
+						short = base[idx+1:]
+					}
 					a.aliases[short] = base
 				}
 			} else if nm := firstChildOfType(n, "name"); nm != nil {
 				base := a.text(nm)
-				if base != "" { a.aliases[base] = base }
+				if base != "" {
+					a.aliases[base] = base
+				}
 			}
 		}
 		for i := 0; i < int(n.ChildCount()); i++ {
@@ -356,17 +372,23 @@ func (a *TreeSitterAdapter) computeExternalDependencies() {
 			parts := strings.Split(clause, ",")
 			for _, p := range parts {
 				seg := strings.TrimSpace(p)
-				if seg == "" { continue }
+				if seg == "" {
+					continue
+				}
 				if strings.Contains(seg, " as ") {
 					kv := strings.SplitN(seg, " as ", 2)
 					base := strings.TrimSpace(kv[0])
 					alias := strings.TrimSpace(kv[1])
-					if base != "" && alias != "" { a.aliases[alias] = base }
+					if base != "" && alias != "" {
+						a.aliases[alias] = base
+					}
 				} else {
 					base := seg
 					if base != "" {
 						short := base
-						if i := strings.LastIndex(short, "\\"); i >= 0 { short = short[i+1:] }
+						if i := strings.LastIndex(short, "\\"); i >= 0 {
+							short = short[i+1:]
+						}
 						a.aliases[short] = base
 					}
 				}
@@ -387,7 +409,9 @@ func (a *TreeSitterAdapter) computeExternalDependencies() {
 		re := regexp.MustCompile(`new\s+(\\)?([A-Za-z_][A-Za-z0-9_\\]*)`)
 		for _, m := range re.FindAllStringSubmatch(src, -1) {
 			name := m[2]
-			if m[1] != "" { name = "\\" + name }
+			if m[1] != "" {
+				name = "\\" + name
+			}
 			add(resolve(name))
 		}
 	}
@@ -396,7 +420,9 @@ func (a *TreeSitterAdapter) computeExternalDependencies() {
 		re := regexp.MustCompile(`(\\)?([A-Za-z_][A-Za-z0-9_\\]*)::`)
 		for _, m := range re.FindAllStringSubmatch(src, -1) {
 			name := m[2]
-			if m[1] != "" { name = "\\" + name }
+			if m[1] != "" {
+				name = "\\" + name
+			}
 			add(resolve(name))
 		}
 	}
@@ -409,7 +435,9 @@ func (a *TreeSitterAdapter) computeExternalDependencies() {
 			pre := regexp.MustCompile(`\??[A-Za-z_\\][A-Za-z0-9_\\]*\s*\$`)
 			for _, p := range pre.FindAllString(params, -1) {
 				name := strings.TrimSpace(strings.TrimSuffix(p, "$"))
-				if !isPrimitive(name) { add(resolve(name)) }
+				if !isPrimitive(name) {
+					add(resolve(name))
+				}
 			}
 		}
 	}
@@ -417,14 +445,18 @@ func (a *TreeSitterAdapter) computeExternalDependencies() {
 	{
 		re := regexp.MustCompile(`\)\s*:\s*\??([A-Za-z_\\][A-Za-z0-9_\\]*)`)
 		for _, m := range re.FindAllStringSubmatch(src, -1) {
-			if !isPrimitive(m[1]) { add(resolve(m[1])) }
+			if !isPrimitive(m[1]) {
+				add(resolve(m[1]))
+			}
 		}
 	}
 	// Property declarations with types
 	{
 		re := regexp.MustCompile(`(?m)^(?:\s*)(?:public|private|protected|var)\s+\??([A-Za-z_\\][A-Za-z0-9_\\]*)?\s*\$`)
 		for _, m := range re.FindAllStringSubmatch(src, -1) {
-			if m[1] != "" && !isPrimitive(m[1]) { add(resolve(m[1])) }
+			if m[1] != "" && !isPrimitive(m[1]) {
+				add(resolve(m[1]))
+			}
 		}
 	}
 	// keep duplicates to align with expected metrics (counts each usage)
@@ -534,30 +566,60 @@ func (a *TreeSitterAdapter) ExtractOperatorsOperands(src []byte, startLine, endL
 // CountComments counts PHP-style comment lines in the given range
 func (a *TreeSitterAdapter) CountComments(lines []string, start, end int) int {
 	cnt := 0
-	// 1) inside node range
+	inBlock := false
 	for i := start - 1; i < end && i < len(lines); i++ {
-		ln := strings.TrimSpace(lines[i])
-		if ln == "" {
+		line := strings.TrimSpace(lines[i])
+		if line == "" {
 			continue
 		}
-		clean := stripStrings(ln)
-		if strings.HasPrefix(clean, "//") || strings.HasPrefix(clean, "/*") || strings.HasPrefix(clean, "*/") || strings.HasPrefix(clean, "*") || strings.HasPrefix(clean, "#") || strings.Contains(clean, "//") {
-			cnt++
-		}
-	}
-	// 2) contiguous docblock immediately above start
-	for i := start - 2; i >= 0 && i < len(lines); i-- {
-		ln := strings.TrimSpace(lines[i])
-		if ln == "" { // allow blank line within block? stop at first blank
-			break
-		}
-		clean := stripStrings(ln)
-		if strings.HasPrefix(clean, "*/") || strings.HasPrefix(clean, "*") || strings.HasPrefix(clean, "/*") || strings.HasPrefix(clean, "//") || strings.HasPrefix(clean, "#") {
-			cnt++
-			// continue upward until non-comment line
+		clean := stripStrings(line)
+
+		if inBlock {
+			if strings.Contains(clean, "*/") {
+				// closing delimiter on this line; do not count the delimiter line itself
+				// but if there is an inline comment after it (e.g., // ...), count that as one
+				after := strings.TrimSpace(clean[strings.Index(clean, "*/")+2:])
+				if strings.Contains(after, "//") || strings.HasPrefix(after, "#") || strings.Contains(after, "# ") {
+					cnt++
+				}
+				inBlock = false
+				continue
+			}
+			// count only interior lines that begin with '*'
+			if strings.HasPrefix(strings.TrimSpace(line), "*") {
+				cnt++
+			}
 			continue
 		}
-		break
+
+		if strings.HasPrefix(clean, "/*") {
+			// If it's a docblock opener "/**", count the opening line as a comment line
+			isDocblock := strings.HasPrefix(clean, "/**")
+			if strings.Contains(clean, "*/") {
+				// block opens and closes on the same line
+				if isDocblock {
+					cnt++ // count the opener line for docblock
+				}
+				// also count inline // or # after the closing delimiter
+				after := strings.TrimSpace(clean[strings.Index(clean, "*/")+2:])
+				if strings.Contains(after, "//") || strings.HasPrefix(after, "#") || strings.Contains(after, "# ") {
+					cnt++
+				}
+				// do not enter block since it closes here
+			} else {
+				if isDocblock {
+					cnt++ // count the opener line for docblock
+				}
+				inBlock = true
+			}
+			continue
+		}
+
+		// line comments anywhere on the line
+		if strings.Contains(clean, "//") || strings.HasPrefix(clean, "#") || strings.Contains(clean, "# ") {
+			cnt++
+			continue
+		}
 	}
 	return cnt
 }
@@ -607,7 +669,9 @@ func dedup(in []Treesitter.ImportItem) []Treesitter.ImportItem {
 	return out
 }
 
-func (a *TreeSitterAdapter) CountElseIfAsIf() bool { return true }
+func (a *TreeSitterAdapter) CountElseIfAsIf() bool {
+	return true
+}
 
 func (a *TreeSitterAdapter) findNamespace() string {
 	if a.src == nil {

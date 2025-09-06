@@ -1,10 +1,11 @@
 package analyzer
 
 import (
-	"math"
+    	"math"
 	"runtime"
 	"sync"
 
+	requirement "github.com/halleck45/ast-metrics/internal/analyzer/requirement"
 	engine "github.com/halleck45/ast-metrics/internal/engine"
 	pb "github.com/halleck45/ast-metrics/internal/nodetype"
 	Scm "github.com/halleck45/ast-metrics/internal/scm"
@@ -16,7 +17,7 @@ type ProjectAggregated struct {
 	Combined              Aggregated
 	ByProgrammingLanguage map[string]Aggregated
 	ErroredFiles          []*pb.File
-	Evaluation            *EvaluationResult
+	Evaluation            *requirement.EvaluationResult
 	Comparaison           *ProjectComparaison
 }
 
@@ -377,13 +378,13 @@ func (r *Aggregator) executeAggregationOnFiles(files []*pb.File) ProjectAggregat
 	projectAggregated.ByClass = r.mapCoupling(&projectAggregated.ByClass)
 	projectAggregated.ByFile = r.mapCoupling(&projectAggregated.ByFile)
 
+	// For all languages (set Combined before running analyzers that rely on it)
+	projectAggregated.Combined = projectAggregated.ByFile
+	projectAggregated.ErroredFiles = projectAggregated.ByFile.ErroredFiles
+
 	// Risks
 	riskAnalyzer := NewRiskAnalyzer()
 	riskAnalyzer.Analyze(projectAggregated)
-
-	// For all languages
-	projectAggregated.Combined = projectAggregated.ByFile
-	projectAggregated.ErroredFiles = projectAggregated.ByFile.ErroredFiles
 
 	return projectAggregated
 }
@@ -613,7 +614,6 @@ func (r *Aggregator) mapSums(file *pb.File, specificAggregation Aggregated) Aggr
 			result.EfferentCoupling.Counter++
 			result.AfferentCoupling.Sum += float64(class.Stmts.Analyze.Coupling.Afferent)
 			result.AfferentCoupling.Counter++
-
 			// Instability for class
 			if class.Stmts.Analyze.Coupling.Efferent > 0 {
 				class.Stmts.Analyze.Coupling.Instability = float64(class.Stmts.Analyze.Coupling.Efferent) / float64(class.Stmts.Analyze.Coupling.Efferent+class.Stmts.Analyze.Coupling.Afferent)
@@ -880,6 +880,19 @@ func (r *Aggregator) mapCoupling(aggregated *Aggregated) Aggregated {
 		files[namespace] = fileItem
 	}
 
+	// populate the classmap
+	for _, file := range aggregated.ConcernedFiles {
+		if file == nil || file.Stmts == nil {
+			continue
+		}
+		for _, class := range engine.GetClassesInFile(file) {
+			if class == nil || class.Name == nil || class.Name.Qualified == "" {
+				continue
+			}
+			classesMap[class.Name.Qualified] = class
+		}
+	}
+
 	for _, file := range aggregated.ConcernedFiles {
 
 		if file == nil || file.Stmts == nil || file.Stmts.StmtExternalDependencies == nil {
@@ -938,11 +951,6 @@ func (r *Aggregator) mapCoupling(aggregated *Aggregated) Aggregated {
 				continue
 			}
 
-			// first we create the hashmap if not exists
-			if _, ok := classesMap[class.Name.Qualified]; !ok {
-				classesMap[class.Name.Qualified] = class
-			}
-
 			if class.Stmts == nil || class.Stmts.StmtExternalDependencies == nil {
 				continue
 			}
@@ -969,9 +977,16 @@ func (r *Aggregator) mapCoupling(aggregated *Aggregated) Aggregated {
 
 				result.ClassesAfferentCoupling[dependencyName]++
 
-				fromClass := classesMap[dependencyName]
+				// Use the qualified namespace to find the target class in the classesMap
+				fromClass := classesMap[dependency.Namespace]
 				if fromClass != nil {
 
+					if fromClass.Stmts == nil {
+						fromClass.Stmts = &pb.Stmts{}
+					}
+					if fromClass.Stmts.Analyze == nil {
+						fromClass.Stmts.Analyze = &pb.Analyze{}
+					}
 					if fromClass.Stmts.Analyze.Coupling == nil {
 						fromClass.Stmts.Analyze.Coupling = &pb.Coupling{
 							Efferent: 0,
