@@ -91,9 +91,10 @@ message StmtFunction {
   repeated StmtComment comments = 4;
   repeated StmtOperator operators = 5;
   repeated StmtOperand operands = 6;
-  repeated StmtParameter parameters = 7;
-  repeated Name externals = 8; // dependencies
-  LinesOfCode linesOfCode = 9;
+  repeated StmtMethodCall methodCalls = 7;
+  repeated StmtParameter parameters = 8;
+  repeated Name externals = 9; // dependencies
+  LinesOfCode linesOfCode = 10;
 }
 
 // Represents a Parameter node (for function)
@@ -178,6 +179,9 @@ message StmtOperator {
 message StmtOperand {
   string name = 1;
 }
+message StmtMethodCall {
+  string name = 1;
+}
 
 // ------------------------------------
 // -- Volume: LinesOfCode
@@ -199,6 +203,7 @@ message Analyze {
   Maintainability maintainability = 3;
   Risk risk = 4;
   Coupling coupling = 5;
+  ClassCohesion classCohesion = 6;
 }
 message Complexity {
   optional int32 cyclomatic = 1;
@@ -219,6 +224,10 @@ message Maintainability {
   optional double maintainabilityIndex = 1;
   optional double maintainabilityIndexWithoutComments = 2;
   optional double commentWeight = 3;
+}
+message ClassCohesion {
+  optional double lcom1 = 1; // Henderson-Sellers algorithm
+  optional int32 lcom4 = 2; // Hitz & Montazer (we don't use Basili algorithm => not pertinent)
 }
 
 // ------------------------------------

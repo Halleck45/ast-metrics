@@ -462,6 +462,59 @@ func (a *TreeSitterAdapter) computeExternalDependencies() {
 	// keep duplicates to align with expected metrics (counts each usage)
 }
 
+// ---- Class operands (properties) ----
+// ClassDirectOperands returns the direct attributes (properties) declared in the given class node.
+// It scans only the class body and collects variable names from property declarations.
+func (a *TreeSitterAdapter) ClassDirectOperands(n *sitter.Node) []string {
+	if n == nil {
+		return nil
+	}
+	body := a.NodeBody(n)
+	if body == nil {
+		return nil
+	}
+	props := []string{}
+	add := func(name string) {
+		if name != "" {
+			props = append(props, name)
+		}
+	}
+	var walkCollect func(*sitter.Node)
+	walkCollect = func(x *sitter.Node) {
+		if x == nil {
+			return
+		}
+		t := x.Type()
+		// property_declaration covers typical cases; class_property_declaration may appear in some grammar versions
+		if t == "property_declaration" || t == "class_property_declaration" {
+			// collect variable_name under property_element list
+			var dive func(*sitter.Node)
+			dive = func(y *sitter.Node) {
+				if y == nil {
+					return
+				}
+				if y.Type() == "variable_name" {
+					add(a.text(y))
+				}
+				for i := 0; i < int(y.ChildCount()); i++ {
+					dive(y.Child(i))
+				}
+			}
+			dive(x)
+			return
+		}
+		// Avoid deep traversal elsewhere to keep it limited to direct children property declarations
+	}
+	for i := 0; i < int(body.ChildCount()); i++ {
+		walkCollect(body.Child(i))
+	}
+ 	// normalize: drop leading $ if present
+ 	for i, p := range props {
+ 		props[i] = normalizePhpOperand(p)
+ 	}
+ 	return props
+}
+
 // ---- helpers ----
 func (a *TreeSitterAdapter) text(n *sitter.Node) string {
 	if n == nil || a.src == nil {
@@ -494,7 +547,7 @@ func (a *TreeSitterAdapter) ExtractOperatorsOperands(src []byte, startLine, endL
 	addOp := func(op string) { ops = append(ops, op) }
 	// tokens ordered longest-first to avoid partial matches
 	tokens := []string{"<<=", ">>=", "**=", "===", "!==", "<=>", "??=", "<=", ">=", "<<", ">>", "&&", "||", "??", "&=", "|=", "^=", "+=", "-=", "*=", "/=", "%=", ".=", "==", "**", "+", "-", "*", "/", "%", ".", "&", "|", "^", "<", ">"}
-	addOperand := func(name string) { oprnds = append(oprnds, name) }
+	addOperand := func(name string) { oprnds = append(oprnds, normalizePhpOperand(name)) }
 	// very naive scan in order
 	for i := startLine - 1; i < endLine && i < len(lines); i++ {
 		lineOrig := strings.TrimSpace(lines[i])
@@ -558,8 +611,100 @@ func (a *TreeSitterAdapter) ExtractOperatorsOperands(src []byte, startLine, endL
 				}
 			}
 		}
-	}
+ }
 	return ops, oprnds
+}
+
+// ExtractMethodCalls scans the function body range and returns normalized method calls
+// Examples recognized:
+//   $this->foo(   => this.foo
+//   $obj->bar(    => obj.bar
+//   parent::baz(  => parent.baz
+//   self::qux(    => self.qux
+//   static::zap(  => static.zap
+func (a *TreeSitterAdapter) ExtractMethodCalls(src []byte, startLine, endLine int) []string {
+	if src == nil || startLine <= 0 || endLine <= 0 || endLine < startLine {
+		return nil
+	}
+	lines := strings.Split(string(src), "\n")
+	res := []string{}
+	add := func(s string) { if s != "" { res = append(res, s) } }
+	// simple scanning using string ops; skip inside comments/strings via stripStrings
+	for i := startLine - 1; i < endLine && i < len(lines); i++ {
+		orig := strings.TrimSpace(lines[i])
+		if orig == "" {
+			continue
+		}
+		line := stripStrings(orig)
+		// Convert arrow and scope for easier parsing but we need original to detect pattern
+		// 1) $this->name(
+		idx := 0
+		for idx < len(line) {
+			p := strings.Index(line[idx:], "$this->")
+			if p < 0 { break }
+			p += idx
+			j := p + len("$this->")
+			// read identifier
+			k := j
+			for k < len(line) && ((line[k] >= 'a' && line[k] <= 'z') || (line[k] >= 'A' && line[k] <= 'Z') || (line[k] >= '0' && line[k] <= '9') || line[k] == '_') {
+				k++
+			}
+			if k < len(line) && line[k] == '(' {
+				name := line[j:k]
+				if name != "" { add("this." + name) }
+			}
+			idx = k
+		}
+		// 2) $obj->name(
+		idx = 0
+		for idx < len(line) {
+			p := strings.Index(line[idx:], "$")
+			if p < 0 { break }
+			p += idx
+			// read var name
+			j := p + 1
+			for j < len(line) && ((line[j] >= 'a' && line[j] <= 'z') || (line[j] >= 'A' && line[j] <= 'Z') || (line[j] >= '0' && line[j] <= '9') || line[j] == '_') {
+				j++
+			}
+			if j+2 < len(line) && line[j] == '-' && line[j+1] == '>' {
+				// read method name
+				k := j + 2
+				for k < len(line) && ((line[k] >= 'a' && line[k] <= 'z') || (line[k] >= 'A' && line[k] <= 'Z') || (line[k] >= '0' && line[k] <= '9') || line[k] == '_') {
+					k++
+				}
+				if k < len(line) && line[k] == '(' {
+					obj := line[p:j]
+					meth := line[j+2 : k]
+					if obj != "$this" { // $this handled above
+						add(strings.TrimPrefix(obj, "$") + "." + meth)
+					}
+					idx = k
+					continue
+				}
+			}
+			idx = j
+		}
+		// 3) parent::/self::/static:: name(
+		for _, kw := range []string{"parent::", "self::", "static::"} {
+			idx = 0
+			for idx < len(line) {
+				p := strings.Index(line[idx:], kw)
+				if p < 0 { break }
+				p += idx
+				j := p + len(kw)
+				k := j
+				for k < len(line) && ((line[k] >= 'a' && line[k] <= 'z') || (line[k] >= 'A' && line[k] <= 'Z') || (line[k] >= '0' && line[k] <= '9') || line[k] == '_') {
+					k++
+				}
+				if k < len(line) && line[k] == '(' {
+					base := strings.TrimSuffix(kw, "::")
+					add(base + "." + line[j:k])
+				}
+				idx = k
+			}
+		}
+	}
+	return res
 }
 
 // stripStrings removes content inside single or double quotes
@@ -650,6 +795,36 @@ func stripStrings(s string) string {
 		out = append(out, rune(c))
 	}
 	return string(out)
+}
+
+func normalizePhpOperand(name string) string {
+	if name == "" {
+		return name
+	}
+	// handle $this->prop and $var->prop
+	if strings.HasPrefix(name, "$this->") {
+		return "this." + strings.TrimPrefix(name, "$this->")
+	}
+	// parent/self/static static props: parent::$a
+	if strings.HasPrefix(name, "parent::$") {
+		return "parent." + strings.TrimPrefix(name, "parent::$")
+	}
+	if strings.HasPrefix(name, "self::$") {
+		return "self." + strings.TrimPrefix(name, "self::$")
+	}
+	if strings.HasPrefix(name, "static::$") {
+		return "static." + strings.TrimPrefix(name, "static::$")
+	}
+	// generic object access $obj->a
+	if strings.HasPrefix(name, "$") && strings.Contains(name, "->") {
+		name = strings.TrimPrefix(name, "$")
+		return strings.ReplaceAll(name, "->", ".")
+	}
+	// simple variable $a
+	if strings.HasPrefix(name, "$") {
+		return strings.TrimPrefix(name, "$")
+	}
+	return name
 }
 
 func dedup(in []Treesitter.ImportItem) []Treesitter.ImportItem {

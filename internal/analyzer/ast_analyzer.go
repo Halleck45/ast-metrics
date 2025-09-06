@@ -134,6 +134,9 @@ func AnalyzeFile(file *pb.File) {
 	halsteadVisitor := &Volume.HalsteadMetricsVisitor{}
 	root.Accept(halsteadVisitor)
 
+	lcomVisitor := &Component.LackOfCohesionOfMethodsVisitor{}
+	root.Accept(lcomVisitor)
+
 	maintainabilityIndexVisitor := &Component.MaintainabilityIndexVisitor{}
 	root.Accept(maintainabilityIndexVisitor)
 

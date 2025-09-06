@@ -412,6 +412,20 @@ func (v *HtmlReportGenerator) RegisterFilters() {
 		return pongo2.AsSafeValue(comp.AsHtml()), nil
 	})
 
+	// filter barchartLcomRepartition
+	pongo2.RegisterFilter("barchartLcomRepartition", func(in *pongo2.Value, param *pongo2.Value) (out *pongo2.Value, err *pongo2.Error) {
+		// get the aggregated and files
+		aggregated := in.Interface().(analyzer.Aggregated)
+		files := aggregated.ConcernedFiles
+
+		// create the component
+		comp := ui.ComponentBarchartLcomRepartition{
+			Aggregated: aggregated,
+			Files:      files,
+		}
+		return pongo2.AsSafeValue(comp.AsHtml()), nil
+	})
+
 	// filter lineChartGitActivity
 	pongo2.RegisterFilter("lineChartGitActivity", func(in *pongo2.Value, param *pongo2.Value) (out *pongo2.Value, err *pongo2.Error) {
 		// get the aggregated and files
