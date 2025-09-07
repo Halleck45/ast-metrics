@@ -239,6 +239,13 @@ func (v *Visitor) Visit(node *sitter.Node) {
 				c.Stmts.StmtExternalDependencies = append(c.Stmts.StmtExternalDependencies, dep)
 			}
 		}
+		// If adapter can list direct class operands (e.g., PHP properties), attach them
+		if va, ok := v.ad.(interface{ ClassDirectOperands(*sitter.Node) []string }); ok {
+			for _, p := range va.ClassDirectOperands(node) {
+				c.Operands = append(c.Operands, &pb.StmtOperand{Name: p})
+			}
+		}
+
 		v.pushClass(c)
 		v.ad.EachChildBody(body, func(ch *sitter.Node) { v.Visit(ch) })
 		v.popClass()
@@ -291,6 +298,13 @@ func (v *Visitor) Visit(node *sitter.Node) {
 			}
 			for _, p := range opr {
 				fn.Operands = append(fn.Operands, &pb.StmtOperand{Name: p})
+			}
+		}
+		// optional: extract method calls (e.g., this.foo, parent.bar) per adapter
+		if mc, ok := v.ad.(interface{ ExtractMethodCalls(src []byte, startLine, endLine int) []string }); ok {
+			calls := mc.ExtractMethodCalls([]byte(strings.Join(v.lines, "\n")), start, end)
+			for _, m := range calls {
+				fn.MethodCalls = append(fn.MethodCalls, &pb.StmtMethodCall{Name: m})
 			}
 		}
 		v.popFunc()

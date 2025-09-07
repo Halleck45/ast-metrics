@@ -1,7 +1,7 @@
 package analyzer
 
 import (
-    	"math"
+	"math"
 	"runtime"
 	"sync"
 
@@ -67,6 +67,7 @@ type Aggregated struct {
 	HalsteadVolume                          AggregateResult
 	HalsteadTime                            AggregateResult
 	HalsteadBugs                            AggregateResult
+	Lcom4PerClass                           AggregateResult
 	MaintainabilityIndex                    AggregateResult
 	MaintainabilityIndexWithoutComments     AggregateResult
 	MaintainabilityCommentWeight            AggregateResult
@@ -156,6 +157,7 @@ func newAggregated() Aggregated {
 		HalsteadVolume:                          NewAggregateResult(),
 		HalsteadTime:                            NewAggregateResult(),
 		HalsteadBugs:                            NewAggregateResult(),
+		Lcom4PerClass:                           NewAggregateResult(),
 		MaintainabilityIndex:                    NewAggregateResult(),
 		MaintainabilityIndexWithoutComments:     NewAggregateResult(),
 		MaintainabilityCommentWeight:            NewAggregateResult(),
@@ -662,6 +664,20 @@ func (r *Aggregator) mapSums(file *pb.File, specificAggregation Aggregated) Aggr
 			}
 		}
 
+		// LCOM
+		if class.Stmts.Analyze.ClassCohesion != nil && class.Stmts.Analyze.ClassCohesion.Lcom4 != nil {
+			// want a float64, got a int32
+			lcom4 := float64(*class.Stmts.Analyze.ClassCohesion.Lcom4)
+			result.Lcom4PerClass.Sum += lcom4
+			result.Lcom4PerClass.Counter++
+			if specificAggregation.Lcom4PerClass.Min == 0 || lcom4 < specificAggregation.Lcom4PerClass.Min {
+				result.Lcom4PerClass.Min = lcom4
+			}
+			if specificAggregation.Lcom4PerClass.Max == 0 || lcom4 > specificAggregation.Lcom4PerClass.Max {
+				result.Lcom4PerClass.Max = lcom4
+			}
+		}
+
 		// Coupling
 		if class.Stmts.Analyze.Coupling == nil {
 			class.Stmts.Analyze.Coupling = &pb.Coupling{
@@ -737,6 +753,16 @@ func (r *Aggregator) mergeChunks(aggregated Aggregated, chunk *Aggregated) Aggre
 	result.HalsteadTime.Counter += chunk.HalsteadTime.Counter
 	result.HalsteadBugs.Sum += chunk.HalsteadBugs.Sum
 	result.HalsteadBugs.Counter += chunk.HalsteadBugs.Counter
+
+	// LCOM
+	result.Lcom4PerClass.Sum += chunk.Lcom4PerClass.Sum
+	result.Lcom4PerClass.Counter += chunk.Lcom4PerClass.Counter
+	if result.Lcom4PerClass.Min == 0 || (chunk.Lcom4PerClass.Min > 0 && chunk.Lcom4PerClass.Min < result.Lcom4PerClass.Min) {
+		result.Lcom4PerClass.Min = chunk.Lcom4PerClass.Min
+	}
+	if chunk.Lcom4PerClass.Max > result.Lcom4PerClass.Max {
+		result.Lcom4PerClass.Max = chunk.Lcom4PerClass.Max
+	}
 
 	result.MaintainabilityIndex.Sum += chunk.MaintainabilityIndex.Sum
 	result.MaintainabilityIndex.Counter += chunk.MaintainabilityIndex.Counter
@@ -818,6 +844,9 @@ func (r *Aggregator) reduceMetrics(aggregated Aggregated) Aggregated {
 	}
 	if result.HalsteadTime.Counter > 0 {
 		result.HalsteadTime.Avg = result.HalsteadTime.Sum / float64(result.HalsteadTime.Counter)
+	}
+	if result.Lcom4PerClass.Counter > 0 {
+		result.Lcom4PerClass.Avg = result.Lcom4PerClass.Sum / float64(result.Lcom4PerClass.Counter)
 	}
 	if result.MaintainabilityIndex.Counter > 0 {
 		result.MaintainabilityIndex.Avg = result.MaintainabilityIndex.Sum / float64(result.MaintainabilityIndex.Counter)

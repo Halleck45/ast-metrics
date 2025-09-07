@@ -70,8 +70,8 @@
     {% endif %}
     <!-- end alert -->
 
-    <!-- start: line of 4 cards -->
-    <div class="grid grid-cols-4 gap-4 mt-4">
+    <!-- start: line of cards -->
+    <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4 mt-4">
 
         <!-- start: card -->
         <div class="max-w-2xl px-8 py-4 bg-white rounded-lg shadow-md ">
@@ -176,14 +176,44 @@
             </div>
         </div>
         <!-- end: card -->
-    </div>
-    <!-- end: line of 4 cards -->
-
-     <!-- start: line -->
-    <div class="grid grid-cols-4 gap-4 mt-4">
 
          <!-- start: card -->
-         <div class="max-w-2xl px-8 py-4 bg-white rounded-lg shadow-md ">
+        <div class="max-w-2xl px-8 py-4 bg-white rounded-lg shadow-md ">
+            <div class="mt-2">
+                <div>
+                    <h5 class="leading-none text-3xl font-bold text-gray-900 pb-2">
+                        {% set color="red" %}
+                        {% if currentView.Lcom4PerClass.Avg < 1.7 %}
+                            {% set color="green" %}
+                        {% elif currentView.Lcom4PerClass.Avg > 1.7 %}
+                            {% set color="yellow" %}
+                        {% endif %}
+                        <span class="text-{{ color }}-900 bg-{{ color }}-400 rounded px-3 py-1">{{ currentView.Lcom4PerClass.Avg | floatformat:1 }}</span>
+                    </h5>
+                    <p class="text-base font-normal text-gray-500 ">
+                        {% if currentView.Comparaison %}
+                            {% include 'componentComparaisonBadge.html' with comparaisonMode='lowIsBetter' diff=currentView.Comparaison.AverageLcom4 round=2 %}
+                        {% endif %}
+                        Lack of Cohesion of Methods
+                    </p>
+                </div>
+                <div class="card-graph">
+                    {{ currentView|barchartLcomRepartition}}
+                </div>
+                <p class="border-t border-gray-200 mt-2 italic text-sm text-gray-600 pt-4 text-justify">
+                    When LCOM is high, it means that the class has low cohesion and is trying to do too many things at once.
+                </p>
+            </div>
+        </div>
+        <!-- end: card -->
+    </div>
+    <!-- end: line of cards -->
+
+     <!-- start: line -->
+    <div class="md:grid  md:grid-cols-3 lg:grid-cols-4 gap-4 mt-4">
+
+         <!-- start: card -->
+         <div class="max-w-2xl px-8 py-4 bg-white rounded-lg shadow-md mb-4 md:mb-0 ">
             <div class="mt-2">
                 {% if currentView.ResultOfGitAnalysis %}
                     <div>
@@ -268,7 +298,7 @@
 
 
          <!-- start: card -->
-         <div class="px-8 py-4 bg-white rounded-lg shadow-md ">
+         <div class="px-8 py-4 bg-white rounded-lg shadow-md  mb-4 md:mb-0">
             <div class="mt-2">
                 <div>
                     <h5 class="leading-none text-3xl font-bold text-gray-900 pb-2">
@@ -329,10 +359,10 @@
     <!-- end: line -->
 
 <!-- start: line  -->
-<div class="grid grid-cols-4 gap-4 mt-4">
+<div class="grid md:grid-cols-4 gap-4 mt-4">
 
     <!-- start: card -->
-    <div class="col-span-2 px-8 py-4 bg-white rounded-lg shadow-md ">
+    <div class=" px-8 py-4 bg-white rounded-lg shadow-md ">
         <div class="mt-2">
             <div>
                 <h5 class="leading-none text-3xl font-bold text-gray-900 pb-2">
@@ -350,7 +380,7 @@
     <!-- end: card -->
 
     <!-- start: card -->
-    <div class="col-span-2 px-8 py-4 bg-white rounded-lg shadow-md ">
+    <div class=" px-8 py-4 bg-white rounded-lg shadow-md ">
         <div class="mt-2">
             <div>
                 <h5 class="leading-none text-3xl font-bold text-gray-900 pb-2">
