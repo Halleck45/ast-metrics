@@ -219,6 +219,7 @@ message Volume {
   optional double halsteadEffort = 8;
   optional double halsteadTime = 9;
   optional double halsteadEstimatedLength = 10;
+  optional double halsteadBugs = 11;
 }
 message Maintainability {
   optional double maintainabilityIndex = 1;

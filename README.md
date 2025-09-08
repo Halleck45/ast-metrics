@@ -44,11 +44,9 @@ Open your terminal and run the following command:
 
 ```console
 curl -s https://raw.githubusercontent.com/Halleck45/ast-metrics/main/scripts/download.sh|bash
-
 ./ast-metrics analyze --report-html=<directory> /path/to/your/code
 ```
 
-> AST Metrics is a standalone package. It does not require any other software to be installed.
 > To install it manually follow the detailled [installation instructions](https://halleck45.github.io/ast-metrics/getting-started/install/).
 
 ## Why AST Metrics?
@@ -59,9 +57,10 @@ curl -s https://raw.githubusercontent.com/Halleck45/ast-metrics/main/scripts/dow
 
 ## Features
 
++ **Architectural analysis**: community detection, coupling, instability.
++ **Linter**: enforce coding standards and best practices.
 + **CI/CD ready**: plug into GitHub Actions, GitLab CI, or any pipeline.
 + **Fast & dependency-free**: single binary, no setup required.
-+ **Architectural analysis**: community detection, coupling, instability.
 + **Code metrics**: complexity, maintainability, size.
 + **Activity metrics**: commits, bus factor.
 + **Readable reports**: detailed HTML dashboards.
@@ -74,10 +73,11 @@ curl -s https://raw.githubusercontent.com/Halleck45/ast-metrics/main/scripts/dow
 + ✅ **Golang** `any version`
 + ✅ **Python** `Python 2, Python 3`
 + ✅ **Rust** `any version`
-+ 🕛 **Dart**
-+ 🕛 **Flutter**
 + 🕛 **TypeScript**
++ 🕛 **Flutter**
 + 🕛 **Java**
++ 🕛 **C++**
++ 🕛 **Ruby**
 
 ## Rule sets: validate your architecture automatically
 

@@ -110,6 +110,12 @@ func (v *HalsteadMetricsVisitor) Visit(stmts *pb.Stmts, parents *pb.Stmts) {
 		stmt.Stmts.Analyze.Volume.HalsteadDifficulty = &D
 		stmt.Stmts.Analyze.Volume.HalsteadEffort = &E
 		stmt.Stmts.Analyze.Volume.HalsteadTime = &T
+
+		// Halstead estimated bugs (B) ≈ V / 3000
+		if V > 0 {
+			b := V / 3000.0
+			stmt.Stmts.Analyze.Volume.HalsteadBugs = &b
+		}
 	}
 
 	// When there are no classes, aggregate Halstead to the parent (file) level, similar to LOC consolidation
@@ -157,6 +163,11 @@ func (v *HalsteadMetricsVisitor) Visit(stmts *pb.Stmts, parents *pb.Stmts) {
 			parents.Analyze.Volume.HalsteadDifficulty = &DD
 			parents.Analyze.Volume.HalsteadEffort = &EE
 			parents.Analyze.Volume.HalsteadTime = &TT
+			// Halstead estimated bugs (B) at parent level
+			if VV > 0 {
+				bb := VV / 3000.0
+				parents.Analyze.Volume.HalsteadBugs = &bb
+			}
 		}
 	}
 }
@@ -230,6 +241,11 @@ func (v *HalsteadMetricsVisitor) LeaveNode(stmts *pb.Stmts) {
 			stmt.Stmts.Analyze.Volume.HalsteadDifficulty = &D
 			stmt.Stmts.Analyze.Volume.HalsteadEffort = &E
 			stmt.Stmts.Analyze.Volume.HalsteadTime = &T
+			// Halstead estimated bugs for class average
+			if V > 0 {
+				b := V / 3000.0
+				stmt.Stmts.Analyze.Volume.HalsteadBugs = &b
+			}
 		}
 	} else {
 		// No classes: aggregate Halstead at the current (file/namespace) level using its functions
@@ -284,6 +300,11 @@ func (v *HalsteadMetricsVisitor) LeaveNode(stmts *pb.Stmts) {
 			stmts.Analyze.Volume.HalsteadDifficulty = &D
 			stmts.Analyze.Volume.HalsteadEffort = &E
 			stmts.Analyze.Volume.HalsteadTime = &T
+			// Halstead estimated bugs at this level
+			if V > 0 {
+				b := V / 3000.0
+				stmts.Analyze.Volume.HalsteadBugs = &b
+			}
 		}
 	}
 }
