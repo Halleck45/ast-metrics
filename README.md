@@ -49,6 +49,40 @@ curl -s https://raw.githubusercontent.com/Halleck45/ast-metrics/main/scripts/dow
 
 > To install it manually follow the detailled [installation instructions](https://halleck45.github.io/ast-metrics/getting-started/install/).
 
+
+## Linting your code
+
+Run:
+
+```bash
+ast-metrics init # create a .ast-metrics.yaml config file
+ast-metrics lint
+```
+
+You can declare thresholds in your YAML config (*Lines of code per method, Coupling, Maintainability...*).
+
+Example:
+
+```yaml
+requirements:
+  rules:
+    volume:
+      loc: { max: 500 }
+      lloc_by_method: { max: 30 }
+    architecture:
+      efferent_coupling: { max: 20 }
+      maintainability: { min: 60 }
+      coupling:
+        forbidden:
+          - from: Service
+            to: Controller
+```
+
+This makes it **easy to enforce architecture and quality at scale**.
+
+Run `ast-metrics ruleset list` to see the list of available rulesets. Then `ast-metrics ruleset add <ruleset-name>` to apply a ruleset to your project.
+
+
 ## Why AST Metrics?
 
 - **Catch issues early**: detect complex or tightly coupled code.
@@ -78,32 +112,6 @@ curl -s https://raw.githubusercontent.com/Halleck45/ast-metrics/main/scripts/dow
 + 🕛 **Java**
 + 🕛 **C++**
 + 🕛 **Ruby**
-
-## Rule sets: validate your architecture automatically
-
-AST Metrics supports **rulesets**  
-You can declare thresholds in your YAML config (Lines of code, Logical lines of code, Coupling, Maintainability...) and AST-Metrics will **fail or succeed the build automatically**.
-
-Example:
-
-```yaml
-requirements:
-  rules:
-    volume:
-      loc: { max: 500 }
-      lloc_by_method: { max: 30 }
-    architecture:
-      efferent_coupling: { max: 20 }
-      maintainability: { min: 60 }
-      coupling:
-        forbidden:
-          - from: Service
-            to: Controller
-```
-
-This makes it **easy to enforce architecture and quality at scale**.
-
-Run `ast-metrics ruleset list` to see the list of available rulesets. Then `ast-metrics ruleset add <ruleset-name>` to apply a ruleset to your project.
 
 ## License
 
