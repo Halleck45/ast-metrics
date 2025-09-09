@@ -1,6 +1,4 @@
-# AST Metrics 
-
-<img src="https://raw.githubusercontent.com/Halleck45/ast-metrics/main/docs/logo-condensed.png" height="200px" alt="PhpMetrics" align="left" style="margin-right:20px"/>
+<h1><img alt="AST Metrics" src="https://raw.githubusercontent.com/Halleck45/ast-metrics/main/docs/logo-condensed.png" height="180px" align="left" style="margin-right:40px"/></h1>
 
 [![CI](https://github.com/Halleck45/ast-metrics/actions/workflows/test.yml/badge.svg)](https://github.com/Halleck45/ast-metrics/actions/workflows/test.yml)
 ![GitHub Release](https://img.shields.io/github/v/release/Halleck45/ast-metrics)
