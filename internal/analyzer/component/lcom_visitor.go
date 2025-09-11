@@ -36,16 +36,6 @@ func (v *LackOfCohesionOfMethodsVisitor) Calculate(stmts *pb.Stmts) {
 		return
 	}
 
-	if stmts.Analyze == nil ||
-		stmts.Analyze.Volume == nil ||
-		stmts.Analyze.Volume.Loc == nil ||
-		stmts.Analyze.Volume.Lloc == nil ||
-		stmts.Analyze.Volume.Cloc == nil ||
-		stmts.Analyze.Complexity.Cyclomatic == nil ||
-		stmts.Analyze.Volume.HalsteadVolume == nil {
-		return
-	}
-
 	// get vars in namespace
 	classes := []*pb.StmtClass{}
 

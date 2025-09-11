@@ -3,15 +3,32 @@ package analyzer
 import (
 	"math"
 
+	"github.com/halleck45/ast-metrics/internal/analyzer/risk"
 	"github.com/halleck45/ast-metrics/internal/engine"
 	pb "github.com/halleck45/ast-metrics/internal/nodetype"
 )
 
 type RiskAnalyzer struct {
+	detectors []risk.Detector
 }
 
 func NewRiskAnalyzer() *RiskAnalyzer {
-	return &RiskAnalyzer{}
+	return &RiskAnalyzer{detectors: []risk.Detector{
+		&risk.TooManyGoClassesDetector{},
+		&risk.TooBuggedDetector{},
+		&risk.TooManyResponsibilityDetector{},
+		&risk.TooManyEfferentCouplingDetector{},
+	}}
+}
+
+// Detects risks for a single file using simple detectors.
+// The returned items are not persisted in protobuf and are intended for reporting views.
+func (v *RiskAnalyzer) DetectFileRisks(file *pb.File) []risk.RiskItem {
+	items := make([]risk.RiskItem, 0)
+	for _, d := range v.detectors {
+		items = append(items, d.Detect(file)...)
+	}
+	return items
 }
 
 func (v *RiskAnalyzer) Analyze(project ProjectAggregated) {

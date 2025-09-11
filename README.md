@@ -44,45 +44,22 @@ Open your terminal and run the following command:
 
 ```console
 curl -s https://raw.githubusercontent.com/Halleck45/ast-metrics/main/scripts/download.sh|bash
-
 ./ast-metrics analyze --report-html=<directory> /path/to/your/code
 ```
 
-> AST Metrics is a standalone package. It does not require any other software to be installed.
 > To install it manually follow the detailled [installation instructions](https://halleck45.github.io/ast-metrics/getting-started/install/).
 
-## Why AST Metrics?
 
-- **Catch issues early**: detect complex or tightly coupled code.
-- **Ensure architectural coherence**: validate dependencies and layering.
-- **Understand your project at scale**: from cyclomatic complexity to bus factor.
+## Linting your code
 
-## Features
+Run:
 
-+ **CI/CD ready**: plug into GitHub Actions, GitLab CI, or any pipeline.
-+ **Fast & dependency-free**: single binary, no setup required.
-+ **Architectural analysis**: community detection, coupling, instability.
-+ **Code metrics**: complexity, maintainability, size.
-+ **Activity metrics**: commits, bus factor.
-+ **Readable reports**: detailed HTML dashboards.
+```bash
+ast-metrics init # create a .ast-metrics.yaml config file
+ast-metrics lint
+```
 
-[Read more in the documentation](https://halleck45.github.io/ast-metrics/)
-
-## Supported languages
-
-+ ✅ **PHP** `<= PHP 8.4`
-+ ✅ **Golang** `any version`
-+ ✅ **Python** `Python 2, Python 3`
-+ ✅ **Rust** `any version`
-+ 🕛 **Dart**
-+ 🕛 **Flutter**
-+ 🕛 **TypeScript**
-+ 🕛 **Java**
-
-## Rule sets: validate your architecture automatically
-
-AST Metrics supports **rulesets**  
-You can declare thresholds in your YAML config (Lines of code, Logical lines of code, Coupling, Maintainability...) and AST-Metrics will **fail or succeed the build automatically**.
+You can declare thresholds in your YAML config (*Lines of code per method, Coupling, Maintainability...*).
 
 Example:
 
@@ -104,6 +81,37 @@ requirements:
 This makes it **easy to enforce architecture and quality at scale**.
 
 Run `ast-metrics ruleset list` to see the list of available rulesets. Then `ast-metrics ruleset add <ruleset-name>` to apply a ruleset to your project.
+
+
+## Why AST Metrics?
+
+- **Catch issues early**: detect complex or tightly coupled code.
+- **Ensure architectural coherence**: validate dependencies and layering.
+- **Understand your project at scale**: from cyclomatic complexity to bus factor.
+
+## Features
+
++ **Architectural analysis**: community detection, coupling, instability.
++ **Linter**: enforce coding standards and best practices.
++ **CI/CD ready**: plug into GitHub Actions, GitLab CI, or any pipeline.
++ **Fast & dependency-free**: single binary, no setup required.
++ **Code metrics**: complexity, maintainability, size.
++ **Activity metrics**: commits, bus factor.
++ **Readable reports**: detailed HTML dashboards.
+
+[Read more in the documentation](https://halleck45.github.io/ast-metrics/)
+
+## Supported languages
+
++ ✅ **PHP** `<= PHP 8.4`
++ ✅ **Golang** `any version`
++ ✅ **Python** `Python 2, Python 3`
++ ✅ **Rust** `any version`
++ 🕛 **TypeScript**
++ 🕛 **Flutter**
++ 🕛 **Java**
++ 🕛 **C++**
++ 🕛 **Ruby**
 
 ## License
 

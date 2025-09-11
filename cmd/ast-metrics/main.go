@@ -367,6 +367,41 @@ func main() {
 				},
 			},
 			{
+				Name:    "lint",
+				Aliases: []string{"l"},
+				Usage:   "Run analysis and print lint (requirements) only",
+				Flags: []cli.Flag{
+					&cli.BoolFlag{ Name: "verbose", Aliases: []string{"v"}, Usage: "Enable verbose mode", Category: "Global options" },
+					&cli.StringSliceFlag{ Name: "exclude", Usage: "Regular expression to exclude files from analysis", Category: "File selection" },
+					&cli.StringFlag{ Name: "config", Usage: "Load configuration from file", Category: "Configuration" },
+				},
+				Action: func(cCtx *cli.Context) error {
+					if cCtx.Bool("verbose") { log.SetLevel(log.DebugLevel) }
+					outWriter := bufio.NewWriter(os.Stdout)
+					config := configuration.NewConfiguration()
+					loader := configuration.NewConfigurationLoader()
+					if cCtx.String("config") != "" { loader.FilenameToChecks = []string{cCtx.String("config")} }
+					cfg, err := loader.Loads(config)
+					if err != nil { pterm.Error.Println("Cannot load configuration file: " + err.Error()) }
+					// paths from args
+					paths := cCtx.Args()
+					if paths.Len() > 0 {
+						pathsSlice := make([]string, paths.Len())
+						for i := 0; i < paths.Len(); i++ { pathsSlice[i] = paths.Get(i) }
+						if err := cfg.SetSourcesToAnalyzePath(pathsSlice); err != nil { pterm.Error.Println(err.Error()); return err }
+					}
+					// exclude
+					if cfg.ExcludePatterns == nil { ex := cCtx.StringSlice("exclude"); if len(ex) > 0 { cfg.SetExcludePatterns(ex) } }
+					// No report generation here; just lint
+     cmd := Command.NewLintCommand(cfg, outWriter, runners)
+     // pass verbose to command
+     cmd.SetVerbose(cCtx.Bool("verbose"))
+     command := cmd
+					if err := command.Execute(); err != nil { return err }
+					return nil
+				},
+			},
+			{
 				Name:    "init",
 				Aliases: []string{"i"},
 				Usage:   "Create a default configuration file",
