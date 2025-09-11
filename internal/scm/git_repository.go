@@ -50,18 +50,22 @@ func NewGitRepositoryFromPath(path string) (GitRepository, error) {
 }
 
 func FindGitRoot(filePath string) (string, error) {
-	// Parcourir les dossiers parent jusqu'à ce qu'un dossier .git soit trouvé
-	for filePath != "" && filePath != "/" {
-
-		checkedPath := filepath.Join(filePath, ".git")
-		if _, err := os.Stat(checkedPath); err == nil {
-			return filePath, nil
-		}
-
-		filePath = filepath.Dir(filePath)
+	// Walk up to the root directory in a portable way (works on Windows, macOS, Linux)
+	abs, err := filepath.Abs(filePath)
+	if err != nil {
+		return "", err
 	}
-
-	return "", fmt.Errorf("no git repository found")
+	for {
+		checkedPath := filepath.Join(abs, ".git")
+		if _, err := os.Stat(checkedPath); err == nil {
+			return abs, nil
+		}
+		parent := filepath.Dir(abs)
+		if parent == abs { // reached filesystem root
+			return "", fmt.Errorf("no git repository found")
+		}
+		abs = parent
+	}
 }
 
 func getAbsolutePath(repoRoot string) (string, error) {

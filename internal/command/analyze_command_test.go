@@ -28,7 +28,7 @@ func TestAnalyzeCommand_Execute(t *testing.T) {
 		sourcesDir1 := t.TempDir()
 		// Add some files
 		file1 := sourcesDir1 + "/test.php"
-		os.Create(file1)
+		_ = os.WriteFile(file1, []byte("<?php echo 1;\n"), 0o644)
 		sourcesToAnalyze := []string{sourcesDir1}
 
 		// Configuration

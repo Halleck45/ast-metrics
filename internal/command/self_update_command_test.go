@@ -3,6 +3,7 @@ package command
 import (
 	"io"
 	"os"
+	"runtime"
 	"testing"
 
 	"github.com/jarcoal/httpmock"
@@ -10,6 +11,9 @@ import (
 )
 
 func TestSelfUpdateExecute(t *testing.T) {
+	if runtime.GOOS == "windows" {
+		t.Skip("self-update not supported on Windows for this test")
+	}
 
 	// Mock http.Get
 	httpmock.Activate()

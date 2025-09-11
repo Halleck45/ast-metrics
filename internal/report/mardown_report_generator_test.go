@@ -3,6 +3,7 @@ package report
 import (
 	"io/ioutil"
 	"os"
+	"path/filepath"
 	"testing"
 
 	"github.com/halleck45/ast-metrics/internal/analyzer"
@@ -18,7 +19,7 @@ func TestGenerate(t *testing.T) {
 	}{
 		{
 			name:        "Test with valid report path",
-			reportPath:  "/tmp/report.md",
+			reportPath:  "", // will be set to a temp file path in test body
 			expectError: false,
 		},
 		{
@@ -35,7 +36,14 @@ func TestGenerate(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			generator := &MarkdownReportGenerator{ReportPath: tt.reportPath}
+			// Use a temp directory for portable paths
+			reportPath := tt.reportPath
+			if tt.name == "Test with valid report path" {
+				dir, _ := ioutil.TempDir("", "report")
+				defer os.RemoveAll(dir)
+				reportPath = filepath.Join(dir, "report.md")
+			}
+			generator := &MarkdownReportGenerator{ReportPath: reportPath}
 			files := []*pb.File{}
 			projectAggregated := analyzer.ProjectAggregated{}
 
@@ -49,12 +57,12 @@ func TestGenerate(t *testing.T) {
 				if err != nil {
 					t.Errorf("Did not expect an error but got: %v", err)
 				} else {
-					if tt.reportPath != "" {
-						if _, err := os.Stat(tt.reportPath); os.IsNotExist(err) {
+					if reportPath != "" {
+						if _, err := os.Stat(reportPath); os.IsNotExist(err) {
 							t.Errorf("Report file was not created")
 						} else {
 							// cleanup
-							os.Remove(tt.reportPath)
+							os.Remove(reportPath)
 						}
 					}
 				}
@@ -64,29 +72,34 @@ func TestGenerate(t *testing.T) {
 }
 
 func TestGenerateWithTemplateFiles(t *testing.T) {
-	// This test assumes that a valid template file "index.md" exists in the templates directory
-	generator := &MarkdownReportGenerator{ReportPath: "/tmp/report.md"}
+	// Create a temporary directory for templates and output
+	tmpDir, err := ioutil.TempDir("", "md-report")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer os.RemoveAll(tmpDir)
+
+	templatesDir := filepath.Join(tmpDir, "templates")
+	_ = os.MkdirAll(templatesDir, 0o755)
+	generator := &MarkdownReportGenerator{ReportPath: filepath.Join(tmpDir, "report.md")}
 	files := []*pb.File{}
 	projectAggregated := analyzer.ProjectAggregated{}
 
 	// Create a temporary template file
-	ioutil.WriteFile("/tmp/templates/index.md", []byte("Test template"), 0644)
+	_ = ioutil.WriteFile(filepath.Join(templatesDir, "index.md"), []byte("Test template"), 0o644)
 
 	reports, err := generator.Generate(files, projectAggregated)
 
 	if err != nil {
 		t.Errorf("Did not expect an error but got: %v", err)
 	} else {
-		if _, err := os.Stat("/tmp/report.md"); os.IsNotExist(err) {
+		if _, err := os.Stat(generator.ReportPath); os.IsNotExist(err) {
 			t.Errorf("Report file was not created")
 		} else {
 			// cleanup
-			os.Remove("/tmp/report.md")
+			os.Remove(generator.ReportPath)
 		}
 	}
 
 	assert.Equal(t, 1, len(reports))
-
-	// cleanup
-	os.RemoveAll("/tmp/templates")
 }

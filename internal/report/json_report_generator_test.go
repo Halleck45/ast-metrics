@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"io/ioutil"
 	"os"
+	"path/filepath"
 	"testing"
 
 	"github.com/halleck45/ast-metrics/internal/analyzer"
@@ -13,7 +14,7 @@ import (
 
 func TestGenerateJson(t *testing.T) {
 
-	reportPath := "/tmp/report.json"
+	reportPath := filepath.Join(t.TempDir(), "report.json")
 	generator := &JsonReportGenerator{ReportPath: reportPath}
 
 	files := []*pb.File{
