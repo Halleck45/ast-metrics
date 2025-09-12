@@ -94,6 +94,18 @@ jobs:
           
           EOF
 
+      - name: "Fix issue with local files on windows"
+        run: |
+          # if .ast-metrics.yaml exists in any subfolder of internal folder, rm it
+          find . -type f -path "*/internal/*/.ast-metrics.yaml" -exec rm -f {} \;
+          # remove also the directory report in any subfolder of internal folder, rm it
+          find . -type d -path "*/internal/*/report" -exec rm -rf {} \;
+          # reset git state for internal/report directory
+          git checkout -- internal/report
+
+        shell: bash
+        if: matrix.os == 'windows-latest'
+
       - name: GoReleaser
         uses: goreleaser/goreleaser-action@v6
         with:
