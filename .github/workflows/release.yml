@@ -30,9 +30,13 @@ jobs:
           - os: windows-latest     # x86_64
             goos: windows
             goarch: amd64
-          - os: windows-11-arm     # arm64 (public repos)
-            goos: windows
-            goarch: arm64
+# DISABLED for the moment:
+# gcc_arm64.S: Assembler messages:
+# gcc_arm64.S:30: Error: no such instruction: `stp x29,x30,[sp,'
+# gcc_arm64.S:34: Error: too many memory references for `mov'
+#          - os: windows-11-arm     # arm64 (public repos)
+#            goos: windows
+#            goarch: arm64
 
     runs-on: ${{ matrix.os }}
 
@@ -89,9 +93,6 @@ jobs:
             split: true
           
           EOF
-
-      - name: "Debug content of goreleaser file"
-        run: cat "$RUNNER_TEMP/goreleaser.yml"
 
       - name: GoReleaser
         uses: goreleaser/goreleaser-action@v6
