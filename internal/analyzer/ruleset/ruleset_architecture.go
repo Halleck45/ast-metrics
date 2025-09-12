@@ -17,29 +17,42 @@ func (a *architectureRuleset) Description() string {
 }
 func (a *architectureRuleset) Enabled() []Rule {
 	rules := []Rule{}
-	if a.cfg.Rules.Architecture != nil {
-		if a.cfg.Rules.Architecture.Coupling != nil {
-			rules = append(rules, NewCouplingRule(a.cfg.Rules.Architecture.Coupling))
-		}
-		if a.cfg.Rules.Architecture.AfferentCoupling != nil {
-			rules = append(rules, NewAfferentCouplingRule(a.cfg.Rules.Architecture.AfferentCoupling))
-		}
-		if a.cfg.Rules.Architecture.EfferentCoupling != nil {
-			rules = append(rules, NewEfferentCouplingRule(a.cfg.Rules.Architecture.EfferentCoupling))
-		}
-		if a.cfg.Rules.Architecture.Maintainability != nil {
-			rules = append(rules, NewMaintainabilityRule(a.cfg.Rules.Architecture.Maintainability))
-		}
+	if a == nil || a.cfg == nil || a.cfg.Rules == nil || a.cfg.Rules.Architecture == nil {
+		return rules
+	}
+	arch := a.cfg.Rules.Architecture
+	if arch.Coupling != nil {
+		rules = append(rules, NewCouplingRule(arch.Coupling))
+	}
+	if arch.AfferentCoupling != nil {
+		rules = append(rules, NewAfferentCouplingRule(arch.AfferentCoupling))
+	}
+	if arch.EfferentCoupling != nil {
+		rules = append(rules, NewEfferentCouplingRule(arch.EfferentCoupling))
+	}
+	if arch.Maintainability != nil {
+		rules = append(rules, NewMaintainabilityRule(arch.Maintainability))
 	}
 	return rules
 }
 
 func (a *architectureRuleset) All() []Rule {
+	var coupling *configuration.ConfigurationCouplingRule
+	var afferent *configuration.ConfigurationDefaultRule
+	var efferent *configuration.ConfigurationDefaultRule
+	var maintainability *configuration.ConfigurationDefaultRule
+	if a != nil && a.cfg != nil && a.cfg.Rules != nil && a.cfg.Rules.Architecture != nil {
+		arch := a.cfg.Rules.Architecture
+		coupling = arch.Coupling
+		afferent = arch.AfferentCoupling
+		efferent = arch.EfferentCoupling
+		maintainability = arch.Maintainability
+	}
 	return []Rule{
-		NewCouplingRule(a.cfg.Rules.Architecture.Coupling),
-		NewAfferentCouplingRule(a.cfg.Rules.Architecture.AfferentCoupling),
-		NewEfferentCouplingRule(a.cfg.Rules.Architecture.EfferentCoupling),
-		NewMaintainabilityRule(a.cfg.Rules.Architecture.Maintainability),
+		NewCouplingRule(coupling),
+		NewAfferentCouplingRule(afferent),
+		NewEfferentCouplingRule(efferent),
+		NewMaintainabilityRule(maintainability),
 	}
 }
 

@@ -18,14 +18,21 @@ func (o *oopRuleset) Description() string {
 }
 func (o *oopRuleset) Enabled() []Rule {
 	rules := []Rule{}
-	if o.cfg.Rules.ObjectOrientedProgramming != nil && o.cfg.Rules.ObjectOrientedProgramming.Maintainability != nil {
+	if o == nil || o.cfg == nil || o.cfg.Rules == nil || o.cfg.Rules.ObjectOrientedProgramming == nil {
+		return rules
+	}
+	if o.cfg.Rules.ObjectOrientedProgramming.Maintainability != nil {
 		rules = append(rules, NewMaintainabilityRule(o.cfg.Rules.ObjectOrientedProgramming.Maintainability))
 	}
 	return rules
 }
 func (o *oopRuleset) All() []Rule {
+	var maintainability *configuration.ConfigurationDefaultRule
+	if o != nil && o.cfg != nil && o.cfg.Rules != nil && o.cfg.Rules.ObjectOrientedProgramming != nil {
+		maintainability = o.cfg.Rules.ObjectOrientedProgramming.Maintainability
+	}
 	return []Rule{
-		NewMaintainabilityRule(o.cfg.Rules.ObjectOrientedProgramming.Maintainability),
+		NewMaintainabilityRule(maintainability),
 	}
 }
 

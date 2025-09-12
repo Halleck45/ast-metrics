@@ -3,8 +3,6 @@
 PROTOC_VERSION=24.4
 ARCHITECTURE=linux-x86_64
 
-install:install-protobuff
-	@echo "\e[34m\033[1mDONE \033[0m\e[39m\n"
 bin/protoc:
 	@echo "\e[34m\033[1m-> Downloading protobuff\033[0m\e[39m\n"
 	mkdir -p bin
@@ -33,7 +31,7 @@ build-release:
 	go install github.com/goreleaser/goreleaser@latest
 	GOPATH=$(HOME)/go PATH=$$PATH:$(HOME)/go/bin goreleaser build --snapshot
 	@echo "\e[34m\033[1mDONE \033[0m\e[39m\n"
-build: install build-protobuff build-release
+build: build-protobuff build-release
 	@echo "\n\e[42m  BUILD FINISHED  \e[49m\n"
 
 test:
