@@ -4,6 +4,9 @@
 ![GitHub Release](https://img.shields.io/github/v/release/Halleck45/ast-metrics)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![](https://img.shields.io/static/v1?label=Sponsor&message=%E2%9D%A4&logo=GitHub&color=%23fe8e86)](https://github.com/sponsors/Halleck45)
+![GitHub all releases](https://img.shields.io/github/downloads/Halleck45/ast-metrics/total)
+[![Go Report Card](https://goreportcard.com/badge/github.com/Halleck45/ast-metrics)](https://goreportcard.com/report/github.com/Halleck45/ast-metrics)
+[![codecov](https://codecov.io/gh/Halleck45/ast-metrics/branch/main/graph/badge.svg)](https://codecov.io/gh/Halleck45/ast-metrics)
 
 
 AST Metrics is a **multi-language static code analyzer**.  
@@ -47,7 +50,7 @@ curl -s https://raw.githubusercontent.com/Halleck45/ast-metrics/main/scripts/dow
 ./ast-metrics analyze --report-html=<directory> /path/to/your/code
 ```
 
-> To install it manually follow the detailled [installation instructions](https://halleck45.github.io/ast-metrics/getting-started/install/).
+> To install it manually follow the detailed [installation instructions](https://halleck45.github.io/ast-metrics/getting-started/install/).
 
 
 ## Linting your code
@@ -82,6 +85,19 @@ This makes it **easy to enforce architecture and quality at scale**.
 
 Run `ast-metrics ruleset list` to see the list of available rulesets. Then `ast-metrics ruleset add <ruleset-name>` to apply a ruleset to your project.
 
+## Github Action
+
+Create a `.github/workflows/ast-metrics.yml` file in your project with the following content:
+
+```yaml
+name: "AST Metrics"
+on: [push]
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+        - uses: halleck45/action-ast-metrics@v1
+```
 
 ## Why AST Metrics?
 
