@@ -1,24 +1,28 @@
-<h1><img alt="AST Metrics" src="https://raw.githubusercontent.com/Halleck45/ast-metrics/main/docs/logo-condensed.png" height="180px" align="left" style="margin-right:40px"/></h1>
+<p align="center" style="text-align:center">
+<img alt="AST Metrics" src="https://raw.githubusercontent.com/Halleck45/ast-metrics/main/docs/logo-ast-metrics.png" height="2000px" "/>
+</p>
 
-[![CI](https://github.com/Halleck45/ast-metrics/actions/workflows/test.yml/badge.svg)](https://github.com/Halleck45/ast-metrics/actions/workflows/test.yml)
-![GitHub Release](https://img.shields.io/github/v/release/Halleck45/ast-metrics)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![](https://img.shields.io/static/v1?label=Sponsor&message=%E2%9D%A4&logo=GitHub&color=%23fe8e86)](https://github.com/sponsors/Halleck45)
-![GitHub all releases](https://img.shields.io/github/downloads/Halleck45/ast-metrics/total)
-[![Go Report Card](https://goreportcard.com/badge/github.com/Halleck45/ast-metrics)](https://goreportcard.com/report/github.com/Halleck45/ast-metrics)
-[![codecov](https://codecov.io/gh/Halleck45/ast-metrics/branch/main/graph/badge.svg)](https://codecov.io/gh/Halleck45/ast-metrics)
+<p align="center" style="text-align:center">
+AST Metrics is a <b>multi-language static code analyzer</b>.  
+<br />
+It provides <b>architectural insights</b>, <b>complexity metrics</b>, and <b>activity analysis</b> - all in a <b>fast, standalone binary</b> ready for CI/CD.
+</p>
 
+<p align="center" style="text-align:center">
+<a href="https://github.com/Halleck45/ast-metrics/actions/workflows/test.yml"><img src="https://github.com/Halleck45/ast-metrics/actions/workflows/test.yml/badge.svg" alt="CI"></a>
+<img src="https://img.shields.io/github/v/release/Halleck45/ast-metrics" alt="GitHub Release">
+<a href="https://opensource.org/licenses/MIT"><img src="https://img.shields.io/badge/License-MIT-yellow.svg" alt="License: MIT"></a>
+<a href="https://github.com/sponsors/Halleck45"><img src="https://img.shields.io/static/v1?label=Sponsor&amp;message=%E2%9D%A4&amp;logo=GitHub&amp;color=%23fe8e86" alt=""></a>
+<img src="https://img.shields.io/github/downloads/Halleck45/ast-metrics/total" alt="GitHub all releases">
+<a href="https://goreportcard.com/report/github.com/Halleck45/ast-metrics"><img src="https://goreportcard.com/badge/github.com/Halleck45/ast-metrics" alt="Go Report Card"></a>
+<a href="https://codecov.io/gh/Halleck45/ast-metrics"><img src="https://codecov.io/gh/Halleck45/ast-metrics/branch/main/graph/badge.svg" alt="codecov"></a></p>
+</p>
 
-AST Metrics is a **multi-language static code analyzer**.  
+<p align="center" style="text-align:center">
+<a href="https://halleck45.github.io/ast-metrics/">Documentation</a> | <a href=".github/CONTRIBUTING.md">Contributing</a> | <a href="https://twitter.com/Halleck45">Twitter</a>
+</p>
 
-It provides **architectural insights**, **complexity metrics**, and **activity analysis**—all in a **fast, standalone binary** ready for CI/CD.
-
-[Documentation](https://halleck45.github.io/ast-metrics/) | [Contributing](.github/CONTRIBUTING.md) | [Twitter](https://twitter.com/Halleck45)
-
-<br/><br/>
-<br/><br/>
-
-## Preview
+<br /><br/>
 
 <table>
     <tr>
@@ -41,7 +45,7 @@ It provides **architectural insights**, **complexity metrics**, and **activity a
 
 
 
-## Quick start
+## Getting Started
 
 Open your terminal and run the following command:
 
