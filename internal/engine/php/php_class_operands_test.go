@@ -23,7 +23,7 @@ class A {
 	class1 := result.Stmts.StmtClass[0]
 	// Expect 2 direct operands from properties: $a and $c
 	if assert.Equal(t, 2, len(class1.Operands), "Class should have 2 operands from direct attributes") {
-  assert.Equal(t, "a", class1.Operands[0].Name)
+		assert.Equal(t, "a", class1.Operands[0].Name)
 		assert.Equal(t, "c", class1.Operands[1].Name)
 	}
 }

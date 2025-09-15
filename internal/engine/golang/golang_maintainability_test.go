@@ -46,6 +46,10 @@ func Test_FileLevel_Maintainability_And_Halstead_IsComputed_ForProceduralGo(t *t
 	if mi == 171 {
 		t.Fatalf("file-level MI should not default to 171; got %v", mi)
 	}
+
+	if mi == 7 {
+		t.Fatalf("file-level MI should not be the fallback 7; got %v", mi)
+	}
 }
 
 func Test_FileLevel_Maintainability_SampleGo(t *testing.T) {

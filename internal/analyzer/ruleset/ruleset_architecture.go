@@ -38,9 +38,9 @@ func (a *architectureRuleset) Enabled() []Rule {
 
 func (a *architectureRuleset) All() []Rule {
 	var coupling *configuration.ConfigurationCouplingRule
-	var afferent *configuration.ConfigurationDefaultRule
-	var efferent *configuration.ConfigurationDefaultRule
-	var maintainability *configuration.ConfigurationDefaultRule
+	var afferent *int
+	var efferent *int
+	var maintainability *int
 	if a != nil && a.cfg != nil && a.cfg.Rules != nil && a.cfg.Rules.Architecture != nil {
 		arch := a.cfg.Rules.Architecture
 		coupling = arch.Coupling

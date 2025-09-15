@@ -17,7 +17,7 @@ func (v *volumeRuleset) Description() string {
 	return "Volume metrics (e.g., lines of code)"
 }
 func (v *volumeRuleset) All() []Rule {
-	var loc, lloc, locByMethod, llocByMethod *configuration.ConfigurationDefaultRule
+	var loc, lloc, locByMethod, llocByMethod *int
 	if v != nil && v.cfg != nil && v.cfg.Rules != nil && v.cfg.Rules.Volume != nil {
 		loc = v.cfg.Rules.Volume.Loc
 		lloc = v.cfg.Rules.Volume.Lloc

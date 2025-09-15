@@ -3,9 +3,9 @@ package command
 import (
 	"bufio"
 	"fmt"
-	"os"
 	"sort"
 
+	"github.com/charmbracelet/lipgloss"
 	"github.com/halleck45/ast-metrics/internal/analyzer"
 	requirement "github.com/halleck45/ast-metrics/internal/analyzer/requirement"
 	"github.com/halleck45/ast-metrics/internal/configuration"
@@ -69,32 +69,32 @@ func (c *LintCommand) Execute() error {
 	reqEval := requirement.NewRequirementsEvaluator(*c.Configuration.Requirements)
 	evaluation := reqEval.Evaluate(allResults, requirement.ProjectAggregated{})
 
-	// Build a map[filePath][]messages from evaluation.Errors when possible.
-	// Our evaluation returns only strings; try to find file path presence inside messages.
-	grouped := map[string][]string{}
-	ungrouped := []string{}
-	for _, msg := range evaluation.Errors {
-		path := extractPath(msg, allResults)
-		if path == "" {
-			ungrouped = append(ungrouped, msg)
+	// Build a map[filePath][]outcomes directly from structured results
+	grouped := map[string][]requirement.RuleOutcome{}
+	ungrouped := []requirement.RuleOutcome{}
+	for _, out := range evaluation.Errors {
+		if out.File == "" {
+			ungrouped = append(ungrouped, out)
 			continue
 		}
-		grouped[path] = append(grouped[path], msg)
+		grouped[out.File] = append(grouped[out.File], out)
 	}
 
 	// When verbose, also prepare successes grouped by file
-	groupedOK := map[string][]string{}
+	groupedOK := map[string][]requirement.RuleOutcome{}
 	if c.verbose {
 		for _, ok := range evaluation.Successes {
-			p := extractPath(ok, allResults)
-			if p == "" {
+			if ok.File == "" {
 				continue
 			}
-			groupedOK[p] = append(groupedOK[p], ok)
+			groupedOK[ok.File] = append(groupedOK[ok.File], ok)
 		}
 	}
 
 	// Pretty print lint by file
+	totalHigh := 0
+	totalMedium := 0
+	totalLow := 0
 	total := 0
 	files := make([]string, 0, len(grouped))
 	for f := range grouped {
@@ -105,38 +105,78 @@ func (c *LintCommand) Execute() error {
 		for f := range groupedOK {
 			found := false
 			for _, existing := range files {
-				if existing == f { found = true; break }
+				if existing == f {
+					found = true
+					break
+				}
 			}
-			if !found { files = append(files, f) }
+			if !found {
+				files = append(files, f)
+			}
 		}
 	}
 	sort.Strings(files)
 
 	for _, f := range files {
-		pterm.Println("File:", f)
+		underline := lipgloss.NewStyle().Underline(true).Bold(true)
+		pterm.Println(underline.Render("File: " + f))
+
 		// successes first if verbose
 		if c.verbose {
 			oks := groupedOK[f]
-			sort.Strings(oks)
+			sort.Slice(oks, func(i, j int) bool { return oks[i].Message < oks[j].Message })
 			for _, s := range oks {
-				pterm.Success.Println("  ✓ " + f + " — " + stripPathPrefix(s, f))
+				pterm.Success.Println("  ✓ " + f + " — " + stripPathPrefix(s.Message, f))
 			}
 		}
 		// sort messages for deterministic output
 		msgs := grouped[f]
-		sort.Strings(msgs)
+		sort.Slice(msgs, func(i, j int) bool { return msgs[i].Message < msgs[j].Message })
 		for _, m := range msgs {
-			pterm.Error.Println("  • " + stripPathPrefix(m, f))
+			badge := ""
+			switch m.Severity {
+			case requirement.SeverityHigh:
+				style := lipgloss.NewStyle().Foreground(lipgloss.Color("#FF0000")).Bold(true)
+				badge = style.Render("HIGH    ")
+				totalHigh++
+			case requirement.SeverityMedium:
+				style := lipgloss.NewStyle().Foreground(lipgloss.Color("#FFA500")).Bold(true)
+				badge = style.Render("MEDIUM  ")
+				totalMedium++
+			case requirement.SeverityLow:
+				style := lipgloss.NewStyle().Foreground(lipgloss.Color("#008000")).Bold(true)
+				badge = style.Render("LOW     ")
+				totalLow++
+			}
+
+			greyStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("#888888"))
+
+			ruleStyled := greyStyle.Render(" #" + m.Rule + "")
+			content := " • " + badge + stripPathPrefix(m.Message, f) + ruleStyled
+			pterm.Println(content)
+
 			total++
 		}
 		pterm.Println()
 	}
 
 	if len(ungrouped) > 0 {
- 	pterm.Println("Other")
-		sort.Strings(ungrouped)
+		pterm.Println("Other")
+		sort.Slice(ungrouped, func(i, j int) bool { return ungrouped[i].Message < ungrouped[j].Message })
 		for _, m := range ungrouped {
-			pterm.Error.Println("  • " + m)
+			badge := ""
+			switch m.Severity {
+			case requirement.SeverityHigh:
+				badge = "[HIGH] "
+				pterm.Error.Println("  • " + badge + m.Message)
+			case requirement.SeverityMedium:
+				badge = "[MED] "
+				pterm.Warning.Println("  • " + badge + m.Message)
+			case requirement.SeverityLow:
+				badge = "[LOW] "
+				pterm.Warning.Println("  • " + badge + m.Message)
+			}
+
 			total++
 		}
 		pterm.Println()
@@ -144,15 +184,11 @@ func (c *LintCommand) Execute() error {
 
 	// Summary and exit code
 	if total == 0 {
-		pterm.Success.Println("No lint issues found. Requirements are met.")
 		return nil
 	}
 
-	pterm.Error.Printf("%d lint issue(s) found\n", total)
-	if c.Configuration.Requirements.FailOnError {
-		os.Exit(1)
-	}
-	return fmt.Errorf("%d lint issue(s) found", total)
+	// return new Error
+	return fmt.Errorf("%d lint issue(s) found (%d high, %d medium, %d low)", total, totalHigh, totalMedium, totalLow)
 }
 
 // extractPath tries to match a File.Path from analysis results inside the message string

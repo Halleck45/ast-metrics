@@ -40,8 +40,7 @@ func TestEvaluationResult(t *testing.T) {
 requirements:
   rules:
     complexity:
-      cyclomatic_complexity:
-        max: 5`
+      max_cyclomatic: 5`
 
 	loader := configuration.NewConfigurationLoader()
 	config, err := loader.Import(configInYaml)
@@ -55,7 +54,9 @@ requirements:
 	assert.Equal(t, false, evaluation.Succeeded)
 
 	assert.Equal(t, 1, len(evaluation.Errors))
-	assert.Equal(t, "Cyclomatic complexity too high in file test1.go: got 10 (max: 5)", evaluation.Errors[0])
+	assert.Equal(t, "Cyclomatic complexity too high in file test1.go: got 10 (max: 5)", evaluation.Errors[0].Message)
+	assert.Equal(t, "cyclomatic_complexity", evaluation.Errors[0].Rule)
+	assert.Equal(t, "test1.go", evaluation.Errors[0].File)
 }
 
 func TestEvaluationResultSuccess(t *testing.T) {
@@ -88,8 +89,7 @@ func TestEvaluationResultSuccess(t *testing.T) {
 	configInYaml := `
 requirements:
   rules:
-    cyclomatic_complexity:
-      max: 15
+    max_cyclomatic: 15
 `
 
 	loader := configuration.NewConfigurationLoader()

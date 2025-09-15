@@ -115,7 +115,7 @@ func (v *LocVisitor) Visit(stmts *pb.Stmts, parents *pb.Stmts) {
 		if parents.Analyze.Volume == nil {
 			parents.Analyze.Volume = &pb.Volume{}
 		}
- 	parents.Analyze.Volume.Loc = &sumLoc
+		parents.Analyze.Volume.Loc = &sumLoc
 		// For Go files with both class-like types and functions, prefer summing function LLOC at file level
 		parents.Analyze.Volume.Lloc = &sumLloc
 		parents.Analyze.Volume.Cloc = &sumCloc

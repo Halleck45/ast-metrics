@@ -18,16 +18,22 @@ func (c *complexityRuleset) Description() string {
 }
 func (c *complexityRuleset) Enabled() []Rule {
 	rules := []Rule{}
-	if c == nil || c.cfg == nil || c.cfg.Rules == nil || c.cfg.Rules.Complexity == nil {
+	if c == nil || c.cfg == nil || c.cfg.Rules == nil {
 		return rules
 	}
-	if c.cfg.Rules.Complexity.Cyclomatic != nil {
+	// New API
+	if c.cfg.Rules.Complexity != nil && c.cfg.Rules.Complexity.Cyclomatic != nil {
 		rules = append(rules, NewCyclomaticRule(c.cfg.Rules.Complexity.Cyclomatic))
+	}
+	// Legacy support: requirements.rules.cyclomatic_complexity: { max: X }
+	if c.cfg.Rules.CyclomaticLegacy != nil && c.cfg.Rules.CyclomaticLegacy.Max > 0 {
+		m := c.cfg.Rules.CyclomaticLegacy.Max
+		rules = append(rules, NewCyclomaticRule(&m))
 	}
 	return rules
 }
 func (c *complexityRuleset) All() []Rule {
-	var cyclo *configuration.ConfigurationDefaultRule
+	var cyclo *int
 	if c != nil && c.cfg != nil && c.cfg.Rules != nil && c.cfg.Rules.Complexity != nil {
 		cyclo = c.cfg.Rules.Complexity.Cyclomatic
 	}

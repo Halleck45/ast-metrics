@@ -301,7 +301,9 @@ func (v *Visitor) Visit(node *sitter.Node) {
 			}
 		}
 		// optional: extract method calls (e.g., this.foo, parent.bar) per adapter
-		if mc, ok := v.ad.(interface{ ExtractMethodCalls(src []byte, startLine, endLine int) []string }); ok {
+		if mc, ok := v.ad.(interface {
+			ExtractMethodCalls(src []byte, startLine, endLine int) []string
+		}); ok {
 			calls := mc.ExtractMethodCalls([]byte(strings.Join(v.lines, "\n")), start, end)
 			for _, m := range calls {
 				fn.MethodCalls = append(fn.MethodCalls, &pb.StmtMethodCall{Name: m})

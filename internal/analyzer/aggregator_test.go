@@ -432,10 +432,10 @@ func TestFIlesWithErrorAreDetected(t *testing.T) {
 	t.Run("TestFilesWithErrorAreDetected", func(t *testing.T) {
 		aggregator := Aggregator{}
 		files := []*pb.File{
-			&pb.File{
+			{
 				Stmts: &pb.Stmts{},
 			},
-			&pb.File{
+			{
 				Errors: []string{"Error1", "Error2"},
 			},
 		}

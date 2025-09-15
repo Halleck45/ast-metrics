@@ -44,9 +44,8 @@ func (c *ConfigurationReport) HasReports() bool {
 }
 
 type ConfigurationRequirements struct {
-	Rules *ConfigurationRequirementsRules `yaml:"rules"`
-
-	FailOnError bool `yaml:"fail_on_error"`
+	Rules   *ConfigurationRequirementsRules `yaml:"rules"`
+	Exclude []string                        `yaml:"exclude,omitempty"`
 }
 
 type ConfigurationCouplingRule struct {
@@ -57,25 +56,25 @@ type ConfigurationCouplingRule struct {
 }
 
 type ConfigurationArchitectureRules struct {
-	Coupling        *ConfigurationCouplingRule `yaml:"coupling,omitempty"`
-	AfferentCoupling *ConfigurationDefaultRule `yaml:"afferent_coupling,omitempty"`
-	EfferentCoupling *ConfigurationDefaultRule `yaml:"efferent_coupling,omitempty"`
-	Maintainability  *ConfigurationDefaultRule `yaml:"maintainability,omitempty"`
+	Coupling         *ConfigurationCouplingRule `yaml:"coupling,omitempty"`
+	AfferentCoupling *int                       `yaml:"max_afferent_coupling,omitempty"`
+	EfferentCoupling *int                       `yaml:"max_efferent_coupling,omitempty"`
+	Maintainability  *int                       `yaml:"min_maintainability,omitempty"`
 }
 
 type ConfigurationVolumeRules struct {
-	Loc           *ConfigurationDefaultRule `yaml:"loc,omitempty"`
-	Lloc          *ConfigurationDefaultRule `yaml:"lloc,omitempty"`
-	LocByMethod   *ConfigurationDefaultRule `yaml:"loc_by_method,omitempty"`
-	LlocByMethod  *ConfigurationDefaultRule `yaml:"lloc_by_method,omitempty"`
+	Loc          *int `yaml:"max_loc,omitempty"`
+	Lloc         *int `yaml:"max_logical_loc,omitempty"`
+	LocByMethod  *int `yaml:"max_loc_by_method,omitempty"`
+	LlocByMethod *int `yaml:"max_logical_loc_by_method,omitempty"`
 }
 
 type ConfigurationComplexityRules struct {
-	Cyclomatic *ConfigurationDefaultRule `yaml:"cyclomatic_complexity,omitempty"`
+	Cyclomatic *int `yaml:"max_cyclomatic,omitempty"`
 }
 
 type ConfigurationOOPRules struct {
-	Maintainability *ConfigurationDefaultRule `yaml:"maintainability,omitempty"`
+	Maintainability *int `yaml:"min_maintainability,omitempty"`
 }
 
 type ConfigurationRequirementsRules struct {
@@ -84,12 +83,22 @@ type ConfigurationRequirementsRules struct {
 	Volume                    *ConfigurationVolumeRules       `yaml:"volume,omitempty"`
 	Complexity                *ConfigurationComplexityRules   `yaml:"complexity,omitempty"`
 	ObjectOrientedProgramming *ConfigurationOOPRules          `yaml:"object-oriented-programming,omitempty"`
+	Golang                    *ConfigurationGolangRuleset     `yaml:"golang,omitempty"`
 
-	// Legacy flat rules (backward compatibility)
-	CyclomaticComplexity *ConfigurationDefaultRule  `yaml:"cyclomatic_complexity,omitempty"`
-	Loc                  *ConfigurationDefaultRule  `yaml:"loc,omitempty"`
-	Maintainability      *ConfigurationDefaultRule  `yaml:"maintainability,omitempty"`
-	Coupling             *ConfigurationCouplingRule `yaml:"coupling,omitempty"`
+	// Legacy flat rules support for backward compatibility
+	CyclomaticLegacy *ConfigurationDefaultRule `yaml:"cyclomatic_complexity,omitempty"`
+}
+
+// ConfigurationGolangRuleset toggles for Golang-specific best-practice rules (per-rule)
+// If a field is set to true, the corresponding rule is enabled. Omitting or false disables it.
+type ConfigurationGolangRuleset struct {
+	NoPackageNameInMethod *bool `yaml:"no_package_name_in_method,omitempty"`
+	MaxNesting            *int  `yaml:"max_nesting,omitempty"`
+	MaxFileSize           *int  `yaml:"max_file_size,omitempty"`
+	MaxFilesPerPackage    *int  `yaml:"max_files_per_package,omitempty"`
+	SlicePrealloc         *bool `yaml:"slice_prealloc,omitempty"`
+	ContextMissing        *bool `yaml:"context_missing,omitempty"`
+	ContextIgnored        *bool `yaml:"context_ignored,omitempty"`
 }
 
 type ConfigurationDefaultRule struct {
@@ -106,7 +115,6 @@ func NewConfiguration() *Configuration {
 		CompareWith:            "",
 		Storage:                storage.Default(),
 		IsComingFromConfigFile: false,
-		Requirements:           &ConfigurationRequirements{FailOnError: true},
 	}
 }
 

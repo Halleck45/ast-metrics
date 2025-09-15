@@ -73,16 +73,32 @@ Example:
 ```yaml
 requirements:
   rules:
-    volume:
-      loc: { max: 500 }
-      lloc_by_method: { max: 30 }
     architecture:
-      efferent_coupling: { max: 20 }
-      maintainability: { min: 60 }
       coupling:
         forbidden:
-          - from: Service
-            to: Controller
+          - from: Controller
+            to: Repository
+          - from: Repository
+            to: Service
+      max_afferent_coupling: 10
+      max_efferent_coupling: 10
+      min_maintainability: 70
+    volume:
+      max_loc: 1000
+      max_logical_loc: 600
+      max_loc_by_method: 30
+      max_logical_loc_by_method: 20
+    complexity:
+      max_cyclomatic: 10
+    golang:
+      no_package_name_in_method: true
+      max_nesting: 4
+      max_file_size: 1000
+      max_files_per_package: 50
+      slice_prealloc: true
+      ignored_error: true
+      context_missing: true
+      context_ignored: true
 ```
 
 This makes it **easy to enforce architecture and quality at scale**.
