@@ -17,7 +17,7 @@ func (v *volumeRuleset) Description() string {
 	return "Volume metrics (e.g., lines of code)"
 }
 func (v *volumeRuleset) All() []Rule {
-	var loc, lloc, locByMethod, llocByMethod, maxMethodsPerClass, maxSwitchCases *int
+	var loc, lloc, locByMethod, llocByMethod, maxMethodsPerClass, maxSwitchCases, maxParametersPerMethod, maxNestedBlocks, maxPublicMethods *int
 	if v != nil && v.cfg != nil && v.cfg.Rules != nil && v.cfg.Rules.Volume != nil {
 		loc = v.cfg.Rules.Volume.Loc
 		lloc = v.cfg.Rules.Volume.Lloc
@@ -25,6 +25,9 @@ func (v *volumeRuleset) All() []Rule {
 		llocByMethod = v.cfg.Rules.Volume.LlocByMethod
 		maxMethodsPerClass = v.cfg.Rules.Volume.MaxMethodsPerClass
 		maxSwitchCases = v.cfg.Rules.Volume.MaxSwitchCases
+		maxParametersPerMethod = v.cfg.Rules.Volume.MaxParametersPerMethod
+		maxNestedBlocks = v.cfg.Rules.Volume.MaxNestedBlocks
+		maxPublicMethods = v.cfg.Rules.Volume.MaxPublicMethods
 	}
 	rules := []Rule{
 		NewLocRule(loc),
@@ -33,6 +36,9 @@ func (v *volumeRuleset) All() []Rule {
 		NewLlocByMethodRule(llocByMethod),
 		NewMaxMethodsPerClassRule(maxMethodsPerClass),
 		NewMaxSwitchCasesRule(maxSwitchCases),
+		NewMaxParametersPerMethodRule(maxParametersPerMethod),
+		NewMaxNestedBlocksRule(maxNestedBlocks),
+		NewMaxPublicMethodsRule(maxPublicMethods),
 	}
 	return rules
 }
@@ -59,6 +65,15 @@ func (v *volumeRuleset) Enabled() []Rule {
 	}
 	if v.cfg.Rules.Volume.MaxSwitchCases != nil {
 		rules = append(rules, NewMaxSwitchCasesRule(v.cfg.Rules.Volume.MaxSwitchCases))
+	}
+	if v.cfg.Rules.Volume.MaxParametersPerMethod != nil {
+		rules = append(rules, NewMaxParametersPerMethodRule(v.cfg.Rules.Volume.MaxParametersPerMethod))
+	}
+	if v.cfg.Rules.Volume.MaxNestedBlocks != nil {
+		rules = append(rules, NewMaxNestedBlocksRule(v.cfg.Rules.Volume.MaxNestedBlocks))
+	}
+	if v.cfg.Rules.Volume.MaxPublicMethods != nil {
+		rules = append(rules, NewMaxPublicMethodsRule(v.cfg.Rules.Volume.MaxPublicMethods))
 	}
 	return rules
 }

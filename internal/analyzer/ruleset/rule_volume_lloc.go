@@ -12,6 +12,9 @@ type llocRule struct {
 }
 
 func NewLlocRule(max *int) Rule {
+	if max == nil {
+		return &llocRule{max: 0}
+	}
 	return &llocRule{max: *max}
 }
 

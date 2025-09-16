@@ -66,12 +66,15 @@ type ConfigurationArchitectureRules struct {
 }
 
 type ConfigurationVolumeRules struct {
-	Loc               *int `yaml:"max_loc,omitempty"`
-	Lloc              *int `yaml:"max_logical_loc,omitempty"`
-	LocByMethod       *int `yaml:"max_loc_by_method,omitempty"`
-	LlocByMethod      *int `yaml:"max_logical_loc_by_method,omitempty"`
-	MaxMethodsPerClass *int `yaml:"max_methods_per_class,omitempty"`
-	MaxSwitchCases    *int `yaml:"max_switch_cases,omitempty"`
+	Loc                  *int `yaml:"max_loc,omitempty"`
+	Lloc                 *int `yaml:"max_logical_loc,omitempty"`
+	LocByMethod          *int `yaml:"max_loc_by_method,omitempty"`
+	LlocByMethod         *int `yaml:"max_logical_loc_by_method,omitempty"`
+	MaxMethodsPerClass   *int `yaml:"max_methods_per_class,omitempty"`
+	MaxSwitchCases       *int `yaml:"max_switch_cases,omitempty"`
+	MaxParametersPerMethod *int `yaml:"max_parameters_per_method,omitempty"`
+	MaxNestedBlocks      *int `yaml:"max_nested_blocks,omitempty"`
+	MaxPublicMethods     *int `yaml:"max_public_methods,omitempty"`
 }
 
 type ConfigurationComplexityRules struct {
