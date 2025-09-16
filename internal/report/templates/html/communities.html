@@ -110,6 +110,7 @@
     <script id="data-communities" type="application/json">[
         {% for id, nodes in cm.Communities %}
         {"id":"{{ id|escapejs }}",
+         "name":{% for k, n in cm.DisplayNamePerComm %}{% if k == id %}"{{ n|escapejs }}"{% endif %}{% endfor %},
          "size":{{ nodes|length }},
          "purity":{% for k, v in cm.PurityPerCommunity %}{% if k == id %}{{ v }}{% endif %}{% endfor %},
          "level":{% for k, lvl in cm.Levels %}{% if k == id %}{{ lvl }}{% endif %}{% endfor %},
@@ -472,7 +473,7 @@
                             const stat = commStats.get(d.id) || {coupling: 0};
                             const p = Math.round((d.purity || 0) * 100);
                             const coup = Math.round((stat.coupling || 0) * 100);
-                            const html = `<strong>${d.id}</strong><br><span style='opacity:.85'>Purity: ${p}% · Coupling: ${coup}%</span>${tns?`<br>Top ns: ${tns}`:''}${tcs?`<br>Top nodes: ${tcs}`:''}`;
+                            const html = `<strong>${d.name}</strong><br><span style='opacity:.85'>Purity: ${p}% · Coupling: ${coup}%</span>${tns?`<br>Top ns: ${tns}`:''}${tcs?`<br>Top nodes: ${tcs}`:''}`;
                             if (window.graphTooltip) window.graphTooltip.show(html, event);
                         })
                         .on('mousemove', function(event){ if (window.graphTooltip) window.graphTooltip.move(event); })
@@ -601,7 +602,8 @@
                         .attr('fill', '#374151')
                         .text(d => {
                             const p = Math.round((d.purity || 0) * 100);
-                            return `${d.id} (${d.size} nodes, purity ${p}%)`;
+                            const name = d.name || d.id;
+                            return `${name} (${d.size} nodes, purity ${p}%)`;
                         })
                         .each(function (d) {
                             // hide label if circle too small to avoid clutter
@@ -627,7 +629,7 @@
                         applyVisibility();
 
                         // Drill-down content
-                        ddTitle.textContent = `Community ${d.id}`;
+                        ddTitle.textContent = `Community ${d.name || d.id}`;
                         const p = Math.round((d.purity || 0) * 100);
                         const stat = commStats.get(d.id) || {coupling: 0};
                         const coup = Math.round((stat.coupling || 0) * 100);
@@ -856,11 +858,18 @@
                             // introduce façade
                             commIds.forEach(cid => {
                                 const st = commStats.get(cid);
-                                if (st && st.coupling > 0.7) suggestions.push(`Introduce façade for community ${cid} (coupling ${(st.coupling * 100).toFixed(0)}%)`);
+                                if (st && st.coupling > 0.7) {
+                                    const c = communities.find(x => x.id === cid);
+                                    const name = (c && c.name) ? c.name : cid;
+                                    suggestions.push(`Introduce façade for community ${name} (coupling ${(st.coupling * 100).toFixed(0)}%)`);
+                                }
                             });
                             // split module
                             communities.forEach(c => {
-                                if (c.size > 50 && c.purity < 0.6) suggestions.push(`Split module for community ${c.id} (size ${c.size}, purity ${(c.purity * 100).toFixed(0)}%)`);
+                                if (c.size > 50 && c.purity < 0.6) {
+                                    const name = c.name || c.id;
+                                    suggestions.push(`Split module for community ${name} (size ${c.size}, purity ${(c.purity * 100).toFixed(0)}%)`);
+                                }
                             });
                             // refactor boundary node
                             topNodes.slice(0, 5).forEach(([nid]) => {
@@ -1100,7 +1109,7 @@
                         .attr('stroke', '#9ca3af')
                         .attr('stroke-width', d => wScale(d.edges))
                         .attr('stroke-opacity', 0.7)
-                        .on('mouseenter', function(event, d){ showTooltip(`${d.from} → ${d.to}: ${d.edges} (${(d.pct * 100).toFixed(1)}%)`, event); })
+                        .on('mouseenter', function(event, d){ const nf=(communities.find(c=>c.id===d.from)?.name)||d.from; const nt=(communities.find(c=>c.id===d.to)?.name)||d.to; showTooltip(`${nf} → ${nt}: ${d.edges} (${(d.pct * 100).toFixed(1)}%)`, event); })
                         .on('mousemove', function(event){ moveTooltip(event); })
                         .on('mouseleave', function(){ hideTooltip(); });
                     // nodes
@@ -1117,7 +1126,8 @@
                         .attr('stroke', d => document.getElementById('highlight-bottlenecks').checked ? (isBottleneck(d.id) ? '#dc2626' : '#333') : '#333')
                         .attr('stroke-width', d => document.getElementById('highlight-bottlenecks').checked && isBottleneck(d.id) ? 3 : 0.5)
                         .on('mouseenter', function(event, d){
-                            const html = `${d.id}<br><span style='opacity:.8'>size:${d.size} pur:${Math.round((d.purity||0) * 100)}% coup:${Math.round((d.coupling||0) * 100)}% bet:${(d.betweenness||0).toFixed(3)}</span>`;
+                            const title = d.name || d.id;
+                            const html = `${title}<br><span style='opacity:.8'>size:${d.size} pur:${Math.round((d.purity||0) * 100)}% coup:${Math.round((d.coupling||0) * 100)}% bet:${(d.betweenness||0).toFixed(3)}</span>`;
                             showTooltip(html, event);
                         })
                         .on('mousemove', function(event){ moveTooltip(event); })
@@ -1125,7 +1135,7 @@
                     nodeG.append('text')
                         .attr('y', d => (pos.get(d.id)?.r || 10) + 12)
                         .attr('text-anchor', 'middle').attr('font-size', 11).attr('fill', '#374151')
-                        .text(d => `${d.id}`)
+                        .text(d => `${d.name || d.id}`)
                         .each(function (d) {
                             if ((pos.get(d.id)?.r || 10) < 14) this.setAttribute('display', 'none');
                         });

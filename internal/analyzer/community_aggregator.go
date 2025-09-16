@@ -29,6 +29,9 @@ type CommunityMetrics struct {
 	BetweennessPerComm      map[string]float64         // betweenness on community graph (undirected approx)
 	MatrixOrder             []string                   // order of communities for matrix
 	TopPaths                map[string][]CommunityPath // entry -> top k paths
+
+	// Human-friendly display names derived generically (no project-specific rules)
+	DisplayNamePerComm map[string]string // community id -> display name
 }
 
 // EdgeBetweenCommunities represents an aggregated directed edge between communities
@@ -775,6 +778,30 @@ func (ca *CommunityAggregator) Calculate(aggregate *Aggregated) {
 		topPaths[entry] = acc
 	}
 
+	// Derive display names per community using a simple rule:
+	// pick the member node with the highest number of outgoing edges ("out").
+	// In case of a tie, choose the lexicographically smallest node id.
+	display := map[string]string{}
+	for cid, nodes := range comms {
+		bestNode := ""
+		bestOut := -1
+		for _, u := range nodes {
+			n := aggregate.Graph.Nodes[u]
+			out := 0
+			if n != nil {
+				out = len(n.Edges)
+			}
+			if out > bestOut || (out == bestOut && (bestNode == "" || u < bestNode)) {
+				bestOut = out
+				bestNode = u
+			}
+		}
+		if bestNode == "" {
+			bestNode = cid
+		}
+		display[cid] = bestNode
+	}
+
 	aggregateCommunity := &CommunityMetrics{
 		Communities:      comms,
 		NodeToCommunity:  node2comm,
@@ -804,6 +831,7 @@ func (ca *CommunityAggregator) Calculate(aggregate *Aggregated) {
 		BetweennessPerComm:      bet,
 		MatrixOrder:             orderRCM,
 		TopPaths:                topPaths,
+		DisplayNamePerComm:      display,
 	}
 	aggregate.Community = aggregateCommunity
 
