@@ -54,7 +54,7 @@ requirements:
 	assert.Equal(t, false, evaluation.Succeeded)
 
 	assert.Equal(t, 1, len(evaluation.Errors))
-	assert.Equal(t, "Cyclomatic complexity too high in file test1.go: got 10 (max: 5)", evaluation.Errors[0].Message)
+	assert.Equal(t, "Cyclomatic complexity too high: got 10 (max: 5)", evaluation.Errors[0].Message)
 	assert.Equal(t, "cyclomatic_complexity", evaluation.Errors[0].Rule)
 	assert.Equal(t, "test1.go", evaluation.Errors[0].File)
 }

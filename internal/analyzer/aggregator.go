@@ -85,7 +85,7 @@ type Aggregated struct {
 	PackageRelations                        map[string]map[string]int // counter of dependencies. Ex: A -> B -> 2
 	Graph                                   *pb.Graph
 	Community                               *CommunityMetrics
-	Suggestions                             []string
+	Suggestions                             []Suggestion
 }
 
 type ProjectComparaison struct {
@@ -175,7 +175,7 @@ func newAggregated() Aggregated {
 		PackageRelations:                        make(map[string]map[string]int),
 		Graph:                                   &pb.Graph{Nodes: make(map[string]*pb.Node)},
 		Community:                               nil,
-		Suggestions:                             make([]string, 0),
+		Suggestions:                             make([]Suggestion, 0),
 	}
 }
 
