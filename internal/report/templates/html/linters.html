@@ -1,0 +1,287 @@
+{% extends "layout.html" %}
+
+{% block title %}
+    Linters
+{% endblock %}
+
+{% block pageTitle %}
+    AST Metrics - Linters
+{% endblock %}
+
+{% block content %}
+
+    <!-- start: language tabs-->
+    <div class="flex overflow-x-auto overflow-y-hidden border-b border-gray-200 whitespace-nowrap ">
+
+        <a 
+            tabindex="-1"
+            href="linters.html"
+            class="inline-flex items-center h-10 px-2 py-2 -mb-px text-center {% if currentLanguage == 'All' %}text-blue-600 border-blue-500{% endif %} bg-transparent border-b-2 sm:px-4 -px-1 focus:outline-none">
+            <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 mx-1 sm:w-6 sm:h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z" />
+            </svg>
+
+            <span class="mx-1 text-sm sm:text-base">
+                All languages <span class="text-xs sm:text-sm">({{ projectAggregated.Combined.ConcernedFiles|length }} files)</span>
+            </span>
+        </a>
+
+        <!-- start: language tab -->
+            {% for languageName, lang in projectAggregated.ByProgrammingLanguage %}
+            <a 
+                tabindex="0"
+                href="linters_{{ languageName }}.html"
+                class="inline-flex items-center h-10 px-2 py-2 -mb-px text-center bg-transparent border-b-2 {% if currentLanguage == languageName %}text-blue-600 border-blue-500{% else %}text-gray-700   border-transparent{% endif %} sm:px-4 -px-1 hover:border-gray-400">
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 mx-1 sm:w-6 sm:h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z" />
+                </svg>
+    
+                <span class="mx-1 text-sm sm:text-base">
+                    {{ languageName }} <span class="text-xs sm:text-sm">({{ lang.ConcernedFiles|length }} files)</span>
+                </span>
+            </a>
+            {% endfor %}
+        <!-- end: language tab -->
+
+    </div>
+    <!-- end: language tabs-->
+
+    {% if not projectAggregated.Evaluation %}
+        <div class="mt-6 p-4 bg-yellow-50 border border-yellow-200 text-yellow-800 rounded">No requirements were evaluated. Configure requirements to see linters results.</div>
+    {% else %}
+
+    <!-- Data injection -->
+    <script type="text/plain" id="errors-data" x-ref="errors">
+        [
+        {% for e in projectAggregated.Evaluation.Errors %}
+            {"message":"{{ e.Message|escape }}","rule":"{{ e.Rule|escape }}","severity":"{{ e.Severity|escape }}","file":"{{ e.File|escape }}"}{% if not forloop.Last %},{% endif %}
+        {% endfor %}
+        ]
+    </script>
+    <script type="text/plain" id="success-data" x-ref="successes">
+        [
+        {% for s in projectAggregated.Evaluation.Successes %}
+            {"message":"{{ s.Message|escape }}","rule":"{{ s.Rule|escape }}","severity":"{{ s.Severity|escape }}","file":"{{ s.File|escape }}"}{% if not forloop.Last %},{% endif %}
+        {% endfor %}
+        ]
+    </script>
+    <script type="text/plain" id="allowed-files" x-ref="allowed">
+        [
+        {% for f in currentView.ConcernedFiles %}
+            "{{ f.Path|escape }}"{% if not forloop.Last %},{% endif %}
+        {% endfor %}
+        ]
+    </script>
+
+    <div x-data="linters()" x-init="init()">
+        <!-- start: line of cards -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mt-4">
+
+            <!-- High -->
+            <div class="max-w-2xl px-8 py-4 bg-white rounded-lg shadow-md ">
+                <div class="mt-2">
+                    <div>
+                        <h5 class="leading-none text-3xl font-bold text-gray-900 pb-2" >
+                            <span class="text-red-900 bg-red-400 rounded px-3 py-1">
+                                {{ projectAggregated.Evaluation.CountErrorsBySeverityString('high') }}
+                            </span>
+                        </h5>
+                        <p class="text-base font-normal text-gray-500 ">High severity</p>
+                    </div>
+                    <p class="border-t border-gray-200 mt-2 italic text-sm text-gray-600 pt-4 text-justify">
+                        Should probably be fixed.
+                    </p>
+                </div>
+            </div>
+
+            <!-- Medium -->
+            <div class="max-w-2xl px-8 py-4 bg-white rounded-lg shadow-md ">
+                <div class="mt-2">
+                    <div>
+                        <h5 class="leading-none text-3xl font-bold text-gray-900 pb-2">
+                            <span class="text-orange-900 bg-orange-400 rounded px-3 py-1">
+                                {{ projectAggregated.Evaluation.CountErrorsBySeverityString('medium') }}
+                            </span>
+                        </h5>
+                        <p class="text-base font-normal text-gray-500 ">Medium severity</p>
+                    </div>
+                    <p class="border-t border-gray-200 mt-2 italic text-sm text-gray-600 pt-4 text-justify">
+                        May cause some issues.
+                    </p>
+                </div>
+            </div>
+
+            <!-- Low -->
+            <div class="max-w-2xl px-8 py-4 bg-white rounded-lg shadow-md ">
+                <div class="mt-2">
+                    <div>
+                        <h5 class="leading-none text-3xl font-bold text-gray-900 pb-2">
+                            <span class="text-yellow-900 bg-yellow-400 rounded px-3 py-1">
+                                {{ projectAggregated.Evaluation.CountErrorsBySeverityString('low') }}
+                            </span>
+                        </h5>
+                        <p class="text-base font-normal text-gray-500 ">Low severity</p>
+                    </div>
+                    <p class="border-t border-gray-200 mt-2 italic text-sm text-gray-600 pt-4 text-justify">
+                        Minor issues, mostly stylistic.
+                    </p>
+                </div>
+            </div>
+
+            <!-- Successes -->
+            <div class="max-w-2xl px-8 py-4 bg-white rounded-lg shadow-md ">
+                <div class="mt-2">
+                    <div>
+                        <h5 class="leading-none text-3xl font-bold text-gray-900 pb-2">
+                            <span
+                                class="text-green-900 bg-green-400 rounded px-3 py-1">
+                                {{projectAggregated.Evaluation.Successes|length| floatformat:0}}
+                            </span>
+                        </h5>
+                        <p class="text-base font-normal text-gray-500 ">Successes</p>
+                    </div>
+                    <p class="border-t border-gray-200 mt-2 italic text-sm text-gray-600 pt-4 text-justify">
+                        Successful linter checks.
+                    </p>
+                </div>
+            </div>
+        </div>
+        <!-- end: line of cards -->
+
+        <div class="text-center mt-8 mb-8" x-show="loading">
+            <div role="status">
+                <svg aria-hidden="true" class="inline w-8 h-8 text-gray-200 animate-spin dark:text-gray-600 fill-blue-600" viewBox="0 0 100 101" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M100 50.5908C100 78.2051 77.6142 100.591 50 100.591C22.3858 100.591 0 78.2051 0 50.5908C0 22.9766 22.3858 0.59082 50 0.59082C77.6142 0.59082 100 22.9766 100 50.5908ZM9.08144 50.5908C9.08144 73.1895 27.4013 91.5094 50 91.5094C72.5987 91.5094 90.9186 73.1895 90.9186 50.5908C90.9186 27.9921 72.5987 9.67226 50 9.67226C27.4013 9.67226 9.08144 27.9921 9.08144 50.5908Z" fill="currentColor"/>
+                    <path d="M93.9676 39.0409C96.393 38.4038 97.8624 35.9116 97.0079 33.5539C95.2932 28.8227 92.871 24.3692 89.8167 20.348C85.8452 15.1192 80.8826 10.7238 75.2124 7.41289C69.5422 4.10194 63.2754 1.94025 56.7698 1.05124C51.7666 0.367541 46.6976 0.446843 41.7345 1.27873C39.2613 1.69328 37.813 4.19778 38.4501 6.62326C39.0873 9.04874 41.5694 10.4717 44.0505 10.1071C47.8511 9.54855 51.7191 9.52689 55.5402 10.0491C60.8642 10.7766 65.9928 12.5457 70.6331 15.2552C75.2735 17.9648 79.3347 21.5619 82.5849 25.841C84.9175 28.9121 86.7997 32.2913 88.1811 35.8758C89.083 38.2158 91.5421 39.6781 93.9676 39.0409Z" fill="currentFill"/>
+                </svg>
+                <span class="sr-only">Loading...</span>
+            </div>
+        </div>
+
+
+        <!-- Filters -->
+        <div class="mt-6 flex flex-col md:flex-row md:items-end gap-4" x-cloak x-show="!loading" x-transition.opacity.duration.200ms>
+            <div>
+                <label class="block text-sm font-medium text-gray-700">Filter by severity</label>
+                <select x-model="severity" class="mt-1 block w-52 pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md">
+                    <option value="">All</option>
+                    <option value="high">High</option>
+                    <option value="medium">Medium</option>
+                    <option value="low">Low</option>
+                    <option value="unknown">Unknown</option>
+                </select>
+            </div>
+            <div class="flex-1">
+                <label class="block text-sm font-medium text-gray-700">Search</label>
+                <input x-model.debounce.200ms="query" type="text" placeholder="Search by message, rule, or file..." class="mt-1 block w-full pl-3 pr-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm" />
+            </div>
+        </div>
+
+        <!-- Table -->
+        <div class="mt-4 overflow-x-auto bg-white rounded shadow"  x-cloak x-show="!loading" x-transition.opacity.duration.200ms>
+            <table class="min-w-full divide-y divide-gray-200 sortable">
+                <thead class="bg-gray-50">
+                    <tr>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">File</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Severity</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Rule</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Message</th>
+                    </tr>
+                </thead>
+                <tbody class="bg-white divide-y divide-gray-200">
+                    <template x-for="e in filtered" >
+                        <tr>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900" x-text="e.file"></td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full"
+                                      :class="badgeClass(e.severity)">
+                                    <span x-text="(e.severity||'unknown').toLowerCase()"></span>
+                                </span>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900" x-text="e.rule"></td>
+                            <td class="px-6 py-4 whitespace-normal text-sm text-gray-900" x-text="e.message"></td>
+                        </tr>
+                    </template>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        function linters() {
+            return {
+                errors: [],
+                successes: [],
+                allowed: new Set(),
+                severity: '',
+                loading: true,
+                query: '',
+                init() {
+                    const errsEl = document.getElementById('errors-data');
+                    const succEl = document.getElementById('success-data');
+                    const allowEl = document.getElementById('allowed-files');
+                    try { this.errors = JSON.parse((errsEl && errsEl.textContent) ? errsEl.textContent : '[]'); } catch(e){ this.errors = []; }
+                    try { this.successes = JSON.parse((succEl && succEl.textContent) ? succEl.textContent : '[]'); } catch(e){ this.successes = []; }
+                    let list = [];
+                    try { list = JSON.parse((allowEl && allowEl.textContent) ? allowEl.textContent : '[]'); } catch(e){ list = []; }
+                    this.allowed = new Set(Array.isArray(list) ? list : []);
+                    this.loading = false;
+                },
+                inScope(item) {
+                    if (this.allowed.size === 0) return true;
+                    if (!item.file) return false;
+                    return this.allowed.has(item.file);
+                },
+                count(sev) {
+                    const s = (sev || 'unknown').toLowerCase();
+                    return this.errors.filter(e => this.inScope(e) && (e.severity || 'unknown').toLowerCase() === s).length;
+                },
+                get countSuccess() {
+                    // Prefer explicit successes when provided
+                    const explicit = this.successes.filter(e => this.inScope(e)).length;
+                    if (explicit > 0) return explicit;
+                    // Fallback: count files in scope that have no errors
+                    const filesWithErrors = new Set(this.errors.filter(e => this.inScope(e)).map(e => e.file));
+                    let total = 0;
+                    for (const f of this.allowed) {
+                        if (!filesWithErrors.has(f)) total++;
+                    }
+                    return total;
+                },
+                badgeClass(sev) {
+                    const s = (sev || 'unknown').toLowerCase();
+                    if (s === 'high') return 'bg-red-100 text-red-800';
+                    if (s === 'medium') return 'bg-orange-100 text-orange-800';
+                    if (s === 'low') return 'bg-green-100 text-green-800';
+                    return 'bg-gray-200 text-gray-800';
+                },
+                get filtered() {
+                    let rows = this.errors.filter(e => this.inScope(e));
+                    if (this.severity) {
+                        const sev = this.severity.toLowerCase();
+                        rows = rows.filter(e => (e.severity || 'unknown').toLowerCase() === sev);
+                    }
+                    if (this.query) {
+                        const q = this.query.toLowerCase();
+                        rows = rows.filter(e => (e.message || '').toLowerCase().includes(q)
+                            || (e.rule || '').toLowerCase().includes(q)
+                            || (e.file || '').toLowerCase().includes(q));
+                    }
+                    const order = {high:0, medium:1, low:2, unknown:3};
+                    rows.sort((a, b) => {
+                        if (a.file !== b.file) return a.file < b.file ? -1 : 1;
+                        const as = (a.severity || 'unknown').toLowerCase();
+                        const bs = (b.severity || 'unknown').toLowerCase();
+                        if (order[as] !== order[bs]) return order[as] - order[bs];
+                        const ar = (a.rule || ''), br = (b.rule || '');
+                        return ar < br ? -1 : (ar > br ? 1 : 0);
+                    });
+                    return rows;
+                }
+            }
+        }
+    </script>
+
+    {% endif %}
+
+{% endblock %}

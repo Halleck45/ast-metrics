@@ -66,6 +66,7 @@ func (v *HtmlReportGenerator) Generate(files []*pb.File, projectAggregated analy
 		"risks.html",
 		"compare.html",
 		"explorer.html",
+		"linters.html",
 		"componentChartRadiusBar.html",
 		"componentTableRisks.html",
 		"componentTableCompareBranch.html",
@@ -137,6 +138,12 @@ func (v *HtmlReportGenerator) Generate(files []*pb.File, projectAggregated analy
 	v.GenerateLanguagePage("communities.html", "All", projectAggregated.Combined, files, projectAggregated)
 	for language, currentView := range projectAggregated.ByProgrammingLanguage {
 		v.GenerateLanguagePage("communities.html", language, currentView, files, projectAggregated)
+	}
+
+	// Linters page
+	v.GenerateLanguagePage("linters.html", "All", projectAggregated.Combined, files, projectAggregated)
+	for language, currentView := range projectAggregated.ByProgrammingLanguage {
+		v.GenerateLanguagePage("linters.html", language, currentView, files, projectAggregated)
 	}
 
 	// copy images

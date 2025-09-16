@@ -42,6 +42,35 @@ type EvaluationResult struct {
 	Succeeded         bool
 }
 
+// method to get number of errors by severity
+func (er *EvaluationResult) CountErrorsBySeverity(sev Severity) int {
+	count := 0
+	for _, e := range er.Errors {
+		if e.Severity == sev {
+			count++
+		}
+	}
+	return count
+}
+
+// methd to get the number of errors by severity (as string)
+func (er *EvaluationResult) CountErrorsBySeverityString(sev string) int {
+	sev = strings.ToLower(strings.TrimSpace(sev))
+	var severity Severity
+	switch sev {
+	case "high":
+		severity = SeverityHigh
+	case "medium":
+		severity = SeverityMedium
+	case "low":
+		severity = SeverityLow
+	default:
+		severity = SeverityUnknown
+	}
+
+	return er.CountErrorsBySeverity(severity)
+}
+
 // minimal view of ProjectAggregated to avoid import cycle; use original type via alias in caller
 // We reuse the original analyzer.ProjectAggregated at call site; here we just keep it opaque
 // Define a tiny interface type to hold reference without methods

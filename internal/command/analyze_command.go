@@ -167,6 +167,13 @@ func (v *AnalyzeCommand) Execute() error {
 	}
 	projectAggregated := aggregator.Aggregates()
 
+	// Evaluate requirements generating reports so templates can use results
+	if v.Configuration.Requirements != nil {
+		requirementsEvaluator := requirement.NewRequirementsEvaluator(*v.Configuration.Requirements)
+		evaluation := requirementsEvaluator.Evaluate(allResults, requirement.ProjectAggregated{})
+		projectAggregated.Evaluation = &evaluation
+	}
+
 	// Generate reports
 	if v.spinner != nil {
 		v.spinner.UpdateTitle("Generating reports...")
@@ -189,32 +196,6 @@ func (v *AnalyzeCommand) Execute() error {
 				return err
 			}
 			generatedReports = append(generatedReports, reports...)
-		}
-	}
-
-	// Evaluate requirements
-	if v.Configuration.Requirements != nil {
-		requirementsEvaluator := requirement.NewRequirementsEvaluator(*v.Configuration.Requirements)
-		evaluation := requirementsEvaluator.Evaluate(allResults, requirement.ProjectAggregated{})
-		projectAggregated.Evaluation = &evaluation
-
-		if evaluation.Succeeded {
-			pterm.Success.Println("Requirements are met")
-		} else {
-			pterm.Error.Printf("Requirements are not met. Found %d violation(s)\n", len(evaluation.Errors))
-			for _, out := range evaluation.Errors {
-				prefix := ""
-				switch out.Severity {
-				case requirement.SeverityHigh:
-					prefix = "[HIGH] "
-					pterm.Error.Println("    " + prefix + out.Message)
-				case requirement.SeverityMedium:
-					prefix = "[MED] "
-					pterm.Warning.Println("    " + prefix + out.Message)
-				case requirement.SeverityLow:
-					pterm.Warning.Println("    " + prefix + out.Message)
-				}
-			}
 		}
 	}
 
