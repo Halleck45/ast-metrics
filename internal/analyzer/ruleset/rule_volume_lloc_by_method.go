@@ -35,7 +35,7 @@ func (r *llocByMethodRule) CheckFile(file *pb.File, addError func(issue.Requirem
 		if r.max != nil && *r.max > 0 && value > *r.max {
 			addError(issue.RequirementError{
 				Severity: issue.SeverityMedium,
-				Message:  fmt.Sprintf("LLOC too high in method %s: got %d (max: %d)", f.Name.Short, value, *r.max),
+				Message:  fmt.Sprintf("LLOC too high in method %s(): got %d (max: %d)", f.Name.Short, value, *r.max),
 				Code:     r.Name(),
 			})
 			ok = false
@@ -43,6 +43,6 @@ func (r *llocByMethodRule) CheckFile(file *pb.File, addError func(issue.Requirem
 		}
 	}
 	if ok {
-		addSuccess(fmt.Sprintf("LLOC by method OK in file %s", file.Path))
+		addSuccess("LLOC by method OK")
 	}
 }

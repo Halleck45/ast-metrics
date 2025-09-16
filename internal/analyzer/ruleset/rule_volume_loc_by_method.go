@@ -44,6 +44,6 @@ func (r *locByMethodRule) CheckFile(file *pb.File, addError func(issue.Requireme
 	}
 
 	if ok {
-		addSuccess(fmt.Sprintf("LOC by method OK in file %s", file.Path))
+		addSuccess("LOC by method OK")
 	}
 }

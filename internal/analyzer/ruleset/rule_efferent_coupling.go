@@ -31,10 +31,10 @@ func (r *efferentCouplingRule) CheckFile(file *pb.File, addError func(issue.Requ
 		addError(issue.RequirementError{
 			Severity: issue.SeverityUnknown,
 			Code:     r.Name(),
-			Message:  fmt.Sprintf("Efferent coupling too high in file %s: got %d (max: %d)", file.Path, value, *r.max),
+			Message:  fmt.Sprintf("Efferent coupling too high: got %d (max: %d)", value, *r.max),
 		})
 		return
 	}
 
-	addSuccess(fmt.Sprintf("Efferent coupling OK in file %s", file.Path))
+	addSuccess("Efferent coupling OK")
 }

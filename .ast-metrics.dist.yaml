@@ -29,6 +29,5 @@ requirements:
       max_file_size: 1000
       max_files_per_package: 50
       slice_prealloc: true
-      ignored_error: true
       context_missing: true
       context_ignored: true

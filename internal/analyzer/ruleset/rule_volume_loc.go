@@ -40,5 +40,5 @@ func (l *locRule) CheckFile(file *pb.File, addError func(issue.RequirementError)
 		return
 	}
 
-	addSuccess(fmt.Sprintf("Max Lines of code OK in file %s", file.Path))
+	addSuccess("Max Lines of code OK")
 }

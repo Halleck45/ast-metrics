@@ -24,12 +24,16 @@ func (r *ruleNoPkgInMethod) CheckFile(file *pb.File, addError func(issue.Require
 	if file == nil || file.Stmts == nil {
 		return
 	}
+
+	if file.ProgrammingLanguage != "Golang" {
+		return
+	}
+
 	pkg := ""
 	if len(file.Stmts.StmtNamespace) > 0 && file.Stmts.StmtNamespace[0] != nil && file.Stmts.StmtNamespace[0].Name != nil {
 		pkg = file.Stmts.StmtNamespace[0].Name.Short
 	}
 	if pkg == "" {
-		addSuccess(fmt.Sprintf("[%s] unable to determine package for %s", r.Name(), file.Path))
 		return
 	}
 	lowPkg := strings.ToLower(pkg)
@@ -50,7 +54,7 @@ func (r *ruleNoPkgInMethod) CheckFile(file *pb.File, addError func(issue.Require
 			flagged++
 			addError(issue.RequirementError{
 				Severity: issue.SeverityMedium,
-				Message:  fmt.Sprintf("Function/method name '%s' in file %s contains package name '%s'", name, file.Path, pkg),
+				Message:  fmt.Sprintf("Function/method name '%s()' contains package name '%s'", name, pkg),
 				Code:     r.Name(),
 			})
 		}
@@ -75,6 +79,6 @@ func (r *ruleNoPkgInMethod) CheckFile(file *pb.File, addError func(issue.Require
 		}
 	}
 	if flagged == 0 {
-		addSuccess(fmt.Sprintf("[%s] OK in %s", r.Name(), file.Path))
+		addSuccess("Names of functions/methods does not contain package name OK")
 	}
 }

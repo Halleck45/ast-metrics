@@ -38,5 +38,5 @@ func (l *llocRule) CheckFile(file *pb.File, addError func(issue.RequirementError
 		return
 	}
 
-	addSuccess(fmt.Sprintf("Logical lines of code OK in file %s", file.Path))
+	addSuccess("Logical lines of code OK")
 }

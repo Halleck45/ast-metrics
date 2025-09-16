@@ -42,5 +42,5 @@ func (r *ruleSlicePrealloc) CheckFile(file *pb.File, addError func(issue.Require
 		})
 		return
 	}
-	addSuccess(fmt.Sprintf("[%s] No slice preallocation opportunities found in %s", r.Name(), file.Path))
+	addSuccess("No slice preallocation opportunities OK")
 }

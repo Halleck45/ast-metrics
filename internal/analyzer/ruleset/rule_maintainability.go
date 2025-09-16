@@ -38,13 +38,13 @@ func (r *maintainabilityRule) CheckFile(file *pb.File, addError func(issue.Requi
 		if r.min != nil && value < *r.min {
 			addError(issue.RequirementError{
 				Severity: issue.SeverityHigh,
-				Message:  fmt.Sprintf("Maintainability too low in file %s: got %d (min: %d)", file.Path, value, *r.min),
+				Message:  fmt.Sprintf("Maintainability too low: got %d (min: %d)", value, *r.min),
 				Code:     r.Name(),
 			})
 			return
 		}
 	}
 	if hasAny {
-		addSuccess(fmt.Sprintf("Maintainability OK in file %s", file.Path))
+		addSuccess("Maintainability OK")
 	}
 }

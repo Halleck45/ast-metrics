@@ -137,7 +137,7 @@ func (r *ruleContextMissing) CheckFile(file *pb.File, addError func(issue.Requir
 	}
 
 	if checked == 0 {
-		addSuccess(fmt.Sprintf("[%s] No exported I/O-related functions found in %s", r.Name(), file.Path))
+		addSuccess("No exported I/O-related functions found")
 		return
 	}
 	if flagged > 0 {
@@ -148,5 +148,5 @@ func (r *ruleContextMissing) CheckFile(file *pb.File, addError func(issue.Requir
 		})
 		return
 	}
-	addSuccess(fmt.Sprintf("[%s] Exported I/O APIs accept context in %s", r.Name(), file.Path))
+	addSuccess("Exported I/O APIs accept context")
 }

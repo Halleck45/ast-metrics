@@ -37,5 +37,5 @@ func (r *cyclomaticRule) CheckFile(file *pb.File, addError func(issue.Requiremen
 		})
 		return
 	}
-	addSuccess(fmt.Sprintf("Cyclomatic complexity OK in file %s", file.Path))
+	addSuccess("Cyclomatic complexity OK")
 }

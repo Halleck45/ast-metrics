@@ -26,9 +26,9 @@ func (r *ruleMaxFileLoc) CheckFile(file *pb.File, addError func(issue.Requiremen
 		addError(issue.RequirementError{
 			Severity: issue.SeverityMedium,
 			Code:     r.Name(),
-			Message:  fmt.Sprintf("File too large: %d LOC > %d in %s", loc, r.max, file.Path),
+			Message:  fmt.Sprintf("File too large: %d LOC > %d", loc, r.max),
 		})
 		return
 	}
-	addSuccess(fmt.Sprintf("[%s] LOC %d ≤ %d in %s", r.Name(), loc, r.max, file.Path))
+	addSuccess(fmt.Sprintf("[%s] LOC %d ≤ %d", r.Name(), loc, r.max))
 }

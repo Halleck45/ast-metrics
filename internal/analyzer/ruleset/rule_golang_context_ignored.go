@@ -54,7 +54,7 @@ func (r *ruleContextIgnored) CheckFile(file *pb.File, addError func(issue.Requir
 		})
 		return
 	}
-	addSuccess(fmt.Sprintf("[%s] No context misuse detected in %s", r.Name(), file.Path))
+	addSuccess("No context misuse detected")
 }
 
 // containsInFunctionBody checks if pattern matches inside the body of a given function

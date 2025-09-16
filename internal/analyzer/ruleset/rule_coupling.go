@@ -49,7 +49,7 @@ func (c *couplingRule) CheckFile(file *pb.File, addError func(issue.RequirementE
 	}
 
 	if !hasError {
-		addSuccess("Coupling OK in file " + file.Path)
+		addSuccess("Coupling OK")
 	}
 }
 

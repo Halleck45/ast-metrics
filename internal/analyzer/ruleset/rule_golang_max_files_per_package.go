@@ -66,7 +66,7 @@ func (r *ruleMaxFilesPerPackage) CheckFile(file *pb.File, addError func(issue.Re
 		})
 		return
 	}
-	addSuccess(fmt.Sprintf("[%s] Package '%s' has %d files ≤ %d in %s", r.Name(), pkg, count, r.max, dir))
+	addSuccess(fmt.Sprintf("Package '%s' has %d files ≤ %d in %s", pkg, count, r.max, dir))
 }
 
 func hasPackage(src, pkg string) bool {

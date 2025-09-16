@@ -27,11 +27,11 @@ func (r *ruleMaxNesting) CheckFile(file *pb.File, addError func(issue.Requiremen
 		addError(issue.RequirementError{
 			Severity: issue.SeverityMedium,
 			Code:     r.Name(),
-			Message:  fmt.Sprintf("Nesting depth %d > %d in %s", maxDepth, r.max, file.Path),
+			Message:  fmt.Sprintf("Nesting depth %d > %d", maxDepth, r.max),
 		})
 		return
 	}
-	addSuccess(fmt.Sprintf("[%s] Max nesting depth %d ≤ %d in %s", r.Name(), maxDepth, r.max, file.Path))
+	addSuccess(fmt.Sprintf("Max nesting depth %d ≤ %d", maxDepth, r.max))
 }
 
 func maxDepthStmts(s *pb.Stmts, cur int) int {
