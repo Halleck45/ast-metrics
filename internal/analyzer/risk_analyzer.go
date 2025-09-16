@@ -49,6 +49,10 @@ func (v *RiskAnalyzer) Analyze(project ProjectAggregated) {
 
 		// OOP file
 		for _, class := range classes {
+			// Guard against nil pointers in class analysis
+			if class.Stmts == nil || class.Stmts.Analyze == nil || class.Stmts.Analyze.Maintainability == nil || class.Stmts.Analyze.Maintainability.MaintainabilityIndex == nil {
+				continue
+			}
 			maintainability := 128 - *class.Stmts.Analyze.Maintainability.MaintainabilityIndex
 			if maintainability > maxComplexity {
 				maxComplexity = maintainability
@@ -56,9 +60,11 @@ func (v *RiskAnalyzer) Analyze(project ProjectAggregated) {
 		}
 
 		// all files (procedural and OOP)
-		cyclomatic := *file.Stmts.Analyze.Complexity.Cyclomatic
-		if cyclomatic > maxCyclomatic {
-			maxCyclomatic = cyclomatic
+		if file.Stmts != nil && file.Stmts.Analyze != nil && file.Stmts.Analyze.Complexity != nil && file.Stmts.Analyze.Complexity.Cyclomatic != nil {
+			cyclomatic := *file.Stmts.Analyze.Complexity.Cyclomatic
+			if cyclomatic > maxCyclomatic {
+				maxCyclomatic = cyclomatic
+			}
 		}
 
 		if len(commits) > maxCommits {
