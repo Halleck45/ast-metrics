@@ -1,5 +1,5 @@
 <p align="center" style="text-align:center">
-<img alt="AST Metrics" src="https://raw.githubusercontent.com/Halleck45/ast-metrics/main/docs/logo-ast-metrics.png" height="2000px" "/>
+<img alt="AST Metrics" src="https://raw.githubusercontent.com/Halleck45/ast-metrics/main/docs/logo-ast-metrics-condensed.png" height="200px"/>
 </p>
 
 <p align="center" style="text-align:center">
