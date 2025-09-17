@@ -6,6 +6,48 @@ import (
 	pb "github.com/halleck45/ast-metrics/internal/nodetype"
 )
 
+func TestMaintainabilityIndexVisitor_Visit_NilStmts(t *testing.T) {
+	visitor := &MaintainabilityIndexVisitor{}
+	visitor.Visit(nil, nil)
+	// Should not panic
+}
+
+func TestMaintainabilityIndexVisitor_Visit_InClass(t *testing.T) {
+	stmts := &pb.Stmts{}
+	parents := &pb.Stmts{
+		StmtClass: []*pb.StmtClass{
+			{Stmts: stmts},
+		},
+	}
+
+	visitor := &MaintainabilityIndexVisitor{}
+	visitor.Visit(stmts, parents)
+
+	if !visitor.inClass {
+		t.Error("expected inClass to be true")
+	}
+}
+
+func TestMaintainabilityIndexVisitor_Visit_NotInClass(t *testing.T) {
+	stmts := &pb.Stmts{}
+	parents := &pb.Stmts{}
+
+	visitor := &MaintainabilityIndexVisitor{}
+	visitor.Visit(stmts, parents)
+
+	if visitor.inClass {
+		t.Error("expected inClass to be false")
+	}
+}
+
+func TestMaintainabilityIndexVisitor_LeaveNode(t *testing.T) {
+	visitor := &MaintainabilityIndexVisitor{}
+	stmts := &pb.Stmts{}
+
+	visitor.LeaveNode(stmts)
+	// Should not panic
+}
+
 func TestItCalculateMaintainabilityIndex(t *testing.T) {
 
 	visitor := MaintainabilityIndexVisitor{}
