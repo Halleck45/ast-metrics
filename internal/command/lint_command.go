@@ -23,6 +23,10 @@ type LintCommand struct {
 	verbose       bool
 }
 
+// lintTestHook is a test hook to force an error during LintCommand execution.
+// It is set by unit tests when needed and should remain nil in production.
+var lintTestHook func() error
+
 func (c *LintCommand) SetVerbose(v bool) { c.verbose = v }
 
 func NewLintCommand(configuration *configuration.Configuration, outWriter *bufio.Writer, runners []engine.Engine) *LintCommand {
@@ -38,6 +42,13 @@ func (c *LintCommand) Execute() error {
 	// Prepare workdir
 	c.Configuration.Storage.Purge()
 	c.Configuration.Storage.Ensure()
+
+	// test hook (used by unit tests to force a lint error)
+	if lintTestHook != nil {
+		if err := lintTestHook(); err != nil {
+			return err
+		}
+	}
 
 	// Run engines to dump ASTs
 	for _, runner := range c.runners {

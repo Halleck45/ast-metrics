@@ -113,6 +113,19 @@ This makes it **easy to enforce architecture and quality at scale**.
 
 Run `ast-metrics ruleset list` to see the list of available rulesets. Then `ast-metrics ruleset add <ruleset-name>` to apply a ruleset to your project.
 
+## CI usage
+
+Use the dedicated CI command to run lint and generate all reports in one go:
+
+```bash
+ast-metrics ci [options] /path/to/your/code
+```
+
+Notes:
+- This command runs the linter first, then generates HTML, Markdown, JSON, OpenMetrics and SARIF reports.
+- If any lint violations are found, the command exits with a non-zero status but still produces the reports.
+- The previous alias `analyze --ci` is deprecated and will display a warning. Please migrate to `ast-metrics ci`.
+
 ## Github Action
 
 Create a `.github/workflows/ast-metrics.yml` file in your project with the following content:
