@@ -99,6 +99,12 @@ func main() {
 						Usage:    "Generate a report in OpenMetrics format",
 						Category: "Report",
 					},
+					// SARIF report
+					&cli.StringFlag{
+						Name:     "report-sarif",
+						Usage:    "Generate a report in SARIF format (2.1.0)",
+						Category: "Report",
+					},
 					// Watch mode
 					&cli.BoolFlag{
 						Name:     "watch",
@@ -238,9 +244,13 @@ func main() {
 					if cCtx.String("report-openmetrics") != "" {
 						config.Reports.OpenMetrics = cCtx.String("report-openmetrics")
 					}
+					if cCtx.String("report-sarif") != "" {
+						config.Reports.Sarif = cCtx.String("report-sarif")
+					}
 
-					// CI mode
+ 				// CI mode
 					if cCtx.Bool("ci") {
+						pterm.Warning.Println("[DEPRECATION] L'option --ci pour 'analyze' est dépréciée. Utilisez plutôt la commande: ast-metrics ci")
 						if config.Reports.Html == "" {
 							config.Reports.Html = "ast-metrics-html-report"
 						}
@@ -255,6 +265,11 @@ func main() {
 							// @see https://docs.gitlab.com/ee/ci/testing/metrics_reports.html
 							config.Reports.OpenMetrics = "metrics.txt"
 						}
+						if config.Reports.Sarif == "" {
+							config.Reports.Sarif = "ast-metrics-report.sarif"
+						}
+						isInteractive = false
+						pterm.DisableColor()
 					}
 
 					// Compare with
@@ -374,6 +389,7 @@ func main() {
 					&cli.BoolFlag{Name: "verbose", Aliases: []string{"v"}, Usage: "Enable verbose mode", Category: "Global options"},
 					&cli.StringSliceFlag{Name: "exclude", Usage: "Regular expression to exclude files from analysis", Category: "File selection"},
 					&cli.StringFlag{Name: "config", Usage: "Load configuration from file", Category: "Configuration"},
+					&cli.StringFlag{Name: "report-sarif", Usage: "Write lint violations as SARIF 2.1.0 to the given file", Category: "Report"},
 				},
 				Action: func(cCtx *cli.Context) error {
 					if cCtx.Bool("verbose") {
@@ -389,6 +405,11 @@ func main() {
 					if err != nil {
 						pterm.Error.Println("Cannot load configuration file: " + err.Error())
 					}
+					// report sarif flag
+					if cCtx.String("report-sarif") != "" {
+						cfg.Reports.Sarif = cCtx.String("report-sarif")
+					}
+
 					// paths from args
 					paths := cCtx.Args()
 					if paths.Len() > 0 {
@@ -422,21 +443,103 @@ func main() {
 					return nil
 				},
 			},
-			{
-				Name:    "init",
-				Aliases: []string{"i"},
-				Usage:   "Create a default configuration file",
-				Action: func(cCtx *cli.Context) error {
-					// Run command
-					command := Command.NewInitConfigurationCommand()
-					err := command.Execute()
-					if err != nil {
-						pterm.Error.Println(err.Error())
-						return err
-					}
-					return nil
+				{
+					Name:    "ci",
+					Usage:   "Run lint then full analysis with reports (CI mode)",
+					Flags: []cli.Flag{
+						&cli.BoolFlag{Name: "verbose", Aliases: []string{"v"}, Usage: "Enable verbose mode", Category: "Global options"},
+						&cli.StringSliceFlag{Name: "exclude", Usage: "Regular expression to exclude files from analysis", Category: "File selection"},
+						&cli.StringFlag{Name: "report-html", Usage: "Generate an HTML report", Category: "Report"},
+						&cli.StringFlag{Name: "report-markdown", Usage: "Generate a Markdown report file", Category: "Report"},
+						&cli.StringFlag{Name: "report-json", Usage: "Generate a report in JSON format", Category: "Report"},
+						&cli.StringFlag{Name: "report-openmetrics", Usage: "Generate a report in OpenMetrics format", Category: "Report"},
+						&cli.StringFlag{Name: "report-sarif", Usage: "Generate a report in SARIF format (2.1.0)", Category: "Report"},
+						&cli.StringFlag{Name: "config", Usage: "Load configuration from file", Category: "Configuration"},
+						&cli.StringFlag{Name: "compare-with", Usage: "Compare with another Git branch or commit", Category: "Global options"},
+					},
+					Action: func(cCtx *cli.Context) error {
+						if cCtx.Bool("verbose") {
+							log.SetLevel(log.DebugLevel)
+						}
+						// Stdout
+						outWriter := bufio.NewWriter(os.Stdout)
+						// Prepare configuration object
+						config := configuration.NewConfiguration()
+						// Load configuration file
+						loader := configuration.NewConfigurationLoader()
+						if cCtx.String("config") != "" {
+							loader.FilenameToChecks = []string{cCtx.String("config")}
+						}
+						cfg, err := loader.Loads(config)
+						if err != nil {
+							pterm.Error.Println("Cannot load configuration file: " + err.Error())
+						}
+						// Paths from args
+						paths := cCtx.Args()
+						if paths.Len() > 0 {
+							pathsSlice := make([]string, paths.Len())
+							for i := 0; i < paths.Len(); i++ {
+								pathsSlice[i] = paths.Get(i)
+							}
+							if err := cfg.SetSourcesToAnalyzePath(pathsSlice); err != nil {
+								pterm.Error.Println(err.Error())
+								return err
+							}
+						}
+						// Exclude patterns
+						if cfg.ExcludePatterns == nil {
+							excludePatterns := cCtx.StringSlice("exclude")
+							if len(excludePatterns) > 0 {
+								cfg.SetExcludePatterns(excludePatterns)
+							}
+						}
+						// Reports from flags
+						if cCtx.String("report-html") != "" {
+							cfg.Reports.Html = cCtx.String("report-html")
+						}
+						if cCtx.String("report-markdown") != "" {
+							cfg.Reports.Markdown = cCtx.String("report-markdown")
+						}
+						if cCtx.String("report-json") != "" {
+							cfg.Reports.Json = cCtx.String("report-json")
+						}
+						if cCtx.String("report-openmetrics") != "" {
+							cfg.Reports.OpenMetrics = cCtx.String("report-openmetrics")
+						}
+						if cCtx.String("report-sarif") != "" {
+							cfg.Reports.Sarif = cCtx.String("report-sarif")
+						}
+						// CI defaults for reports if not set
+						if cfg.Reports.Html == "" { cfg.Reports.Html = "ast-metrics-html-report" }
+						if cfg.Reports.Markdown == "" { cfg.Reports.Markdown = "ast-metrics-markdown-report.md" }
+						if cfg.Reports.Json == "" { cfg.Reports.Json = "ast-metrics-report.json" }
+						if cfg.Reports.OpenMetrics == "" { cfg.Reports.OpenMetrics = "metrics.txt" }
+						if cfg.Reports.Sarif == "" { cfg.Reports.Sarif = "ast-metrics-report.sarif" }
+						// Compare with
+						if cCtx.String("compare-with") != "" { cfg.CompareWith = cCtx.String("compare-with") }
+						// Run CI command
+						cmd := Command.NewCICommand(cfg, outWriter, runners)
+						if err := cmd.Execute(); err != nil {
+							return err
+						}
+						return nil
+					},
 				},
-			},
+				{
+					Name:    "init",
+					Aliases: []string{"i"},
+					Usage:   "Create a default configuration file",
+					Action: func(cCtx *cli.Context) error {
+						// Run command
+						command := Command.NewInitConfigurationCommand()
+						err := command.Execute()
+						if err != nil {
+							pterm.Error.Println(err.Error())
+							return err
+						}
+						return nil
+					},
+				},
 		},
 	}
 	app.Suggest = true

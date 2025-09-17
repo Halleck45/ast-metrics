@@ -10,6 +10,7 @@ import (
 	requirement "github.com/halleck45/ast-metrics/internal/analyzer/requirement"
 	"github.com/halleck45/ast-metrics/internal/configuration"
 	"github.com/halleck45/ast-metrics/internal/engine"
+	"github.com/halleck45/ast-metrics/internal/report"
 	pb "github.com/halleck45/ast-metrics/internal/nodetype"
 	"github.com/pterm/pterm"
 )
@@ -21,6 +22,10 @@ type LintCommand struct {
 	runners       []engine.Engine
 	verbose       bool
 }
+
+// lintTestHook is a test hook to force an error during LintCommand execution.
+// It is set by unit tests when needed and should remain nil in production.
+var lintTestHook func() error
 
 func (c *LintCommand) SetVerbose(v bool) { c.verbose = v }
 
@@ -37,6 +42,13 @@ func (c *LintCommand) Execute() error {
 	// Prepare workdir
 	c.Configuration.Storage.Purge()
 	c.Configuration.Storage.Ensure()
+
+	// test hook (used by unit tests to force a lint error)
+	if lintTestHook != nil {
+		if err := lintTestHook(); err != nil {
+			return err
+		}
+	}
 
 	// Run engines to dump ASTs
 	for _, runner := range c.runners {
@@ -68,6 +80,15 @@ func (c *LintCommand) Execute() error {
 	}
 	reqEval := requirement.NewRequirementsEvaluator(*c.Configuration.Requirements)
 	evaluation := reqEval.Evaluate(allResults, requirement.ProjectAggregated{})
+
+	// If SARIF path provided, write SARIF report from violations
+	if c.Configuration.Reports.Sarif != "" {
+		_, err := report.GenerateSarifFromOutcomes(c.Configuration.Reports.Sarif, evaluation.Errors)
+		if err != nil {
+			return err
+		}
+		pterm.Success.Printf("SARIF report generated: %s\n", c.Configuration.Reports.Sarif)
+	}
 
 	// Build a map[filePath][]outcomes directly from structured results
 	grouped := map[string][]requirement.RuleOutcome{}

@@ -18,7 +18,7 @@ func (d *TooManyGoClassesDetector) Detect(file *pb.File) []RiskItem {
 	if file == nil || file.ProgrammingLanguage == "" {
 		return items
 	}
-	if !strings.EqualFold(file.ProgrammingLanguage, "Go") {
+	if !strings.EqualFold(file.ProgrammingLanguage, "Golang") {
 		return items
 	}
 	classes := engine.GetClassesInFile(file)

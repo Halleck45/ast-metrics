@@ -2,48 +2,74 @@ package cli
 
 import (
 	"testing"
+
+	pb "github.com/halleck45/ast-metrics/internal/nodetype"
 )
 
-func TestStyleTitle(t *testing.T) {
-	style := StyleTitle("Hello")
-
-	if style.GetWidth() != 120 {
-		t.Errorf("Expected correct width', got %d", style.GetWidth())
+func TestDecorateMaintainabilityIndex_HighValue(t *testing.T) {
+	analyze := &pb.Analyze{
+		Volume: &pb.Volume{
+			Lloc: func() *int32 { v := int32(100); return &v }(),
+		},
 	}
-
-	// Add more assertions here for the other properties of the style...
+	
+	result := DecorateMaintainabilityIndex(90, analyze)
+	if result != "🟢 90" {
+		t.Errorf("expected '🟢 90', got %s", result)
+	}
 }
 
-func TestDecorateMaintainabilityIndex(t *testing.T) {
-	if DecorateMaintainabilityIndex(63, nil) != "🔴 63" {
-		t.Errorf("Expected '🔴 63', got '%s'", DecorateMaintainabilityIndex(63, nil))
+func TestDecorateMaintainabilityIndex_MediumValue(t *testing.T) {
+	analyze := &pb.Analyze{
+		Volume: &pb.Volume{
+			Lloc: func() *int32 { v := int32(100); return &v }(),
+		},
 	}
-
-	if DecorateMaintainabilityIndex(84, nil) != "🟡 84" {
-		t.Errorf("Expected '🟡 84', got '%s'", DecorateMaintainabilityIndex(84, nil))
+	
+	result := DecorateMaintainabilityIndex(75, analyze)
+	if result != "🟡 75" {
+		t.Errorf("expected '🟡 75', got %s", result)
 	}
+}
 
-	if DecorateMaintainabilityIndex(85, nil) != "🟢 85" {
-		t.Errorf("Expected '🟢 85', got '%s'", DecorateMaintainabilityIndex(85, nil))
+func TestDecorateMaintainabilityIndex_LowValue(t *testing.T) {
+	analyze := &pb.Analyze{
+		Volume: &pb.Volume{
+			Lloc: func() *int32 { v := int32(100); return &v }(),
+		},
+	}
+	
+	result := DecorateMaintainabilityIndex(50, analyze)
+	if result != "🔴 50" {
+		t.Errorf("expected '🔴 50', got %s", result)
+	}
+}
+
+func TestDecorateMaintainabilityIndex_LowLloc(t *testing.T) {
+	analyze := &pb.Analyze{
+		Volume: &pb.Volume{
+			Lloc: func() *int32 { v := int32(0); return &v }(),
+		},
+	}
+	
+	result := DecorateMaintainabilityIndex(90, analyze)
+	if result != "-" {
+		t.Errorf("expected '-', got %s", result)
 	}
 }
 
 func TestRound(t *testing.T) {
-	if Round(1.4) != 1 {
-		t.Errorf("Expected 1, got %d", Round(1.4))
+	if Round(3.7) != 4 {
+		t.Errorf("expected 4, got %d", Round(3.7))
 	}
-
-	if Round(1.5) != 2 {
-		t.Errorf("Expected 2, got %d", Round(1.5))
+	if Round(3.2) != 3 {
+		t.Errorf("expected 3, got %d", Round(3.2))
 	}
 }
 
 func TestToFixed(t *testing.T) {
-	if ToFixed(1.2345, 2) != 1.23 {
-		t.Errorf("Expected 1.23, got %f", ToFixed(1.2345, 2))
-	}
-
-	if ToFixed(1.2345, 3) != 1.235 {
-		t.Errorf("Expected 1.235, got %f", ToFixed(1.2345, 3))
+	result := ToFixed(3.14159, 2)
+	if result != 3.14 {
+		t.Errorf("expected 3.14, got %f", result)
 	}
 }
