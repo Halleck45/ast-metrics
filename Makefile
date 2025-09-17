@@ -31,7 +31,7 @@ build-release:
 	go install github.com/goreleaser/goreleaser@latest
 	GOPATH=$(HOME)/go PATH=$$PATH:$(HOME)/go/bin goreleaser build --snapshot
 	@echo "\e[34m\033[1mDONE \033[0m\e[39m\n"
-build: build-protobuff build-release
+build: build-protobuff build-go
 	@echo "\n\e[42m  BUILD FINISHED  \e[49m\n"
 
 test:
