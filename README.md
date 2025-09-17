@@ -62,7 +62,15 @@ curl -s https://raw.githubusercontent.com/Halleck45/ast-metrics/main/scripts/dow
 Run:
 
 ```bash
-ast-metrics init # create a .ast-metrics.yaml config file
+# create a .ast-metrics.yaml config file
+ast-metrics init 
+
+# Add ruleset to your config file
+ast-metrics ruleset add architecture
+ast-metrics ruleset add volume
+ast-metrics ruleset list # see the list of available rulesets
+
+# Run the linter
 ast-metrics lint
 ```
 
@@ -139,10 +147,10 @@ jobs:
 
 ## Supported languages
 
-+ ✅ **PHP** `<= PHP 8.4`
 + ✅ **Golang** `any version`
 + ✅ **Python** `Python 2, Python 3`
 + ✅ **Rust** `any version`
++ ✅ **PHP** `<= PHP 8.4`
 + 🕛 **TypeScript**
 + 🕛 **Flutter**
 + 🕛 **Java**
