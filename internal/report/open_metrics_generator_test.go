@@ -3,7 +3,7 @@ package report
 import (
 	"testing"
 
-	pb "github.com/halleck45/ast-metrics/internal/nodetype"
+	pb "github.com/halleck45/ast-metrics/pb"
 	"github.com/stretchr/testify/assert"
 	"google.golang.org/protobuf/proto"
 

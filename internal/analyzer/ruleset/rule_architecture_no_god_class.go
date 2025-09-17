@@ -5,7 +5,7 @@ import (
 
 	"github.com/halleck45/ast-metrics/internal/analyzer/issue"
 	"github.com/halleck45/ast-metrics/internal/engine"
-	pb "github.com/halleck45/ast-metrics/internal/nodetype"
+	pb "github.com/halleck45/ast-metrics/pb"
 )
 
 type noGodClassRule struct {

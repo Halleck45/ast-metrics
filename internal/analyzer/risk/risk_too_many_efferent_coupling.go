@@ -4,7 +4,7 @@ import (
 	"fmt"
 
 	"github.com/halleck45/ast-metrics/internal/engine"
-	pb "github.com/halleck45/ast-metrics/internal/nodetype"
+	pb "github.com/halleck45/ast-metrics/pb"
 )
 
 // TooManyEfferentCouplingDetector flags classes with high efferent coupling

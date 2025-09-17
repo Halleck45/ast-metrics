@@ -6,7 +6,7 @@ import (
 	"testing"
 
 	"github.com/halleck45/ast-metrics/internal/analyzer/issue"
-	pb "github.com/halleck45/ast-metrics/internal/nodetype"
+	pb "github.com/halleck45/ast-metrics/pb"
 )
 
 func TestSlicePreallocRule_Name(t *testing.T) {

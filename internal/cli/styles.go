@@ -6,7 +6,7 @@ import (
 	"strconv"
 
 	"github.com/charmbracelet/lipgloss"
-	pb "github.com/halleck45/ast-metrics/internal/nodetype"
+	pb "github.com/halleck45/ast-metrics/pb"
 	osterm "golang.org/x/term"
 )
 

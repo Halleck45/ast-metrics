@@ -4,7 +4,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	pb "github.com/halleck45/ast-metrics/internal/nodetype"
+	pb "github.com/halleck45/ast-metrics/pb"
 	"github.com/halleck45/ast-metrics/internal/scm"
 	log "github.com/sirupsen/logrus"
 )

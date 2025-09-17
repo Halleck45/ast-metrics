@@ -13,7 +13,7 @@ import (
 	"github.com/flosch/pongo2/v5"
 	"github.com/halleck45/ast-metrics/internal/analyzer"
 	"github.com/halleck45/ast-metrics/internal/engine"
-	pb "github.com/halleck45/ast-metrics/internal/nodetype"
+	pb "github.com/halleck45/ast-metrics/pb"
 	"github.com/halleck45/ast-metrics/internal/ui"
 	"google.golang.org/protobuf/encoding/protojson"
 	"google.golang.org/protobuf/proto"

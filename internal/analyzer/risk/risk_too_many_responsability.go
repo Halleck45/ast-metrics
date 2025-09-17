@@ -4,7 +4,7 @@ import (
 	"fmt"
 
 	"github.com/halleck45/ast-metrics/internal/engine"
-	pb "github.com/halleck45/ast-metrics/internal/nodetype"
+	pb "github.com/halleck45/ast-metrics/pb"
 )
 
 // TooManyResponsibilityDetector flags classes with too many methods or poor cohesion (LCOM4 > 1)

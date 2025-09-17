@@ -3,7 +3,7 @@ package risk
 import (
 	"testing"
 
-	pb "github.com/halleck45/ast-metrics/internal/nodetype"
+	pb "github.com/halleck45/ast-metrics/pb"
 )
 
 func TestRiskItem_Structure(t *testing.T) {

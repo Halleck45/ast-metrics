@@ -5,7 +5,7 @@ import (
 
 	enginePkg "github.com/halleck45/ast-metrics/internal/engine"
 	golangrunner "github.com/halleck45/ast-metrics/internal/engine/golang"
-	pb "github.com/halleck45/ast-metrics/internal/nodetype"
+	pb "github.com/halleck45/ast-metrics/pb"
 )
 
 const nestedGo = `package main

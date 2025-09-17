@@ -5,7 +5,7 @@ import (
 	"testing"
 
 	"github.com/halleck45/ast-metrics/internal/engine"
-	pb "github.com/halleck45/ast-metrics/internal/nodetype"
+	pb "github.com/halleck45/ast-metrics/pb"
 	"github.com/halleck45/ast-metrics/internal/storage"
 	"github.com/stretchr/testify/assert"
 )

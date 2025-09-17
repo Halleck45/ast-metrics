@@ -11,7 +11,7 @@ import (
 	Component "github.com/halleck45/ast-metrics/internal/analyzer/component"
 	Volume "github.com/halleck45/ast-metrics/internal/analyzer/volume"
 	engine "github.com/halleck45/ast-metrics/internal/engine"
-	pb "github.com/halleck45/ast-metrics/internal/nodetype"
+	pb "github.com/halleck45/ast-metrics/pb"
 	storage "github.com/halleck45/ast-metrics/internal/storage"
 	"github.com/pterm/pterm"
 	"github.com/yargevad/filepathx"

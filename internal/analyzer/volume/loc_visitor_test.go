@@ -5,7 +5,7 @@ import (
 
 	"github.com/halleck45/ast-metrics/internal/engine"
 	"github.com/halleck45/ast-metrics/internal/engine/golang"
-	pb "github.com/halleck45/ast-metrics/internal/nodetype"
+	pb "github.com/halleck45/ast-metrics/pb"
 	"github.com/stretchr/testify/assert"
 )
 

@@ -6,7 +6,7 @@ import (
 
 	"github.com/halleck45/ast-metrics/internal/analyzer/issue"
 	"github.com/halleck45/ast-metrics/internal/configuration"
-	pb "github.com/halleck45/ast-metrics/internal/nodetype"
+	pb "github.com/halleck45/ast-metrics/pb"
 )
 
 type couplingRule struct {

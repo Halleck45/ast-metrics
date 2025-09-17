@@ -11,7 +11,7 @@ import (
 	"github.com/halleck45/ast-metrics/internal/cli"
 	"github.com/halleck45/ast-metrics/internal/configuration"
 	"github.com/halleck45/ast-metrics/internal/engine"
-	pb "github.com/halleck45/ast-metrics/internal/nodetype"
+	pb "github.com/halleck45/ast-metrics/pb"
 	"github.com/halleck45/ast-metrics/internal/report"
 	"github.com/halleck45/ast-metrics/internal/storage"
 	"github.com/inancgumus/screen"

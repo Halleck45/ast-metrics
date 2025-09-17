@@ -7,7 +7,7 @@ import (
 	"github.com/charmbracelet/lipgloss"
 	"github.com/halleck45/ast-metrics/internal/analyzer"
 	"github.com/halleck45/ast-metrics/internal/configuration"
-	pb "github.com/halleck45/ast-metrics/internal/nodetype"
+	pb "github.com/halleck45/ast-metrics/pb"
 	"github.com/halleck45/ast-metrics/internal/report"
 )
 

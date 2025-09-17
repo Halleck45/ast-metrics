@@ -7,7 +7,7 @@ import (
 
 	"github.com/halleck45/ast-metrics/internal/analyzer"
 	requirement "github.com/halleck45/ast-metrics/internal/analyzer/requirement"
-	pb "github.com/halleck45/ast-metrics/internal/nodetype"
+	pb "github.com/halleck45/ast-metrics/pb"
 )
 
 // Minimal SARIF 2.1.0 structures we need

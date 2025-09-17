@@ -1,7 +1,7 @@
 syntax = "proto3";
 
 package NodeType;
-option go_package = "github.com/halleck45/ast-metrics/NodeType";
+option go_package = "github.com/halleck45/ast-metrics/pb";
 
 // ------------------------------------
 // -- Node Types and statements

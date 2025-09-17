@@ -3,7 +3,7 @@ package risk
 import (
 	"fmt"
 
-	pb "github.com/halleck45/ast-metrics/internal/nodetype"
+	pb "github.com/halleck45/ast-metrics/pb"
 )
 
 // TooBuggedDetector flags files or classes when Halstead estimated bugs are high.

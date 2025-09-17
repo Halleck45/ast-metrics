@@ -4,7 +4,7 @@ import (
 	"testing"
 
 	"github.com/halleck45/ast-metrics/internal/analyzer"
-	pb "github.com/halleck45/ast-metrics/internal/nodetype"
+	pb "github.com/halleck45/ast-metrics/pb"
 )
 
 func TestComponentBarchartCyclomaticByMethodRepartition_AsTerminalElement(t *testing.T) {

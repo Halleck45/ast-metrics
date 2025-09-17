@@ -2,7 +2,7 @@ package analyzer
 
 import (
 	"github.com/golang/protobuf/proto"
-	pb "github.com/halleck45/ast-metrics/internal/nodetype"
+	pb "github.com/halleck45/ast-metrics/pb"
 )
 
 type Visitor interface {

@@ -3,7 +3,7 @@ package analyzer
 import (
 	"testing"
 
-	pb "github.com/halleck45/ast-metrics/internal/nodetype"
+	pb "github.com/halleck45/ast-metrics/pb"
 )
 
 // Mock visitor for testing

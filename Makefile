@@ -16,10 +16,12 @@ bin/protoc:
 	@echo "\e[34m\033[1mDONE \033[0m\e[39m\n"
 build-protobuff: bin/protoc
 	@echo "\e[34m\033[1m-> Building protobuff\033[0m\e[39m\n"
-	rm -rf internal/nodetype || true
-	GOPATH=$(HOME)/go PATH=$$PATH:$(HOME)/go/bin ./bin/protoc --go_out=internal proto/NodeType.proto
-	mv internal/github.com/halleck45/ast-metrics/NodeType internal/nodetype || true
-	rm -rf internal/github.com || true
+	rm -rf pb || true
+	mkdir -p pb
+	GOPATH=$(HOME)/go PATH=$$PATH:$(HOME)/go/bin ./bin/protoc --go_out=pb proto/NodeType.proto
+	mv pb/github.com/halleck45/ast-metrics/pb/NodeType.pb.go pb/ || true
+	echo 'THIS DIRECTORY IS BUILT BY MAKEFILE (make build-protobuff)' > pb/README.md
+	rm -rf pb/github.com || true
 	@echo "\e[34m\033[1mDONE \033[0m\e[39m\n"
 build-go: # for local development and tests
 	@echo "\e[34m\033[1m-> Building go binaries\033[0m\e[39m\n"

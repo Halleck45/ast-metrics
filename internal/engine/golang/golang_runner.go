@@ -9,7 +9,7 @@ import (
 	engine "github.com/halleck45/ast-metrics/internal/engine"
 	Treesitter "github.com/halleck45/ast-metrics/internal/engine/treesitter"
 	File "github.com/halleck45/ast-metrics/internal/file"
-	pb "github.com/halleck45/ast-metrics/internal/nodetype"
+	pb "github.com/halleck45/ast-metrics/pb"
 	"github.com/pterm/pterm"
 	"golang.org/x/mod/modfile"
 

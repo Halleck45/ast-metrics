@@ -5,7 +5,7 @@ import (
 
 	enginePkg "github.com/halleck45/ast-metrics/internal/engine"
 	phpengine "github.com/halleck45/ast-metrics/internal/engine/php"
-	pb "github.com/halleck45/ast-metrics/internal/nodetype"
+	pb "github.com/halleck45/ast-metrics/pb"
 )
 
 // This test verifies that afferent/efferent coupling are computed at class and file level

@@ -3,7 +3,7 @@ package treesitter
 import (
 	"testing"
 
-	pb "github.com/halleck45/ast-metrics/internal/nodetype"
+	pb "github.com/halleck45/ast-metrics/pb"
 )
 
 func TestVisitor_curStmts_FileLevel(t *testing.T) {

@@ -4,7 +4,7 @@ import (
 	"strings"
 
 	"github.com/halleck45/ast-metrics/internal/engine"
-	pb "github.com/halleck45/ast-metrics/internal/nodetype"
+	pb "github.com/halleck45/ast-metrics/pb"
 )
 
 // TooManyGoClassesDetector flags Go files that contain too many classes/types in a single file

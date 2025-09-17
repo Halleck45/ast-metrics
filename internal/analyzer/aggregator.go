@@ -7,7 +7,7 @@ import (
 
 	requirement "github.com/halleck45/ast-metrics/internal/analyzer/requirement"
 	engine "github.com/halleck45/ast-metrics/internal/engine"
-	pb "github.com/halleck45/ast-metrics/internal/nodetype"
+	pb "github.com/halleck45/ast-metrics/pb"
 	Scm "github.com/halleck45/ast-metrics/internal/scm"
 )
 

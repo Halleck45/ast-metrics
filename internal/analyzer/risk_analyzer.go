@@ -5,7 +5,7 @@ import (
 
 	"github.com/halleck45/ast-metrics/internal/analyzer/risk"
 	"github.com/halleck45/ast-metrics/internal/engine"
-	pb "github.com/halleck45/ast-metrics/internal/nodetype"
+	pb "github.com/halleck45/ast-metrics/pb"
 )
 
 type RiskAnalyzer struct {

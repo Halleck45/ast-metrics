@@ -6,7 +6,7 @@ import (
 	"github.com/elliotchance/orderedmap/v2"
 	"github.com/halleck45/ast-metrics/internal/analyzer"
 	"github.com/halleck45/ast-metrics/internal/engine"
-	pb "github.com/halleck45/ast-metrics/internal/nodetype"
+	pb "github.com/halleck45/ast-metrics/pb"
 )
 
 // ComponentLineChartGitActivity is the barchart component for the loc repartition

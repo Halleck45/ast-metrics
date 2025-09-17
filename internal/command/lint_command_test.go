@@ -8,7 +8,7 @@ import (
 	"github.com/halleck45/ast-metrics/internal/configuration"
 	"github.com/halleck45/ast-metrics/internal/engine"
 	"github.com/halleck45/ast-metrics/internal/engine/php"
-	pb "github.com/halleck45/ast-metrics/internal/nodetype"
+	pb "github.com/halleck45/ast-metrics/pb"
 	"github.com/halleck45/ast-metrics/internal/storage"
 )
 

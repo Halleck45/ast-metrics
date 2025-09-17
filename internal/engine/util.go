@@ -10,7 +10,7 @@ import (
 
 	"github.com/elliotchance/orderedmap/v2"
 
-	pb "github.com/halleck45/ast-metrics/internal/nodetype"
+	pb "github.com/halleck45/ast-metrics/pb"
 	"google.golang.org/protobuf/proto"
 )
 

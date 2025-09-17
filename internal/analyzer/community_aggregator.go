@@ -3,7 +3,7 @@ package analyzer
 import (
 	"fmt"
 	graph "github.com/halleck45/ast-metrics/internal/analyzer/graph"
-	pb "github.com/halleck45/ast-metrics/internal/nodetype"
+	pb "github.com/halleck45/ast-metrics/pb"
 )
 
 // CommunityMetrics holds computed community-related KPIs for the aggregate

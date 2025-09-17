@@ -3,7 +3,7 @@ package analyzer
 import (
 	"math"
 
-	pb "github.com/halleck45/ast-metrics/internal/nodetype"
+	pb "github.com/halleck45/ast-metrics/pb"
 )
 
 type MaintainabilityIndexVisitor struct {

@@ -11,7 +11,7 @@ import (
 	"github.com/flosch/pongo2/v5"
 
 	"github.com/halleck45/ast-metrics/internal/analyzer"
-	pb "github.com/halleck45/ast-metrics/internal/nodetype"
+	pb "github.com/halleck45/ast-metrics/pb"
 )
 
 var (

@@ -3,7 +3,7 @@ package cli
 import (
 	"testing"
 
-	pb "github.com/halleck45/ast-metrics/internal/nodetype"
+	pb "github.com/halleck45/ast-metrics/pb"
 )
 
 func TestDecorateMaintainabilityIndex_HighValue(t *testing.T) {

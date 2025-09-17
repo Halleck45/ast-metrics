@@ -8,18 +8,18 @@ import (
 	"runtime/pprof"
 
 	"github.com/charmbracelet/lipgloss"
-	Cli "github.com/halleck45/ast-metrics/internal/cli"
-	Command "github.com/halleck45/ast-metrics/internal/command"
+	"github.com/halleck45/ast-metrics/internal/cli"
+	"github.com/halleck45/ast-metrics/internal/command"
 	"github.com/halleck45/ast-metrics/internal/configuration"
 	"github.com/halleck45/ast-metrics/internal/engine"
-	Golang "github.com/halleck45/ast-metrics/internal/engine/golang"
-	Php "github.com/halleck45/ast-metrics/internal/engine/php"
-	Python "github.com/halleck45/ast-metrics/internal/engine/python"
-	Rust "github.com/halleck45/ast-metrics/internal/engine/rust"
-	Watcher "github.com/halleck45/ast-metrics/internal/watcher"
+	"github.com/halleck45/ast-metrics/internal/engine/golang"
+	"github.com/halleck45/ast-metrics/internal/engine/php"
+	"github.com/halleck45/ast-metrics/internal/engine/python"
+	"github.com/halleck45/ast-metrics/internal/engine/rust"
+	"github.com/halleck45/ast-metrics/internal/watcher"
 	"github.com/pterm/pterm"
-	log "github.com/sirupsen/logrus"
-	"github.com/urfave/cli/v2"
+	"github.com/sirupsen/logrus"
+	cliV2 "github.com/urfave/cli/v2"
 )
 
 var (
@@ -32,115 +32,115 @@ var (
 
 func main() {
 
-	log.SetLevel(log.TraceLevel)
+	logrus.SetLevel(logrus.TraceLevel)
 
 	// Create a temporary directory
 	build, err := os.MkdirTemp("", "ast-metrics")
 	if err != nil {
-		log.Error(err)
+		logrus.Error(err)
 	}
 	defer os.RemoveAll(build)
 
 	// Prepare accepted languages
-	runnerPhp := Php.PhpRunner{}
-	runnerGolang := Golang.GolangRunner{}
-	runnerPython := Python.PythonRunner{}
-	runnerRust := Rust.RustRunner{}
+	runnerPhp := php.PhpRunner{}
+	runnerGolang := golang.GolangRunner{}
+	runnerPython := python.PythonRunner{}
+	runnerRust := rust.RustRunner{}
 	runners := []engine.Engine{&runnerPhp, &runnerGolang, &runnerPython, &runnerRust}
 
-	app := &cli.App{
+	app := &cliV2.App{
 		Name:  "ast-metrics",
 		Usage: "Static code analysis tool",
-		Commands: []*cli.Command{
+		Commands: []*cliV2.Command{
 			{
 				Name:    "analyze",
 				Aliases: []string{"a"},
 				Usage:   "Start analyzing the project",
-				Flags: []cli.Flag{
-					&cli.BoolFlag{
+				Flags: []cliV2.Flag{
+					&cliV2.BoolFlag{
 						Name:     "verbose",
 						Aliases:  []string{"v"},
 						Usage:    "Enable verbose mode",
 						Category: "Global options",
 					},
-					&cli.StringSliceFlag{
+					&cliV2.StringSliceFlag{
 						Name:     "exclude",
 						Usage:    "Regular expression to exclude files from analysis",
 						Category: "File selection",
 					},
-					&cli.BoolFlag{
+					&cliV2.BoolFlag{
 						Name:     "non-interactive",
 						Aliases:  []string{"i"},
 						Usage:    "Disable interactive mode",
 						Category: "Global options",
 					},
 					// HTML report
-					&cli.StringFlag{
+					&cliV2.StringFlag{
 						Name:     "report-html",
 						Usage:    "Generate an HTML report",
 						Category: "Report",
 					},
 					// Markdown report
-					&cli.StringFlag{
+					&cliV2.StringFlag{
 						Name:     "report-markdown",
 						Usage:    "Generate an Markdown report file",
 						Category: "Report",
 					},
 					// JSON report
-					&cli.StringFlag{
+					&cliV2.StringFlag{
 						Name:     "report-json",
 						Usage:    "Generate a report in JSON format",
 						Category: "Report",
 					},
 					// OpenMetrics report
 					// https://github.com/prometheus/OpenMetrics/blob/main/specification/OpenMetrics.md
-					&cli.StringFlag{
+					&cliV2.StringFlag{
 						Name:     "report-openmetrics",
 						Usage:    "Generate a report in OpenMetrics format",
 						Category: "Report",
 					},
 					// SARIF report
-					&cli.StringFlag{
+					&cliV2.StringFlag{
 						Name:     "report-sarif",
 						Usage:    "Generate a report in SARIF format (2.1.0)",
 						Category: "Report",
 					},
 					// Watch mode
-					&cli.BoolFlag{
+					&cliV2.BoolFlag{
 						Name:     "watch",
 						Usage:    "Re-run the analysis when files change",
 						Category: "Global options",
 					},
 					// CI mode (alias of --non-interactive, --report-html and --report-markdown)
-					&cli.BoolFlag{
+					&cliV2.BoolFlag{
 						Name:     "ci",
 						Usage:    "Enable CI mode",
 						Category: "Global options",
 					},
 					// Configuration
-					&cli.StringFlag{
+					&cliV2.StringFlag{
 						Name:     "config",
 						Usage:    "Load configuration from file",
 						Category: "Configuration",
 					},
 					// Diff mode (comparaison between current branch and another one or commit)
-					&cli.StringFlag{
+					&cliV2.StringFlag{
 						Name:     "compare-with",
 						Usage:    "Compare with another Git branch or commit",
 						Category: "Global options",
 					},
 					// Profiling (with pprof)
-					&cli.BoolFlag{
+					&cliV2.BoolFlag{
 						Name:     "profile",
 						Usage:    "Generate a profiling reports into files ast-metrics.cpu and ast-metrics.mem",
 						Category: "Global options",
 					},
 				},
-				Action: func(cCtx *cli.Context) error {
+				Action: func(cCtx *cliV2.Context) error {
 
 					// get option --verbose
 					if cCtx.Bool("verbose") {
-						log.SetLevel(log.DebugLevel)
+						logrus.SetLevel(logrus.DebugLevel)
 					}
 
 					// get option --profile
@@ -150,22 +150,22 @@ func main() {
 						memfile := "ast-metrics.mem"
 						f, err := os.Create(cpufile)
 						if err != nil {
-							log.Fatal("could not create CPU profile: ", err)
+							logrus.Fatal("could not create CPU profile: ", err)
 						}
 						defer f.Close() // error handling omitted for example
 						if err := pprof.StartCPUProfile(f); err != nil {
-							log.Fatal("could not start CPU profile: ", err)
+							logrus.Fatal("could not start CPU profile: ", err)
 						}
 						defer pprof.StopCPUProfile()
 
 						f, err = os.Create(memfile)
 						if err != nil {
-							log.Fatal("could not create memory profile: ", err)
+							logrus.Fatal("could not create memory profile: ", err)
 						}
 						defer f.Close() // error handling omitted for example
 						runtime.GC()    // get up-to-date statistics
 						if err := pprof.WriteHeapProfile(f); err != nil {
-							log.Fatal("could not write memory profile: ", err)
+							logrus.Fatal("could not write memory profile: ", err)
 						}
 					}
 
@@ -208,7 +208,7 @@ func main() {
 						if config.SourcesToAnalyzePath == nil || len(config.SourcesToAnalyzePath) == 0 {
 							if isInteractive {
 								// we try to ask the user to select a file
-								pathsSlice = Cli.AskUserToSelectFile()
+								pathsSlice = cli.AskUserToSelectFile()
 							}
 						}
 					} else {
@@ -248,7 +248,7 @@ func main() {
 						config.Reports.Sarif = cCtx.String("report-sarif")
 					}
 
- 				// CI mode
+					// CI mode
 					if cCtx.Bool("ci") {
 						pterm.Warning.Println("[DEPRECATION] L'option --ci pour 'analyze' est dépréciée. Utilisez plutôt la commande: ast-metrics ci")
 						if config.Reports.Html == "" {
@@ -278,11 +278,11 @@ func main() {
 					}
 
 					// Run command
-					command := Command.NewAnalyzeCommand(config, outWriter, runners, isInteractive)
+					command := command.NewAnalyzeCommand(config, outWriter, runners, isInteractive)
 
 					// Watch mode
 					config.Watching = cCtx.Bool("watch")
-					err = Watcher.NewCommandWatcher(config).Start(command)
+					err = watcher.NewCommandWatcher(config).Start(command)
 					if err != nil {
 						pterm.Error.Println("Cannot watch files: " + err.Error())
 					}
@@ -301,10 +301,10 @@ func main() {
 				Name:    "clean",
 				Aliases: []string{"c"},
 				Usage:   "Clean workdir",
-				Action: func(cCtx *cli.Context) error {
+				Action: func(cCtx *cliV2.Context) error {
 					// Run command
 					config := configuration.NewConfiguration()
-					command := Command.NewCleanCommand(config.Storage)
+					command := command.NewCleanCommand(config.Storage)
 					err := command.Execute()
 					if err != nil {
 						pterm.Error.Println(err.Error())
@@ -317,9 +317,9 @@ func main() {
 				Name:    "self-update",
 				Aliases: []string{"u"},
 				Usage:   "Update current binary",
-				Action: func(cCtx *cli.Context) error {
+				Action: func(cCtx *cliV2.Context) error {
 					// Run command
-					command := Command.NewSelfUpdateCommand(version)
+					command := command.NewSelfUpdateCommand(version)
 					err := command.Execute()
 					if err != nil {
 						pterm.Error.Println(err.Error())
@@ -331,36 +331,36 @@ func main() {
 			{
 				Name:  "ruleset",
 				Usage: "Manage requirement rulesets",
-				Subcommands: []*cli.Command{
+				Subcommands: []*cliV2.Command{
 					{
 						Name:  "list",
 						Usage: "List available rulesets",
-						Action: func(cCtx *cli.Context) error {
-							command := Command.NewRulesetListCommand()
+						Action: func(cCtx *cliV2.Context) error {
+							command := command.NewRulesetListCommand()
 							return command.Execute()
 						},
 					},
 					{
 						Name:  "show",
 						Usage: "Show rules inside a ruleset",
-						Action: func(cCtx *cli.Context) error {
+						Action: func(cCtx *cliV2.Context) error {
 							if cCtx.Args().Len() == 0 {
 								return fmt.Errorf("usage: ast-metrics ruleset show <name>")
 							}
 							name := cCtx.Args().First()
-							command := Command.NewRulesetShowCommand(name)
+							command := command.NewRulesetShowCommand(name)
 							return command.Execute()
 						},
 					},
 					{
 						Name:  "add",
 						Usage: "Add all rules from a ruleset to the configuration file",
-						Action: func(cCtx *cli.Context) error {
+						Action: func(cCtx *cliV2.Context) error {
 							if cCtx.Args().Len() == 0 {
 								return fmt.Errorf("usage: ast-metrics ruleset add <name>")
 							}
 							name := cCtx.Args().First()
-							command := Command.NewRulesetAddCommand(name)
+							command := command.NewRulesetAddCommand(name)
 							return command.Execute()
 						},
 					},
@@ -370,9 +370,9 @@ func main() {
 				Name:    "version",
 				Aliases: []string{"v"},
 				Usage:   "Print version information",
-				Action: func(cCtx *cli.Context) error {
+				Action: func(cCtx *cliV2.Context) error {
 					// Run command
-					command := Command.NewVersionCommand(version)
+					command := command.NewVersionCommand(version)
 					err := command.Execute()
 					if err != nil {
 						pterm.Error.Println(err.Error())
@@ -385,15 +385,15 @@ func main() {
 				Name:    "lint",
 				Aliases: []string{"l"},
 				Usage:   "Run analysis and print lint (requirements) only",
-				Flags: []cli.Flag{
-					&cli.BoolFlag{Name: "verbose", Aliases: []string{"v"}, Usage: "Enable verbose mode", Category: "Global options"},
-					&cli.StringSliceFlag{Name: "exclude", Usage: "Regular expression to exclude files from analysis", Category: "File selection"},
-					&cli.StringFlag{Name: "config", Usage: "Load configuration from file", Category: "Configuration"},
-					&cli.StringFlag{Name: "report-sarif", Usage: "Write lint violations as SARIF 2.1.0 to the given file", Category: "Report"},
+				Flags: []cliV2.Flag{
+					&cliV2.BoolFlag{Name: "verbose", Aliases: []string{"v"}, Usage: "Enable verbose mode", Category: "Global options"},
+					&cliV2.StringSliceFlag{Name: "exclude", Usage: "Regular expression to exclude files from analysis", Category: "File selection"},
+					&cliV2.StringFlag{Name: "config", Usage: "Load configuration from file", Category: "Configuration"},
+					&cliV2.StringFlag{Name: "report-sarif", Usage: "Write lint violations as SARIF 2.1.0 to the given file", Category: "Report"},
 				},
-				Action: func(cCtx *cli.Context) error {
+				Action: func(cCtx *cliV2.Context) error {
 					if cCtx.Bool("verbose") {
-						log.SetLevel(log.DebugLevel)
+						logrus.SetLevel(logrus.DebugLevel)
 					}
 					outWriter := bufio.NewWriter(os.Stdout)
 					config := configuration.NewConfiguration()
@@ -430,7 +430,7 @@ func main() {
 						}
 					}
 					// No report generation here; just lint
-					cmd := Command.NewLintCommand(cfg, outWriter, runners)
+					cmd := command.NewLintCommand(cfg, outWriter, runners)
 					// pass verbose to command
 					cmd.SetVerbose(cCtx.Bool("verbose"))
 					command := cmd
@@ -443,108 +443,120 @@ func main() {
 					return nil
 				},
 			},
-				{
-					Name:    "ci",
-					Usage:   "Run lint then full analysis with reports (CI mode)",
-					Flags: []cli.Flag{
-						&cli.BoolFlag{Name: "verbose", Aliases: []string{"v"}, Usage: "Enable verbose mode", Category: "Global options"},
-						&cli.StringSliceFlag{Name: "exclude", Usage: "Regular expression to exclude files from analysis", Category: "File selection"},
-						&cli.StringFlag{Name: "report-html", Usage: "Generate an HTML report", Category: "Report"},
-						&cli.StringFlag{Name: "report-markdown", Usage: "Generate a Markdown report file", Category: "Report"},
-						&cli.StringFlag{Name: "report-json", Usage: "Generate a report in JSON format", Category: "Report"},
-						&cli.StringFlag{Name: "report-openmetrics", Usage: "Generate a report in OpenMetrics format", Category: "Report"},
-						&cli.StringFlag{Name: "report-sarif", Usage: "Generate a report in SARIF format (2.1.0)", Category: "Report"},
-						&cli.StringFlag{Name: "config", Usage: "Load configuration from file", Category: "Configuration"},
-						&cli.StringFlag{Name: "compare-with", Usage: "Compare with another Git branch or commit", Category: "Global options"},
-					},
-					Action: func(cCtx *cli.Context) error {
-						if cCtx.Bool("verbose") {
-							log.SetLevel(log.DebugLevel)
-						}
-						// Stdout
-						outWriter := bufio.NewWriter(os.Stdout)
-						// Prepare configuration object
-						config := configuration.NewConfiguration()
-						// Load configuration file
-						loader := configuration.NewConfigurationLoader()
-						if cCtx.String("config") != "" {
-							loader.FilenameToChecks = []string{cCtx.String("config")}
-						}
-						cfg, err := loader.Loads(config)
-						if err != nil {
-							pterm.Error.Println("Cannot load configuration file: " + err.Error())
-						}
-						// Paths from args
-						paths := cCtx.Args()
-						if paths.Len() > 0 {
-							pathsSlice := make([]string, paths.Len())
-							for i := 0; i < paths.Len(); i++ {
-								pathsSlice[i] = paths.Get(i)
-							}
-							if err := cfg.SetSourcesToAnalyzePath(pathsSlice); err != nil {
-								pterm.Error.Println(err.Error())
-								return err
-							}
-						}
-						// Exclude patterns
-						if cfg.ExcludePatterns == nil {
-							excludePatterns := cCtx.StringSlice("exclude")
-							if len(excludePatterns) > 0 {
-								cfg.SetExcludePatterns(excludePatterns)
-							}
-						}
-						// Reports from flags
-						if cCtx.String("report-html") != "" {
-							cfg.Reports.Html = cCtx.String("report-html")
-						}
-						if cCtx.String("report-markdown") != "" {
-							cfg.Reports.Markdown = cCtx.String("report-markdown")
-						}
-						if cCtx.String("report-json") != "" {
-							cfg.Reports.Json = cCtx.String("report-json")
-						}
-						if cCtx.String("report-openmetrics") != "" {
-							cfg.Reports.OpenMetrics = cCtx.String("report-openmetrics")
-						}
-						if cCtx.String("report-sarif") != "" {
-							cfg.Reports.Sarif = cCtx.String("report-sarif")
-						}
-						// CI defaults for reports if not set
-						if cfg.Reports.Html == "" { cfg.Reports.Html = "ast-metrics-html-report" }
-						if cfg.Reports.Markdown == "" { cfg.Reports.Markdown = "ast-metrics-markdown-report.md" }
-						if cfg.Reports.Json == "" { cfg.Reports.Json = "ast-metrics-report.json" }
-						if cfg.Reports.OpenMetrics == "" { cfg.Reports.OpenMetrics = "metrics.txt" }
-						if cfg.Reports.Sarif == "" { cfg.Reports.Sarif = "ast-metrics-report.sarif" }
-						// Compare with
-						if cCtx.String("compare-with") != "" { cfg.CompareWith = cCtx.String("compare-with") }
-						// Run CI command
-						cmd := Command.NewCICommand(cfg, outWriter, runners)
-						if err := cmd.Execute(); err != nil {
-							return err
-						}
-						return nil
-					},
+			{
+				Name:  "ci",
+				Usage: "Run lint then full analysis with reports (CI mode)",
+				Flags: []cliV2.Flag{
+					&cliV2.BoolFlag{Name: "verbose", Aliases: []string{"v"}, Usage: "Enable verbose mode", Category: "Global options"},
+					&cliV2.StringSliceFlag{Name: "exclude", Usage: "Regular expression to exclude files from analysis", Category: "File selection"},
+					&cliV2.StringFlag{Name: "report-html", Usage: "Generate an HTML report", Category: "Report"},
+					&cliV2.StringFlag{Name: "report-markdown", Usage: "Generate a Markdown report file", Category: "Report"},
+					&cliV2.StringFlag{Name: "report-json", Usage: "Generate a report in JSON format", Category: "Report"},
+					&cliV2.StringFlag{Name: "report-openmetrics", Usage: "Generate a report in OpenMetrics format", Category: "Report"},
+					&cliV2.StringFlag{Name: "report-sarif", Usage: "Generate a report in SARIF format (2.1.0)", Category: "Report"},
+					&cliV2.StringFlag{Name: "config", Usage: "Load configuration from file", Category: "Configuration"},
+					&cliV2.StringFlag{Name: "compare-with", Usage: "Compare with another Git branch or commit", Category: "Global options"},
 				},
-				{
-					Name:    "init",
-					Aliases: []string{"i"},
-					Usage:   "Create a default configuration file",
-					Action: func(cCtx *cli.Context) error {
-						// Run command
-						command := Command.NewInitConfigurationCommand()
-						err := command.Execute()
-						if err != nil {
+				Action: func(cCtx *cliV2.Context) error {
+					if cCtx.Bool("verbose") {
+						logrus.SetLevel(logrus.DebugLevel)
+					}
+					// Stdout
+					outWriter := bufio.NewWriter(os.Stdout)
+					// Prepare configuration object
+					config := configuration.NewConfiguration()
+					// Load configuration file
+					loader := configuration.NewConfigurationLoader()
+					if cCtx.String("config") != "" {
+						loader.FilenameToChecks = []string{cCtx.String("config")}
+					}
+					cfg, err := loader.Loads(config)
+					if err != nil {
+						pterm.Error.Println("Cannot load configuration file: " + err.Error())
+					}
+					// Paths from args
+					paths := cCtx.Args()
+					if paths.Len() > 0 {
+						pathsSlice := make([]string, paths.Len())
+						for i := 0; i < paths.Len(); i++ {
+							pathsSlice[i] = paths.Get(i)
+						}
+						if err := cfg.SetSourcesToAnalyzePath(pathsSlice); err != nil {
 							pterm.Error.Println(err.Error())
 							return err
 						}
-						return nil
-					},
+					}
+					// Exclude patterns
+					if cfg.ExcludePatterns == nil {
+						excludePatterns := cCtx.StringSlice("exclude")
+						if len(excludePatterns) > 0 {
+							cfg.SetExcludePatterns(excludePatterns)
+						}
+					}
+					// Reports from flags
+					if cCtx.String("report-html") != "" {
+						cfg.Reports.Html = cCtx.String("report-html")
+					}
+					if cCtx.String("report-markdown") != "" {
+						cfg.Reports.Markdown = cCtx.String("report-markdown")
+					}
+					if cCtx.String("report-json") != "" {
+						cfg.Reports.Json = cCtx.String("report-json")
+					}
+					if cCtx.String("report-openmetrics") != "" {
+						cfg.Reports.OpenMetrics = cCtx.String("report-openmetrics")
+					}
+					if cCtx.String("report-sarif") != "" {
+						cfg.Reports.Sarif = cCtx.String("report-sarif")
+					}
+					// CI defaults for reports if not set
+					if cfg.Reports.Html == "" {
+						cfg.Reports.Html = "ast-metrics-html-report"
+					}
+					if cfg.Reports.Markdown == "" {
+						cfg.Reports.Markdown = "ast-metrics-markdown-report.md"
+					}
+					if cfg.Reports.Json == "" {
+						cfg.Reports.Json = "ast-metrics-report.json"
+					}
+					if cfg.Reports.OpenMetrics == "" {
+						cfg.Reports.OpenMetrics = "metrics.txt"
+					}
+					if cfg.Reports.Sarif == "" {
+						cfg.Reports.Sarif = "ast-metrics-report.sarif"
+					}
+					// Compare with
+					if cCtx.String("compare-with") != "" {
+						cfg.CompareWith = cCtx.String("compare-with")
+					}
+					// Run CI command
+					cmd := command.NewCICommand(cfg, outWriter, runners)
+					if err := cmd.Execute(); err != nil {
+						return err
+					}
+					return nil
 				},
+			},
+			{
+				Name:    "init",
+				Aliases: []string{"i"},
+				Usage:   "Create a default configuration file",
+				Action: func(cCtx *cliV2.Context) error {
+					// Run command
+					command := command.NewInitConfigurationCommand()
+					err := command.Execute()
+					if err != nil {
+						pterm.Error.Println(err.Error())
+						return err
+					}
+					return nil
+				},
+			},
 		},
 	}
 	app.Suggest = true
 
 	if err := app.Run(os.Args); err != nil {
-		log.Error(err)
+		logrus.Error(err)
 	}
 }

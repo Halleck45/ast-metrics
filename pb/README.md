@@ -1,0 +1,1 @@
+THIS DIRECTORY IS BUILT BY MAKEFILE (make build-protobuff)

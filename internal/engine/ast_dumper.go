@@ -7,7 +7,7 @@ import (
 	"sync"
 
 	"github.com/halleck45/ast-metrics/internal/configuration"
-	pb "github.com/halleck45/ast-metrics/internal/nodetype"
+	pb "github.com/halleck45/ast-metrics/pb"
 	storage "github.com/halleck45/ast-metrics/internal/storage"
 	"github.com/pterm/pterm"
 )

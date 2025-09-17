@@ -5,7 +5,7 @@ import (
 
 	"github.com/halleck45/ast-metrics/internal/analyzer"
 	enginePkg "github.com/halleck45/ast-metrics/internal/engine"
-	pb "github.com/halleck45/ast-metrics/internal/nodetype"
+	pb "github.com/halleck45/ast-metrics/pb"
 )
 
 // Simple PHP source mixing a class and some procedural code to exercise both paths

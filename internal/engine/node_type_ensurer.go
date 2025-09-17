@@ -1,7 +1,7 @@
 package engine
 
 import (
-	pb "github.com/halleck45/ast-metrics/internal/nodetype"
+	pb "github.com/halleck45/ast-metrics/pb"
 )
 
 func EnsureNodeTypeIsComplete(file *pb.File) {

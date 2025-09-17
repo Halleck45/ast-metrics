@@ -3,7 +3,7 @@ package risk
 import (
 	"testing"
 
-	pb "github.com/halleck45/ast-metrics/internal/nodetype"
+	pb "github.com/halleck45/ast-metrics/pb"
 )
 
 func TestTooManyGoClassesDetector_Name(t *testing.T) {

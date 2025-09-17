@@ -5,7 +5,7 @@ import (
 	"math/rand"
 	"slices"
 
-	pb "github.com/halleck45/ast-metrics/internal/nodetype"
+	pb "github.com/halleck45/ast-metrics/pb"
 )
 
 // no directed graph

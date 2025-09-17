@@ -4,7 +4,7 @@ import (
 	"testing"
 
 	enginePkg "github.com/halleck45/ast-metrics/internal/engine"
-	pb "github.com/halleck45/ast-metrics/internal/nodetype"
+	pb "github.com/halleck45/ast-metrics/pb"
 )
 
 const sampleGo = `package main

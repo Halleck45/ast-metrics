@@ -7,7 +7,7 @@ import (
 	"strings"
 
 	"github.com/halleck45/ast-metrics/internal/analyzer/issue"
-	pb "github.com/halleck45/ast-metrics/internal/nodetype"
+	pb "github.com/halleck45/ast-metrics/pb"
 )
 
 // Rule: Context ignored (use of context.Background/TODO when a context is available)

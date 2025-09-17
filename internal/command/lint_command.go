@@ -11,7 +11,7 @@ import (
 	"github.com/halleck45/ast-metrics/internal/configuration"
 	"github.com/halleck45/ast-metrics/internal/engine"
 	"github.com/halleck45/ast-metrics/internal/report"
-	pb "github.com/halleck45/ast-metrics/internal/nodetype"
+	pb "github.com/halleck45/ast-metrics/pb"
 	"github.com/pterm/pterm"
 )
 

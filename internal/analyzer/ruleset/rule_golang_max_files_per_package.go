@@ -9,7 +9,7 @@ import (
 	"strings"
 
 	"github.com/halleck45/ast-metrics/internal/analyzer/issue"
-	pb "github.com/halleck45/ast-metrics/internal/nodetype"
+	pb "github.com/halleck45/ast-metrics/pb"
 )
 
 // Rule: Max number of files per package (excluding doc.go)
