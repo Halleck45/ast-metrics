@@ -71,6 +71,7 @@ func (c *ConfigurationLoader) CreateDefaultFile() error {
 	if err != nil {
 		return err
 	}
+	defer f.Close()
 
 	_, err = f.WriteString(`# AST Metrics configuration file
 # This file is used to configure AST Metrics
