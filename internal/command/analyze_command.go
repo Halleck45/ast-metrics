@@ -3,7 +3,6 @@ package command
 import (
 	"bufio"
 	"errors"
-	"os"
 
 	"github.com/fsnotify/fsnotify"
 	"github.com/halleck45/ast-metrics/internal/analyzer"
@@ -168,6 +167,13 @@ func (v *AnalyzeCommand) Execute() error {
 	}
 	projectAggregated := aggregator.Aggregates()
 
+	// Evaluate requirements generating reports so templates can use results
+	if v.Configuration.Requirements != nil {
+		requirementsEvaluator := requirement.NewRequirementsEvaluator(*v.Configuration.Requirements)
+		evaluation := requirementsEvaluator.Evaluate(allResults, requirement.ProjectAggregated{})
+		projectAggregated.Evaluation = &evaluation
+	}
+
 	// Generate reports
 	if v.spinner != nil {
 		v.spinner.UpdateTitle("Generating reports...")
@@ -190,25 +196,6 @@ func (v *AnalyzeCommand) Execute() error {
 				return err
 			}
 			generatedReports = append(generatedReports, reports...)
-		}
-	}
-
-	// Evaluate requirements
-	shouldFail := false
-	if v.Configuration.Requirements != nil {
-		requirementsEvaluator := requirement.NewRequirementsEvaluator(*v.Configuration.Requirements)
-		evaluation := requirementsEvaluator.Evaluate(allResults, requirement.ProjectAggregated{})
-		projectAggregated.Evaluation = &evaluation
-
-		if evaluation.Succeeded {
-			pterm.Success.Println("Requirements are met")
-		} else {
-			pterm.Error.Printf("Requirements are not met. Found %d violation(s)\n", len(evaluation.Errors))
-			for _, err := range evaluation.Errors {
-				pterm.Error.Println("    " + err)
-			}
-
-			shouldFail = v.Configuration.Requirements.FailOnError
 		}
 	}
 
@@ -255,10 +242,6 @@ func (v *AnalyzeCommand) Execute() error {
 	// End screen
 	screen := cli.NewScreenEnd(v.isInteractive, allResults, projectAggregated, *v.Configuration, generatedReports)
 	screen.Render()
-
-	if shouldFail {
-		os.Exit(1)
-	}
 
 	return nil
 }

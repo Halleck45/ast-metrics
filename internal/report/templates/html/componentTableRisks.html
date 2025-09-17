@@ -29,7 +29,7 @@
                 <th scope="col" class="py-2 px-4 text-sm font-normal text-left rtl:text-right text-gray-500 ">
                     <acronym title="Halstead effort is calculated as the average effort required to implement a software programe.">
                     Effort
-                    </acronmy>
+                    </acronym>
                 </th>
                 <th scope="col" class="py-2 px-4 text-sm font-normal text-left rtl:text-right text-gray-500 ">
                     <acronym title="Lines of code (LOC)">
@@ -41,12 +41,10 @@
                         C<sub>e</sub>
                     </acronym>
                 </th>
-                </th>
                 <th scope="col" class="py-2 px-4 text-sm font-normal text-left rtl:text-right text-gray-500 ">
                     <acronym title="Afferent coupling: number of times the component is used by other components">
                         C<sub>a</sub>
                     </acronym>
-                </th>
                 </th>
                 <th scope="col" class="py-2 px-4 text-sm font-normal text-left rtl:text-right text-gray-500 ">
                     <acronym title="0 (stable) to 1 (unstable) - The ratio of efferent coupling (Ce) to total coupling (Ce + Ca)">
@@ -57,8 +55,8 @@
         </tr>
     </thead>
     <tbody>
-        {% set files = currentView.ConcernedFiles|sortRisk:linesToDisplay %}
-        {% if files|length == 0 %}
+        {% set entries = currentView.ConcernedFiles|selectTopRiskEntries:linesToDisplay %}
+        {% if entries|length == 0 %}
 
         <tr>
             <td class="px-4 py-1 text-sm font-medium whitespace-nowrap" colspan="4">
@@ -69,18 +67,10 @@
         </tr>
         {% endif %}
 
-        {% for file in files %}
-
-
-            {% if len(file.Stmts.StmtClass) == 0 %}
-                {% set elements = file|convertOneFileToCollection %}
-                {% set name = file.Path %}
-            {% else %}
-                {% set elements = file.Stmts.StmtClass %}
-                {% set name = "" %}
-            {% endif %}
-            
-            {% for class in elements %}
+        {% for e in entries %}
+            {% set file = e.File %}
+            {% set class = e.Class %}
+            {% set name = e.Name %}
             <tr class="odd:bg-white odd:">
                 {% if detailled == true %}
                     <td class="px-4 py-1 text-xs font-medium whitespace-nowrap">
@@ -91,8 +81,8 @@
                 {% endif %}
                 <td class="px-4 py-1 text-xs font-medium whitespace-nowrap">
                     <div class="truncate w-72">
-                        <acronym title="{{ name|default:class.Name.Qualified }}" class="text-xs font-bold text-gray-600 ">
-                            {{ name|default:class.Name.Qualified }}
+                        <acronym title="{{ name }}" class="text-xs font-bold text-gray-600 ">
+                            {{ name }}
                         </acronym>
                     </div>
                 </td>
@@ -122,7 +112,6 @@
                             {{ class.Stmts.Analyze.Volume.HalsteadEffort|floatformat:0 }}
                         </span>
                     </td>
-                    </td>
                     <td class="px-4 py-1 text-sm font-medium whitespace-nowrap">
                         <span class="text-sm font-normal text-gray-600 ">
                             {{ class.Stmts.Analyze.Volume.Loc }}
@@ -145,7 +134,6 @@
                     </td>
                 {% endif %}
             </tr>
-            {% endfor %}
         {% endfor %}
     </tbody>
 </table>

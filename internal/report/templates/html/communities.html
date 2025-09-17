@@ -110,6 +110,7 @@
     <script id="data-communities" type="application/json">[
         {% for id, nodes in cm.Communities %}
         {"id":"{{ id|escapejs }}",
+         "name":{% for k, n in cm.DisplayNamePerComm %}{% if k == id %}"{{ n|escapejs }}"{% endif %}{% endfor %},
          "size":{{ nodes|length }},
          "purity":{% for k, v in cm.PurityPerCommunity %}{% if k == id %}{{ v }}{% endif %}{% endfor %},
          "level":{% for k, lvl in cm.Levels %}{% if k == id %}{{ lvl }}{% endif %}{% endfor %},
@@ -472,7 +473,7 @@
                             const stat = commStats.get(d.id) || {coupling: 0};
                             const p = Math.round((d.purity || 0) * 100);
                             const coup = Math.round((stat.coupling || 0) * 100);
-                            const html = `<strong>${d.id}</strong><br><span style='opacity:.85'>Purity: ${p}% · Coupling: ${coup}%</span>${tns?`<br>Top ns: ${tns}`:''}${tcs?`<br>Top nodes: ${tcs}`:''}`;
+                            const html = `<strong>${d.name}</strong><br><span style='opacity:.85'>Purity: ${p}% · Coupling: ${coup}%</span>${tns?`<br>Top ns: ${tns}`:''}${tcs?`<br>Top nodes: ${tcs}`:''}`;
                             if (window.graphTooltip) window.graphTooltip.show(html, event);
                         })
                         .on('mousemove', function(event){ if (window.graphTooltip) window.graphTooltip.move(event); })
@@ -601,7 +602,8 @@
                         .attr('fill', '#374151')
                         .text(d => {
                             const p = Math.round((d.purity || 0) * 100);
-                            return `${d.id} (${d.size} nodes, purity ${p}%)`;
+                            const name = d.name || d.id;
+                            return `${name} (${d.size} nodes, purity ${p}%)`;
                         })
                         .each(function (d) {
                             // hide label if circle too small to avoid clutter
@@ -627,7 +629,7 @@
                         applyVisibility();
 
                         // Drill-down content
-                        ddTitle.textContent = `Community ${d.id}`;
+                        ddTitle.textContent = `Community ${d.name || d.id}`;
                         const p = Math.round((d.purity || 0) * 100);
                         const stat = commStats.get(d.id) || {coupling: 0};
                         const coup = Math.round((stat.coupling || 0) * 100);
@@ -856,11 +858,18 @@
                             // introduce façade
                             commIds.forEach(cid => {
                                 const st = commStats.get(cid);
-                                if (st && st.coupling > 0.7) suggestions.push(`Introduce façade for community ${cid} (coupling ${(st.coupling * 100).toFixed(0)}%)`);
+                                if (st && st.coupling > 0.7) {
+                                    const c = communities.find(x => x.id === cid);
+                                    const name = (c && c.name) ? c.name : cid;
+                                    suggestions.push(`Introduce façade for community ${name} (coupling ${(st.coupling * 100).toFixed(0)}%)`);
+                                }
                             });
                             // split module
                             communities.forEach(c => {
-                                if (c.size > 50 && c.purity < 0.6) suggestions.push(`Split module for community ${c.id} (size ${c.size}, purity ${(c.purity * 100).toFixed(0)}%)`);
+                                if (c.size > 50 && c.purity < 0.6) {
+                                    const name = c.name || c.id;
+                                    suggestions.push(`Split module for community ${name} (size ${c.size}, purity ${(c.purity * 100).toFixed(0)}%)`);
+                                }
                             });
                             // refactor boundary node
                             topNodes.slice(0, 5).forEach(([nid]) => {
@@ -1100,7 +1109,7 @@
                         .attr('stroke', '#9ca3af')
                         .attr('stroke-width', d => wScale(d.edges))
                         .attr('stroke-opacity', 0.7)
-                        .on('mouseenter', function(event, d){ showTooltip(`${d.from} → ${d.to}: ${d.edges} (${(d.pct * 100).toFixed(1)}%)`, event); })
+                        .on('mouseenter', function(event, d){ const nf=(communities.find(c=>c.id===d.from)?.name)||d.from; const nt=(communities.find(c=>c.id===d.to)?.name)||d.to; showTooltip(`${nf} → ${nt}: ${d.edges} (${(d.pct * 100).toFixed(1)}%)`, event); })
                         .on('mousemove', function(event){ moveTooltip(event); })
                         .on('mouseleave', function(){ hideTooltip(); });
                     // nodes
@@ -1117,7 +1126,8 @@
                         .attr('stroke', d => document.getElementById('highlight-bottlenecks').checked ? (isBottleneck(d.id) ? '#dc2626' : '#333') : '#333')
                         .attr('stroke-width', d => document.getElementById('highlight-bottlenecks').checked && isBottleneck(d.id) ? 3 : 0.5)
                         .on('mouseenter', function(event, d){
-                            const html = `${d.id}<br><span style='opacity:.8'>size:${d.size} pur:${Math.round((d.purity||0) * 100)}% coup:${Math.round((d.coupling||0) * 100)}% bet:${(d.betweenness||0).toFixed(3)}</span>`;
+                            const title = d.name || d.id;
+                            const html = `${title}<br><span style='opacity:.8'>size:${d.size} pur:${Math.round((d.purity||0) * 100)}% coup:${Math.round((d.coupling||0) * 100)}% bet:${(d.betweenness||0).toFixed(3)}</span>`;
                             showTooltip(html, event);
                         })
                         .on('mousemove', function(event){ moveTooltip(event); })
@@ -1125,7 +1135,7 @@
                     nodeG.append('text')
                         .attr('y', d => (pos.get(d.id)?.r || 10) + 12)
                         .attr('text-anchor', 'middle').attr('font-size', 11).attr('fill', '#374151')
-                        .text(d => `${d.id}`)
+                        .text(d => `${d.name || d.id}`)
                         .each(function (d) {
                             if ((pos.get(d.id)?.r || 10) < 14) this.setAttribute('display', 'none');
                         });
@@ -1518,7 +1528,59 @@
 
 
 
-{% include "partials/suggestions.html" with suggestions=currentView.Suggestions subtitle="Automatically inferred from coupling, purity and boundary nodes" emptyText="No suggestions — architecture looks healthy based on current heuristics." %}
+{% include "partials/suggestions.html" with suggestions=currentView.Suggestions subtitle="Automatically inferred from coupling, purity and boundary nodes" emptyText="No suggestions — the architecture looks healthy based on current heuristics." %}
+
+
+
+<!-- Purity per community -->
+<div class="bg-white p-4 rounded shadow mb-8">
+    <h2 class="leading-none text-3xl font-bold text-gray-900 pb-2">Purity per community</h2>
+    <div class="overflow-x-auto">
+        <table class="min-w-full text-sm border-separate border-spacing-0">
+            <thead>
+            <tr class="bg-gray-50">
+                <th class="text-left px-3 py-2 text-xs font-semibold uppercase tracking-wide text-gray-500">Community</th>
+                <th class="text-left px-3 py-2 text-xs font-semibold uppercase tracking-wide text-gray-500">Purity</th>
+                <th class="text-left px-3 py-2 text-xs font-semibold uppercase tracking-wide text-gray-500">Top namespaces</th>
+            </tr>
+            </thead>
+            <tbody>
+            {% for id, purity in cm.PurityPerCommunity %}
+            <tr class="border-t hover:bg-slate-50 odd:bg-white even:bg-slate-50/30">
+                <td class="px-3 py-2 font-medium text-gray-900">{% for k, n in cm.DisplayNamePerComm %}{% if k == id %}{{ n }}{% endif %}{% endfor %}</td>
+                {% set purity_pct = purity * 100 %}
+                {% if purity_pct >= 80 %}
+                {% set purity_bar = "bg-emerald-500" %}
+                {% elif purity_pct >= 60 %}
+                {% set purity_bar = "bg-amber-500" %}
+                {% else %}
+                {% set purity_bar = "bg-rose-500" %}
+                {% endif %}
+                <td class="px-3 py-2">
+                    <div class="flex items-center gap-2">
+                        <div class="w-40 h-2.5 bg-gray-200 rounded">
+                            <div class="h-2.5 rounded {{ purity_bar }}" style="width: {{ purity_pct|floatformat:0 }}%"></div>
+                        </div>
+                        <span class="tabular-nums text-gray-700">{{ purity_pct|floatformat:1 }}%</span>
+                    </div>
+                </td>
+                <td class="px-3 py-2">
+                    <div class="flex flex-wrap gap-1">
+                        {% for k, ns in cm.TopNamespacesPerComm %}
+                        {% if k == id %}
+                        {% for s in ns %}
+                        <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-sky-50 text-sky-700 ring-1 ring-sky-200">{{ s }}</span>
+                        {% endfor %}
+                        {% endif %}
+                        {% endfor %}
+                    </div>
+                </td>
+            </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
 
 
 
@@ -1543,86 +1605,100 @@
 </div>
 
 
-<!-- Purity per community -->
-<div class="bg-white p-4 rounded shadow mb-8">
-    <h2 class="leading-none text-3xl font-bold text-gray-900 pb-2">Purity per community</h2>
-    <table class="min-w-full text-sm">
-        <thead>
-        <tr>
-            <th class="text-left p-2">Community</th>
-            <th class="text-left p-2">Purity</th>
-            <th class="text-left p-2">Top namespace</th>
-        </tr>
-        </thead>
-        <tbody>
-        {% for id, purity in cm.PurityPerCommunity %}
-        <tr class="border-t">
-            <td class="p-2">{{ id }}</td>
-            {% set purity_pct = purity * 100 %}
-            <td class="p-2">{{ purity_pct|floatformat:1 }}%</td>
-            <td class="p-2">{% for k, ns in cm.TopNamespacesPerComm %}{% if k == id %}{{ ns|join:", " }}{% endif %}{% endfor %}
-            </td>
-        </tr>
-        {% endfor %}
-        </tbody>
-    </table>
-</div>
-
-
 
 
 <!-- Communities table -->
 <div class="bg-white p-4 rounded shadow mb-8">
     <h2 class="leading-none text-3xl font-bold text-gray-900 pb-2">Communities</h2>
-    <table class="min-w-full text-sm sortable">
-        <thead>
-        <tr>
-            <th class="text-left p-2">id</th>
-            <th class="text-left p-2">size</th>
-            <th class="text-left p-2">density</th>
-            <th class="text-left p-2">purity</th>
-            <th class="text-left p-2">inbound_edges</th>
-            <th class="text-left p-2">outbound_edges</th>
-            <th class="text-left p-2">coupling</th>
-            <th class="text-left p-2">criticality_rank</th>
-            <th class="text-left p-2">top_namespaces</th>
-            <th class="text-left p-2">top_classes</th>
-            <th class="text-left p-2">action_hints</th>
-        </tr>
-        </thead>
-        <tbody>
-        {% for id, nodes in cm.Communities %}
-        {% set size = nodes|length %}
-        {% set purity = 0 %}
-        {% for k, pv in cm.PurityPerCommunity %}{% if k == id %}{% set purity = pv %}{% endif %}{% endfor %}
-        {% set inbound = 0 %}
-        {% for k, iv in cm.InboundEdgesPerComm %}{% if k == id %}{% set inbound = iv %}{% endif %}{% endfor %}
-        {% set outbound = 0 %}
-        {% for k, ov in cm.OutboundEdgesPerComm %}{% if k == id %}{% set outbound = ov %}{% endif %}{% endfor %}
-        {% if size > 50 and purity < 0.6 %}
-        {% set hint = "split_candidate" %}
-        {% else %}
-        {% set hint = "" %}
-        {% endif %}
-        <tr class="border-t">
-            <td class="p-2">{{ id }}</td>
-            <td class="p-2">{{ size }}</td>
-            <td class="p-2">-</td>
+    <div class="overflow-x-auto">
+        <table class="min-w-full text-sm sortable border-separate border-spacing-0">
+            <thead>
+            <tr class="bg-gray-50">
+                <th class="text-left px-3 py-2 text-xs font-semibold uppercase tracking-wide text-gray-500">Community</th>
+                <th class="text-left px-3 py-2 text-xs font-semibold uppercase tracking-wide text-gray-500">Size</th>
+                <th class="text-left px-3 py-2 text-xs font-semibold uppercase tracking-wide text-gray-500">Density</th>
+                <th class="text-left px-3 py-2 text-xs font-semibold uppercase tracking-wide text-gray-500">Purity</th>
+                <th class="text-left px-3 py-2 text-xs font-semibold uppercase tracking-wide text-gray-500">Inbound</th>
+                <th class="text-left px-3 py-2 text-xs font-semibold uppercase tracking-wide text-gray-500">Outbound</th>
+                <th class="text-left px-3 py-2 text-xs font-semibold uppercase tracking-wide text-gray-500">Coupling</th>
+                <th class="text-left px-3 py-2 text-xs font-semibold uppercase tracking-wide text-gray-500">Criticality</th>
+                <th class="text-left px-3 py-2 text-xs font-semibold uppercase tracking-wide text-gray-500">Top namespaces</th>
+                <th class="text-left px-3 py-2 text-xs font-semibold uppercase tracking-wide text-gray-500">Top classes</th>
+                <th class="text-left px-3 py-2 text-xs font-semibold uppercase tracking-wide text-gray-500">Action</th>
+            </tr>
+            </thead>
+            <tbody>
+            {% for id, nodes in cm.Communities %}
+            {% set size = nodes|length %}
+            {% set purity = 0 %}
+            {% for k, pv in cm.PurityPerCommunity %}{% if k == id %}{% set purity = pv %}{% endif %}{% endfor %}
+            {% set inbound = 0 %}
+            {% for k, iv in cm.InboundEdgesPerComm %}{% if k == id %}{% set inbound = iv %}{% endif %}{% endfor %}
+            {% set outbound = 0 %}
+            {% for k, ov in cm.OutboundEdgesPerComm %}{% if k == id %}{% set outbound = ov %}{% endif %}{% endfor %}
+            {% if size > 50 and purity < 0.6 %}
+            {% set hint = "split_candidate" %}
+            {% else %}
+            {% set hint = "" %}
+            {% endif %}
             {% set purity_pct = purity * 100 %}
-            <td class="p-2">{{ purity_pct|floatformat:1 }}%</td>
-            <td class="p-2">{{ inbound }}</td>
-            <td class="p-2">{{ outbound }}</td>
-            <td class="p-2 comm-coupling" data-comm="{{ id }}">-</td>
-            <td class="p-2 comm-crit-rank" data-comm="{{ id }}">-</td>
-            <td class="p-2">{% set printed = false %}{% for k, ns in cm.TopNamespacesPerComm %}{% if k == id %}{{ ns|join:", " }}{% set printed = true %}{% endif %}{% endfor %}{% if not printed %}{% endif %}
-            </td>
-            <td class="p-2">{% set printed2 = false %}{% for k, cls in cm.TopClassesPerComm %}{% if k == id %}{{ cls|join:", " }}{% set printed2 = true %}{% endif %}{% endfor %}{% if not printed2 %}{% endif %}
-            </td>
-            <td class="p-2 comm-hint" data-comm="{{ id }}">{{ hint }}</td>
-        </tr>
-        {% endfor %}
-        </tbody>
-    </table>
+            {% if purity_pct >= 80 %}
+                {% set purity_bar = "bg-emerald-500" %}
+            {% elif purity_pct >= 60 %}
+                {% set purity_bar = "bg-amber-500" %}
+            {% else %}
+                {% set purity_bar = "bg-rose-500" %}
+            {% endif %}
+            <tr class="border-t hover:bg-slate-50 odd:bg-white even:bg-slate-50/30">
+                <td class="px-3 py-2 font-medium text-gray-900">{% for k, n in cm.DisplayNamePerComm %}{% if k == id %}{{ n }}{% endif %}{% endfor %}</td>
+                <td class="px-3 py-2 tabular-nums">{{ size }}</td>
+                <td class="px-3 py-2 text-gray-400">-</td>
+                <td class="px-3 py-2">
+                    <div class="flex items-center gap-2">
+                        <div class="w-32 h-2.5 bg-gray-200 rounded">
+                            <div class="h-2.5 rounded {{ purity_bar }}" style="width: {{ purity_pct|floatformat:0 }}%"></div>
+                        </div>
+                        <span class="tabular-nums text-gray-700">{{ purity_pct|floatformat:1 }}%</span>
+                    </div>
+                </td>
+                <td class="px-3 py-2"><span class="px-2 py-0.5 rounded bg-gray-100 text-gray-700 tabular-nums ring-1 ring-gray-200">{{ inbound }}</span></td>
+                <td class="px-3 py-2"><span class="px-2 py-0.5 rounded bg-gray-100 text-gray-700 tabular-nums ring-1 ring-gray-200">{{ outbound }}</span></td>
+                <td class="px-3 py-2 comm-coupling tabular-nums text-gray-700" data-comm="{{ id }}">-</td>
+                <td class="px-3 py-2 comm-crit-rank tabular-nums text-gray-700" data-comm="{{ id }}">-</td>
+                <td class="px-3 py-2">
+                    <div class="flex flex-wrap gap-1">
+                        {% for k, ns in cm.TopNamespacesPerComm %}
+                            {% if k == id %}
+                                {% for s in ns %}
+                                    <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-sky-50 text-sky-700 ring-1 ring-sky-200">{{ s }}</span>
+                                {% endfor %}
+                            {% endif %}
+                        {% endfor %}
+                    </div>
+                </td>
+                <td class="px-3 py-2">
+                    <div class="flex flex-wrap gap-1">
+                        {% for k, cls in cm.TopClassesPerComm %}
+                            {% if k == id %}
+                                {% for s in cls %}
+                                    <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-violet-50 text-violet-700 ring-1 ring-violet-200">{{ s }}</span>
+                                {% endfor %}
+                            {% endif %}
+                        {% endfor %}
+                    </div>
+                </td>
+                <td class="px-3 py-2 comm-hint" data-comm="{{ id }}">
+                    {% if hint == "split_candidate" %}
+                        <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-amber-50 text-amber-800 ring-1 ring-amber-200" title="Large and low-purity community; consider splitting.">split candidate</span>
+                    {% else %}
+                        <span class="text-gray-400">-</span>
+                    {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
 </div>
 
 

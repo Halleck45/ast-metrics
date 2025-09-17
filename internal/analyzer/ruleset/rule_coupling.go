@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"regexp"
 
+	"github.com/halleck45/ast-metrics/internal/analyzer/issue"
 	"github.com/halleck45/ast-metrics/internal/configuration"
 	pb "github.com/halleck45/ast-metrics/internal/nodetype"
 )
@@ -24,7 +25,7 @@ func (c *couplingRule) Description() string {
 	return "Checks for forbidden coupling between packages"
 }
 
-func (c *couplingRule) CheckFile(file *pb.File, addError func(string), addSuccess func(string)) {
+func (c *couplingRule) CheckFile(file *pb.File, addError func(issue.RequirementError), addSuccess func(string)) {
 	if c.cfg == nil || file.Stmts == nil || file.Stmts.StmtExternalDependencies == nil {
 		return
 	}
@@ -36,7 +37,11 @@ func (c *couplingRule) CheckFile(file *pb.File, addError func(string), addSucces
 		}
 		for _, dependency := range file.Stmts.StmtExternalDependencies {
 			if regexp.MustCompile(forbidden.To).MatchString(dependency.ClassName) {
-				addError(fmt.Sprintf("Forbidden coupling between %s and %s", file.Path, dependency.ClassName))
+				addError(issue.RequirementError{
+					Severity: issue.SeverityUnknown,
+					Code:     c.Name(),
+					Message:  fmt.Sprintf("Forbidden coupling between %s and %s", file.Path, dependency.ClassName),
+				})
 				hasError = true
 				break
 			}
@@ -44,7 +49,7 @@ func (c *couplingRule) CheckFile(file *pb.File, addError func(string), addSucces
 	}
 
 	if !hasError {
-		addSuccess("Coupling OK in file " + file.Path)
+		addSuccess("Coupling OK")
 	}
 }
 

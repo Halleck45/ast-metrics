@@ -66,6 +66,7 @@ func (v *HtmlReportGenerator) Generate(files []*pb.File, projectAggregated analy
 		"risks.html",
 		"compare.html",
 		"explorer.html",
+		"linters.html",
 		"componentChartRadiusBar.html",
 		"componentTableRisks.html",
 		"componentTableCompareBranch.html",
@@ -137,6 +138,12 @@ func (v *HtmlReportGenerator) Generate(files []*pb.File, projectAggregated analy
 	v.GenerateLanguagePage("communities.html", "All", projectAggregated.Combined, files, projectAggregated)
 	for language, currentView := range projectAggregated.ByProgrammingLanguage {
 		v.GenerateLanguagePage("communities.html", language, currentView, files, projectAggregated)
+	}
+
+	// Linters page
+	v.GenerateLanguagePage("linters.html", "All", projectAggregated.Combined, files, projectAggregated)
+	for language, currentView := range projectAggregated.ByProgrammingLanguage {
+		v.GenerateLanguagePage("linters.html", language, currentView, files, projectAggregated)
 	}
 
 	// copy images
@@ -568,7 +575,7 @@ func (v *HtmlReportGenerator) RegisterFilters() {
 		// Sort by risk of file
 		files := in.Interface().([]*pb.File)
 		sort.Slice(files, func(i, j int) bool {
-			if files[i].Stmts == nil && files[j].Stmts == nil || files[i].Stmts.Analyze == nil || files[j].Stmts.Analyze == nil {
+			if files[i].Stmts == nil && files[j].Stmts == nil || files[i].Stmts == nil || files[j].Stmts == nil || files[i].Stmts.Analyze == nil || files[j].Stmts.Analyze == nil {
 				return false
 			}
 
@@ -593,6 +600,90 @@ func (v *HtmlReportGenerator) RegisterFilters() {
 		}
 
 		return pongo2.AsValue(files), nil
+	})
+
+	// selectTopRiskEntries flattens files into class/file rows and caps the total number of rows
+	pongo2.RegisterFilter("selectTopRiskEntries", func(in *pongo2.Value, param *pongo2.Value) (out *pongo2.Value, err *pongo2.Error) {
+		rowsToKeep := 10
+		if param != nil && param.Integer() > 0 {
+			rowsToKeep = param.Integer()
+		}
+
+		// defensive: empty input
+		if in == nil || in.IsNil() {
+			return pongo2.AsValue([]interface{}{}), nil
+		}
+
+		// Sort by risk of file first (reuse logic)
+		files := in.Interface().([]*pb.File)
+		sort.Slice(files, func(i, j int) bool {
+			if files[i] == nil || files[j] == nil || files[i].Stmts == nil || files[j].Stmts == nil || files[i].Stmts.Analyze == nil || files[j].Stmts.Analyze == nil {
+				return false
+			}
+			if files[i].Stmts.Analyze.Risk == nil && files[j].Stmts.Analyze.Risk == nil {
+				return false
+			}
+			if files[i].Stmts.Analyze.Risk == nil {
+				return false
+			}
+			if files[j].Stmts.Analyze.Risk == nil {
+				return true
+			}
+			return files[i].Stmts.Analyze.Risk.Score > files[j].Stmts.Analyze.Risk.Score
+		})
+
+		type RiskEntry struct {
+			File  *pb.File
+			Class *pb.StmtClass
+			Name  string
+		}
+
+		entries := make([]*RiskEntry, 0, rowsToKeep)
+
+		add := func(file *pb.File, class *pb.StmtClass, name string) bool {
+			entries = append(entries, &RiskEntry{File: file, Class: class, Name: name})
+			return len(entries) >= rowsToKeep
+		}
+
+		for _, file := range files {
+			if file == nil || file.Stmts == nil {
+				continue
+			}
+			// if no classes, treat file as a single row
+			if len(file.Stmts.StmtClass) == 0 {
+				name := file.Path
+				if name == "" {
+					name = "(unknown)"
+				}
+				// Create a dummy class holder so template fields (class.Stmts...) remain available
+				dummy := &pb.StmtClass{Stmts: file.Stmts}
+				if add(file, dummy, name) {
+					break
+				}
+				continue
+			}
+			// else, iterate classes
+			for _, class := range file.Stmts.StmtClass {
+				if class == nil {
+					continue
+				}
+				name := ""
+				if class.Name != nil {
+					name = class.Name.Qualified
+				}
+				if name == "" {
+					name = file.Path
+				}
+				if add(file, class, name) {
+					break
+				}
+			}
+			if len(entries) >= rowsToKeep {
+				break
+			}
+		}
+
+		return pongo2.AsValue(entries), nil
 	})
 
 	// filter to format number. Ex: 1234 -> 1 K

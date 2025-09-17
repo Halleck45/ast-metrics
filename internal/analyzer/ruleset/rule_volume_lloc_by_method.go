@@ -2,18 +2,17 @@ package ruleset
 
 import (
 	"fmt"
-	"regexp"
 
-	"github.com/halleck45/ast-metrics/internal/configuration"
+	"github.com/halleck45/ast-metrics/internal/analyzer/issue"
 	pb "github.com/halleck45/ast-metrics/internal/nodetype"
 )
 
 type llocByMethodRule struct {
-	Cfg *configuration.ConfigurationDefaultRule
+	max *int
 }
 
-func NewLlocByMethodRule(c *configuration.ConfigurationDefaultRule) Rule {
-	return &llocByMethodRule{Cfg: c}
+func NewLlocByMethodRule(max *int) Rule {
+	return &llocByMethodRule{max: max}
 }
 
 func (r *llocByMethodRule) Name() string { return "lloc_by_method" }
@@ -22,18 +21,9 @@ func (r *llocByMethodRule) Description() string {
 	return "Checks the logical lines of code by method/function"
 }
 
-func (r *llocByMethodRule) CheckFile(file *pb.File, addError func(string), addSuccess func(string)) {
-	if r.Cfg == nil || file.Stmts == nil || file.Stmts.StmtFunction == nil {
+func (r *llocByMethodRule) CheckFile(file *pb.File, addError func(issue.RequirementError), addSuccess func(string)) {
+	if r.max == nil || file.Stmts == nil || file.Stmts.StmtFunction == nil {
 		return
-	}
-
-	// Exclusions
-	if r.Cfg.ExcludePatterns != nil {
-		for _, pattern := range r.Cfg.ExcludePatterns {
-			if regexp.MustCompile(pattern).MatchString(file.Path) {
-				return
-			}
-		}
 	}
 
 	ok := true
@@ -42,18 +32,17 @@ func (r *llocByMethodRule) CheckFile(file *pb.File, addError func(string), addSu
 			continue
 		}
 		value := int(f.LinesOfCode.LogicalLinesOfCode)
-		if r.Cfg.Max > 0 && value > r.Cfg.Max {
-			addError(fmt.Sprintf("LLOC too high in method %s (file %s): got %d (max: %d)", f.Name.Short, file.Path, value, r.Cfg.Max))
-			ok = false
-			continue
-		}
-		if r.Cfg.Min > 0 && value < r.Cfg.Min {
-			addError(fmt.Sprintf("LLOC too low in method %s (file %s): got %d (min: %d)", f.Name.Short, file.Path, value, r.Cfg.Min))
+		if r.max != nil && *r.max > 0 && value > *r.max {
+			addError(issue.RequirementError{
+				Severity: issue.SeverityMedium,
+				Message:  fmt.Sprintf("LLOC too high in method %s(): got %d (max: %d)", f.Name.Short, value, *r.max),
+				Code:     r.Name(),
+			})
 			ok = false
 			continue
 		}
 	}
 	if ok {
-		addSuccess(fmt.Sprintf("LLOC by method OK in file %s", file.Path))
+		addSuccess("LLOC by method OK")
 	}
 }

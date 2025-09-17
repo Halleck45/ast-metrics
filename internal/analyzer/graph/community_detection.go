@@ -40,9 +40,9 @@ func contains(xs []string, x string) bool {
 
 // Label Propagation
 type LPAOptions struct {
-	MaxIters      int   // default ~15 for speed
-	Seed          int64 // deterministic when provided
-	ShufflePer    bool  // shuffle order per iteration; default false for stability
+	MaxIters      int     // default ~15 for speed
+	Seed          int64   // deterministic when provided
+	ShufflePer    bool    // shuffle order per iteration; default false for stability
 	Resolution    float64 // >1.0 encourages more, smaller communities; <1.0 fewer, larger
 	MinCommSize   int     // communities smaller than this will be merged to neighbors
 	TieBreakFavor string  // "small" favors splitting (pick smallest label), "large" merges (pick largest)

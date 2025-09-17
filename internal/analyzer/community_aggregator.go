@@ -29,6 +29,9 @@ type CommunityMetrics struct {
 	BetweennessPerComm      map[string]float64         // betweenness on community graph (undirected approx)
 	MatrixOrder             []string                   // order of communities for matrix
 	TopPaths                map[string][]CommunityPath // entry -> top k paths
+
+	// Human-friendly display names derived generically (no project-specific rules)
+	DisplayNamePerComm map[string]string // community id -> display name
 }
 
 // EdgeBetweenCommunities represents an aggregated directed edge between communities
@@ -72,7 +75,6 @@ func density(g *pb.Graph) float64 {
 	return (2 * m) / (n * (n - 1))
 }
 
-
 // computeModularityQ computes Newman-Girvan modularity using an undirected approximation.
 // Q = (1/2m) sum_{ij} [A_ij - (k_i k_j / 2m)] delta(c_i, c_j)
 // Self-loops are ignored; multiple edges count once.
@@ -86,13 +88,21 @@ func computeModularityQ(g *pb.Graph, node2comm map[string]string) float64 {
 	edges := map[pair]struct{}{}
 	deg := map[string]int{}
 	for u, n := range g.Nodes {
-		if _, ok := deg[u]; !ok { deg[u] = 0 }
+		if _, ok := deg[u]; !ok {
+			deg[u] = 0
+		}
 		for _, v := range n.Edges {
-			if u == v { continue }
+			if u == v {
+				continue
+			}
 			// ensure nodes exist in deg map
-			if _, ok := deg[v]; !ok { deg[v] = 0 }
+			if _, ok := deg[v]; !ok {
+				deg[v] = 0
+			}
 			a, b := u, v
-			if a > b { a, b = b, a }
+			if a > b {
+				a, b = b, a
+			}
 			p := pair{a: a, b: b}
 			if _, ok := edges[p]; !ok {
 				edges[p] = struct{}{}
@@ -102,7 +112,9 @@ func computeModularityQ(g *pb.Graph, node2comm map[string]string) float64 {
 		}
 	}
 	m := 0.0
-	for range edges { m += 1 }
+	for range edges {
+		m += 1
+	}
 	if m == 0 {
 		return 0
 	}
@@ -112,7 +124,9 @@ func computeModularityQ(g *pb.Graph, node2comm map[string]string) float64 {
 	for e := range edges {
 		ci := node2comm[e.a]
 		cj := node2comm[e.b]
-		if ci == "" || cj == "" { continue }
+		if ci == "" || cj == "" {
+			continue
+		}
 		if ci == cj {
 			// A_ij = 1 for edge, subtract expected term
 			ki := float64(deg[e.a])
@@ -158,21 +172,39 @@ func (ca *CommunityAggregator) Calculate(aggregate *Aggregated) {
 			cu := node2comm[u]
 			for _, v := range n.Edges {
 				cv := node2comm[v]
-				if cu == "" || cv == "" || cu == cv { continue }
-				if outW[cu] == nil { outW[cu] = map[string]int{} }
-				if inW[cv] == nil { inW[cv] = map[string]int{} }
+				if cu == "" || cv == "" || cu == cv {
+					continue
+				}
+				if outW[cu] == nil {
+					outW[cu] = map[string]int{}
+				}
+				if inW[cv] == nil {
+					inW[cv] = map[string]int{}
+				}
 				outW[cu][cv]++
 				inW[cv][cu]++
 			}
 		}
 		// Determine small communities
 		sizes := map[string]int{}
-		for cid, nodes := range comms { sizes[cid] = len(nodes) }
+		for cid, nodes := range comms {
+			sizes[cid] = len(nodes)
+		}
 		// For determinism, collect small IDs sorted
 		small := []string{}
-		for cid, sz := range sizes { if sz > 0 && sz < minCommSize { small = append(small, cid) } }
+		for cid, sz := range sizes {
+			if sz > 0 && sz < minCommSize {
+				small = append(small, cid)
+			}
+		}
 		// simple sort lexicographically (manual to avoid importing extra packages)
-		for i := 0; i < len(small); i++ { for j := i+1; j < len(small); j++ { if small[j] < small[i] { small[i], small[j] = small[j], small[i] } } }
+		for i := 0; i < len(small); i++ {
+			for j := i + 1; j < len(small); j++ {
+				if small[j] < small[i] {
+					small[i], small[j] = small[j], small[i]
+				}
+			}
+		}
 		// Merge pass: choose best neighbor by (out+in) weight; if tie, pick lexicographically smallest
 		for _, s := range small {
 			best := ""
@@ -181,7 +213,9 @@ func (ca *CommunityAggregator) Calculate(aggregate *Aggregated) {
 			if m := outW[s]; m != nil {
 				for t, w := range m {
 					ww := w
-					if inW[s] != nil { ww += inW[s][t] }
+					if inW[s] != nil {
+						ww += inW[s][t]
+					}
 					if ww > bestW || (ww == bestW && t < best) {
 						best = t
 						bestW = ww
@@ -191,7 +225,11 @@ func (ca *CommunityAggregator) Calculate(aggregate *Aggregated) {
 			// also consider pure inbound-only neighbors
 			if m := inW[s]; m != nil {
 				for t, w := range m {
-					if outW[s] != nil { if _, ok := outW[s][t]; ok { continue } }
+					if outW[s] != nil {
+						if _, ok := outW[s][t]; ok {
+							continue
+						}
+					}
 					ww := w
 					if ww > bestW || (ww == bestW && t < best) {
 						best = t
@@ -199,7 +237,9 @@ func (ca *CommunityAggregator) Calculate(aggregate *Aggregated) {
 					}
 				}
 			}
-			if best == "" { continue }
+			if best == "" {
+				continue
+			}
 			// reassign nodes of s to best
 			for _, u := range comms[s] {
 				node2comm[u] = best
@@ -210,10 +250,16 @@ func (ca *CommunityAggregator) Calculate(aggregate *Aggregated) {
 		newMax := 0
 		for u := range aggregate.Graph.Nodes {
 			c := node2comm[u]
-			if c == "" { continue }
+			if c == "" {
+				continue
+			}
 			newComms[c] = append(newComms[c], u)
 		}
-		for _, nodes := range newComms { if len(nodes) > newMax { newMax = len(nodes) } }
+		for _, nodes := range newComms {
+			if len(nodes) > newMax {
+				newMax = len(nodes)
+			}
+		}
 		if len(newComms) > 0 {
 			comms = newComms
 			maxSize = newMax
@@ -732,6 +778,30 @@ func (ca *CommunityAggregator) Calculate(aggregate *Aggregated) {
 		topPaths[entry] = acc
 	}
 
+	// Derive display names per community using a simple rule:
+	// pick the member node with the highest number of outgoing edges ("out").
+	// In case of a tie, choose the lexicographically smallest node id.
+	display := map[string]string{}
+	for cid, nodes := range comms {
+		bestNode := ""
+		bestOut := -1
+		for _, u := range nodes {
+			n := aggregate.Graph.Nodes[u]
+			out := 0
+			if n != nil {
+				out = len(n.Edges)
+			}
+			if out > bestOut || (out == bestOut && (bestNode == "" || u < bestNode)) {
+				bestOut = out
+				bestNode = u
+			}
+		}
+		if bestNode == "" {
+			bestNode = cid
+		}
+		display[cid] = bestNode
+	}
+
 	aggregateCommunity := &CommunityMetrics{
 		Communities:      comms,
 		NodeToCommunity:  node2comm,
@@ -761,6 +831,7 @@ func (ca *CommunityAggregator) Calculate(aggregate *Aggregated) {
 		BetweennessPerComm:      bet,
 		MatrixOrder:             orderRCM,
 		TopPaths:                topPaths,
+		DisplayNamePerComm:      display,
 	}
 	aggregate.Community = aggregateCommunity
 
@@ -770,17 +841,21 @@ func (ca *CommunityAggregator) Calculate(aggregate *Aggregated) {
 	// - Split module for communities with big size (>50) and low purity (<0.6)
 	// - Refactor boundary nodes (top N boundary nodes listed)
 	if aggregate.Suggestions == nil {
-		aggregate.Suggestions = make([]string, 0)
+		aggregate.Suggestions = make([]Suggestion, 0)
 	}
 	seen := map[string]bool{}
 	// 1) Introduce façade for high coupling communities
 	for cid, coup := range aggregateCommunity.CouplingRatioPerComm {
 		if coup > 0.7 {
-			msg := "Introduce façade for community " + cid + " (coupling "
 			pct := int(coup*100 + 0.5)
-			msg = msg + fmt.Sprintf("%d%%)", pct)
+			msg := "Introduce façade for community " + cid + " (coupling " + fmt.Sprintf("%d%%)", pct)
 			if !seen[msg] {
-				aggregate.Suggestions = append(aggregate.Suggestions, msg)
+				aggregate.Suggestions = append(aggregate.Suggestions, Suggestion{
+					Summary:             "Introduce façade for community " + cid,
+					Location:            cid,
+					Why:                 fmt.Sprintf("High outbound coupling ratio: %d%% (> 70%%)", pct),
+					DetailedExplanation: "This community depends on many others. Introduce a façade or API boundary to reduce direct dependencies and stabilize interactions.",
+				})
 				seen[msg] = true
 			}
 		}
@@ -792,7 +867,12 @@ func (ca *CommunityAggregator) Calculate(aggregate *Aggregated) {
 		if size > 50 && pur < 0.6 {
 			msg := fmt.Sprintf("Split module for community %s (size %d, purity %d%%)", cid, size, int(pur*100+0.5))
 			if !seen[msg] {
-				aggregate.Suggestions = append(aggregate.Suggestions, msg)
+				aggregate.Suggestions = append(aggregate.Suggestions, Suggestion{
+					Summary:  "Split module for community " + cid,
+					Location: cid,
+					Why:      fmt.Sprintf("Large and impure community: size=%d (>50), purity=%d%% (<60%%)", size, int(pur*100+0.5)),
+					DetailedExplanation: "This community aggregates several concerns. Consider splitting it into smaller, cohesive modules aligned by domain or namespace to improve purity and maintainability.",
+				})
 				seen[msg] = true
 			}
 		}
@@ -805,7 +885,12 @@ func (ca *CommunityAggregator) Calculate(aggregate *Aggregated) {
 		}
 		msg := "Refactor boundary node " + nid + " (boundary crossing)"
 		if !seen[msg] {
-			aggregate.Suggestions = append(aggregate.Suggestions, msg)
+			aggregate.Suggestions = append(aggregate.Suggestions, Suggestion{
+				Summary:  "Refactor boundary node " + nid,
+				Location: nid,
+				Why:      "Boundary node detected: participates in edges crossing communities",
+				DetailedExplanation: "This node connects multiple communities and can create tight coupling. Consider introducing anti-corruption layers, moving responsibilities, or clarifying ownership to reduce boundary crossings.",
+			})
 			seen[msg] = true
 		}
 	}

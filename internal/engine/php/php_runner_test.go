@@ -73,14 +73,14 @@ class calculatrice {
 	// [name:"a" name:"b" name:"a" name:"b"]
 	// Convert to string (for easier comparison)
 	operandsAsString := fmt.Sprintf("%v", func1.Operands)
- operandsExpectedAsString := "[name:\"a\" name:\"b\" name:\"a\" name:\"b\"]"
+	operandsExpectedAsString := "[name:\"a\" name:\"b\" name:\"a\" name:\"b\"]"
 	assert.Equal(t, operandsExpectedAsString, operandsAsString, "Expected operands to be %s, got %s", operandsExpectedAsString, operandsAsString)
 
 	// Ensure operands of function 2
 	// [a, b, b, d, a, b, d, e, a, d, e]
 	// Convert to string (for easier comparison)
 	operandsAsString = fmt.Sprintf("%v", func2.Operands)
- operandsExpectedAsString = "[name:\"a\" name:\"b\" name:\"b\" name:\"d\" name:\"a\" name:\"b\" name:\"d\" name:\"e\" name:\"this.a1\" name:\"d\" name:\"e\"]"
+	operandsExpectedAsString = "[name:\"a\" name:\"b\" name:\"b\" name:\"d\" name:\"a\" name:\"b\" name:\"d\" name:\"e\" name:\"this.a1\" name:\"d\" name:\"e\"]"
 	assert.Equal(t, operandsExpectedAsString, operandsAsString, "Expected operands to be %s, got %s", operandsExpectedAsString, operandsAsString)
 
 	// Ensure method calls for divide

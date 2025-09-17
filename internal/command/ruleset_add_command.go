@@ -81,41 +81,64 @@ func (c *RulesetAddCommand) Execute() error {
 		f()
 	}
 	// Initialize empty rule keys for convenience (no numeric defaults)
+	intVal := func(i int) *int { return &i }
+	trueVal := func() *bool { b := true; return &b }
+
 	switch c.Name {
 	case "volume":
 		if cfg.Requirements.Rules.Volume.Loc == nil {
-			cfg.Requirements.Rules.Volume.Loc = &configuration.ConfigurationDefaultRule{}
+			cfg.Requirements.Rules.Volume.Loc = intVal(1000)
 		}
 		if cfg.Requirements.Rules.Volume.Lloc == nil {
-			cfg.Requirements.Rules.Volume.Lloc = &configuration.ConfigurationDefaultRule{}
+			cfg.Requirements.Rules.Volume.Lloc = intVal(600)
 		}
 		if cfg.Requirements.Rules.Volume.LocByMethod == nil {
-			cfg.Requirements.Rules.Volume.LocByMethod = &configuration.ConfigurationDefaultRule{}
+			cfg.Requirements.Rules.Volume.LocByMethod = intVal(30)
 		}
 		if cfg.Requirements.Rules.Volume.LlocByMethod == nil {
-			cfg.Requirements.Rules.Volume.LlocByMethod = &configuration.ConfigurationDefaultRule{}
+			cfg.Requirements.Rules.Volume.LlocByMethod = intVal(20)
 		}
 	case "architecture":
 		if cfg.Requirements.Rules.Architecture.Coupling == nil {
-			cfg.Requirements.Rules.Architecture.Coupling = &configuration.ConfigurationCouplingRule{}
+			cfg.Requirements.Rules.Architecture.Coupling = &configuration.ConfigurationCouplingRule{
+				Forbidden: []struct {
+					From string `yaml:"from"`
+					To   string `yaml:"to"`
+				}{
+					{From: "Controller", To: "Repository"},
+					{From: "Repository", To: "Service"},
+				},
+			}
 		}
 		if cfg.Requirements.Rules.Architecture.AfferentCoupling == nil {
-			cfg.Requirements.Rules.Architecture.AfferentCoupling = &configuration.ConfigurationDefaultRule{}
+			cfg.Requirements.Rules.Architecture.AfferentCoupling = intVal(10)
 		}
 		if cfg.Requirements.Rules.Architecture.EfferentCoupling == nil {
-			cfg.Requirements.Rules.Architecture.EfferentCoupling = &configuration.ConfigurationDefaultRule{}
+			cfg.Requirements.Rules.Architecture.EfferentCoupling = intVal(10)
 		}
 		if cfg.Requirements.Rules.Architecture.Maintainability == nil {
-			cfg.Requirements.Rules.Architecture.Maintainability = &configuration.ConfigurationDefaultRule{}
+			cfg.Requirements.Rules.Architecture.Maintainability = intVal(70)
 		}
 	case "complexity":
 		if cfg.Requirements.Rules.Complexity.Cyclomatic == nil {
-			cfg.Requirements.Rules.Complexity.Cyclomatic = &configuration.ConfigurationDefaultRule{}
+			cfg.Requirements.Rules.Complexity.Cyclomatic = intVal(10)
 		}
 	case "object-oriented-programming":
 		if cfg.Requirements.Rules.ObjectOrientedProgramming.Maintainability == nil {
-			cfg.Requirements.Rules.ObjectOrientedProgramming.Maintainability = &configuration.ConfigurationDefaultRule{}
+			cfg.Requirements.Rules.ObjectOrientedProgramming.Maintainability = intVal(70)
 		}
+	case "golang":
+		if cfg.Requirements.Rules.Golang == nil {
+			cfg.Requirements.Rules.Golang = &configuration.ConfigurationGolangRuleset{}
+		}
+		// Initialize Go rules with sensible defaults; user can adjust thresholds or disable booleans later
+		cfg.Requirements.Rules.Golang.NoPackageNameInMethod = trueVal()
+		cfg.Requirements.Rules.Golang.MaxNesting = intVal(4)
+		cfg.Requirements.Rules.Golang.MaxFileSize = intVal(1000)
+		cfg.Requirements.Rules.Golang.MaxFilesPerPackage = intVal(50)
+		cfg.Requirements.Rules.Golang.SlicePrealloc = trueVal()
+		cfg.Requirements.Rules.Golang.ContextMissing = trueVal()
+		cfg.Requirements.Rules.Golang.ContextIgnored = trueVal()
 	}
 
 	// Save back to file

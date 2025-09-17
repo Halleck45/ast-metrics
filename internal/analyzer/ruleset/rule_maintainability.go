@@ -3,16 +3,16 @@ package ruleset
 import (
 	"fmt"
 
-	"github.com/halleck45/ast-metrics/internal/configuration"
+	"github.com/halleck45/ast-metrics/internal/analyzer/issue"
 	pb "github.com/halleck45/ast-metrics/internal/nodetype"
 )
 
 type maintainabilityRule struct {
-	cfg *configuration.ConfigurationDefaultRule
+	min *int
 }
 
-func NewMaintainabilityRule(c *configuration.ConfigurationDefaultRule) Rule {
-	return &maintainabilityRule{cfg: c}
+func NewMaintainabilityRule(min *int) Rule {
+	return &maintainabilityRule{min: min}
 }
 
 func (r *maintainabilityRule) Name() string {
@@ -23,8 +23,8 @@ func (r *maintainabilityRule) Description() string {
 	return "Checks the maintainability of the code"
 }
 
-func (r *maintainabilityRule) CheckFile(file *pb.File, addError func(string), addSuccess func(string)) {
-	if r.cfg == nil || file.Stmts == nil {
+func (r *maintainabilityRule) CheckFile(file *pb.File, addError func(issue.RequirementError), addSuccess func(string)) {
+	if r.min == nil || file.Stmts == nil {
 		return
 	}
 	// apply to classes
@@ -35,16 +35,16 @@ func (r *maintainabilityRule) CheckFile(file *pb.File, addError func(string), ad
 		}
 		hasAny = true
 		value := int(*class.Stmts.Analyze.Maintainability.MaintainabilityIndex)
-		if r.cfg.Max > 0 && value > r.cfg.Max {
-			addError(fmt.Sprintf("Maintainability too high in file %s: got %d (max: %d)", file.Path, value, r.cfg.Max))
-			return
-		}
-		if r.cfg.Min > 0 && value < r.cfg.Min {
-			addError(fmt.Sprintf("Maintainability too low in file %s: got %d (min: %d)", file.Path, value, r.cfg.Min))
+		if r.min != nil && value < *r.min {
+			addError(issue.RequirementError{
+				Severity: issue.SeverityHigh,
+				Message:  fmt.Sprintf("Maintainability too low: got %d (min: %d)", value, *r.min),
+				Code:     r.Name(),
+			})
 			return
 		}
 	}
 	if hasAny {
-		addSuccess(fmt.Sprintf("Maintainability OK in file %s", file.Path))
+		addSuccess("Maintainability OK")
 	}
 }

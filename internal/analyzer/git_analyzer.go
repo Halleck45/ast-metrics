@@ -64,7 +64,7 @@ func (gitAnalyzer *GitAnalyzer) CalculateCount(files []*pb.File) []ResultOfGitAn
 	}
 
 	// For each git repository
-	for repoRoot, _ := range filesByGitRepo {
+	for repoRoot := range filesByGitRepo {
 
 		gitObject, err := scm.NewGitRepositoryFromPath(repoRoot)
 		if err != nil {

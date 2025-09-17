@@ -6,17 +6,28 @@ reports:
   markdown: ./build/report.md
 requirements:
   rules:
+    architecture:
+      coupling:
+        forbidden:
+          - from: Controller
+            to: Repository
+          - from: Repository
+            to: Service
+      max_afferent_coupling: 10
+      max_efferent_coupling: 10
+      min_maintainability: 70
     volume:
-      loc:
-        max: 999
-        min: 0
-        exclude:
-          - aggregator.go
-          - NodeType.pb.go
-      lloc_by_method:
-        max: 250
-        min: 0
-        exclude:
-          - aggregator.go
-          - NodeType.pb.go
-  fail_on_error: true
+      max_loc: 1000
+      max_logical_loc: 600
+      max_loc_by_method: 30
+      max_logical_loc_by_method: 20
+    complexity:
+      max_cyclomatic: 10
+    golang:
+      no_package_name_in_method: true
+      max_nesting: 4
+      max_file_size: 1000
+      max_files_per_package: 50
+      slice_prealloc: true
+      context_missing: true
+      context_ignored: true

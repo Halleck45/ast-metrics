@@ -77,6 +77,33 @@ func (a *TreeSitterAdapter) EachParamIdent(params *sitter.Node, yield func(strin
 }
 
 func (a *TreeSitterAdapter) ModuleNameFromPath(path string) string {
+	// Prefer actual Go package name from source, fallback to file base name
+	if a != nil && a.src != nil {
+		lines := strings.Split(string(a.src), "\n")
+		for _, ln := range lines {
+			trim := strings.TrimSpace(ln)
+			if trim == "" || strings.HasPrefix(trim, "//") {
+				continue
+			}
+			// strip block comment openers quickly (best-effort)
+			if strings.HasPrefix(trim, "/*") {
+				continue
+			}
+			if strings.HasPrefix(trim, "package ") {
+				pkg := strings.TrimSpace(strings.TrimPrefix(trim, "package "))
+				// remove inline comment if any
+				if idx := strings.Index(pkg, "//"); idx >= 0 {
+					pkg = strings.TrimSpace(pkg[:idx])
+				}
+				if idx := strings.Index(pkg, "/*"); idx >= 0 {
+					pkg = strings.TrimSpace(pkg[:idx])
+				}
+				if pkg != "" {
+					return pkg
+				}
+			}
+		}
+	}
 	base := strings.TrimSuffix(filepath.Base(path), filepath.Ext(path))
 	return base
 }

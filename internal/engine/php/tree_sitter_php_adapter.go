@@ -508,11 +508,11 @@ func (a *TreeSitterAdapter) ClassDirectOperands(n *sitter.Node) []string {
 	for i := 0; i < int(body.ChildCount()); i++ {
 		walkCollect(body.Child(i))
 	}
- 	// normalize: drop leading $ if present
- 	for i, p := range props {
- 		props[i] = normalizePhpOperand(p)
- 	}
- 	return props
+	// normalize: drop leading $ if present
+	for i, p := range props {
+		props[i] = normalizePhpOperand(p)
+	}
+	return props
 }
 
 // ---- helpers ----
@@ -611,24 +611,29 @@ func (a *TreeSitterAdapter) ExtractOperatorsOperands(src []byte, startLine, endL
 				}
 			}
 		}
- }
+	}
 	return ops, oprnds
 }
 
 // ExtractMethodCalls scans the function body range and returns normalized method calls
 // Examples recognized:
-//   $this->foo(   => this.foo
-//   $obj->bar(    => obj.bar
-//   parent::baz(  => parent.baz
-//   self::qux(    => self.qux
-//   static::zap(  => static.zap
+//
+//	$this->foo(   => this.foo
+//	$obj->bar(    => obj.bar
+//	parent::baz(  => parent.baz
+//	self::qux(    => self.qux
+//	static::zap(  => static.zap
 func (a *TreeSitterAdapter) ExtractMethodCalls(src []byte, startLine, endLine int) []string {
 	if src == nil || startLine <= 0 || endLine <= 0 || endLine < startLine {
 		return nil
 	}
 	lines := strings.Split(string(src), "\n")
 	res := []string{}
-	add := func(s string) { if s != "" { res = append(res, s) } }
+	add := func(s string) {
+		if s != "" {
+			res = append(res, s)
+		}
+	}
 	// simple scanning using string ops; skip inside comments/strings via stripStrings
 	for i := startLine - 1; i < endLine && i < len(lines); i++ {
 		orig := strings.TrimSpace(lines[i])
@@ -641,7 +646,9 @@ func (a *TreeSitterAdapter) ExtractMethodCalls(src []byte, startLine, endLine in
 		idx := 0
 		for idx < len(line) {
 			p := strings.Index(line[idx:], "$this->")
-			if p < 0 { break }
+			if p < 0 {
+				break
+			}
 			p += idx
 			j := p + len("$this->")
 			// read identifier
@@ -651,7 +658,9 @@ func (a *TreeSitterAdapter) ExtractMethodCalls(src []byte, startLine, endLine in
 			}
 			if k < len(line) && line[k] == '(' {
 				name := line[j:k]
-				if name != "" { add("this." + name) }
+				if name != "" {
+					add("this." + name)
+				}
 			}
 			idx = k
 		}
@@ -659,7 +668,9 @@ func (a *TreeSitterAdapter) ExtractMethodCalls(src []byte, startLine, endLine in
 		idx = 0
 		for idx < len(line) {
 			p := strings.Index(line[idx:], "$")
-			if p < 0 { break }
+			if p < 0 {
+				break
+			}
 			p += idx
 			// read var name
 			j := p + 1
@@ -689,7 +700,9 @@ func (a *TreeSitterAdapter) ExtractMethodCalls(src []byte, startLine, endLine in
 			idx = 0
 			for idx < len(line) {
 				p := strings.Index(line[idx:], kw)
-				if p < 0 { break }
+				if p < 0 {
+					break
+				}
 				p += idx
 				j := p + len(kw)
 				k := j

@@ -49,6 +49,10 @@ func (v *RiskAnalyzer) Analyze(project ProjectAggregated) {
 
 		// OOP file
 		for _, class := range classes {
+			// Guard against nil pointers in class analysis
+			if class.Stmts == nil || class.Stmts.Analyze == nil || class.Stmts.Analyze.Maintainability == nil || class.Stmts.Analyze.Maintainability.MaintainabilityIndex == nil {
+				continue
+			}
 			maintainability := 128 - *class.Stmts.Analyze.Maintainability.MaintainabilityIndex
 			if maintainability > maxComplexity {
 				maxComplexity = maintainability
@@ -56,9 +60,11 @@ func (v *RiskAnalyzer) Analyze(project ProjectAggregated) {
 		}
 
 		// all files (procedural and OOP)
-		cyclomatic := *file.Stmts.Analyze.Complexity.Cyclomatic
-		if cyclomatic > maxCyclomatic {
-			maxCyclomatic = cyclomatic
+		if file.Stmts != nil && file.Stmts.Analyze != nil && file.Stmts.Analyze.Complexity != nil && file.Stmts.Analyze.Complexity.Cyclomatic != nil {
+			cyclomatic := *file.Stmts.Analyze.Complexity.Cyclomatic
+			if cyclomatic > maxCyclomatic {
+				maxCyclomatic = cyclomatic
+			}
 		}
 
 		if len(commits) > maxCommits {
@@ -107,8 +113,8 @@ func (v *RiskAnalyzer) Analyze(project ProjectAggregated) {
 	}
 
 	// Build suggestions for Combined and per language
-	build := func(agg Aggregated) []string {
-		sugs := make([]string, 0)
+	build := func(agg Aggregated) []Suggestion {
+		sugs := make([]Suggestion, 0)
 		seen := make(map[string]bool)
 		for _, f := range agg.ConcernedFiles {
 			if f == nil || f.Stmts == nil || f.Stmts.Analyze == nil || f.Stmts.Analyze.Risk == nil {
@@ -123,7 +129,12 @@ func (v *RiskAnalyzer) Analyze(project ProjectAggregated) {
 			if risk >= 0.7 && commits >= 3 {
 				msg := "Refactor hotspot: " + f.Path
 				if !seen[msg] {
-					sugs = append(sugs, msg)
+					sugs = append(sugs, Suggestion{
+						Summary:  "Refactor hotspot",
+						Location: f.Path,
+						Why:      "High combined risk and frequent changes (>= 3 commits)",
+						DetailedExplanation: "This file exhibits both complexity and change frequency. Focus refactoring on complex or frequently modified parts, add tests, and reduce cyclomatic complexity.",
+					})
 					seen[msg] = true
 				}
 			}
@@ -136,7 +147,12 @@ func (v *RiskAnalyzer) Analyze(project ProjectAggregated) {
 					name := cls.Name.GetQualified()
 					msg := "Improve maintainability of " + name
 					if !seen[msg] {
-						sugs = append(sugs, msg)
+						sugs = append(sugs, Suggestion{
+							Summary:  "Improve maintainability",
+							Location: name,
+							Why:      "Maintainability Index below 65",
+							DetailedExplanation: "Refactor long methods, reduce nesting, and enhance cohesion. Consider splitting responsibilities and improving naming and tests.",
+						})
 						seen[msg] = true
 					}
 				}
@@ -146,7 +162,12 @@ func (v *RiskAnalyzer) Analyze(project ProjectAggregated) {
 				if *f.Stmts.Analyze.Complexity.Cyclomatic > 50 && commits >= 3 {
 					msg := "Split complex functions in " + f.Path
 					if !seen[msg] {
-						sugs = append(sugs, msg)
+						sugs = append(sugs, Suggestion{
+							Summary:  "Split complex functions",
+							Location: f.Path,
+							Why:      "Cyclomatic complexity > 50 with frequent changes (>= 3 commits)",
+							DetailedExplanation: "Identify the most complex functions and extract smaller, well-named functions. Aim to reduce decision points and increase readability.",
+						})
 						seen[msg] = true
 					}
 				}

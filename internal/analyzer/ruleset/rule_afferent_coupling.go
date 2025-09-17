@@ -2,18 +2,17 @@ package ruleset
 
 import (
 	"fmt"
-	"regexp"
 
-	"github.com/halleck45/ast-metrics/internal/configuration"
+	"github.com/halleck45/ast-metrics/internal/analyzer/issue"
 	pb "github.com/halleck45/ast-metrics/internal/nodetype"
 )
 
 type afferentCouplingRule struct {
-	cfg *configuration.ConfigurationDefaultRule
+	max *int
 }
 
-func NewAfferentCouplingRule(c *configuration.ConfigurationDefaultRule) Rule {
-	return &afferentCouplingRule{cfg: c}
+func NewAfferentCouplingRule(max *int) Rule {
+	return &afferentCouplingRule{max: max}
 }
 
 func (r *afferentCouplingRule) Name() string { return "afferent_coupling" }
@@ -22,28 +21,19 @@ func (r *afferentCouplingRule) Description() string {
 	return "Checks the afferent coupling of files/classes"
 }
 
-func (r *afferentCouplingRule) CheckFile(file *pb.File, addError func(string), addSuccess func(string)) {
-	if r.cfg == nil || file.Stmts == nil || file.Stmts.Analyze == nil || file.Stmts.Analyze.Coupling == nil {
+func (r *afferentCouplingRule) CheckFile(file *pb.File, addError func(issue.RequirementError), addSuccess func(string)) {
+	if r.max == nil || file.Stmts == nil || file.Stmts.Analyze == nil || file.Stmts.Analyze.Coupling == nil {
 		return
-	}
-
-	// Exclusions
-	if r.cfg.ExcludePatterns != nil {
-		for _, pattern := range r.cfg.ExcludePatterns {
-			if regexp.MustCompile(pattern).MatchString(file.Path) {
-				return
-			}
-		}
 	}
 
 	value := int(file.Stmts.Analyze.Coupling.Afferent)
-	if r.cfg.Max > 0 && value > r.cfg.Max {
-		addError(fmt.Sprintf("Afferent coupling too high in file %s: got %d (max: %d)", file.Path, value, r.cfg.Max))
+	if r.max != nil && *r.max > 0 && value > *r.max {
+		addError(issue.RequirementError{
+			Severity: issue.SeverityUnknown,
+			Code:     r.Name(),
+			Message:  fmt.Sprintf("Afferent coupling too high: got %d (max: %d)", value, *r.max),
+		})
 		return
 	}
-	if r.cfg.Min > 0 && value < r.cfg.Min {
-		addError(fmt.Sprintf("Afferent coupling too low in file %s: got %d (min: %d)", file.Path, value, r.cfg.Min))
-		return
-	}
-	addSuccess(fmt.Sprintf("Afferent coupling OK in file %s", file.Path))
+	addSuccess("Afferent coupling OK")
 }

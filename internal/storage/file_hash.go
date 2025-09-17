@@ -7,9 +7,8 @@ import (
 	"io"
 	"os"
 
-	"google.golang.org/protobuf/proto"
 	pb "github.com/halleck45/ast-metrics/internal/nodetype"
-
+	"google.golang.org/protobuf/proto"
 )
 
 // Provides the hash of a file, in order to avoid to parse it twice

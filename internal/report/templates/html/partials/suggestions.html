@@ -1,17 +1,42 @@
 
 <div class="bg-white p-4 rounded shadow mb-8">
-  <div class="flex items-center justify-between mb-2">
-    <h2 class="leading-none text-3xl font-bold text-gray-900 pb-2">Suggestions</h2>
-    {% if subtitle %}<div class="text-xs text-gray-500">{{ subtitle }}</div>{% endif %}
+  <div class="mb-2">
+    <h2 class="leading-none text-3xl font-bold text-gray-900 pb-1">Suggestions</h2>
+    <div class="text-xs text-gray-600 flex items-start gap-2">
+      <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 mt-0.5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M12 2a10 10 0 100 20 10 10 0 000-20z" />
+      </svg>
+      <span>
+        {% if subtitle %}{{ subtitle }}{% else %}
+          Automatically inferred from metrics (coupling, purity, boundary nodes, etc.). These highlight concrete actions to improve the architecture.
+        {% endif %}
+      </span>
+    </div>
   </div>
+
   {% if not suggestions or suggestions|length == 0 %}
-    <div class="text-sm text-gray-500">{{ emptyText|default:"No suggestions available." }}</div>
+    <div class="text-sm text-gray-500">{{ emptyText|default:"No suggestions at the moment." }}</div>
   {% else %}
     <ul class="text-sm space-y-2">
       {% for s in suggestions %}
-      <li class="p-2 border rounded flex items-start gap-2">
-        <span class="inline-block text-[10px] px-1 py-0.5 rounded bg-gray-100 border">Tip</span>
-        <span>{{ s }}</span>
+      <li class="p-3 border rounded bg-gray-50 flex items-start gap-3">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-5 shrink-0 mt-0.5 text-gray-500">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M12 18v-5.25m0 0a6.01 6.01 0 0 0 1.5-.189m-1.5.189a6.01 6.01 0 0 1-1.5-.189m3.75 7.478a12.06 12.06 0 0 1-4.5 0m3.75 2.383a14.406 14.406 0 0 1-3 0M14.25 18v-.192c0-.983.658-1.823 1.508-2.316a7.5 7.5 0 1 0-7.517 0c.85.493 1.509 1.333 1.509 2.316V18" />
+          </svg>
+          <div class="flex-1 space-y-1">
+            <div class="flex flex-wrap items-center gap-2">
+              <span class="font-medium text-gray-900">{{ s.Summary }}</span>
+              {% if s.Location %}
+                <span class="px-2 py-0.5 text-xs rounded bg-blue-100 text-blue-700">{{ s.Location }}</span>
+              {% endif %}
+            </div>
+            {% if s.Why %}
+              <div class="text-xs text-gray-600">Why: {{ s.Why }}</div>
+            {% endif %}
+            {% if s.DetailedExplanation %}
+              <div class="text-gray-700">{{ s.DetailedExplanation }}</div>
+            {% endif %}
+          </div>
       </li>
       {% endfor %}
     </ul>

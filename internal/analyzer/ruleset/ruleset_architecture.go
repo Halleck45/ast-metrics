@@ -33,26 +33,44 @@ func (a *architectureRuleset) Enabled() []Rule {
 	if arch.Maintainability != nil {
 		rules = append(rules, NewMaintainabilityRule(arch.Maintainability))
 	}
+	if arch.NoCircularDependencies != nil {
+		rules = append(rules, NewNoCircularDependenciesRule(arch.NoCircularDependencies))
+	}
+	if arch.MaxResponsibilities != nil {
+		rules = append(rules, NewMaxResponsibilitiesRule(arch.MaxResponsibilities))
+	}
+	if arch.NoGodClass != nil {
+		rules = append(rules, NewNoGodClassRule(arch.NoGodClass))
+	}
 	return rules
 }
 
 func (a *architectureRuleset) All() []Rule {
 	var coupling *configuration.ConfigurationCouplingRule
-	var afferent *configuration.ConfigurationDefaultRule
-	var efferent *configuration.ConfigurationDefaultRule
-	var maintainability *configuration.ConfigurationDefaultRule
+	var afferent *int
+	var efferent *int
+	var maintainability *int
+	var noCircularDependencies *bool
+	var maxResponsibilities *int
+	var noGodClass *bool
 	if a != nil && a.cfg != nil && a.cfg.Rules != nil && a.cfg.Rules.Architecture != nil {
 		arch := a.cfg.Rules.Architecture
 		coupling = arch.Coupling
 		afferent = arch.AfferentCoupling
 		efferent = arch.EfferentCoupling
 		maintainability = arch.Maintainability
+		noCircularDependencies = arch.NoCircularDependencies
+		maxResponsibilities = arch.MaxResponsibilities
+		noGodClass = arch.NoGodClass
 	}
 	return []Rule{
 		NewCouplingRule(coupling),
 		NewAfferentCouplingRule(afferent),
 		NewEfferentCouplingRule(efferent),
 		NewMaintainabilityRule(maintainability),
+		NewNoCircularDependenciesRule(noCircularDependencies),
+		NewMaxResponsibilitiesRule(maxResponsibilities),
+		NewNoGodClassRule(noGodClass),
 	}
 }
 
