@@ -2,6 +2,7 @@ package cli
 
 import (
 	"errors"
+	"os"
 	"time"
 
 	"github.com/charmbracelet/bubbles/filepicker"
@@ -84,9 +85,15 @@ func (m modelFileSelection) View() string {
 }
 
 func AskUserToSelectFile() []string {
+	// Get current working directory
+	currentDir, err := os.Getwd()
+	if err != nil {
+		currentDir = "."
+	}
+
 	fp := filepicker.New()
 	fp.DirAllowed = true
-	fp.CurrentDirectory = "."
+	fp.CurrentDirectory = currentDir
 	fp.ShowHidden = false
 
 	m := modelFileSelection{
@@ -94,7 +101,20 @@ func AskUserToSelectFile() []string {
 	}
 
 	options := tea.WithAltScreen()
-	tm, _ := tea.NewProgram(&m, options).Run()
-	mm := tm.(modelFileSelection)
+	p := tea.NewProgram(&m, options)
+	tm, err := p.Run()
+	if err != nil {
+		return []string{}
+	}
+
+	if tm == nil {
+		return []string{}
+	}
+
+	mm, ok := tm.(modelFileSelection)
+	if !ok {
+		return []string{}
+	}
+
 	return []string{mm.selectedFile}
 }
