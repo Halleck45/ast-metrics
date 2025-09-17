@@ -23,6 +23,9 @@ func (v *ReportersFactory) Factory(configuration *configuration.Configuration) [
 		if v.Configuration.Reports.OpenMetrics != "" {
 			reporters = append(reporters, NewOpenMetricsReportGenerator(v.Configuration.Reports.OpenMetrics))
 		}
+		if v.Configuration.Reports.Sarif != "" {
+			reporters = append(reporters, NewSarifReportGenerator(v.Configuration.Reports.Sarif))
+		}
 	}
 
 	return reporters

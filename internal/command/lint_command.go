@@ -10,6 +10,7 @@ import (
 	requirement "github.com/halleck45/ast-metrics/internal/analyzer/requirement"
 	"github.com/halleck45/ast-metrics/internal/configuration"
 	"github.com/halleck45/ast-metrics/internal/engine"
+	"github.com/halleck45/ast-metrics/internal/report"
 	pb "github.com/halleck45/ast-metrics/internal/nodetype"
 	"github.com/pterm/pterm"
 )
@@ -68,6 +69,15 @@ func (c *LintCommand) Execute() error {
 	}
 	reqEval := requirement.NewRequirementsEvaluator(*c.Configuration.Requirements)
 	evaluation := reqEval.Evaluate(allResults, requirement.ProjectAggregated{})
+
+	// If SARIF path provided, write SARIF report from violations
+	if c.Configuration.Reports.Sarif != "" {
+		_, err := report.GenerateSarifFromOutcomes(c.Configuration.Reports.Sarif, evaluation.Errors)
+		if err != nil {
+			return err
+		}
+		pterm.Success.Printf("SARIF report generated: %s\n", c.Configuration.Reports.Sarif)
+	}
 
 	// Build a map[filePath][]outcomes directly from structured results
 	grouped := map[string][]requirement.RuleOutcome{}

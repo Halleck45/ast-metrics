@@ -99,6 +99,12 @@ func main() {
 						Usage:    "Generate a report in OpenMetrics format",
 						Category: "Report",
 					},
+					// SARIF report
+					&cli.StringFlag{
+						Name:     "report-sarif",
+						Usage:    "Generate a report in SARIF format (2.1.0)",
+						Category: "Report",
+					},
 					// Watch mode
 					&cli.BoolFlag{
 						Name:     "watch",
@@ -238,6 +244,9 @@ func main() {
 					if cCtx.String("report-openmetrics") != "" {
 						config.Reports.OpenMetrics = cCtx.String("report-openmetrics")
 					}
+					if cCtx.String("report-sarif") != "" {
+						config.Reports.Sarif = cCtx.String("report-sarif")
+					}
 
 					// CI mode
 					if cCtx.Bool("ci") {
@@ -255,6 +264,11 @@ func main() {
 							// @see https://docs.gitlab.com/ee/ci/testing/metrics_reports.html
 							config.Reports.OpenMetrics = "metrics.txt"
 						}
+						if config.Reports.Sarif == "" {
+							config.Reports.Sarif = "ast-metrics-report.sarif"
+						}
+						isInteractive = false
+						pterm.DisableColor()
 					}
 
 					// Compare with
@@ -374,6 +388,7 @@ func main() {
 					&cli.BoolFlag{Name: "verbose", Aliases: []string{"v"}, Usage: "Enable verbose mode", Category: "Global options"},
 					&cli.StringSliceFlag{Name: "exclude", Usage: "Regular expression to exclude files from analysis", Category: "File selection"},
 					&cli.StringFlag{Name: "config", Usage: "Load configuration from file", Category: "Configuration"},
+					&cli.StringFlag{Name: "report-sarif", Usage: "Write lint violations as SARIF 2.1.0 to the given file", Category: "Report"},
 				},
 				Action: func(cCtx *cli.Context) error {
 					if cCtx.Bool("verbose") {
@@ -389,6 +404,11 @@ func main() {
 					if err != nil {
 						pterm.Error.Println("Cannot load configuration file: " + err.Error())
 					}
+					// report sarif flag
+					if cCtx.String("report-sarif") != "" {
+						cfg.Reports.Sarif = cCtx.String("report-sarif")
+					}
+
 					// paths from args
 					paths := cCtx.Args()
 					if paths.Len() > 0 {

@@ -36,11 +36,12 @@ type ConfigurationReport struct {
 	Markdown    string `yaml:"markdown,omitempty"`
 	Json        string `yaml:"json,omitempty"`
 	OpenMetrics string `yaml:"openmetrics,omitempty"`
+	Sarif       string `yaml:"sarif,omitempty"`
 }
 
 // function HasReports() bool {
 func (c *ConfigurationReport) HasReports() bool {
-	return c.Html != "" || c.Markdown != "" || c.Json != "" || c.OpenMetrics != ""
+	return c.Html != "" || c.Markdown != "" || c.Json != "" || c.OpenMetrics != "" || c.Sarif != ""
 }
 
 type ConfigurationRequirements struct {
