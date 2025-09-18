@@ -80,6 +80,11 @@ func main() {
 						Usage:    "Generate an HTML report",
 						Category: "Report",
 					},
+					&cliV2.BoolFlag{
+						Name:     "open-html",
+						Usage:    "Automatically open HTML report in browser",
+						Category: "Report",
+					},
 					// Markdown report
 					&cliV2.StringFlag{
 						Name:     "report-markdown",
@@ -246,6 +251,9 @@ func main() {
 					}
 					if cCtx.String("report-sarif") != "" {
 						config.Reports.Sarif = cCtx.String("report-sarif")
+					}
+					if cCtx.Bool("open-html") {
+						config.Reports.OpenHtml = true
 					}
 
 					// CI mode
@@ -450,6 +458,7 @@ func main() {
 					&cliV2.BoolFlag{Name: "verbose", Aliases: []string{"v"}, Usage: "Enable verbose mode", Category: "Global options"},
 					&cliV2.StringSliceFlag{Name: "exclude", Usage: "Regular expression to exclude files from analysis", Category: "File selection"},
 					&cliV2.StringFlag{Name: "report-html", Usage: "Generate an HTML report", Category: "Report"},
+					&cliV2.BoolFlag{Name: "open-html", Usage: "Automatically open HTML report in browser", Category: "Report"},
 					&cliV2.StringFlag{Name: "report-markdown", Usage: "Generate a Markdown report file", Category: "Report"},
 					&cliV2.StringFlag{Name: "report-json", Usage: "Generate a report in JSON format", Category: "Report"},
 					&cliV2.StringFlag{Name: "report-openmetrics", Usage: "Generate a report in OpenMetrics format", Category: "Report"},
@@ -508,6 +517,9 @@ func main() {
 					}
 					if cCtx.String("report-sarif") != "" {
 						cfg.Reports.Sarif = cCtx.String("report-sarif")
+					}
+					if cCtx.Bool("open-html") {
+						cfg.Reports.OpenHtml = true
 					}
 					// CI defaults for reports if not set
 					if cfg.Reports.Html == "" {

@@ -37,6 +37,7 @@ type ConfigurationReport struct {
 	Json        string `yaml:"json,omitempty"`
 	OpenMetrics string `yaml:"openmetrics,omitempty"`
 	Sarif       string `yaml:"sarif,omitempty"`
+	OpenHtml    bool   `yaml:"open_html,omitempty"`
 }
 
 // function HasReports() bool {

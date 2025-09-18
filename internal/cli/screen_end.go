@@ -2,13 +2,14 @@ package cli
 
 import (
 	"fmt"
+	"path/filepath"
 
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 	"github.com/halleck45/ast-metrics/internal/analyzer"
 	"github.com/halleck45/ast-metrics/internal/configuration"
 	pb "github.com/halleck45/ast-metrics/pb"
-	"github.com/halleck45/ast-metrics/internal/report"
+	reportpkg "github.com/halleck45/ast-metrics/internal/report"
 )
 
 type ScreenEnd struct {
@@ -19,7 +20,7 @@ type ScreenEnd struct {
 	tea *tea.Program
 	// reports
 	Configuration configuration.Configuration
-	reports       []report.GeneratedReport
+	reports       []reportpkg.GeneratedReport
 }
 
 func NewScreenEnd(
@@ -27,7 +28,7 @@ func NewScreenEnd(
 	files []*pb.File,
 	projectAggregated analyzer.ProjectAggregated,
 	configuration configuration.Configuration,
-	reports []report.GeneratedReport,
+	reports []reportpkg.GeneratedReport,
 ) *ScreenEnd {
 	return &ScreenEnd{
 		isInteractive:     isInteractive,
@@ -69,6 +70,17 @@ func (r *ScreenEnd) Render() {
 		for _, report := range r.reports {
 			fmt.Println("\n  ✔ " + report.Path + " (" + report.Type + ")")
 			fmt.Println("\n        " + report.Description)
+			
+			// Handle HTML report opening
+			if report.Type == "html" && r.Configuration.Reports.OpenHtml {
+				htmlPath := filepath.Join(report.Path, "index.html")
+				if err := reportpkg.OpenHtmlReport(htmlPath); err != nil {
+					fmt.Println("\n        " + reportpkg.GetOpenInstructions(htmlPath))
+				}
+			} else if report.Type == "html" {
+				htmlPath := filepath.Join(report.Path, "index.html")
+				fmt.Println("\n        " + reportpkg.GetOpenInstructions(htmlPath))
+			}
 		}
 
 		fmt.Println("")
