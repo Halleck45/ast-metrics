@@ -179,7 +179,7 @@ func (v *HtmlReportGenerator) Generate(files []*pb.File, projectAggregated analy
 	reports := []GeneratedReport{
 		{
 			Path:        v.ReportPath,
-			Type:        "directory",
+			Type:        "html",
 			Description: "The HTML reports allow you to visualize the metrics of your project in a web browser.",
 			Icon:        "📊",
 		},
