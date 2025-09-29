@@ -43,6 +43,9 @@ type report struct {
 	AverageAfferentCoupling              float64                   `json:"averageAfferentCoupling,omitempty"`
 	AverageEfferentCoupling              float64                   `json:"averageEfferentCoupling,omitempty"`
 	AverageInstability                   float64                   `json:"averageInstability,omitempty"`
+	AverageLcom4                         float64                   `json:"averageLcom4,omitempty"`
+	AverageCcn                           float64                   `json:"averageCcn,omitempty"`
+	MaxLoc                               float64                   `json:"maxLoc,omitempty"`
 	CommitCountForPeriod                 int                       `json:"commitCountForPeriod,omitempty"`
 	CommittedFilesCountForPeriod         int                       `json:"committedFilesCountForPeriod,omitempty"` // for example if one commit concerns 10 files, it will be 10
 	BusFactor                            int                       `json:"busFactor,omitempty"`

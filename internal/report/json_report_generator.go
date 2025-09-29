@@ -173,6 +173,9 @@ func (j *JsonReportGenerator) buildReport(projectAggregated analyzer.ProjectAggr
 	r.AverageAfferentCoupling = combined.AfferentCoupling.Avg
 	r.AverageEfferentCoupling = combined.EfferentCoupling.Avg
 	r.AverageInstability = combined.Instability.Avg
+	r.AverageLcom4 = combined.Lcom4PerClass.Avg
+	r.AverageCcn = combined.CyclomaticComplexity.Avg
+	r.MaxLoc = combined.Loc.Max
 	r.CommitCountForPeriod = combined.CommitCountForPeriod
 	r.CommittedFilesCountForPeriod = combined.CommittedFilesCountForPeriod
 	r.BusFactor = combined.BusFactor
