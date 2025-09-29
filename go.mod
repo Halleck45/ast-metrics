@@ -3,7 +3,6 @@ module github.com/halleck45/ast-metrics
 go 1.23.0
 
 require (
-	github.com/VKCOM/php-parser v0.8.2
 	github.com/bsm/openmetrics v0.3.1
 	github.com/charmbracelet/bubbles v0.18.0
 	github.com/charmbracelet/bubbletea v0.25.0
@@ -13,14 +12,15 @@ require (
 	github.com/evandro-slv/go-cli-charts v0.0.0-20191022204244-4ef8459d5f4d
 	github.com/flosch/pongo2/v5 v5.0.0
 	github.com/fsnotify/fsnotify v1.7.0
-	github.com/go-python/gpython v0.2.0
 	github.com/golang/protobuf v1.5.4
+	github.com/google/uuid v1.6.0
 	github.com/inancgumus/screen v0.0.0-20190314163918-06e984b86ed3
 	github.com/jarcoal/httpmock v1.3.1
 	github.com/minio/selfupdate v0.6.0
 	github.com/muesli/termenv v0.15.2
 	github.com/pterm/pterm v0.12.79
 	github.com/sirupsen/logrus v1.9.3
+	github.com/smacker/go-tree-sitter v0.0.0-20240827094217-dd81d9e9be82
 	github.com/stretchr/testify v1.9.0
 	github.com/urfave/cli/v2 v2.27.1
 	github.com/yargevad/filepathx v1.0.0

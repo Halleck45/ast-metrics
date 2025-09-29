@@ -1,0 +1,40 @@
+package command
+
+import (
+	"os"
+	"testing"
+
+	"github.com/halleck45/ast-metrics/internal/storage"
+)
+
+func TestCommandCleanupWorkspace(t *testing.T) {
+
+	// Suite
+	t.Run("TestCommandCleanupWorkspace", func(t *testing.T) {
+
+		storage := storage.Default()
+		providedPath := storage.Path()
+
+		// Create folder
+		storage.Ensure()
+
+		// providedPath should exist
+		if _, err := os.Stat(providedPath); os.IsNotExist(err) {
+			t.Errorf("Path() = %s; want it to exist", providedPath)
+		}
+
+		// Run command
+		cmd := NewCleanCommand(storage)
+		err := cmd.Execute()
+
+		if err != nil {
+			t.Errorf("CleanCommand.Execute() = %s; want it to be nil", err.Error())
+		}
+
+		// providedPath should not exist
+
+		if _, err := os.Stat(providedPath); os.IsNotExist(err) == false {
+			t.Errorf("Path() = %s; want it to not exist", providedPath)
+		}
+	})
+}

@@ -1,45 +1,123 @@
-name: build
-
+name: release
 on:
   push:
-    # run only against tags
-    tags:
-      - "*"
+    tags: ["*"]
 
 permissions:
   contents: write
-  # packages: write
-  # issues: write
 
 jobs:
-  goreleaser:
-    runs-on: ubuntu-latest
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # Linux
+          - os: ubuntu-latest      # x86_64
+            goos: linux
+            goarch: amd64
+          - os: ubuntu-24.04-arm   # arm64 (public repos)
+            goos: linux
+            goarch: arm64
+          # macOS
+          - os: macos-13           # Intel
+            goos: darwin
+            goarch: amd64
+          - os: macos-14           # Apple Silicon
+            goos: darwin
+            goarch: arm64
+          # Windows
+          - os: windows-latest     # x86_64
+            goos: windows
+            goarch: amd64
+# DISABLED for the moment:
+# gcc_arm64.S: Assembler messages:
+# gcc_arm64.S:30: Error: no such instruction: `stp x29,x30,[sp,'
+# gcc_arm64.S:34: Error: too many memory references for `mov'
+#          - os: windows-11-arm     # arm64 (public repos)
+#            goos: windows
+#            goarch: arm64
+
+    runs-on: ${{ matrix.os }}
+
     steps:
-      # Checkout the repository
       - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
+        with: { fetch-depth: 0 }
 
-      # Install go dependencies
-      - uses: actions/setup-go@v4
-        with:
-          go-version: stable
+      - uses: actions/setup-go@v5
+        with: { go-version: stable }
 
-      # run tests
-      - name: "Test application"
-        run: go test
+      # Toolchains pour CGO
+      - name: Toolchain (Linux)
+        if: startsWith(matrix.os, 'ubuntu')
+        run: sudo apt-get update && sudo apt-get install -y build-essential pkg-config
+      - name: Toolchain (Windows)
+        if: startsWith(matrix.os, 'windows')
+        uses: ilammy/msvc-dev-cmd@v1
 
-      # Build artifacts
-      - uses: goreleaser/goreleaser-action@v5
+      - name: Tests
+        run: go test ./...
+        env: { CGO_ENABLED: 1 }
+
+      - name: Génère la config ciblée (hors repo)
+        shell: bash
+        run: |
+          cat > "$RUNNER_TEMP/goreleaser.yml" <<EOF
+          version: 2
+          before:
+            hooks:
+              - go mod tidy
+              - go generate ./...
+          builds:
+            - id: app
+              main: ./cmd/ast-metrics
+              env: ["CGO_ENABLED=1"]
+              goos: [${{ matrix.goos }}]
+              goarch: [${{ matrix.goarch }}]
+              ldflags: ["-s", "-w"]
+              mod_timestamp: "{{ .CommitTimestamp }}"
+          archives:
+            - id: bin
+              builds: [app]
+              format: binary
+              name_template: '{{ .ProjectName }}_{{ title .Os }}_{{ if eq .Arch "amd64" }}x86_64{{ else }}{{ .Arch }}{{ end }}'
+          changelog:
+            sort: asc
+            filters:
+              exclude:
+                - "^docs:"
+                - "^test:"
+          checksum:
+            disable: true
+            name_template: "{{ .ProjectName }}_checksums.txt"
+            split: true
+          
+          EOF
+
+      - name: "Fix issue with local files on windows"
+        run: |
+          # if .ast-metrics.yaml exists in any subfolder of internal folder, rm it
+          find . -type f -path "*/internal/*/.ast-metrics.yaml" -exec rm -f {} \;
+          # remove also the directory report in any subfolder of internal folder, rm it
+          find . -type d -path "*/internal/*/report" -exec rm -rf {} \;
+          # reset git state for internal/report directory
+          git checkout -- internal/report
+
+        shell: bash
+        if: matrix.os == 'windows-latest'
+
+      - name: GoReleaser
+        uses: goreleaser/goreleaser-action@v6
         with:
-          distribution: goreleaser
           version: latest
-          args: release --clean
+          args: release --clean --config "${{ runner.temp }}/goreleaser.yml"
         env:
+          CGO_ENABLED: 1
           GITHUB_TOKEN: ${{ secrets.PUSH_TOKEN }}
 
+
   dockerrelease:
-    needs: goreleaser
+    needs: build
     runs-on: ubuntu-latest
     steps:
 
