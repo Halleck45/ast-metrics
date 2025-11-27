@@ -1,68 +1,66 @@
 # Installing AST Metrics
 
-## Downloading binaries
+AST Metrics is built in Golang and distributed as a single binary. It has no dependencies.
 
-AST Metrics is built in Golang, and distributed as binary. 
+## 🚀 Quick Install
 
-You don't need anything, simply download the correct binary for your platform.
+Choose your preferred method below.
 
+??? info ":magic_wand: Automatic Install (Linux/MacOS/Windows)"
 
-=== ":magic_wand: Automatically"
-
-
-    Run the following command to download the latest version of AST Metrics:
+    Run the following command to download the latest version:
 
     ```bash
     curl -s https://raw.githubusercontent.com/Halleck45/ast-metrics/main/scripts/download.sh|sh
     ```
 
+    Then move the `./ast-metrics` binary to a directory in your `PATH` (e.g. `/usr/local/bin` for Linux/MacOS).
+
     > Be careful when running scripts from the internet. Always check the content of the script before running it.
 
-
-=== ":simple-linux: Linux"
-
+??? info ":simple-linux: Linux (Manual)"
 
     Download the binary for your platform (run `uname -m` in your terminal to get your architecture):
 
-    + [amd64](https://github.com/Halleck45/ast-metrics/releases/download/v0.0.11-alpha/ast-metrics_Linux_x86_64) (most common)
-    + [arm64](https://github.com/Halleck45/ast-metrics/releases/download/v0.0.11-alpha/ast-metrics_Linux_arm64) (for Raspberry Pi)
-    + [i386](https://github.com/Halleck45/ast-metrics/releases/download/v0.0.11-alpha/ast-metrics_Linux_i386) (for old 32-bit systems)
+    - [amd64](https://github.com/Halleck45/ast-metrics/releases/download/v0.0.11-alpha/ast-metrics_Linux_x86_64) (most common)
+    - [arm64](https://github.com/Halleck45/ast-metrics/releases/download/v0.0.11-alpha/ast-metrics_Linux_arm64) (for Raspberry Pi)
+    - [i386](https://github.com/Halleck45/ast-metrics/releases/download/v0.0.11-alpha/ast-metrics_Linux_i386) (for old 32-bit systems)
 
-=== ":simple-apple: MacOS"
+??? info ":simple-apple: MacOS (Manual)"
 
     Download the binary for your platform (run `uname -m` in your terminal to get your architecture):
     
-    + [arm64](https://github.com/Halleck45/ast-metrics/releases/download/--latest_version--/ast-metrics_Darwin_arm64) (for Apple Silicon)
-    + [amd64](https://github.com/Halleck45/ast-metrics/releases/download/--latest_version--/ast-metrics_Darwin_x86_64) (for Intel)
+    - [arm64](https://github.com/Halleck45/ast-metrics/releases/download/--latest_version--/ast-metrics_Darwin_arm64) (for Apple Silicon / M1 / M2)
+    - [amd64](https://github.com/Halleck45/ast-metrics/releases/download/--latest_version--/ast-metrics_Darwin_x86_64) (for Intel Macs)
+
+??? info ":fontawesome-brands-windows: Windows (Manual)"
+
+    Download the executable for your platform:
+
+    - [amd64](https://github.com/Halleck45/ast-metrics/releases/download/--latest_version--/ast-metrics_Windows_x86_64.exe) (most common)
+    - [arm64](https://github.com/Halleck45/ast-metrics/releases/download/--latest_version--/ast-metrics_Windows_arm64.exe) (for ARM)
+    - [i386](https://github.com/Halleck45/ast-metrics/releases/download/--latest_version--/ast-metrics_Windows_i386.exe) (for old 32-bit systems)
 
 
-=== ":simple-windows10: Windows"
 
-    Download the binary for your platform (run `uname -m` in your terminal to get your architecture):
+??? info ":elephant: PHP Project (Composer)"
 
-    + [amd64](https://github.com/Halleck45/ast-metrics/releases/download/--latest_version--/ast-metrics_Windows_x86_64.exe) (most common)
-    + [arm64](https://github.com/Halleck45/ast-metrics/releases/download/--latest_version--/ast-metrics_Windows_arm64.exe) (for ARM)
-    + [i386](https://github.com/Halleck45/ast-metrics/releases/download/--latest_version--/ast-metrics_Windows_i386.exe) (for old 32-bit systems)
-
-
-=== ":simple-docker: inside containers (Docker)"
-
-    If you don't know what is your image architecture, the simplest way consists in running the following command in your container:
+    If you are working on a PHP project, you can install AST Metrics as a dev dependency via Composer.
+    This is the recommended way for PHP developers as it manages the binary version for you.
 
     ```bash
-    # run this command in your container. 
-    # For example, execute `docker exec -it my-container bash` to open a shell in your container
-
-    echo "OS: $(uname -s), Arch: $(uname -m)"
+    composer require --dev halleck45/ast-metrics
     ```
 
-    It will show you the OS and architecture of the container. 
+    Then you can run it using:
 
-    For example, if the output is `OS: Linux, Arch: x86_64`, you should download the `amd64` binary for Linux.
+    ```bash
+    php vendor/bin/ast-metrics analyze .
+    ```
 
-    Then follow the instructions for your platform.
+??? info ":simple-go: Go Install"
 
-=== ":simple-go: With Go"
+    If you have Go installed:
 
     ```bash
     go install github.com/halleck45/ast-metrics@latest
@@ -81,3 +79,11 @@ You should see the help message with the available subcommands.
 ## Troubleshooting
 
 If you get an error that the command `ast-metrics` is not found, you may need to add the directory where the binary is located to your PATH.
+
+## Updating
+
+Update is really easy. Just run:
+
+```bash
+ast-metrics self-update
+```

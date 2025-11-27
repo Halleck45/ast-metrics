@@ -6,7 +6,7 @@ Locate the directory where your source code is stored. For example, if you have 
 directory, you can run AST Metrics with the following command in your terminal:
 
 ```bash
-ast-metrics /var/www/my-project
+ast-metrics analyze /var/www/my-project
 ```
 
 This will display the CLI application, which will analyze the source code in the specified directory.
@@ -19,4 +19,14 @@ To exit the application, press `Ctrl+C` or the `Esc` key.
 
 > **Note**: You can search for a specific file or directory by pressing the `Ctrl+F` key and typing the name of the file or directory you want to find.
 
- 
+## Generating an HTML Report
+
+You can also generate a static HTML report to share with your team or keep as an artifact.
+
+```bash
+ast-metrics analyze /path/to/project --report-html=./report
+```
+
+This will create a `report` directory containing the full analysis.
+
+![HTML Report](https://raw.githubusercontent.com/Halleck45/ast-metrics/main/docs/preview-html-report.png)

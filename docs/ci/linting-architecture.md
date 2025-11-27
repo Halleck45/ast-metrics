@@ -1,94 +1,129 @@
-# Defining rules for your code
+# Rulesets & Linting
 
-One of the interests of AST Metrics is to allow you to check that your code respects certain rules.
+AST Metrics allows you to enforce rules on your codebase (Linting). You can check complexity, coupling, volume, and more.
 
-For example, you can check that functions do not exceed a certain complexity.
+## Managing Rulesets (CLI)
 
-To do this, create a `.ast-metrics.yaml` file at the root of your project and add the rules you want to check.
+The easiest way to add rules is to use the `ruleset` command. It allows you to import pre-defined sets of rules.
 
-You can also run the `ast-metrics init` command to generate this file with default rules.
+### Available Rulesets
 
-We will add a rule to check that files do not exceed a complexity of 30.
+You can list available rulesets with:
 
-```yaml
-sources: 
-  - ./src
-
-requirements:
-  rules:
-    cyclomatic_complexity:
-      max: 30
-      excludes: []
+```bash
+ast-metrics ruleset list
 ```
 
-Now you can run the `ast-metrics analyze` command to check that your code respects this rule.
+| Ruleset | Description |
+|---------|-------------|
+| **architecture** | Architecture-related constraints (e.g., coupling) |
+| **volume** | Volume metrics (e.g., lines of code) |
+| **complexity** | Complexity metrics (e.g., cyclomatic complexity) |
+| **golang** | Golang-specific best practices and API hygiene |
 
-```console
+### Installing a Ruleset
+
+To add a ruleset to your configuration:
+
+```bash
+ast-metrics ruleset add architecture
+ast-metrics ruleset add volume
+```
+
+### Detailed Rules
+
+#### 🏗️ Architecture Ruleset
+`ast-metrics ruleset add architecture`
+
+| Rule Name | Description |
+|-----------|-------------|
+| **coupling** | Checks for forbidden coupling between packages |
+| **max_afferent_coupling** | Checks the afferent coupling of files/classes |
+| **max_efferent_coupling** | Checks the efferent coupling of files/classes |
+| **min_maintainability** | Checks the maintainability of the code |
+| **no_circular_dependencies** | Detect circular dependencies between classes |
+| **max_responsibilities** | Maximum number of responsibilities (LCOM) per class |
+| **no_god_class** | Avoid God Classes (too many methods/properties) |
+
+#### 📏 Volume Ruleset
+`ast-metrics ruleset add volume`
+
+| Rule Name | Description |
+|-----------|-------------|
+| **max_loc** | Checks the lines of code in a file |
+| **max_logical_loc** | Checks the logical lines of code in a file |
+| **max_loc_by_method** | Checks the lines of code by method/function |
+| **max_logical_loc_by_method** | Checks the logical lines of code by method/function |
+| **max_methods_per_class** | Maximum number of methods per class |
+| **max_switch_cases** | Maximum number of cases in switch statements |
+| **max_parameters_per_method** | Maximum number of parameters per method |
+| **max_nested_blocks** | Maximum nesting depth of blocks |
+| **max_public_methods** | Maximum number of public methods per class |
+
+#### 🧠 Complexity Ruleset
+`ast-metrics ruleset add complexity`
+
+| Rule Name | Description |
+|-----------|-------------|
+| **max_cyclomatic** | Checks the cyclomatic complexity of functions |
+
+#### 🐹 Golang Ruleset
+`ast-metrics ruleset add golang`
+
+| Rule Name | Description |
+|-----------|-------------|
+| **no_package_name_in_method** | Do not include the package name in exported function or method identifiers |
+| **max_nesting** | Limit nested depth of control structures (if/for/switch) |
+| **max_file_size** | Limit file size (LOC) |
+| **max_files_per_package** | Limit number of source files per package (excluding doc.go) |
+| **slice_prealloc** | Check if slice preallocation is used |
+| **context_missing** | Check if context is missing in function arguments |
+| **context_ignored** | Check if context is ignored |
+
+---
+
+## Manual Configuration
+
+You can also manually edit the `.ast-metrics.yaml` file at the root of your project.
+
+```yaml
+sources:
+  - ./internal
+exclude: []
+reports:
+  html: ./build/report
+  markdown: ./build/report.md
+requirements:
+  rules:
+    architecture:
+      coupling:
+        forbidden:
+          - from: Controller
+            to: Repository
+          - from: Repository
+            to: Service
+      max_afferent_coupling: 10
+      max_efferent_coupling: 10
+      min_maintainability: 70
+    volume:
+      max_loc: 1000
+      max_logical_loc: 600
+      max_loc_by_method: 30
+      max_logical_loc_by_method: 20
+    complexity:
+      max_cyclomatic: 10
+    golang:
+      no_package_name_in_method: true
+      max_nesting: 4
+      max_file_size: 1000
+      max_files_per_package: 50
+      slice_prealloc: true
+      context_missing: true
+      context_ignored: true
+```
+
+Run the analysis with:
+
+```bash
 ast-metrics analyze
-```
-
-If all your files respect this rule, the command will return 0. If not, you will see an error message indicating which files do not respect this rule, and the command will return an error code.
-
-For each of the rules, you can specify exceptions. For example, if you have a very complex function but cannot simplify it, you can exclude it from the check. Note that regular expressions are used to specify the files to exclude.
-
-```yaml
-requirements:
-  rules:
-    cyclomatic_complexity:
-      max: 30
-      excludes: 
-        - very_complex_file
-```
-
-## Available rules
-
-The list of available rules is growing regularly. Here is the current list:
-
-**Avoid coupling between classes**
-
-This constraint checks that there is no coupling between classes. For example, it may be forbidden for a controller to use a repository.
-
-```yaml
-requirements:
-  rules:
-    coupling:
-      forbidden:
-        - from: "Controller.*"
-          to: ".*Repository.*"
-```
-
-**Maximum number of lines of code per file**
-
-```yaml
-requirements:
-  rules:
-    ...
-    lines_of_code:
-      max: 1000
-```
-
-**Code maintainability**
-
-Code maintainability is a measure of how easy the code can be maintained. It is calculated based on cyclomatic complexity, number of lines of code, number of functions, and number of classes.
-
-It ranges from 0 to 171. Generally, > 85 is considered an acceptable value.
-
-```yaml
-requirements:
-  rules:
-    ...
-    maintainability:
-      min: 85
-```
-
-**Cyclomatic complexity**
-
-Cyclomatic complexity is a measure of the complexity of a function. It is calculated based on the number of possible paths in a function.
-
-```yaml
-requirements:
-  rules:
-    ...
-    cyclomatic_complexity:
-      max: 30
 ```

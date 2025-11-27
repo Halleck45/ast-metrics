@@ -12,11 +12,22 @@ theme:
     - navigation.footer
     - content.action.edit
     - content.code.copy
+    - navigation.tabs
+    - navigation.sections
+    - navigation.top
+    - toc.integrate
+  palette:
+    scheme: default
+  logo: assets/images/logo-no-text.png
+  favicon: assets/favicon.png
+  icon:
+    repo: fontawesome/brands/github
   custom_dir: docs/overrides
 
 markdown_extensions:
   - pymdownx.superfences
   - admonition
+  - pymdownx.details
   - pymdownx.tabbed:
       alternate_style: true
   - attr_list
@@ -24,8 +35,13 @@ markdown_extensions:
       emoji_index: !!python/name:material.extensions.emoji.twemoji
       emoji_generator: !!python/name:material.extensions.emoji.to_svg
   - md_in_html
+
+extra_css:
+  - assets/stylesheets/extra.css
+
 extra_javascript:
   - javascripts/extra.js
+  - assets/javascripts/landing.js
 
 nav:
   - Home: index.md
@@ -35,15 +51,25 @@ nav:
     - First execution: getting-started/first-execution.md
     - Understanding the output: getting-started/understand.md
     - Generating a report: getting-started/generate-reports.md
-  - Continuous integration:
-    - Definining rules for your code: ci/linting-architecture.md
-    - GitHub Actions: ci/github-actions.md
-    - Gilab CI: ci/gitlab-ci.md
-    - Tips for CI: ci/tips.md
-  - Advanced usage:
-    - Watching a directory: advanced-usage/watch-directory.md
-    - Updating binaries: advanced-usage/update-binaries.md
-    - Comparing two versions of your code: advanced-usage/compare-versions.md
+    - Continuous integration:
+      - Rulesets & Linting: ci/linting-architecture.md
+      - GitHub Actions: ci/github-actions.md
+      - Gilab CI: ci/gitlab-ci.md
+      - Tips for CI: ci/tips.md
+    - Metrics Guide:
+      - Overview: metrics/index.md
+      - Volume: metrics/volume.md
+      - Cyclomatic Complexity: metrics/cyclomatic-complexity.md
+      - Maintainability Index: metrics/maintainability-index.md
+      - Risk Score: metrics/risk.md
+      - Coupling & Instability: metrics/coupling.md
+      - LCOM4 (Cohesion): metrics/lcom4.md
+      - Community Detection: metrics/community-detection.md
+      - Architecture Map: metrics/architecture-map.md
+      - Bus Factor: metrics/bus-factor.md
+    - Advanced usage:
+      - Watching a directory: advanced-usage/watch-directory.md
+      - Comparing two versions of your code: advanced-usage/compare-versions.md
 
 
 # Repository

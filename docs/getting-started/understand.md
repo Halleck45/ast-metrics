@@ -1,10 +1,9 @@
-## Understanding the output
+## Understanding AST Metrics
 
-You don't understand anything about AST Metrics? No problem! 
+You don't need a PhD in Computer Science to use AST Metrics, but understanding a few concepts will help you get the most out of it.
 
-This documentation will guide you through the basics of the tool, so you can start using it right away.
-
-First of all, you need to understand that any source code can be represented as a tree. This tree is called an [Abstract Syntax Tree (AST)](https://en.wikipedia.org/wiki/Abstract_syntax_tree).
+### 1. Everything is a Tree (AST)
+First, you need to understand that any source code can be represented as a tree. This tree is called an [Abstract Syntax Tree (AST)](https://en.wikipedia.org/wiki/Abstract_syntax_tree).
 
 For example, this code:
 
@@ -19,57 +18,40 @@ return a
 
 Can be represented as this tree:
 
-
 <figure markdown="span">
   ![Wikipedia](https://upload.wikimedia.org/wikipedia/commons/thumb/c/c7/Abstract_syntax_tree_for_Euclidean_algorithm.svg/531px-Abstract_syntax_tree_for_Euclidean_algorithm.svg.png){ align=center }
   <figcaption>The AST of the code, from Wikipedia</figcaption>
 </figure>
 
+**AST Metrics analyzes this tree** to calculate complexity, volume, and other code-level metrics.
 
-**It is possible to perform calculations on this tree**, to determine the complexity of a function, the probability of an error... This is exactly what AST Metrics does.
+### 2. The Architecture is a Graph
+Just like code forms a tree, **dependencies between your files form a graph**.
 
-Many metrics are integrated into AST Metrics, but here are the main ones.
+- When Class A uses Class B, there is a link.
+- When Class B uses Class C, the chain continues.
 
-## Risk
+AST Metrics analyzes this graph to find:
 
-The Risk score is **the probability that the code needs refactoring**.
+- **Communities**: Groups of classes that work together.
+- **Cycles**: Circular dependencies that lock your system.
+- **Coupling**: How tightly connected your components are.
 
-<figure markdown="span">
-  ![risk illustration](../../images/risk-complexity-activity.webp){ align=center width="300" }
-</figure>
+### 3. From Math to Insights
+By combining the AST analysis (micro-view) and the Graph analysis (macro-view), AST Metrics uses mathematical models to uncover hidden truths about your project:
 
-**This metric is based on the complexity of the code and its recent activity**. Indeed, a file committed often, with complex code, is probably a sign of risky code.
+- **Bus Factor**: Who is indispensable?
+- **Risk**: Where are bugs likely to hide?
+- **Architecture Violations**: Where is the code not doing what you think it is?
 
-In the CLI application, open the `Top candidates for refactoring` section to see the files with the highest risk.
+---
 
-![](../../images/capture-risks.png)
+<div class="grid cards" markdown>
 
+-   :material-chart-bar: **Ready to dive deep?**
 
-## Complexity
+    Check out the detailed guide for every metric available in AST Metrics.
 
-The complexity of a function is **an indicator of the difficulty to understand it**. The more complex a function is, the harder it is to maintain.
+    [Explore the Metrics Guide :arrow_right:](../metrics/index.md)
 
-In general, a function should not exceed a score of 10. Beyond that, it is recommended to refactor it.
-
-For a class, the complexity is the sum of the complexities of its methods.
-
-![](../../images/capture-cyclo.png)
-
-In the screenshot above, the complexity of the `Symfony\Component\DependencyInjection\DependencyInjection` class is 67. 
-This is a high complexity, but it is not necessarily a problem. It is important to analyze the context of the class to determine if it is necessary to refactor it.
-
-## Maintainability
-
-Maintainability is **an indicator of how easy it is to maintain the code**. It is a complex metric that takes into account the complexity, but also the richness of variables, operators...
-
-This metric is very practical because it is extremely readable. It allows you to easily compare two files with each other.
-
-**A good maintainability is a score above 85. Below 65, it is recommended to refactor the code** (if you are looking for maintainable code).
-
-> Having maintainable code is not always a priority. Sometimes it is more important to have fast code, or code that consumes little memory.
-
-![](../../images/capture-maintenability.png)
-
-In the screenshot above, the `MailerTransport` class has a maintainability score of 103. This is a very good score, which means that the code is easy to maintain.
-
-You can also note that the global maintainability score is 94. This is a good score, frequent in Open Source projects.
+</div>

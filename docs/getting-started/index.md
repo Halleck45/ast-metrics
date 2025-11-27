@@ -1,21 +1,35 @@
-# AST Metrics
+# Why AST Metrics?
 
-## What is static analysis with AST Metrics?
+!!! info "TL;DR"
+    Just want to install? [Skip to Installation →](./install.md)
 
-**Static analysis consists of analyzing the source code of a program without executing it**. AST Metrics uses the Abstract Syntax Tree (AST) to analyze the structure of the code. The AST is a tree representation of the source code that allows us to analyze the code in a structured way.
+AST Metrics goes beyond simple linting. It uses **Abstract Syntax Trees (AST)** and **Component Graphs** to analyze your code from a mathematical perspective.
 
-AST Metrics is a language-agnostic static code analyzer. It helps you to identify potential issues, and to find candidates for refactoring.
+## From Code to Insights
 
-AST Metrics can generate HTML reports:
+By analyzing the relationships between every file, class, and function, AST Metrics extracts the **general architecture** of your project. It allows you to step back and see the big picture.
 
-![AST Metrics is a language-agnostic static code analyzer.](https://raw.githubusercontent.com/Halleck45/ast-metrics/main/docs/preview-html-report.png)
+It helps you answer critical questions:
 
-And can be used as a terminal application:
+- **Architecture**: Is my code structured as I expect? Are there hidden dependencies?
+- **Risk**: Which parts of the code are most likely to break?
+- **Coupling**: How entangled are my components?
 
-![CLI application](https://raw.githubusercontent.com/Halleck45/ast-metrics/main/docs/preview.gif)
+## How it works
 
-## Why use AST Metrics?
+1.  **Parse**: It reads your source code and builds an AST for each file.
+2.  **Graph**: It connects all components (classes, functions) to build a dependency graph.
+3.  **Analyze**: It applies graph theory and mathematical models to find patterns, clusters, and anomalies.
 
-- **Language-agnostic**: AST Metrics can analyze code written in any programming language.
-- **Fast**: AST Metrics is written in Go, a fast and efficient language.
-- **Easy to use**: AST Metrics is a standalone package. It does not require any other software to be installed.
+![AST Metrics Report](https://raw.githubusercontent.com/Halleck45/ast-metrics/main/docs/preview-html-report.png)
+
+??? tip "Also available as a CLI tool"
+    AST Metrics can also be used directly in your terminal for quick analysis or CI/CD pipelines.
+
+    ![CLI application](https://raw.githubusercontent.com/Halleck45/ast-metrics/main/docs/preview.gif)
+
+## Key Benefits
+
+- **Language-agnostic**: Works with PHP, Python, Go, Java, and more.
+- **Standalone**: No complex setup, databases, or servers required. Just a single binary.
+- **Fast**: Written in Go for high performance on large codebases.

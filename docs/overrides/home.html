@@ -1,134 +1,177 @@
-<!DOCTYPE html>
-<html class="screen-top">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-    <title>AST Metrics - Understand. Improve. Code.</title>
+{% extends "main.html" %}
 
-    <link rel="preconnect" href="https://fonts.gstatic.com">
-    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&display=swap" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500&display=swap" rel="stylesheet">
+{% block tabs %}
+{{ super() }}
+{% endblock %}
 
-    <script src="https://cdn.tailwindcss.com"></script>
-
-
-    <style type="text/css">
-      .font-heading {
-        font-family: Poppins,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,"Noto Sans",sans-serif,"Apple Color Emoji","Segoe UI Emoji","Segoe UI Symbol","Noto Color Emoji";
-      }
-      
-    </style>
-
-</head>
-<body id="page" class="antialiased font-body bg-body text-body">
-    <div class="" id="content">
-            
-      <div data-section-id="2" data-share="" data-category="headers" data-component-id="44d0b9e2_01_awz">
-        <div class="text-gray-700 font-heading font-medium relative bg-gray-50 bg-opacity-50">
-          <nav class="flex justify-between px-6 lg:px-12 py-8" data-config-id="toggle-mobile" data-config-target=".navbar-menu" data-config-class="hidden">
-            <div class="flex w-full items-center">
-              <div class="flex flex-items-center gap-3 text-xl">
-                <svg class="w-7 h-7 stroke-purple-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" >
-                  <path stroke-linecap="round" stroke-linejoin="round" d="M9.813 15.904 9 18.75l-.813-2.846a4.5 4.5 0 0 0-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 0 0 3.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 0 0 3.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 0 0-3.09 3.09ZM18.259 8.715 18 9.75l-.259-1.035a3.375 3.375 0 0 0-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 0 0 2.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 0 0 2.456 2.456L21.75 6l-1.035.259a3.375 3.375 0 0 0-2.456 2.456ZM16.894 20.567 16.5 21.75l-.394-1.183a2.25 2.25 0 0 0-1.423-1.423L13.5 18.75l1.183-.394a2.25 2.25 0 0 0 1.423-1.423l.394-1.183.394 1.183a2.25 2.25 0 0 0 1.423 1.423l1.183.394-1.183.394a2.25 2.25 0 0 0-1.423 1.423Z" />
-                </svg>
-                <span class="text-black font-black">
-                  AST Metrics
-                </span>
-              </div>
-              <ul class="hidden xl:flex px-4 ml-32">
-                <li class="mr-16">
-                  <a class="flex items-center text-gray-400 hover:text-gray-500" href="getting-started/">
-
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="mr-2 inline w-6 h-6">
-                      <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z" />
-                    </svg>
-
-                    <span class="mr-4" data-config-id="auto-txt-4-1">Documentation</span>
-                  </a>
-                </li>
-<!--                <li><a class="text-gray-400 hover:text-gray-500" href="#" data-config-id="auto-txt-5-1">How to help ?</a></li>-->
-              </ul>
-
-              <div class="hidden xl:flex items-center ml-auto">
-
-                <a href="https://github.com/Halleck45/ast-metrics/" class="flex flex-items-center gap-3 uppercase text-sm font-bold font-body border-2 border-gray-200 border-opacity-50 rounded-full py-3 px-5 tracking-wide hover:border-gray-300">
-                  <svg viewBox="0 0 24 24" aria-hidden="true" class="h-6 w-6 fill-slate-900"><path fill-rule="evenodd" clip-rule="evenodd" d="M12 2C6.477 2 2 6.463 2 11.97c0 4.404 2.865 8.14 6.839 9.458.5.092.682-.216.682-.48 0-.236-.008-.864-.013-1.695-2.782.602-3.369-1.337-3.369-1.337-.454-1.151-1.11-1.458-1.11-1.458-.908-.618.069-.606.069-.606 1.003.07 1.531 1.027 1.531 1.027.892 1.524 2.341 1.084 2.91.828.092-.643.35-1.083.636-1.332-2.22-.251-4.555-1.107-4.555-4.927 0-1.088.39-1.979 1.029-2.675-.103-.252-.446-1.266.098-2.638 0 0 .84-.268 2.75 1.022A9.607 9.607 0 0 1 12 6.82c.85.004 1.705.114 2.504.336 1.909-1.29 2.747-1.022 2.747-1.022.546 1.372.202 2.386.1 2.638.64.696 1.028 1.587 1.028 2.675 0 3.83-2.339 4.673-4.566 4.92.359.307.678.915.678 1.846 0 1.332-.012 2.407-.012 2.734 0 .267.18.577.688.48 3.97-1.32 6.833-5.054 6.833-9.458C22 6.463 17.522 2 12 2Z"></path></svg>
-                  <span class=" mt-px" data-config-id="auto-txt-9-1">GITHUB</span>
-                </a>
-              </div>
-
-              
-            </div>
-            <button class="navbar-burger self-center xl:hidden text-gray-400 hover:text-gray-500 focus:outline-none">
-              <svg width="25" height="16" viewbox="0 0 25 16" fill="none" xmlns="http://www.w3.org/2000/svg" data-config-id="auto-svg-3-1"><rect width="25" height="2" fill="currentColor"></rect><rect y="14" width="25" height="2" fill="currentColor"></rect></svg>
-            </button>
-          </nav>
-          <div class="navbar-menu hidden fixed top-0 left-0 bottom-0 w-5/6 max-w-sm z-50" data-config-id="toggle-mobile-2" data-config-target=".navbar-menu" data-config-class="hidden">
-            <div class="navbar-backdrop fixed inset-0 bg-gray-800 opacity-80"></div>
-            <nav class="relative flex flex-col py-8 h-full w-full bg-white overflow-y-auto">
-              <div class="flex items-center pl-16 mb-8">
-                <a class="text-2xl text-gray-800 font-bold" href="/" data-config-id="brand">
-                  AST Metrics
-                </a>
-              </div>
-              <div class="flex items-center mb-10 px-10">
-                <a class="flex items-center ml-1" href="#">
-                  <img class="ml-6" src="uinel-assets/elements/navigations/avatar-online.png" alt="" data-config-id="auto-img-5-1">
-                  <img class="ml-6" src="uinel-assets/elements/navigations/arrow-down-gray.svg" alt="" data-config-id="auto-img-6-1">
-                </a>
-                <a class="text-gray-400 hover:text-gray-500 ml-auto" href="#">
-                  <svg width="20" height="23" viewbox="0 0 20 23" fill="none" xmlns="http://www.w3.org/2000/svg" data-config-id="auto-svg-4-1">
-                    <path d="M17.5219 18.016H2.70312V8.5933C2.70313 6.719 3.48375 4.92147 4.87328 3.59614C6.2628 2.27081 8.1474 1.52625 10.1125 1.52625C12.0776 1.52625 13.9622 2.27081 15.3517 3.59614C16.7412 4.92147 17.5219 6.719 17.5219 8.5933V18.016Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path>
-                    <path d="M1 18.0121H19" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path>
-                    <path d="M8.87891 22H10.8789" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path>
-                  </svg>
-                </a>
-              </div>
-            </nav>
-            <button class="navbar-close absolute top-5 p-6 right-5">
-              <div class="absolute top-3">
-                <span class="absolute w-px h-6 bg-black transform -rotate-45"></span>
-                <span class="absolute w-px h-6 bg-black transform rotate-45"></span>
-              </div>
-            </button>
-          </div>
+{% block content %}
+<div class="landing-page">
+  <!-- Hero Section -->
+  <section class="hero-section">
+    <div class="hero-container">
+      <div class="hero-content fade-up">
+        <h1>See the Invisible Structure of Your Code.</h1>
+        <p>
+          Go beyond simple metrics. Visualize code communities, identify bus factors, and master your architecture with
+          AST Metrics.
+        </p>
+        <div class="hero-cta">
+          <a href="getting-started/" class="cta-button">
+            Start Analyzing
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+              stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="ml-2">
+              <line x1="5" y1="12" x2="19" y2="12"></line>
+              <polyline points="12 5 19 12 12 19"></polyline>
+            </svg>
+          </a>
         </div>
-        <section class="pb-16 2xl:pb-20 overflow-hidden">
-          <div class="relative bg-gray-100 rounded-b-10xl">
-            <div class="container px-4 mx-auto">
-              <div class="flex flex-wrap items-center -mx-4 pt-16 pb-20">
-                <div class="w-full lg:w-1/2 px-4 mb-24 lg:mb-0">
-                  <span class="block mb-9 font-medium tracking-widest uppercase text-sm text-gray-500" data-config-id="auto-txt-19-1">JOIN THE AST METRICS COMMUNITY</span>
-                  <h1 class="max-w-xl mb-16 font-heading font-medium text-6xl md:text-7xl xl:text-7xl leading-none">
-                    <span data-config-id="auto-txt-20-1">Understand. Improve.</span>
-                    <span class="relative inline-block">
-                      <span class="absolute inset-0 xl:-left-8 xl:-right-8">
-                        <img class="absolute inset-0 w-full max-w-non" src="images/lines-blue1.svg" alt="" data-config-id="auto-img-7-1">
-                        <img class="absolute inset-0 mt-1 lg:mt-2 xl:ml-4 w-full max-w-none" src="images/lines-blue2.svg" alt="" data-config-id="auto-img-8-1">
-                      </span>
-                      <span class="relative z-10" data-config-id="auto-txt-23-1">Code.</span>
-                    </span>
-                  </h1>
-                  <p class="mb-16 lg:mb-24 text-xl text-gray-500 leading-snug" data-config-id="auto-txt-24-1">Identify Code Issues: Before they become problems.</p>
-                  <div class="flex flex-col sm:flex-row">
-                    <a 
-                      href="getting-started/"
-                      class="py-5 px-10 mt-3 sm:mt-0 sm:-ml-4 font-heading font-medium tracking-tighter text-xl text-white text-center bg-blue-500 focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50 hover:bg-blue-600 rounded-xl" data-config-id="auto-txt-25-1" data-removed="true">Getting started
-                    </a>
-                  </div>
-                </div>
-                <div class="w-full lg:w-1/2 px-4">
-                  <div class="relative max-w-sm xl:max-w-none mx-auto">
-                    <img class="relative xl:max-w-max z-10" src="images/preview-html.webp" alt="" data-config-id="auto-img-9-1">
-                  </div>
-                </div>
-              </div>
-            </div>
+      </div>
+
+      <div class="hero-visual fade-up">
+        <div class="code-window">
+          <div class="window-header">
+            <div class="dot red"></div>
+            <div class="dot yellow"></div>
+            <div class="dot green"></div>
           </div>
-        </section>
+          <pre><code class="language-bash" style="background: transparent; padding: 0; margin: 0; font-size: 0.9rem; color: #a9b1d6;">
+<span style="color: #7aa2f7;">$</span> ast-metrics analyze .
+
+<span style="color: #9ece6a;">✓</span> Detecting architecture...
+<span style="color: #9ece6a;">✓</span> Extracting code metrics...
+<span style="color: #9ece6a;">✓</span> Calculating Bus Factor...
+<span style="color: #9ece6a;">✓</span> Generating recommendations...
+
+<span style="color: #bb9af7;">Insights found:</span>
+  • 3 Communities detected  
+  • <span style="color: #f7768e;">CRITICAL</span>: Bus Factor = 1
+  • <span style="color: #ce8321;">WARNING</span>: 5 Classes with high complexity
+          </code></pre>
+        </div>
       </div>
     </div>
+  </section>
 
-</body>
-</html>
+  <!-- Features Section -->
+  <section class="features-section">
+    <div class="features-grid">
+      <div class="feature-card fade-up">
+        <div class="feature-icon">
+          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+            <circle cx="9" cy="7" r="4"></circle>
+            <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+            <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+          </svg>
+        </div>
+        <h3>Architecture Detection</h3>
+        <p>Discover how your code naturally groups together using the Louvain algorithm. See the real structure of your
+          application.</p>
+      </div>
 
+      <div class="feature-card fade-up">
+        <div class="feature-icon">
+          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
+            <line x1="12" y1="9" x2="12" y2="13"></line>
+            <line x1="12" y1="17" x2="12.01" y2="17"></line>
+          </svg>
+        </div>
+        <h3>Bus Factor Analysis</h3>
+        <p>Identify key contributors and potential risks. Know exactly who holds the critical knowledge in your
+          codebase.</p>
+      </div>
+
+      <div class="feature-card fade-up">
+        <div class="feature-icon">
+          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="18" cy="5" r="3"></circle>
+            <circle cx="6" cy="12" r="3"></circle>
+            <circle cx="18" cy="19" r="3"></circle>
+            <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line>
+            <line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line>
+          </svg>
+        </div>
+        <h3>Coupling & Architecture</h3>
+        <p>Visualize dependencies and architectural hotspots. Ensure your code remains loosely coupled and maintainable.
+        </p>
+      </div>
+
+      <!-- Code metrics -->
+      <div class="feature-card fade-up">
+        <div class="feature-icon">
+          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
+            <line x1="12" y1="9" x2="12" y2="13"></line>
+            <line x1="12" y1="17" x2="12.01" y2="17"></line>
+          </svg>
+        </div>
+        <h3>Code Metrics</h3>
+        <p>Identify complexity, size, and structure of your codebase. Understand the true cost of your code.</p>
+      </div>
+    </div>
+  </section>
+
+
+
+  <!-- CI/CD Section -->
+  <section class="ci-section">
+    <div class="ci-container fade-up">
+      <div class="ci-content">
+        <h2>Built for CI/CD</h2>
+        <p>
+          AST Metrics is designed to be integrated into your Continuous Integration pipelines.
+          Block merge requests if the code quality decreases, or if architectural rules are violated.
+        </p>
+        <div class="ci-logos">
+          <div class="ci-card">
+            <div class="ci-icon">
+              <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="currentColor">
+                <path
+                  d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z" />
+              </svg>
+            </div>
+            <h3>GitHub Actions</h3>
+            <p>Ready-to-use Action available on the Marketplace.</p>
+          </div>
+          <div class="ci-card">
+            <div class="ci-icon">
+              <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="currentColor">
+                <path
+                  d="M22.65 14.39L12 22.13 1.35 14.39a.84.84 0 0 1-.3-.94l1.22-3.78 2.44-7.51A.42.42 0 0 1 4.82 2a.43.43 0 0 1 .41.26l2.47 7.6h8.6l2.47-7.6a.43.43 0 0 1 .41-.26.42.42 0 0 1 .11.01l2.44 7.51 1.22 3.78a.84.84 0 0 1-.3.94zM5.48 2.57L3.07 9.98h4.88L5.48 2.57zm13.04 0l-2.47 7.41h4.88l-2.41-7.41zM12 21.11l9.35-6.8-4.88-3.26L12 21.11zm-9.35-6.8L12 21.11l-4.47-10.06-4.88 3.26z" />
+              </svg>
+            </div>
+            <h3>GitLab CI</h3>
+            <p>Simple integration with a single binary or Docker image.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Metrics CTA Section -->
+  <section class="metrics-cta-section">
+    <div class="metrics-cta-container fade-up">
+      <div class="metrics-cta-content">
+        <h2>Explore All Metrics</h2>
+        <p>
+          Dive deep into every metric: Volume, Complexity, Coupling, Bus Factor, and more.
+          Understand what they mean and how to use them.
+        </p>
+        <a href="metrics/" class="cta-button cta-button-secondary">
+          View Metrics Guide
+          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="ml-2">
+            <line x1="5" y1="12" x2="19" y2="12"></line>
+            <polyline points="12 5 19 12 12 19"></polyline>
+          </svg>
+        </a>
+      </div>
+    </div>
+  </section>
+</div>
+{% endblock %}
