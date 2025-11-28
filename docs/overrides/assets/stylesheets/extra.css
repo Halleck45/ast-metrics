@@ -387,22 +387,61 @@ h6 {
 }
 
 @media (max-width: 768px) {
+  .hero-section {
+    padding: 4rem 0 3rem;
+  }
+
   .hero-container {
     grid-template-columns: 1fr;
     text-align: center;
-    gap: 3rem;
+    gap: 2rem;
+    padding: 0 1rem;
   }
 
   .hero-content h1 {
-    font-size: 3rem;
+    font-size: 2.5rem;
+    line-height: 1.2;
   }
 
   .hero-content p {
-    margin: 0 auto 2.5rem;
+    font-size: 1rem;
+    margin: 0 auto 2rem;
   }
 
   .code-window {
     transform: none;
+    font-size: 0.75rem;
+  }
+
+  .hero-visual {
+    display: none;
+  }
+
+  .cta-button {
+    padding: 0.875rem 1.5rem;
+    font-size: 1rem;
+  }
+
+  .features-grid {
+    grid-template-columns: 1fr;
+    gap: 1.5rem;
+    padding: 0 1rem;
+  }
+
+  .feature-card {
+    padding: 2rem;
+  }
+
+  .ci-logos {
+    grid-template-columns: 1fr;
+  }
+
+  .metrics-cta-content h2 {
+    font-size: 2rem;
+  }
+
+  .metrics-cta-content p {
+    font-size: 1.125rem;
   }
 }
 
