@@ -1,5 +1,6 @@
 <script id="chart_maintainability_data" type="application/json">
     [
+        {%- set first = true -%}
         {%- set files = currentView.ConcernedFiles -%}
         {%- for file in files -%}
         {%- if len(file.Stmts.StmtClass) == 0 -%}
@@ -10,15 +11,18 @@
         {% set name = "" -%}
         {%- endif -%}
         {%- for class in elements -%}
+        {%- if not first -%},{%- endif -%}
         {
             "name": "{{ name|default:class.Name.Qualified|addslashes }}",
             "value": {{ class.Stmts.Analyze.Maintainability.MaintainabilityIndex|floatformat:0 }}
-    },
+        }
+        {%- set first = false -%}
         {%- endfor -%}
         {%- endfor -%}
     ]
 </script>
 
-<div id="chart_bar_maintainability_help" class="mb-2 italic text-sm text-gray-600 pt-4 bg-white text-center h-16 z-10 "></div>
+<div id="chart_bar_maintainability_help" class="mb-2 italic text-sm text-gray-600 pt-4 bg-white text-center h-16 z-10 ">
+</div>
 
 {% include "componentChartRadiusBar.html" with chart_name="maintainability" chart_variable_name="value" chart_variable_label="Maintainability" chart_datasource_dom_element_identifier="chart_maintainability_data" chart_help_dom_element_identifier="chart_bar_maintainability_help" %}

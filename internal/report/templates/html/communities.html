@@ -2,6 +2,47 @@
 {% block pageTitle %}Communities - {{ currentLanguage }}{% endblock %}
 {% block content %}
 
+<style>
+    .dashboard-card {
+        background: white;
+        border: 1px solid #e2e8f0;
+        border-radius: 16px;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        position: relative;
+        overflow: hidden;
+    }
+
+    .dashboard-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        border-color: #cbd5e1;
+    }
+
+    .dashboard-card::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 4px;
+        background: linear-gradient(90deg, #3b82f6, #8b5cf6);
+        opacity: 0;
+        transition: opacity 0.3s ease;
+    }
+
+    .dashboard-card:hover::before {
+        opacity: 1;
+    }
+
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(10px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
+    .animate-fade-in-up {
+        animation: fadeIn 0.5s ease-out backwards;
+    }
+</style>
 
 {% set cm = currentView.Community %}
 {% if not cm %}
@@ -44,9 +85,9 @@
 <!-- end: language tabs-->
 
 
-<div class="bg-white p-4 rounded shadow mb-8 mt-8">
-    <h2 class="leading-none text-3xl font-bold text-gray-900 pb-2">Communities - Help</h2>
-    <p class="text-gray-600">Graph communities detected via label propagation on the dependency graph.</p>
+<div class="dashboard-card p-6 mb-8 mt-8 animate-fade-in-up">
+    <h2 class="leading-none text-2xl font-bold text-gray-900 pb-2 mb-3">Communities - Help</h2>
+    <p class="text-sm text-gray-600">Graph communities detected via label propagation on the dependency graph.</p>
 
     <div class="mt-4 mb-4">
         <img src="images/help-community.png" alt="Diagram showing how software classes form communities. A network of classes is grouped into a community when some classes interact more with each other. Communities are then evaluated: if most classes share the same namespace, it is a high-purity community; if classes mix different namespaces, it is a low-purity community."
@@ -60,30 +101,135 @@
 </div>
 
 
+<!-- Layered dependency map -->
+<div class="dashboard-card mb-8 p-6" style="padding: 32px 0;">
+    <div class="max-w-7xl mx-auto px-6">
+        <div class="flex items-center justify-between mb-8">
+            <div>
+                <h2 class="text-3xl font-normal text-gray-900 mb-2" style="letter-spacing: -0.5px;">Layered Dependency Map</h2>
+                <p class="text-sm text-gray-500 font-light">Visualize your architecture layers and dependencies</p>
+            </div>
+            <div class="flex items-center gap-3">
+                <button id="toggle-layered-filters" class="text-sm text-gray-600 hover:text-gray-900 flex items-center gap-2 px-3 py-1.5 rounded-full hover:bg-gray-50 transition-colors" title="Show/hide filters">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
+                    </svg>
+                    <span>Filters</span>
+                </button>
+                <button id="export-layered" class="text-sm text-gray-600 hover:text-gray-900 px-3 py-1.5 rounded-full hover:bg-gray-50 transition-colors">Export PNG</button>
+            </div>
+        </div>
+        <div id="layered-filters" class="text-sm text-gray-600 flex items-center gap-6 mb-6 hidden pb-4 border-b border-gray-100">
+            <label class="flex items-center gap-2">
+                <span class="text-xs text-gray-500">Min edge %</span>
+                <input id="min-edge-slider" type="range" min="0" max="50" value="0" class="w-24">
+            </label>
+            <label class="flex items-center gap-2 cursor-pointer">
+                <input id="highlight-bottlenecks" type="checkbox" checked="checked" class="w-4 h-4 text-blue-600 rounded">
+                <span>Highlight bottlenecks</span>
+            </label>
+            <label class="flex items-center gap-2 cursor-pointer">
+                <input id="only-cross-layer" type="checkbox" class="w-4 h-4 text-blue-600 rounded">
+                <span>Only cross-layer</span>
+            </label>
+            <label class="flex items-center gap-2 cursor-pointer">
+                <input id="bundle-edges" type="checkbox" class="w-4 h-4 text-blue-600 rounded">
+                <span>Edge bundling</span>
+            </label>
+            <label class="flex items-center gap-2">
+                <span class="text-xs text-gray-500">Search</span>
+                <input id="search-comm" type="text" placeholder="name" class="border border-gray-200 rounded-full px-3 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500">
+            </label>
+        </div>
+        <div class="relative dashboard-card overflow-hidden p-0">
+            <svg id="layered-map" viewBox="0 0 1200 600" class="w-full h-[600px]"></svg>
+        </div>
+        <div class="mt-6 pt-4 border-t border-gray-100">
+            <div class="flex flex-wrap items-center gap-6 text-xs text-gray-500">
+                <span class="font-medium text-gray-700">Legend:</span>
+                <div class="flex items-center gap-2">
+                    <div class="w-2.5 h-2.5 rounded-full bg-gray-400"></div>
+                    <span>Size = number of nodes</span>
+                </div>
+                <div class="flex items-center gap-2">
+                    <div class="w-2.5 h-2.5 rounded-full" style="background: linear-gradient(90deg, #34d399 0%, #fbbf24 50%, #f87171 100%);"></div>
+                    <span>Color = coupling ratio</span>
+                </div>
+                <div class="flex items-center gap-2">
+                    <div class="h-0.5 w-5 bg-gray-400"></div>
+                    <span>Width = number of calls</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    /* Clean Google Labs / Antigravity style */
+    #layered-map {
+        background: #ffffff;
+    }
+    
+    .layered-link {
+        transition: opacity 0.2s ease, stroke-width 0.2s ease;
+    }
+    
+    .layer-bg {
+        transition: opacity 0.2s ease;
+    }
+    
+    .layer-label {
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+        font-weight: 400;
+        letter-spacing: 0.3px;
+    }
+    
+    .node-label {
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+    }
+    
+    /* Subtle fade-in */
+    @keyframes fadeIn {
+        from { opacity: 0; }
+        to { opacity: 1; }
+    }
+    
+    .nodes-group g {
+        animation: fadeIn 0.4s ease backwards;
+    }
+    
+    .nodes-group g:nth-child(1) { animation-delay: 0.02s; }
+    .nodes-group g:nth-child(2) { animation-delay: 0.04s; }
+    .nodes-group g:nth-child(3) { animation-delay: 0.06s; }
+    .nodes-group g:nth-child(4) { animation-delay: 0.08s; }
+    .nodes-group g:nth-child(5) { animation-delay: 0.1s; }
+    .nodes-group g:nth-child(n+6) { animation-delay: 0.12s; }
+</style>
+
 
 <!-- Metrics -->
 <div class="grid grid-cols-5 gap-4 mb-8">
-    <div class="bg-white p-4 rounded shadow">
+    <div class="dashboard-card p-5">
         <div class="leading-none text-3xl font-bold text-gray-900 pb-2">{{ cm.CommunitiesCount }}</div>
         <div class="text-base font-normal text-gray-500 ">Number of detected communities (modules)</div>
         <div class="mt-2 text-xs text-gray-500">communities_count</div>
     </div>
-    <div class="bg-white p-4 rounded shadow">
+    <div class="dashboard-card p-5">
         <div class="leading-none text-3xl font-bold text-gray-900 pb-2">{{ cm.ModularityQ|floatformat:2 }}</div>
         <div class="text-base font-normal text-gray-500">Community separation quality (0–1)</div>
         <div class="mt-2 text-xs text-gray-500">modularity_q</div>
     </div>
-    <div class="bg-white p-4 rounded shadow">
+    <div class="dashboard-card p-5">
         <div class="leading-none text-3xl font-bold text-gray-900 pb-2">{{ cm.AvgSize|floatformat:1 }}</div>
         <div class="text-base font-normal text-gray-500">Average number of nodes per community</div>
         <div class="mt-2 text-xs text-gray-500">avg_size</div>
     </div>
-    <div class="bg-white p-4 rounded shadow">
+    <div class="dashboard-card p-5">
         <div class="leading-none text-3xl font-bold text-gray-900 pb-2">{{ cm.MaxSize }}</div>
         <div class="text-base font-normal text-gray-500">Largest community size (nodes)</div>
         <div class="mt-2 text-xs text-gray-500">max_size</div>
     </div>
-    <div class="bg-white p-4 rounded shadow">
+    <div class="dashboard-card p-5">
         <div class="leading-none text-3xl font-bold text-gray-900 pb-2">{{ cm.GraphDensity|floatformat:3 }}</div>
         <div class="text-base font-normal text-gray-500">Edge density of the dependency graph</div>
         <div class="mt-2 text-xs text-gray-500">graph_density</div>
@@ -92,7 +238,7 @@
 
 
 <!-- Graph view: one circle per community, sized by number of nodes, colored by dominant namespace -->
-<div class="bg-white p-4 rounded shadow mb-8">
+<div class="dashboard-card p-6 mb-8">
 
 
     <div class="f">
@@ -913,11 +1059,30 @@
 </div>
 
 <!-- Architecture-oriented views -->
-<div class="bg-white p-4 rounded shadow mb-8">
+<div class="dashboard-card p-6 mb-8">
     <div class="flex items-center justify-between mb-2">
             <style>
-                .graph-tooltip { position: fixed; pointer-events: none; z-index: 50; background: rgba(17,24,39,0.95); color: #f9fafb; font-size: 12px; line-height: 1.2; padding: 6px 8px; border-radius: 6px; box-shadow: 0 6px 18px rgba(0,0,0,0.25); transform: translate(-50%, calc(-100% - 10px)); opacity: 0; transition: opacity 120ms ease, transform 120ms ease; white-space: nowrap; }
-                .graph-tooltip.visible { opacity: 1; transform: translate(-50%, calc(-100% - 6px)); }
+                .graph-tooltip { 
+                    position: fixed; 
+                    pointer-events: none; 
+                    z-index: 50; 
+                    background: rgba(255, 255, 255, 0.98); 
+                    color: #1f2937; 
+                    font-size: 12px; 
+                    line-height: 1.5; 
+                    padding: 8px 12px; 
+                    border-radius: 6px; 
+                    box-shadow: 0 2px 8px rgba(0,0,0,0.1); 
+                    border: 1px solid #e5e7eb;
+                    transform: translate(-50%, calc(-100% - 8px)); 
+                    opacity: 0; 
+                    transition: opacity 150ms ease; 
+                    white-space: normal; 
+                    max-width: 280px;
+                }
+                .graph-tooltip.visible { 
+                    opacity: 1; 
+                }
                 .graph-hover { transition: transform 120ms ease, filter 120ms ease; }
                 .graph-hover:hover { transform: scale(1.06); filter: drop-shadow(0 2px 6px rgba(0,0,0,0.2)); }
                 /* Disable scaling for Sankey nodes to avoid pointer loss on hover */
@@ -925,31 +1090,11 @@
             </style>
         <h2 class="leading-none text-3xl font-bold text-gray-900 pb-2">Architecture</h2>
         <div class="text-sm text-gray-600">Export:
-            <button id="export-layered" class="px-2 py-1 border rounded mr-1">Layered PNG</button>
             <button id="export-sankey" class="px-2 py-1 border rounded mr-1">Sankey PNG</button>
         </div>
     </div>
     <div class="grid grid-cols-12 gap-4">
-        <div class="col-span-8">
-            <div class="">
-                <h3 class="font-semibold">Layered dependency map</h3>
-                <div class="text-xs text-gray-600 flex items-center gap-4 mb-2">
-                    <label>Min edge % <input id="min-edge-slider" type="range" min="0" max="50" value="0"
-                                             class="align-middle"></label>
-                    <label><input id="highlight-bottlenecks" type="checkbox" checked="checked" class="mr-1"> Highlight
-                        bottlenecks</label>
-                    <label><input id="only-cross-layer" type="checkbox" class="mr-1"> Only cross-layer</label>
-                    <label><input id="bundle-edges" type="checkbox" class="mr-1"> Edge bundling</label>
-                    <label>Search <input id="search-comm" type="text" placeholder="name"
-                                         class="border px-1 py-0.5 rounded w-28"></label>
-                </div>
-            </div>
-            <svg id="layered-map" viewBox="0 0 900 420" class="w-full h-[420px] border border-gray-200 rounded"></svg>
-            <div class="text-xs text-gray-600 mt-1">Legend: Size = nb nodes, Color = coupling ratio (green→red), Width =
-                calls
-            </div>
-        </div>
-        <div class="col-span-4">
+        <div class="col-span-12">
             <h3 class="font-semibold mb-1">Sankey</h3>
             <svg id="sankey" viewBox="0 0 500 420" class="w-full h-[420px] border border-gray-200 rounded"></svg>
         </div>
@@ -1025,6 +1170,17 @@
             }
         })();
 
+        // Toggle for layered map filters (executes immediately on DOM ready)
+        document.addEventListener('DOMContentLoaded', function() {
+            const toggleFiltersBtn = document.getElementById('toggle-layered-filters');
+            const filtersContainer = document.getElementById('layered-filters');
+            if (toggleFiltersBtn && filtersContainer) {
+                toggleFiltersBtn.addEventListener('click', () => {
+                    filtersContainer.classList.toggle('hidden');
+                });
+            }
+        });
+
         function initArchViews() {
             const communities = JSON.parse(document.getElementById('data-communities').textContent || '[]');
             const ebc = JSON.parse(document.getElementById('data-edges-between-comms').textContent || '[]');
@@ -1056,31 +1212,56 @@
                 .domain(Array.from(new Set(communities.map(c => (c.topNamespaces[0] || '')))));
             const colorCoupling = (c) => d3.interpolateRdYlGn(1 - Math.max(0, Math.min(1, c || 0)));
 
-            //  Layered dependency map
+            //  Layered dependency map - Enhanced visual design
             (function () {
                 const svg = d3.select('#layered-map');
                 svg.selectAll('*').remove();
-                const W = 900, H = 420, padX = 100, padY = 50;
+                const W = 1200, H = 600, padX = 120, padY = 60;
+                
+                // Simple defs for any needed SVG elements
+                const defs = svg.append('defs');
+                
                 // Persistent zoom layer
                 const gZoom = svg.append('g').attr('class', 'zoom-layer');
-                const zoom = d3.zoom().scaleExtent([0.5, 8]).on('zoom', (event) => {
+                const zoom = d3.zoom().scaleExtent([0.3, 10]).on('zoom', (event) => {
                     gZoom.attr('transform', event.transform);
                 });
                 svg.call(zoom);
                 const levels = d3.group(communities, d => d.level);
                 const maxSize = d3.max(communities, d => d.size) || 1;
-                const rScale = d3.scaleSqrt().domain([1, maxSize]).range([6, 34]);
+                const rScale = d3.scaleSqrt().domain([1, maxSize]).range([10, 45]);
                 const maxEdges = d3.max(ebc, d => d.edges) || 1;
-                const wScale = d3.scaleSqrt().domain([1, maxEdges]).range([0.5, 8]);
-                // compute positions
+                const wScale = d3.scaleSqrt().domain([1, maxEdges]).range([1, 8]);
+                // compute positions with better vertical grouping for layers
                 const levelKeys = Array.from(levels.keys()).sort((a, b) => a - b);
                 const pos = new Map();
+                let layerHeight = 90; // Height allocated per layer
+                let layerSpacing = 40; // Spacing between layers
+                let totalLayerHeight = levelKeys.length * layerHeight + (levelKeys.length - 1) * layerSpacing;
+                // If layers don't fit, reduce spacing and/or height
+                const availableHeight = H - 2 * padY;
+                if (totalLayerHeight > availableHeight) {
+                    // Reduce spacing first, then height if still needed
+                    if (levelKeys.length > 1) {
+                        layerSpacing = Math.max(5, (availableHeight - levelKeys.length * layerHeight) / (levelKeys.length - 1));
+                    }
+                    totalLayerHeight = levelKeys.length * layerHeight + (levelKeys.length - 1) * layerSpacing;
+                    if (totalLayerHeight > availableHeight) {
+                        layerHeight = Math.max(40, (availableHeight - (levelKeys.length - 1) * layerSpacing) / levelKeys.length);
+                        totalLayerHeight = levelKeys.length * layerHeight + (levelKeys.length - 1) * layerSpacing;
+                    }
+                }
+                // Center layers vertically with proper margins
+                const startY = padY + (availableHeight - totalLayerHeight) / 2 + layerHeight / 2;
+                
                 levelKeys.forEach((lv, li) => {
                     const arr = levels.get(lv).slice().sort((a, b) => d3.ascending(a.id, b.id));
-                    const y = padY + li * ((H - 2 * padY) / Math.max(1, levelKeys.length - 1));
+                    // Center Y position for this layer (startY already includes layerHeight/2 for first layer)
+                    const layerY = startY + li * (layerHeight + layerSpacing);
+                    // Center communities horizontally within the layer
                     arr.forEach((d, i) => {
-                        const x = padX + (i + 1) * ((W - 2 * padX) / (arr.length + 1));
-                        pos.set(d.id, {x, y, r: rScale(d.size)});
+                        const x = padX + (i + 0.5) * ((W - 2 * padX) / arr.length);
+                        pos.set(d.id, {x, y: layerY, r: rScale(d.size), level: lv});
                     });
                 });
                 // normalized edges percentage by source
@@ -1089,13 +1270,45 @@
 
                 function draw() {
                     gZoom.selectAll('*').remove();
-                    // links
+                    
+                    // Draw layer backgrounds - Clean minimal style
+                    levelKeys.forEach((lv, li) => {
+                        const layerCenterY = startY + li * (layerHeight + layerSpacing);
+                        
+                        const layerBg = gZoom.append('rect')
+                            .attr('class', 'layer-bg')
+                            .attr('x', padX - 10)
+                            .attr('y', layerCenterY - layerHeight / 2)
+                            .attr('width', W - 2 * padX + 20)
+                            .attr('height', layerHeight)
+                            .attr('fill', li % 2 === 0 ? 'rgba(0, 0, 0, 0.01)' : 'rgba(0, 0, 0, 0.02)')
+                            .attr('stroke', 'none')
+                            .style('pointer-events', 'none');
+                        
+                        // Simple layer label
+                        gZoom.append('text')
+                            .attr('class', 'layer-label')
+                            .attr('x', padX - 20)
+                            .attr('y', layerCenterY)
+                            .attr('text-anchor', 'end')
+                            .attr('font-size', 12)
+                            .attr('font-weight', '400')
+                            .attr('fill', '#666')
+                            .attr('dominant-baseline', 'middle')
+                            .text(`Layer ${lv}`)
+                            .style('pointer-events', 'none');
+                    });
+                    
+                    // links - Clean minimal style
                     const links = ebc.filter(d => (totalOut.get(d.from) || 0) > 0)
                         .map(d => ({...d, pct: d.edges / (totalOut.get(d.from) || 1)}))
                         .filter(d => d.pct * 100 >= minPct);
                     const onlyCross = document.getElementById('only-cross-layer').checked;
                     const links2 = links.filter(d => !onlyCross || ((communities.find(c => c.id === d.from)?.level) !== (communities.find(c => c.id === d.to)?.level)));
-                    gZoom.append('g').selectAll('path').data(links2).enter().append('path')
+                    
+                    const linkGroup = gZoom.append('g').attr('class', 'links-group');
+                    linkGroup.selectAll('path').data(links2).enter().append('path')
+                        .attr('class', 'layered-link')
                         .attr('d', d => {
                             const s = pos.get(d.from), t = pos.get(d.to);
                             if (!s || !t) return '';
@@ -1106,38 +1319,100 @@
                             return `M${s.x},${s.y} C${mx},${my} ${mx},${my2} ${t.x},${t.y}`;
                         })
                         .attr('fill', 'none')
-                        .attr('stroke', '#9ca3af')
+                        .attr('stroke', '#cbd5e1')
                         .attr('stroke-width', d => wScale(d.edges))
-                        .attr('stroke-opacity', 0.7)
-                        .on('mouseenter', function(event, d){ const nf=(communities.find(c=>c.id===d.from)?.name)||d.from; const nt=(communities.find(c=>c.id===d.to)?.name)||d.to; showTooltip(`${nf} → ${nt}: ${d.edges} (${(d.pct * 100).toFixed(1)}%)`, event); })
+                        .attr('stroke-opacity', 0.4)
+                        .attr('stroke-linecap', 'round')
+                        .style('cursor', 'pointer')
+                        .on('mouseenter', function(event, d){ 
+                            const link = d3.select(this);
+                            link.transition()
+                                .duration(150)
+                                .ease(d3.easeCubicOut)
+                                .attr('stroke-opacity', 0.7)
+                                .attr('stroke', '#64748b');
+                            const nf=(communities.find(c=>c.id===d.from)?.name)||d.from; 
+                            const nt=(communities.find(c=>c.id===d.to)?.name)||d.to; 
+                            showTooltip(`${nf} → ${nt}<br>${d.edges} calls (${(d.pct * 100).toFixed(1)}%)`, event); 
+                        })
                         .on('mousemove', function(event){ moveTooltip(event); })
-                        .on('mouseleave', function(){ hideTooltip(); });
-                    // nodes
-                    const nodeG = gZoom.append('g').selectAll('g').data(communities).enter().append('g')
+                        .on('mouseleave', function(event, d){ 
+                            const link = d3.select(this);
+                            link.transition()
+                                .duration(150)
+                                .ease(d3.easeCubicOut)
+                                .attr('stroke-opacity', 0.4)
+                                .attr('stroke', '#cbd5e1');
+                            hideTooltip(); 
+                        });
+                    // nodes - Clean minimal style
+                    const nodeG = gZoom.append('g').attr('class', 'nodes-group')
+                        .selectAll('g').data(communities).enter().append('g')
+                        .attr('class', 'layered-node')
                         .attr('transform', d => {
                             const p = pos.get(d.id) || {x: 0, y: 0, r: 10};
                             return `translate(${p.x},${p.y})`;
                         });
+                    
+                    // Simple node circles with smooth transitions
                     nodeG.append('circle')
-                        .attr('class', 'graph-hover')
+                        .attr('class', 'node-circle')
                         .attr('r', d => (pos.get(d.id)?.r) || 10)
                         .attr('fill', d => colorCoupling(d.coupling))
-                        .attr('fill-opacity', 0.9)
-                        .attr('stroke', d => document.getElementById('highlight-bottlenecks').checked ? (isBottleneck(d.id) ? '#dc2626' : '#333') : '#333')
-                        .attr('stroke-width', d => document.getElementById('highlight-bottlenecks').checked && isBottleneck(d.id) ? 3 : 0.5)
+                        .attr('fill-opacity', 0.85)
+                        .attr('stroke', d => {
+                            if (document.getElementById('highlight-bottlenecks')?.checked && isBottleneck(d.id)) {
+                                return '#ef4444';
+                            }
+                            return '#e2e8f0';
+                        })
+                        .attr('stroke-width', d => {
+                            if (document.getElementById('highlight-bottlenecks')?.checked && isBottleneck(d.id)) {
+                                return 2.5;
+                            }
+                            return 1.5;
+                        })
+                        .style('cursor', 'pointer')
                         .on('mouseenter', function(event, d){
+                            const circle = d3.select(this);
+                            circle.transition()
+                                .duration(150)
+                                .ease(d3.easeCubicOut)
+                                .attr('stroke-width', 3)
+                                .attr('fill-opacity', 1);
                             const title = d.name || d.id;
-                            const html = `${title}<br><span style='opacity:.8'>size:${d.size} pur:${Math.round((d.purity||0) * 100)}% coup:${Math.round((d.coupling||0) * 100)}% bet:${(d.betweenness||0).toFixed(3)}</span>`;
+                            const purity = Math.round((d.purity||0) * 100);
+                            const coupling = Math.round((d.coupling||0) * 100);
+                            const betweenness = (d.betweenness||0).toFixed(3);
+                            const html = `${title}<br>Size: ${d.size} | Purity: ${purity}% | Coupling: ${coupling}%<br>Betweenness: ${betweenness}`;
                             showTooltip(html, event);
                         })
                         .on('mousemove', function(event){ moveTooltip(event); })
-                        .on('mouseleave', function(){ hideTooltip(); });
+                        .on('mouseleave', function(event, d){
+                            const circle = d3.select(this);
+                            const isBottleneckNode = document.getElementById('highlight-bottlenecks')?.checked && isBottleneck(d.id);
+                            circle.transition()
+                                .duration(150)
+                                .ease(d3.easeCubicOut)
+                                .attr('stroke-width', isBottleneckNode ? 2.5 : 1.5)
+                                .attr('fill-opacity', 0.85);
+                            hideTooltip();
+                        });
+                    
+                    // Simple node labels
                     nodeG.append('text')
-                        .attr('y', d => (pos.get(d.id)?.r || 10) + 12)
-                        .attr('text-anchor', 'middle').attr('font-size', 11).attr('fill', '#374151')
+                        .attr('class', 'node-label')
+                        .attr('y', d => (pos.get(d.id)?.r || 10) + 16)
+                        .attr('text-anchor', 'middle')
+                        .attr('font-size', d => {
+                            const r = pos.get(d.id)?.r || 10;
+                            return r > 30 ? 11 : r > 20 ? 10 : 9;
+                        })
+                        .attr('font-weight', '400')
+                        .attr('fill', '#475569')
                         .text(d => `${d.name || d.id}`)
                         .each(function (d) {
-                            if ((pos.get(d.id)?.r || 10) < 14) this.setAttribute('display', 'none');
+                            if ((pos.get(d.id)?.r || 10) < 16) this.setAttribute('display', 'none');
                         });
                 }
 
@@ -1533,7 +1808,7 @@
 
 
 <!-- Purity per community -->
-<div class="bg-white p-4 rounded shadow mb-8">
+<div class="dashboard-card p-6 mb-8">
     <h2 class="leading-none text-3xl font-bold text-gray-900 pb-2">Purity per community</h2>
     <div class="overflow-x-auto">
         <table class="min-w-full text-sm border-separate border-spacing-0">
@@ -1608,7 +1883,7 @@
 
 
 <!-- Communities table -->
-<div class="bg-white p-4 rounded shadow mb-8">
+<div class="dashboard-card p-6 mb-8">
     <h2 class="leading-none text-3xl font-bold text-gray-900 pb-2">Communities</h2>
     <div class="overflow-x-auto">
         <table class="min-w-full text-sm sortable border-separate border-spacing-0">

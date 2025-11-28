@@ -10,6 +10,53 @@
 
 {% block content %}
 
+<style>
+    .dashboard-card {
+        background: white;
+        border: 1px solid #e2e8f0;
+        border-radius: 16px;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        position: relative;
+        overflow: hidden;
+    }
+
+    .dashboard-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        border-color: #cbd5e1;
+    }
+
+    .dashboard-card::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 4px;
+        background: linear-gradient(90deg, #3b82f6, #8b5cf6);
+        opacity: 0;
+        transition: opacity 0.3s ease;
+    }
+
+    .dashboard-card:hover::before {
+        opacity: 1;
+    }
+
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(10px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
+    .animate-fade-in-up {
+        animation: fadeIn 0.5s ease-out backwards;
+    }
+
+    .stagger-1 { animation-delay: 0.1s; }
+    .stagger-2 { animation-delay: 0.2s; }
+    .stagger-3 { animation-delay: 0.3s; }
+    .stagger-4 { animation-delay: 0.4s; }
+</style>
+
     <!-- start: language tabs-->
     <div class="flex overflow-x-auto overflow-y-hidden border-b border-gray-200 whitespace-nowrap ">
 
@@ -47,7 +94,7 @@
     <!-- end: language tabs-->
 
     {% if not projectAggregated.Evaluation %}
-        <div class="mt-6 p-4 bg-yellow-50 border border-yellow-200 text-yellow-800 rounded">No requirements were evaluated. Configure requirements to see linters results.</div>
+        <div class="mt-6 p-4 bg-yellow-50 border border-yellow-200 text-yellow-800 rounded-lg">No requirements were evaluated. Configure requirements to see linters results.</div>
     {% else %}
 
     <!-- Data injection -->
@@ -75,72 +122,63 @@
 
     <div x-data="linters()" x-init="init()">
         <!-- start: line of cards -->
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mt-4">
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mt-6">
 
             <!-- High -->
-            <div class="max-w-2xl px-8 py-4 bg-white rounded-lg shadow-md ">
-                <div class="mt-2">
-                    <div>
-                        <h5 class="leading-none text-3xl font-bold text-gray-900 pb-2" >
-                            <span class="text-red-900 bg-red-400 rounded px-3 py-1">
-                                {{ projectAggregated.Evaluation.CountErrorsBySeverityString('high') }}
-                            </span>
-                        </h5>
-                        <p class="text-base font-normal text-gray-500 ">High severity</p>
-                    </div>
-                    <p class="border-t border-gray-200 mt-2 italic text-sm text-gray-600 pt-4 text-justify">
+            <div class="dashboard-card p-5 animate-fade-in-up stagger-1">
+                <div>
+                    <h5 class="text-2xl font-bold text-gray-900 mb-1" style="letter-spacing: -0.3px;">
+                        <span class="text-red-600 bg-red-50 rounded-full px-3 py-1 text-sm font-medium">
+                            {{ projectAggregated.Evaluation.CountErrorsBySeverityString('high') }}
+                        </span>
+                    </h5>
+                    <p class="text-xs font-medium text-gray-500 mt-2 mb-3">High severity</p>
+                    <p class="border-t border-gray-100 pt-3 text-xs text-gray-400">
                         Should probably be fixed.
                     </p>
                 </div>
             </div>
 
             <!-- Medium -->
-            <div class="max-w-2xl px-8 py-4 bg-white rounded-lg shadow-md ">
-                <div class="mt-2">
-                    <div>
-                        <h5 class="leading-none text-3xl font-bold text-gray-900 pb-2">
-                            <span class="text-orange-900 bg-orange-400 rounded px-3 py-1">
-                                {{ projectAggregated.Evaluation.CountErrorsBySeverityString('medium') }}
-                            </span>
-                        </h5>
-                        <p class="text-base font-normal text-gray-500 ">Medium severity</p>
-                    </div>
-                    <p class="border-t border-gray-200 mt-2 italic text-sm text-gray-600 pt-4 text-justify">
+            <div class="dashboard-card p-5 animate-fade-in-up stagger-2">
+                <div>
+                    <h5 class="text-2xl font-bold text-gray-900 mb-1" style="letter-spacing: -0.3px;">
+                        <span class="text-orange-600 bg-orange-50 rounded-full px-3 py-1 text-sm font-medium">
+                            {{ projectAggregated.Evaluation.CountErrorsBySeverityString('medium') }}
+                        </span>
+                    </h5>
+                    <p class="text-xs font-medium text-gray-500 mt-2 mb-3">Medium severity</p>
+                    <p class="border-t border-gray-100 pt-3 text-xs text-gray-400">
                         May cause some issues.
                     </p>
                 </div>
             </div>
 
             <!-- Low -->
-            <div class="max-w-2xl px-8 py-4 bg-white rounded-lg shadow-md ">
-                <div class="mt-2">
-                    <div>
-                        <h5 class="leading-none text-3xl font-bold text-gray-900 pb-2">
-                            <span class="text-yellow-900 bg-yellow-400 rounded px-3 py-1">
-                                {{ projectAggregated.Evaluation.CountErrorsBySeverityString('low') }}
-                            </span>
-                        </h5>
-                        <p class="text-base font-normal text-gray-500 ">Low severity</p>
-                    </div>
-                    <p class="border-t border-gray-200 mt-2 italic text-sm text-gray-600 pt-4 text-justify">
+            <div class="dashboard-card p-5 animate-fade-in-up stagger-3">
+                <div>
+                    <h5 class="text-2xl font-bold text-gray-900 mb-1" style="letter-spacing: -0.3px;">
+                        <span class="text-yellow-600 bg-yellow-50 rounded-full px-3 py-1 text-sm font-medium">
+                            {{ projectAggregated.Evaluation.CountErrorsBySeverityString('low') }}
+                        </span>
+                    </h5>
+                    <p class="text-xs font-medium text-gray-500 mt-2 mb-3">Low severity</p>
+                    <p class="border-t border-gray-100 pt-3 text-xs text-gray-400">
                         Minor issues, mostly stylistic.
                     </p>
                 </div>
             </div>
 
             <!-- Successes -->
-            <div class="max-w-2xl px-8 py-4 bg-white rounded-lg shadow-md ">
-                <div class="mt-2">
-                    <div>
-                        <h5 class="leading-none text-3xl font-bold text-gray-900 pb-2">
-                            <span
-                                class="text-green-900 bg-green-400 rounded px-3 py-1">
-                                {{projectAggregated.Evaluation.Successes|length| floatformat:0}}
-                            </span>
-                        </h5>
-                        <p class="text-base font-normal text-gray-500 ">Successes</p>
-                    </div>
-                    <p class="border-t border-gray-200 mt-2 italic text-sm text-gray-600 pt-4 text-justify">
+            <div class="dashboard-card p-5 animate-fade-in-up stagger-4">
+                <div>
+                    <h5 class="text-2xl font-bold text-gray-900 mb-1" style="letter-spacing: -0.3px;">
+                        <span class="text-green-600 bg-green-50 rounded-full px-3 py-1 text-sm font-medium">
+                            {{projectAggregated.Evaluation.Successes|length| floatformat:0}}
+                        </span>
+                    </h5>
+                    <p class="text-xs font-medium text-gray-500 mt-2 mb-3">Successes</p>
+                    <p class="border-t border-gray-100 pt-3 text-xs text-gray-400">
                         Successful linter checks.
                     </p>
                 </div>
@@ -178,7 +216,7 @@
         </div>
 
         <!-- Table -->
-        <div class="mt-4 overflow-x-auto bg-white rounded shadow"  x-cloak x-show="!loading" x-transition.opacity.duration.200ms>
+        <div class="mt-6 overflow-x-auto dashboard-card p-6"  x-cloak x-show="!loading" x-transition.opacity.duration.200ms>
             <table class="min-w-full divide-y divide-gray-200 sortable">
                 <thead class="bg-gray-50">
                     <tr>

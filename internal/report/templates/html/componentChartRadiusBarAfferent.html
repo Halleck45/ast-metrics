@@ -1,6 +1,6 @@
 <script id="chart_afferent_data" type="application/json">
     [
-        {% set separator = "," %}
+        {%- set first = true -%}
         {%- set files = currentView.ConcernedFiles -%}
         {%- for file in files -%}
         {%- if len(file.Stmts.StmtClass) == 0 -%}
@@ -10,14 +10,13 @@
         {% set elements = file.Stmts.StmtClass -%}
         {% set name = "" -%}
         {%- endif -%}
-        {%if forloop.last %}
-            {% set separator = "" %}
-        {% endif %}
         {%- for class in elements -%}
+        {%- if not first -%},{%- endif -%}
         {
             "name": "{{ name|default:class.Name.Qualified|addslashes }}",
             "afferent": {{ class.Stmts.Analyze.Coupling.Afferent|floatformat:0  }}
-    }{{ separator }}
+        }
+        {%- set first = false -%}
         {%- endfor -%}
         {%- endfor -%}
     ]
