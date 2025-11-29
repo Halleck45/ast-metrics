@@ -82,6 +82,26 @@ AST Metrics - Bus Factor
     .stagger-5 {
         animation-delay: 0.5s;
     }
+
+    .contributor-avatar {
+        width: 36px;
+        height: 36px;
+        border-radius: 50%;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 600;
+        font-size: 14px;
+        color: white;
+        flex-shrink: 0;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+
+    .contributor-avatar-small {
+        width: 28px;
+        height: 28px;
+        font-size: 11px;
+    }
 </style>
 
 <!-- Language tabs -->
@@ -193,7 +213,14 @@ AST Metrics - Bus Factor
                 {% for committer in currentView.TopCommitters %}
                 <tr class="border-b border-gray-50 last:border-0 hover:bg-gray-50 transition-colors">
                     <td class="py-2 font-medium text-gray-900">{{ forloop.Counter }}</td>
-                    <td class="py-2 font-medium text-gray-900">{{ committer.Name }}</td>
+                    <td class="py-2 font-medium text-gray-900">
+                        <div class="flex items-center gap-2">
+                            <div class="contributor-avatar" style="background-color: {{ committer.Name|contributorColor }};">
+                                {{ committer.Name|contributorInitials }}
+                            </div>
+                            <span>{{ committer.Name }}</span>
+                        </div>
+                    </td>
                     <td class="py-2 text-right">{{ committer.Count }}</td>
                     <td class="py-2 text-right">
                         <span class="bg-blue-100 text-blue-800 px-2 py-0.5 rounded-full text-xs font-medium">
@@ -241,32 +268,40 @@ AST Metrics - Bus Factor
             <div class="mb-3">
                 <div class="flex items-end justify-between h-8 gap-0.5">
                     {% for author, count in committers %}
-                    {% if forloop.Counter <= 10 %} <div class="flex-1 bg-blue-500 opacity-70 rounded-t"
-                        style="height: {{ count }}px; max-height: 32px;">
+                    {% if forloop.Counter <= 10 %}
+                    <div class="flex-1 rounded-t opacity-80 hover:opacity-100 transition-opacity" 
+                        style="height: {{ count }}px; max-height: 32px; background-color: {{ author|contributorColor }};"
+                        title="{{ author }}: {{ count }} commits">
+                    </div>
+                    {% endif %}
+                    {% endfor %}
                 </div>
-                {% endif %}
-                {% endfor %}
+                <p class="text-xs text-gray-400 mt-1">Commit distribution</p>
             </div>
-            <p class="text-xs text-gray-400 mt-1">Commit distribution</p>
-        </div>
 
         <!-- Top Contributors -->
         <div class="border-t border-gray-100 pt-3">
             <p class="text-xs font-medium text-gray-500 mb-2">Top Contributors</p>
             <div class="space-y-1">
                 {% for author, count in committers %}
-                {% if forloop.Counter <= 5 %} <div class="flex justify-between items-center text-xs">
-                    <span class="text-gray-900 truncate max-w-[150px]" title="{{ author }}">{{ author }}</span>
-                    <span class="text-gray-500 bg-gray-100 px-2 py-0.5 rounded-full font-medium">{{ count }}</span>
+                {% if forloop.Counter <= 5 %}
+                <div class="flex justify-between items-center text-xs">
+                    <div class="flex items-center gap-2 flex-1 min-w-0">
+                        <div class="contributor-avatar contributor-avatar-small" style="background-color: {{ author|contributorColor }};">
+                            {{ author|contributorInitials }}
+                        </div>
+                        <span class="text-gray-900 truncate" title="{{ author }}">{{ author }}</span>
+                    </div>
+                    <span class="text-gray-500 bg-gray-100 px-2 py-0.5 rounded-full font-medium ml-2 flex-shrink-0">{{ count }}</span>
+                </div>
+                {% endif %}
+                {% endfor %}
+                {% if committers|length > 5 %}
+                <p class="text-xs text-gray-400 mt-2">+ {{ committers|length|add:"-5" }} more</p>
+                {% endif %}
             </div>
-            {% endif %}
-            {% endfor %}
-            {% if committers|length > 5 %}
-            <p class="text-xs text-gray-400 mt-2">+ {{ committers|length|add:"-5" }} more</p>
-            {% endif %}
         </div>
     </div>
-</div>
 {% endfor %}
 </div>
 </div>

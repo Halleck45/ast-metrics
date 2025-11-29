@@ -3,10 +3,12 @@ package report
 import (
 	"embed"
 	"fmt"
+	"hash/fnv"
 	"os"
 	"sort"
 	"strings"
 	"time"
+	"unicode"
 
 	log "github.com/sirupsen/logrus"
 
@@ -819,5 +821,81 @@ func (v *HtmlReportGenerator) RegisterFilters() {
 		collection = append(collection, file.Stmts.StmtFunction...)
 
 		return pongo2.AsValue(collection), nil
+	})
+
+	// filter contributorInitials: extracts initials from a name (e.g., "John Doe" -> "JD")
+	pongo2.RegisterFilter("contributorInitials", func(in *pongo2.Value, param *pongo2.Value) (out *pongo2.Value, err *pongo2.Error) {
+		name := in.String()
+		if name == "" {
+			return pongo2.AsValue("?"), nil
+		}
+
+		// Split by common separators and get first letter of each word
+		parts := strings.Fields(name)
+		initials := strings.Builder{}
+		for _, part := range parts {
+			if len(part) > 0 {
+				// Get first letter (handling unicode)
+				for _, r := range part {
+					if unicode.IsLetter(r) {
+						initials.WriteRune(unicode.ToUpper(r))
+						break
+					}
+				}
+			}
+		}
+
+		result := initials.String()
+		if result == "" {
+			// Fallback: use first character
+			for _, r := range name {
+				if unicode.IsPrint(r) {
+					result = strings.ToUpper(string(r))
+					break
+				}
+			}
+			if result == "" {
+				result = "?"
+			}
+		}
+
+		// Limit to 2-3 characters max
+		if len([]rune(result)) > 3 {
+			result = string([]rune(result)[:3])
+		}
+
+		return pongo2.AsValue(result), nil
+	})
+
+	// filter contributorColor: generates a consistent color based on name hash
+	pongo2.RegisterFilter("contributorColor", func(in *pongo2.Value, param *pongo2.Value) (out *pongo2.Value, err *pongo2.Error) {
+		name := in.String()
+		if name == "" {
+			return pongo2.AsValue("#9ca3af"), nil // gray fallback
+		}
+
+		// Generate hash from name
+		h := fnv.New32a()
+		h.Write([]byte(name))
+		hash := h.Sum32()
+
+		// Use a palette of pleasant colors
+		colors := []string{
+			"#3b82f6", // blue
+			"#8b5cf6", // purple
+			"#ec4899", // pink
+			"#f59e0b", // amber
+			"#10b981", // emerald
+			"#06b6d4", // cyan
+			"#ef4444", // red
+			"#14b8a6", // teal
+			"#f97316", // orange
+			"#6366f1", // indigo
+			"#84cc16", // lime
+			"#a855f7", // violet
+		}
+
+		colorIndex := int(hash) % len(colors)
+		return pongo2.AsValue(colors[colorIndex]), nil
 	})
 }
