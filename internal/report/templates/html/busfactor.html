@@ -142,7 +142,7 @@ AST Metrics - Bus Factor
             {{ currentView.BusFactor }}
         </h5>
         <p class="text-sm font-medium text-gray-500 mb-3">Global Bus Factor</p>
-        <p class="text-xs text-gray-400 border-t border-gray-100 pt-3">
+        <p class="text-xs text-gray-800 border-t border-gray-100 pt-3">
             Number of developers who account for 50% of commits
         </p>
     </div>
@@ -162,7 +162,7 @@ AST Metrics - Bus Factor
         <div class="overflow-x-auto">
             <table class="w-full text-left border-collapse text-xs">
                 <thead>
-                    <tr class="text-xs text-gray-400 border-b border-gray-100">
+                    <tr class="text-xs text-gray-800 border-b border-gray-100">
                         <th class="py-1 font-medium">Repo</th>
                         <th class="py-1 font-medium">Total</th>
                         <th class="py-1 font-medium">Imp.</th>
@@ -202,7 +202,7 @@ AST Metrics - Bus Factor
     <div class="overflow-x-auto">
         <table class="w-full text-left border-collapse">
             <thead>
-                <tr class="text-xs text-gray-400 border-b border-gray-100">
+                <tr class="text-xs text-gray-800 border-b border-gray-100">
                     <th class="py-2 font-medium">Rank</th>
                     <th class="py-2 font-medium">Contributor</th>
                     <th class="py-2 font-medium text-right">Commits</th>
@@ -259,7 +259,7 @@ AST Metrics - Bus Factor
                     <p class="text-xs text-gray-500">Bus Factor</p>
                     <div class="mt-2 text-sm text-gray-600">
                         <span class="font-medium">{{ committers|length }}</span>
-                        <span class="text-xs text-gray-400">contributors</span>
+                        <span class="text-xs text-gray-800">contributors</span>
                     </div>
                 </div>
             </div>
@@ -276,7 +276,7 @@ AST Metrics - Bus Factor
                     {% endif %}
                     {% endfor %}
                 </div>
-                <p class="text-xs text-gray-400 mt-1">Commit distribution</p>
+                <p class="text-xs text-gray-800 mt-1">Commit distribution</p>
             </div>
 
         <!-- Top Contributors -->
@@ -297,7 +297,7 @@ AST Metrics - Bus Factor
                 {% endif %}
                 {% endfor %}
                 {% if committers|length > 5 %}
-                <p class="text-xs text-gray-400 mt-2">+ {{ committers|length|add:"-5" }} more</p>
+                <p class="text-xs text-gray-800 mt-2">+ {{ committers|length|add:"-5" }} more</p>
                 {% endif %}
             </div>
         </div>
