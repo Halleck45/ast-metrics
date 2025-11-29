@@ -1,139 +1,114 @@
-<table class="sortable w-full mt-2 min-w-full divide-y divide-gray-200 ">
-    <thead class="uppercase bg-gray-50 ">
-        <tr>
-            {% if detailled == true %}
-                <th scope="col" class="py-2 px-4 text-sm font-normal text-left rtl:text-right text-gray-500 ">Lang.</th>
-            {% endif %}
-            <th scope="col" class="py-2 px-4 text-sm font-normal text-left rtl:text-right text-gray-500 ">Component</th>
-            <th scope="col" class="py-2 px-4 text-sm font-normal text-left rtl:text-right text-gray-500 ">
-                <acronym title="Risk score is calculated as the average risk of the component.">
-                    Risk
-                </acronym>
-            </th>
-            <th scope="col" class="py-2 px-4 text-sm font-normal text-left rtl:text-right text-gray-500 ">
-                <acronym title="Maintainability index is based on the complexity of operators, operands, and cyclomatic complexity.">
-                    Maint.
-                </acronym>
-            </th>
-            <th scope="col" class="py-2 px-4 text-sm font-normal text-left rtl:text-right text-gray-500 ">
-                <acronym title="Number of recents commits (12 month)">
-                    Commits
-                </acronym>
-            </th>
-            {% if detailled == true %}
-                <th scope="col" class="py-2 px-4 text-sm font-normal text-left rtl:text-right text-gray-500 ">
-                    <acronym title="Cyclomatic complexity is the number of decision points in a program">
-                        Cyclomatic
-                    </acronym>
-                </th>
-                <th scope="col" class="py-2 px-4 text-sm font-normal text-left rtl:text-right text-gray-500 ">
-                    <acronym title="Halstead effort is calculated as the average effort required to implement a software programe.">
-                    Effort
-                    </acronym>
-                </th>
-                <th scope="col" class="py-2 px-4 text-sm font-normal text-left rtl:text-right text-gray-500 ">
-                    <acronym title="Lines of code (LOC)">
-                        LOC
-                    </acronym>
-                </th>
-                <th scope="col" class="py-2 px-4 text-sm font-normal text-left rtl:text-right text-gray-500 ">
-                    <acronym title="Efferent coupling: number of external dependencies">
-                        C<sub>e</sub>
-                    </acronym>
-                </th>
-                <th scope="col" class="py-2 px-4 text-sm font-normal text-left rtl:text-right text-gray-500 ">
-                    <acronym title="Afferent coupling: number of times the component is used by other components">
-                        C<sub>a</sub>
-                    </acronym>
-                </th>
-                <th scope="col" class="py-2 px-4 text-sm font-normal text-left rtl:text-right text-gray-500 ">
-                    <acronym title="0 (stable) to 1 (unstable) - The ratio of efferent coupling (Ce) to total coupling (Ce + Ca)">
-                        Instability
-                    </acronym>
-                </th>
-            {% endif %}
-        </tr>
-    </thead>
-    <tbody>
-        {% set entries = currentView.ConcernedFiles|selectTopRiskEntries:linesToDisplay %}
-        {% if entries|length == 0 %}
-
-        <tr>
-            <td class="px-4 py-1 text-sm font-medium whitespace-nowrap" colspan="4">
-                <span class="text-sm font-normal text-gray-600 ">
-                    No component with high risk found
-                </span>
-            </td>
-        </tr>
-        {% endif %}
-
-        {% for e in entries %}
-            {% set file = e.File %}
-            {% set class = e.Class %}
-            {% set name = e.Name %}
-            <tr class="odd:bg-white odd:">
+<div class="overflow-x-auto">
+    <table class="sortable w-full min-w-full">
+        <thead>
+            <tr class="border-b border-gray-200">
                 {% if detailled == true %}
-                    <td class="px-4 py-1 text-xs font-medium whitespace-nowrap">
-                        <span class="text-xs font-normal text-gray-600 ">
-                            {{ file.ProgrammingLanguage }}
-                        </span>
-                    </td>
+                    <th scope="col" class="py-3 px-4 text-xs font-semibold text-gray-600 uppercase tracking-wide text-left">Lang.</th>
                 {% endif %}
-                <td class="px-4 py-1 text-xs font-medium whitespace-nowrap">
-                    <div class="truncate w-72">
-                        <acronym title="{{ name }}" class="text-xs font-bold text-gray-600 ">
-                            {{ name }}
-                        </acronym>
-                    </div>
-                </td>
-                <td  class="px-4 py-1 text-xs font-medium whitespace-nowrap text-center"  width="60">
-                    <span class="text-sm font-normal text-gray-600 ">
-                        {{ file.Stmts.Analyze.Risk.Score|floatformat:2 }}
-                    </span>
-                </td>
-                <td class="px-4 py-1 text-xs font-medium whitespace-nowrap text-center" width="60">
-                    <span class="text-xs font-normal text-gray-600 ">
-                        {{ class.Stmts.Analyze.Maintainability.MaintainabilityIndex|floatformat:0 }}
-                    </span>
-                </td>
-                <td  class="px-4 py-1 text-xs font-medium whitespace-nowrap text-center"  width="60">
-                    <span class="text-xs font-normal text-gray-600 ">
-                        {{ file.Commits.Count }}
-                    </span>
-                </td>
+                <th scope="col" class="py-3 px-4 text-xs font-semibold text-gray-600 uppercase tracking-wide text-left">Component</th>
                 {% if detailled == true %}
-                    <td class="px-4 py-1 text-sm font-medium whitespace-nowrap">
-                        <span class="text-sm font-normal text-gray-600 ">
-                            {{ class.Stmts.Analyze.Complexity.Cyclomatic|floatformat:0 }}
-                        </span>
-                    </td>
-                    <td class="px-4 py-1 text-sm font-medium whitespace-nowrap">
-                        <span class="text-sm font-normal text-gray-600 ">
-                            {{ class.Stmts.Analyze.Volume.HalsteadEffort|floatformat:0 }}
-                        </span>
-                    </td>
-                    <td class="px-4 py-1 text-sm font-medium whitespace-nowrap">
-                        <span class="text-sm font-normal text-gray-600 ">
-                            {{ class.Stmts.Analyze.Volume.Loc }}
-                        </span>
-                    </td>
-                    <td class="px-4 py-1 text-sm font-medium whitespace-nowrap">
-                        <span class="text-sm font-normal text-gray-600 ">
-                            {{ class.Stmts.Analyze.Coupling.Efferent }}
-                        </span>
-                    </td>
-                    <td class="px-4 py-1 text-sm font-medium whitespace-nowrap">
-                        <span class="text-sm font-normal text-gray-600 ">
-                            {{ class.Stmts.Analyze.Coupling.Afferent }}
-                        </span>
-                    </td>
-                    <td class="px-4 py-1 text-sm font-medium whitespace-nowrap">
-                        <span class="text-sm font-normal text-gray-600 ">
-                            {{ class.Stmts.Analyze.Coupling.Instability|floatformat:2 }}
-                        </span>
-                    </td>
+                    <th scope="col" class="py-3 px-4 text-xs font-semibold text-gray-600 uppercase tracking-wide text-right">
+                        <acronym title="Cyclomatic complexity is the number of decision points in a program" class="cursor-help">
+                            Cyclomatic
+                        </acronym>
+                    </th>
+                    <th scope="col" class="py-3 px-4 text-xs font-semibold text-gray-600 uppercase tracking-wide text-right">
+                        <acronym title="Halstead effort is calculated as the average effort required to implement a software programe." class="cursor-help">
+                            Effort
+                        </acronym>
+                    </th>
+                    <th scope="col" class="py-3 px-4 text-xs font-semibold text-gray-600 uppercase tracking-wide text-right">
+                        <acronym title="Lines of code (LOC)" class="cursor-help">
+                            LOC
+                        </acronym>
+                    </th>
+                    <th scope="col" class="py-3 px-4 text-xs font-semibold text-gray-600 uppercase tracking-wide text-right">
+                        <acronym title="Efferent coupling: number of external dependencies" class="cursor-help">
+                            C<sub>e</sub>
+                        </acronym>
+                    </th>
+                    <th scope="col" class="py-3 px-4 text-xs font-semibold text-gray-600 uppercase tracking-wide text-right">
+                        <acronym title="Afferent coupling: number of times the component is used by other components" class="cursor-help">
+                            C<sub>a</sub>
+                        </acronym>
+                    </th>
+                    <th scope="col" class="py-3 px-4 text-xs font-semibold text-gray-600 uppercase tracking-wide text-right">
+                        <acronym title="0 (stable) to 1 (unstable) - The ratio of efferent coupling (Ce) to total coupling (Ce + Ca)" class="cursor-help">
+                            Instability
+                        </acronym>
+                    </th>
                 {% endif %}
             </tr>
-        {% endfor %}
-    </tbody>
-</table>
+        </thead>
+        <tbody class="divide-y divide-gray-100">
+            {% set entries = currentView.ConcernedFiles|selectTopRiskEntries:linesToDisplay %}
+            {% if entries|length == 0 %}
+            <tr>
+                <td class="px-4 py-12 text-center" colspan="{% if detailled == true %}8{% else %}1{% endif %}">
+                    <div class="empty-state">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-12 h-12 text-green-300 mx-auto mb-3">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75 11.25 15 15 9.75m-3-7.036A11.959 11.959 0 0 1 3.598 6 11.99 11.99 0 0 0 3 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-4.902Z" />
+                        </svg>
+                        <p class="text-sm font-medium text-gray-400">No high-risk components found</p>
+                        <p class="text-xs text-gray-400 mt-1">Your codebase looks healthy!</p>
+                    </div>
+                </td>
+            </tr>
+            {% endif %}
+
+            {% for e in entries %}
+                {% set file = e.File %}
+                {% set class = e.Class %}
+                {% set name = e.Name %}
+                <tr class="table-row">
+                    {% if detailled == true %}
+                        <td class="px-4 py-3 whitespace-nowrap">
+                            <span class="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium bg-gray-100 text-gray-700">
+                                {{ file.ProgrammingLanguage }}
+                            </span>
+                        </td>
+                    {% endif %}
+                    <td class="px-4 py-3">
+                        <div class="max-w-md">
+                            <acronym title="{{ name }}" class="text-sm font-semibold text-gray-900 cursor-help hover:text-blue-600 transition-colors">
+                                {{ name }}
+                            </acronym>
+                        </div>
+                    </td>
+                    {% if detailled == true %}
+                        <td class="px-4 py-3 whitespace-nowrap text-right">
+                            <span class="text-sm font-mono text-gray-700">
+                                {{ class.Stmts.Analyze.Complexity.Cyclomatic|floatformat:0 }}
+                            </span>
+                        </td>
+                        <td class="px-4 py-3 whitespace-nowrap text-right">
+                            <span class="text-sm font-mono text-gray-700">
+                                {{ class.Stmts.Analyze.Volume.HalsteadEffort|floatformat:0 }}
+                            </span>
+                        </td>
+                        <td class="px-4 py-3 whitespace-nowrap text-right">
+                            <span class="text-sm font-mono text-gray-700">
+                                {{ class.Stmts.Analyze.Volume.Loc }}
+                            </span>
+                        </td>
+                        <td class="px-4 py-3 whitespace-nowrap text-right">
+                            <span class="text-sm font-mono text-gray-700">
+                                {{ class.Stmts.Analyze.Coupling.Efferent }}
+                            </span>
+                        </td>
+                        <td class="px-4 py-3 whitespace-nowrap text-right">
+                            <span class="text-sm font-mono text-gray-700">
+                                {{ class.Stmts.Analyze.Coupling.Afferent }}
+                            </span>
+                        </td>
+                        <td class="px-4 py-3 whitespace-nowrap text-right">
+                            <span class="text-sm font-mono text-gray-700">
+                                {{ class.Stmts.Analyze.Coupling.Instability|floatformat:2 }}
+                            </span>
+                        </td>
+                    {% endif %}
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>

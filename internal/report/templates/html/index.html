@@ -1,452 +1,867 @@
 {% extends "layout.html" %}
 
 {% block title %}
-    Overview
+Overview
 {% endblock %}
 
 {% block pageTitle %}
-    AST Metrics - Overview
+AST Metrics - Overview
 {% endblock %}
 
 {% block content %}
 
-    <!-- start: language tabs-->
-    <div class="flex overflow-x-auto overflow-y-hidden border-b border-gray-200 whitespace-nowrap ">
+<!-- start: language tabs-->
+<div class="flex overflow-x-auto overflow-y-hidden border-b border-gray-200 whitespace-nowrap ">
 
-        <a 
-            tabindex="-1"
-            href="index.html"
-            class="inline-flex items-center h-10 px-2 py-2 -mb-px text-center {% if currentLanguage == "All" %}text-blue-600 border-blue-500{% endif %} bg-transparent border-b-2 sm:px-4 -px-1 focus:outline-none">
-            <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 mx-1 sm:w-6 sm:h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z" />
-            </svg>
+    <a tabindex="-1" href="index.html"
+        class="inline-flex items-center h-10 px-2 py-2 -mb-px text-center {% if currentLanguage == " All"%}text-blue-600 border-blue-500{% endif %} bg-transparent border-b-2 sm:px-4 -px-1 focus:outline-none">
+        <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 mx-1 sm:w-6 sm:h-6" fill="none" viewBox="0 0 24 24"
+            stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z" />
+        </svg>
 
-            <span class="mx-1 text-sm sm:text-base">
-                All languages <span class="text-xs sm:text-sm">({{ projectAggregated.Combined.ConcernedFiles|length }} files)</span>
+        <span class="mx-1 text-sm sm:text-base">
+            All languages <span class="text-xs sm:text-sm">({{ projectAggregated.Combined.ConcernedFiles|length }}
+                files)</span>
+        </span>
+    </a>
+
+    <!-- start: language tab -->
+    {% for languageName, lang in projectAggregated.ByProgrammingLanguage %}
+    <a tabindex="0" href="index_{{ languageName }}.html"
+        class="inline-flex items-center h-10 px-2 py-2 -mb-px text-center bg-transparent border-b-2 {% if currentLanguage == languageName %}text-blue-600 border-blue-500{% else %}text-gray-700   border-transparent{% endif %} sm:px-4 -px-1 hover:border-gray-400">
+        <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 mx-1 sm:w-6 sm:h-6" fill="none" viewBox="0 0 24 24"
+            stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z" />
+        </svg>
+
+        <span class="mx-1 text-sm sm:text-base">
+            {{ languageName }} <span class="text-xs sm:text-sm">({{ lang.ConcernedFiles|length }} files)
             </span>
-        </a>
-
-        <!-- start: language tab -->
-            {% for languageName, lang in projectAggregated.ByProgrammingLanguage %}
-            <a 
-                tabindex="0"
-                href="index_{{ languageName }}.html"
-                class="inline-flex items-center h-10 px-2 py-2 -mb-px text-center bg-transparent border-b-2 {% if currentLanguage == languageName %}text-blue-600 border-blue-500{% else %}text-gray-700   border-transparent{% endif %} sm:px-4 -px-1 hover:border-gray-400">
-                <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 mx-1 sm:w-6 sm:h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z" />
-                </svg>
-    
-                <span class="mx-1 text-sm sm:text-base">
-                    {{ languageName }} <span class="text-xs sm:text-sm">({{ lang.ConcernedFiles|length }} files)
-                </span>
-            </a>
-            {% endfor %}
-        <!-- end: language tab -->
-
-    </div>
-    <!-- end: language tabs-->
-
-    <!-- start alert -->
-    {% if currentView.Comparaison %}
-        {% if currentView.Comparaison.ChangedFiles|length > 0 %}
-        <div class="flex bg-white rounded-lg shadow-md mt-4">
-            <div class="rounded-l-lg flex items-center justify-center w-12 bg-blue-500">
-                <svg class="w-6 h-6 text-white fill-current" viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M20 3.33331C10.8 3.33331 3.33337 10.8 3.33337 20C3.33337 29.2 10.8 36.6666 20 36.6666C29.2 36.6666 36.6667 29.2 36.6667 20C36.6667 10.8 29.2 3.33331 20 3.33331ZM21.6667 28.3333H18.3334V25H21.6667V28.3333ZM21.6667 21.6666H18.3334V11.6666H21.6667V21.6666Z" />
-                </svg>
-            </div>
-        
-            <div class="px-4 py-2 -mx-3">
-                <div  class="mx-3">
-                    <span class="font-semibold text-blue-500 changed</span>
-                    <div class="text-sm text-gray-600 ">
-                        Code has changed compared to {{ currentView.Comparaison.ComparedBranch }}.
-                        <a href="compare.html" class="text-blue-500 underline">Explore changes now</a>.
-                    </div>
-                </div>
-            </div>
-        </div>
-        {% endif %}
-    {% endif %}
-    <!-- end alert -->
-
-    <!-- start: line of cards -->
-    <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4 mt-4">
-
-        <!-- start: card -->
-        <div class="max-w-2xl px-8 py-4 bg-white rounded-lg shadow-md ">
-            <div class="mt-2">
-                <div>
-                    <h5 class="leading-none text-3xl font-bold text-gray-900 pb-2">
-                        {{ currentView.Loc.Sum|stringifyNumber }}
-                    </h5>
-                    <p class="text-base font-normal text-gray-500 ">
-                        {% if currentView.Comparaison %}
-                            {% include 'componentComparaisonBadge.html' with comparaisonMode='dontCare' diff=currentView.Comparaison.Loc round=0 %}
-                        {% endif %}
-                        Lines of code
-                    </p>
-                </div>
-                <div class="mt-4 chart-container" >
-                    {% include "componentChartRadiusBarLoc.html" %}
-                </div>
-                <p class="border-t border-gray-200 mt-2 italic text-sm text-gray-600 pt-4 text-justify">
-                    The total number of lines of code.
-                </p>
-            </div>
-        </div>
-        <!-- end: card -->
-
-        <!-- start: card -->
-        <div class="max-w-2xl px-8 py-4 bg-white rounded-lg shadow-md ">
-            <div class="mt-2">
-                <div>
-                    <h5 class="leading-none text-3xl font-bold text-gray-900 pb-2">
-                        {{ currentView.CyclomaticComplexityPerMethod.Avg | floatformat:2 }}
-                    </h5>
-                    <p class="text-base font-normal text-gray-500 ">
-                        {% if currentView.Comparaison %}
-                            {% include 'componentComparaisonBadge.html' with comparaisonMode='lowIsBetter' diff=currentView.Comparaison.AverageCyclomaticComplexityPerMethod round=2 %}
-                        {% endif %}
-                        Cycl. complexity per method
-                    </p>
-                </div>
-                <div class="card-graph">
-                    {{ currentView|barchartCyclomaticByMethodRepartition}}
-                </div>
-                <p class="border-t border-gray-200 mt-2 italic text-sm text-gray-600 pt-4 text-justify">
-                    The average complexity of the code, measured by the number of possible execution paths. Lower is better.
-                </p>
-            </div>
-        </div>
-        <!-- end: card -->
-
-
-        <!-- start: card -->
-        <div class="max-w-2xl px-8 py-4 bg-white rounded-lg shadow-md ">
-            <div class="mt-2">
-                <div>
-                    <h5 class="leading-none text-3xl font-bold text-gray-900 pb-2">
-                        {% set color="red" %}
-                        {% if currentView.MaintainabilityIndex.Avg > 84 %}
-                            {% set color="green" %}
-                        {% elif currentView.MaintainabilityIndex.Avg > 64 %}
-                            {% set color="yellow" %}
-                        {% endif %}
-                        <span class="text-{{ color }}-900 bg-{{ color }}-400 rounded px-3 py-1">{{ currentView.MaintainabilityIndex.Avg | floatformat:0 }}</span>
-                    </h5>
-                    <p class="text-base font-normal text-gray-500 ">
-                        {% if currentView.Comparaison %}
-                            {% include 'componentComparaisonBadge.html' with comparaisonMode='highIsBetter' diff=currentView.Comparaison.AverageMI round=2 %}
-                        {% endif %}
-                        Maintainability index
-                    </p>
-                </div>
-                <div class="card-graph">
-                    {{ currentView|barchartMaintainabilityIndexRepartition}}
-                </div>
-                <p class="border-t border-gray-200 mt-2 italic text-sm text-gray-600 pt-4 text-justify">
-                    Based on the volume, the complexity of operators and the complexity of the code.
-                    Ideally, should be higher than 85.
-                </p>
-            </div>
-        </div>
-        <!-- end: card -->
-
-        <!-- start: card -->
-        <div class="max-w-2xl px-8 py-4 bg-white rounded-lg shadow-md ">
-            <div class="mt-2">
-                <div>
-                    <h5 class="leading-none text-3xl font-bold text-gray-900 pb-2">
-                        {{ currentView.LocPerMethod.Avg | floatformat:0 }}
-                    </h5>
-                    <p class="text-base font-normal text-gray-500 ">
-                        {% if currentView.Comparaison %}
-                            {% include 'componentComparaisonBadge.html' with comparaisonMode='lowIsBetter' diff=currentView.Comparaison.AverageLocPerMethod round=2 %}
-                        {% endif %}
-                        Average lines of code per method
-                    </p>
-                </div>
-                <div class="card-graph">
-                    {{ currentView|barchartLocPerMethodRepartition}}
-                </div>
-                <p class="border-t border-gray-200 mt-2 italic text-sm text-gray-600 pt-4 text-justify">
-                    Long methods are hard to maintain and understand. Ideally, should be lower than 20.
-                </p>
-            </div>
-        </div>
-        <!-- end: card -->
-
-         <!-- start: card -->
-        <div class="max-w-2xl px-8 py-4 bg-white rounded-lg shadow-md ">
-            <div class="mt-2">
-                <div>
-                    <h5 class="leading-none text-3xl font-bold text-gray-900 pb-2">
-                        {% set color="red" %}
-                        {% if currentView.Lcom4PerClass.Avg < 1.7 %}
-                            {% set color="green" %}
-                        {% elif currentView.Lcom4PerClass.Avg > 1.7 %}
-                            {% set color="yellow" %}
-                        {% endif %}
-                        <span class="text-{{ color }}-900 bg-{{ color }}-400 rounded px-3 py-1">{{ currentView.Lcom4PerClass.Avg | floatformat:1 }}</span>
-                    </h5>
-                    <p class="text-base font-normal text-gray-500 ">
-                        {% if currentView.Comparaison %}
-                            {% include 'componentComparaisonBadge.html' with comparaisonMode='lowIsBetter' diff=currentView.Comparaison.AverageLcom4 round=2 %}
-                        {% endif %}
-                        Lack of Cohesion of Methods
-                    </p>
-                </div>
-                <div class="card-graph">
-                    {{ currentView|barchartLcomRepartition}}
-                </div>
-                <p class="border-t border-gray-200 mt-2 italic text-sm text-gray-600 pt-4 text-justify">
-                    When LCOM is high, it means that the class has low cohesion and is trying to do too many things at once.
-                </p>
-            </div>
-        </div>
-        <!-- end: card -->
-    </div>
-    <!-- end: line of cards -->
-
-     <!-- start: line -->
-    <div class="md:grid  md:grid-cols-3 lg:grid-cols-4 gap-4 mt-4">
-
-         <!-- start: card -->
-         <div class="max-w-2xl px-8 py-4 bg-white rounded-lg shadow-md mb-4 md:mb-0 ">
-            <div class="mt-2">
-                {% if currentView.ResultOfGitAnalysis %}
-                    <div>
-                        <h5 class="leading-none text-3xl font-bold text-gray-900 pb-2">
-                            {{ currentView.CommitCountForPeriod | stringifyNumber }}
-                        </h5>
-                        <p class="text-base font-normal text-gray-500 ">
-                            Commits on analyzed code
-                        </p>
-                    </div>
-                    <div class="card-graph">
-                        {{ currentView|lineChartGitActivity}}
-                    </div>
-                    <table class="sortable w-full mt-2 min-w-full divide-y divide-gray-200 ">
-                        <thead class="uppercase bg-gray-50 ">
-                            <tr>
-                                <th scope="col" class="py-2 px-2 text-sm font-normal text-left rtl:text-right text-gray-500 "></th>
-                                <th scope="col" class="py-2 px-2 text-sm font-normal text-left rtl:text-right text-gray-500 ">
-                                    <acronym title="Total commits in the analyzed period">Total</acronym>
-                                </th>
-                                <th scope="col" class="py-2 px-2 text-sm font-normal text-left rtl:text-right text-gray-500 ">
-                                    <acronym title="Commits on analyzed files">
-                                        Impacting
-                                    </acronym>
-                                </th>
-                                <th scope="col" class="py-2 px-2 text-sm font-normal text-left rtl:text-right text-gray-500 ">
-                                    <acronym title="Commits on files ignored by the analysis, or merge commits">
-                                        Ignored
-                                    </acronym>
-                                </th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for commitAnalysis in currentView.ResultOfGitAnalysis %}
-                                <tr class="text-sm odd:bg-white odd:">
-                                    <td class="px-2 py-1 text-sm font-medium whitespace-nowrap">
-                                        <acronym
-                                        class="cursor-help"
-                                            title="{{ commitAnalysis.ReportRootDir }}">
-                                            <svg 
-                                                title="{{ commitAnalysis.ReportRootDir }}"
-                                                xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6">
-                                                <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 12.75V12A2.25 2.25 0 0 1 4.5 9.75h15A2.25 2.25 0 0 1 21.75 12v.75m-8.69-6.44-2.12-2.12a1.5 1.5 0 0 0-1.061-.44H4.5A2.25 2.25 0 0 0 2.25 6v12a2.25 2.25 0 0 0 2.25 2.25h15A2.25 2.25 0 0 0 21.75 18V9a2.25 2.25 0 0 0-2.25-2.25h-5.379a1.5 1.5 0 0 1-1.06-.44Z" />
-                                          </svg>
-                                        </acronym>
-                                    </td>
-                                    <td class="px-2 py-1 text-sm whitespace-nowrap">
-                                        {{ commitAnalysis.CountCommits }}
-                                    </td>
-                                    <td class="px-2 py-1 text-sm f whitespace-nowrap">
-                                        {{ commitAnalysis.CountCommitsForLanguage }}
-                                    </td>
-                                    <td class="px-2 py-1 text-sm  whitespace-nowrap">
-                                        {{ commitAnalysis.CountCommitsIgnored }}
-                                    </td>
-                                </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
-                    <p class="border-t border-gray-200 mt-2 italic text-sm text-gray-600 pt-4 text-justify">
-                        The number of commits over the last 12 months. Only commits on current programming language are counted.
-                    </p>
-                {% else %}
-                    <div>
-                        <h5 class="leading-none text-3xl font-bold text-gray-900 pb-2">
-                            {{ currentView.CommitCountForPeriod | stringifyNumber }}
-                        </h5>
-                        <p class="text-base font-normal text-gray-500 ">
-                            Commits
-                        </p>
-                    </div>
-                    <div class="card-graph">
-                        {{ currentView|lineChartGitActivity}}
-                    </div>
-                    <p class="border-t border-gray-200 mt-2 italic text-sm text-gray-600 pt-4 text-justify">
-                        The number of commits over the last 12 months. Only commits on current programming language are counted.
-                    </p>
-                {% endif %}
-            </div>
-        </div>
-        <!-- end: card -->
-
-
-         <!-- start: card -->
-         <div class="px-8 py-4 bg-white rounded-lg shadow-md  mb-4 md:mb-0">
-            <div class="mt-2">
-                <div>
-                    <h5 class="leading-none text-3xl font-bold text-gray-900 pb-2">
-                        {{ currentView.BusFactor }}
-                    </h5>
-                    <p class="text-base font-normal text-gray-500 ">
-                        Bus factor
-                    </p>
-                </div>
-                <div class="card-graph h-48">
-                    <table class="w-full mt-2 divide-y divide-gray-200 ">
-                        <thead class="uppercase bg-gray-50 ">
-                            <tr>
-                                <th scope="col" class="py-2 px-4 text-sm font-normal text-left rtl:text-right text-gray-500 ">
-                                    Top committers
-                                </th>
-                                    Top committers
-                                </td>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for committer in currentView.TopCommitters %}
-                                <tr class="odd:bg-white odd:">
-                                    <td class="px-4 py-1 text-xs whitespace-nowrap">
-                                        <acronym title="{{ committer.Count }} commits">
-                                            {{ committer.Name }}
-                                        </acronym>
-                                    </td>
-                                </tr>
-                            {% endfor %}
-                    </table>
-                </div>
-                <p class="border-t border-gray-200 mt-2 italic text-sm text-gray-600 pt-4 text-justify">
-                    The bus factor is the number of developers that would need to be incapacitated before a project would stall due to insufficient knowledge or skills.
-                    Ideally, should be higher than 3.
-                </p>
-            </div>
-        </div>
-        <!-- end: card -->
-
-
-        <!-- start: card about files with low maintenability -->
-        <div class="px-8 py-4 bg-white rounded-lg shadow-md col-span-2">
-            <div class="mt-2">
-                <a href="risks.html" class="text-xl font-bold text-gray-700 role="link">
-                    Top candidates for refactoring <span class="text-sm font-normal hover:underline text-blue-600 ">(more)</span>
-                </a>
-                <p class="mt-2 text-sm text-gray-600 ">
-                    These components have a low maintainability index and have been recently modified. They are good candidates for refactoring.
-                </p>
-            </div>
-            <div>
-                {% include "componentTableRisks.html" with detailled=false linesToDisplay=10 %}
-            </div>
-        </div>
-        <!-- end: card about files with low maintenability -->
-    </div>
-    <!-- end: line -->
-
-<!-- start: line  -->
-<div class="grid md:grid-cols-4 gap-4 mt-4">
-
-    <!-- start: card -->
-    <div class=" px-8 py-4 bg-white rounded-lg shadow-md ">
-        <div class="mt-2">
-            <div>
-                <h5 class="leading-none text-3xl font-bold text-gray-900 pb-2">
-                    Packages
-                </h5>
-                <p class="text-base font-normal text-gray-500 ">
-                    Relations between packages
-                </p>
-            </div>
-            <div class="mt-4 chart-container" >
-                {% include "componentDependencyDiagram.html" %}
-            </div>
-        </div>
-    </div>
-    <!-- end: card -->
-
-    <!-- start: card -->
-    <div class=" px-8 py-4 bg-white rounded-lg shadow-md ">
-        <div class="mt-2">
-            <div>
-                <h5 class="leading-none text-3xl font-bold text-gray-900 pb-2">
-                    {% if currentView.Instability.Avg == 0.00 %}
-                        -
-                    {% else %}
-                        {{ currentView.Instability.Avg | floatformat:2 }}
-                    {% endif %}
-                </h5>
-                <p class="text-base font-normal text-gray-500 ">
-                    Average <acronym title="The higher the number, the more difficult the refactoring becomes because it impacts other components that depend on it.">
-                         Instability
-                    </acronym>
-                </p>
-            </div>
-            {% if currentView.Instability.Avg == 0.00 %}
-                <div class="text-sm text-gray-600 mt-4 ">
-                    Instability is not available. This is likely due to a lack of classes (for example, only interfaces are present, or language is not object oriented).
-                </div>
-            {% else %}
-                <div class="grid grid-cols-2 gap-8 w-full">
-                    <div class="mt-4 chart-container" >
-                        {% include "componentChartRadiusBarAfferent.html" %}
-                    <p class="border-t border-gray-200 mt-2 italic text-sm text-gray-600 pt-4 text-justify">
-                        Number of times the component is used by other components. If high, the component is difficult to refactor.
-                    </p>
-                    </div>
-                    <div class="mt-4 chart-container" >
-                        {% include "componentChartRadiusBarEfferent.html" %}
-                        <p class="border-t border-gray-200 mt-2 italic text-sm text-gray-600 pt-4 text-justify">
-                            Number of external dependencies.
-                        </p>
-                    </div>
-                </div>
-            {% endif %}
-        </div>
-    </div>
-    <!-- end: card -->
-
-
-     <!-- start: card -->
-     <div class="col-span-1 px-8 py-4 bg-white rounded-lg shadow-md ">
-        <div class="mt-2">
-            <div>
-                <h5 class="leading-none text-3xl font-bold text-gray-900 pb-2">
-                    {{ currentView.CyclomaticComplexityPerMethod.Avg | floatformat:2 }}
-                </h5>
-                <p class="text-base font-normal text-gray-500 ">
-                    Average complexity per method (cyclomatic)
-                </p>
-            </div>
-            <div class="mt-4 chart-container" >
-                {% include "componentChartRadiusBarComplexity.html" %}
-            </div>
-            <p class="border-t border-gray-200 mt-2 italic text-sm text-gray-600 pt-4 text-justify">
-                The average complexity of the code, measured by the number of possible execution paths. Lower is better. 
-                This metrics includes interfaces and abstract classes, and may be lower than 1.
-            </p>
-        </div>
-    </div>
-    <!-- end: card -->
-
+    </a>
+    {% endfor %}
+    <!-- end: language tab -->
 
 </div>
-<!-- end: line -->
+<!-- end: language tabs-->
+
+<!-- start alert -->
+{% if currentView.Comparaison %}
+{% if currentView.Comparaison.ChangedFiles|length > 0 %}
+<div class="flex bg-white rounded-2xl mt-6" style="box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
+    <div class="rounded-l-2xl flex items-center justify-center w-12 bg-blue-100">
+        <svg class="w-6 h-6 text-blue-600 fill-current" viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg">
+            <path
+                d="M20 3.33331C10.8 3.33331 3.33337 10.8 3.33337 20C3.33337 29.2 10.8 36.6666 20 36.6666C29.2 36.6666 36.6667 29.2 36.6667 20C36.6667 10.8 29.2 3.33331 20 3.33331ZM21.6667 28.3333H18.3334V25H21.6667V28.3333ZM21.6667 21.6666H18.3334V11.6666H21.6667V21.6666Z" />
+        </svg>
+    </div>
+
+    <div class="px-4 py-2 -mx-3">
+        <div class="mx-3">
+            <span class="font-normal text-gray-900">Code has changed</span>
+            <div class="text-sm text-gray-500 font-light mt-1">
+                Compared to {{ currentView.Comparaison.ComparedBranch }}.
+                <a href="compare.html" class="text-gray-600 hover:text-gray-900 underline">Explore changes</a>.
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+{% endif %}
+<!-- end alert -->
+
+{% set cm = currentView.Community %}
+
+<style>
+    /* Clean Google Labs / Antigravity style for dashboard */
+    #layered-map-dashboard {
+        background: transparent;
+    }
+
+    .dashboard-card {
+        background: white;
+        border: 1px solid #e2e8f0;
+        border-radius: 16px;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        position: relative;
+        overflow: hidden;
+    }
+
+    .dashboard-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        border-color: #cbd5e1;
+    }
+
+    .dashboard-card::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 4px;
+        background: linear-gradient(90deg, #3b82f6, #8b5cf6);
+        opacity: 0;
+        transition: opacity 0.3s ease;
+    }
+
+    .dashboard-card:hover::before {
+        opacity: 1;
+    }
+
+    .metric-value {
+        font-family: var(--font-mono);
+        letter-spacing: -0.05em;
+    }
+
+    .layered-link-dashboard {
+        transition: opacity 0.2s ease, stroke-width 0.2s ease;
+    }
+
+    .layer-bg-dashboard {
+        transition: opacity 0.2s ease;
+    }
+
+    .layer-label-dashboard {
+        font-family: var(--font-sans);
+        font-weight: 500;
+        letter-spacing: 0.3px;
+    }
+
+    .node-label-dashboard {
+        font-family: var(--font-sans);
+    }
+
+    @keyframes fadeIn {
+        from {
+            opacity: 0;
+        }
+
+        to {
+            opacity: 1;
+        }
+    }
+
+    .nodes-group-dashboard g {
+        animation: fadeIn 0.4s ease backwards;
+    }
+
+    .nodes-group-dashboard g:nth-child(1) {
+        animation-delay: 0.02s;
+    }
+
+    .nodes-group-dashboard g:nth-child(2) {
+        animation-delay: 0.04s;
+    }
+
+    .nodes-group-dashboard g:nth-child(3) {
+        animation-delay: 0.06s;
+    }
+
+    .nodes-group-dashboard g:nth-child(4) {
+        animation-delay: 0.08s;
+    }
+
+    .nodes-group-dashboard g:nth-child(5) {
+        animation-delay: 0.1s;
+    }
+
+    .nodes-group-dashboard g:nth-child(n+6) {
+        animation-delay: 0.12s;
+    }
+</style>
+
+<!-- start: bento grid -->
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mt-6">
+    {% if cm and cm.Communities|length > 0 %}
+    <!-- Architecture Layers & Dependencies - Hero Card (2x2) -->
+    <div class="col-span-1 md:col-span-2 lg:col-span-2 row-span-2 dashboard-card p-6 animate-fade-in-up stagger-1" style="border: 2px solid #e2e8f0;">
+        <div class="flex items-center justify-between mb-5">
+            <div>
+                <h5 class="text-xl font-bold text-gray-900 mb-1">Architecture Map</h5>
+                <p class="text-xs text-gray-500 mb-1">Visualizing layers & dependencies</p>
+                <p class="text-xs text-gray-400 leading-relaxed">Architecture represents how your codebase is organized into logical layers. This map shows the hierarchical structure and dependencies between components, helping identify potential design issues and maintainability concerns.</p>
+            </div>
+            <div class="flex items-center gap-2">
+                <button id="toggle-layered-filters-dashboard"
+                    class="text-xs font-medium text-gray-600 hover:text-blue-600 flex items-center gap-1 px-3 py-1.5 rounded-full bg-gray-50 hover:bg-blue-50 transition-colors"
+                    title="Show/hide filters">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24"
+                        stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round"
+                            d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
+                    </svg>
+                    <span>Filters</span>
+                </button>
+                <button id="export-layered-dashboard"
+                    class="text-xs font-medium text-gray-600 hover:text-blue-600 px-3 py-1.5 rounded-full bg-gray-50 hover:bg-blue-50 transition-colors">Export</button>
+            </div>
+        </div>
+
+        <div id="layered-filters-dashboard"
+            class="text-xs text-gray-600 flex flex-wrap items-center gap-4 mb-4 hidden pb-4 border-b border-gray-100">
+            <label class="flex items-center gap-2 bg-gray-50 px-3 py-1.5 rounded-lg">
+                <span class="text-xs font-medium text-gray-500">Min edge %</span>
+                <input id="min-edge-slider-dashboard" type="range" min="0" max="50" value="0"
+                    class="w-24 accent-blue-600">
+            </label>
+            <label
+                class="flex items-center gap-2 cursor-pointer bg-gray-50 px-3 py-1.5 rounded-lg hover:bg-gray-100 transition-colors">
+                <input id="highlight-bottlenecks-dashboard" type="checkbox" checked="checked"
+                    class="w-3.5 h-3.5 text-blue-600 rounded border-gray-300 focus:ring-blue-500">
+                <span class="font-medium">Bottlenecks</span>
+            </label>
+            <label
+                class="flex items-center gap-2 cursor-pointer bg-gray-50 px-3 py-1.5 rounded-lg hover:bg-gray-100 transition-colors">
+                <input id="only-cross-layer-dashboard" type="checkbox"
+                    class="w-3.5 h-3.5 text-blue-600 rounded border-gray-300 focus:ring-blue-500">
+                <span class="font-medium">Cross-layer</span>
+            </label>
+            <label
+                class="flex items-center gap-2 cursor-pointer bg-gray-50 px-3 py-1.5 rounded-lg hover:bg-gray-100 transition-colors">
+                <input id="bundle-edges-dashboard" type="checkbox"
+                    class="w-3.5 h-3.5 text-blue-600 rounded border-gray-300 focus:ring-blue-500">
+                <span class="font-medium">Bundle</span>
+            </label>
+            <label class="flex items-center gap-1">
+                <input id="search-comm-dashboard" type="text" placeholder="Search node..."
+                    class="border border-gray-200 rounded-lg px-3 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent w-32 transition-shadow">
+            </label>
+        </div>
+
+        <div class="relative w-full h-[450px] bg-slate-50 rounded-xl overflow-hidden border border-slate-100">
+            <svg id="layered-map-dashboard" viewBox="0 0 800 400" class="w-full h-full"></svg>
+        </div>
+
+        <div class="mt-4 flex flex-wrap items-center justify-center gap-6 text-xs text-gray-500 font-medium">
+            <div class="flex items-center gap-2">
+                <span class="w-2 h-2 rounded-full bg-slate-400"></span>
+                <span>Size = Nodes</span>
+            </div>
+            <div class="flex items-center gap-2">
+                <span class="w-2 h-2 rounded-full bg-gradient-to-r from-red-400 to-green-400"></span>
+                <span>Color = Coupling</span>
+            </div>
+            <div class="flex items-center gap-2">
+                <span class="w-8 h-0.5 bg-slate-300"></span>
+                <span>Width = Calls</span>
+            </div>
+        </div>
+    </div>
+
+    {% if cm and cm.Communities|length > 0 %}
+    <!-- Data for layered map -->
+    <script id="data-communities-dashboard" type="application/json">[
+    {% for id, nodes in cm.Communities %}
+    {"id":"{{ id|escapejs }}",
+     "name":{% for k, n in cm.DisplayNamePerComm %}{% if k == id %}"{{ n|escapejs }}"{% endif %}{% endfor %},
+     "size":{{ nodes|length }},
+     "purity":{% for k, v in cm.PurityPerCommunity %}{% if k == id %}{{ v }}{% endif %}{% endfor %},
+     "level":{% for k, lvl in cm.Levels %}{% if k == id %}{{ lvl }}{% endif %}{% endfor %},
+     "betweenness":{% for k, b in cm.BetweennessPerComm %}{% if k == id %}{{ b }}{% endif %}{% endfor %},
+     "coupling":{% for k, c in cm.CouplingRatioPerComm %}{% if k == id %}{{ c }}{% endif %}{% endfor %},
+     "topNamespaces":[{% for k, ns in cm.TopNamespacesPerComm %}{% if k == id %}{% for s in ns %}"{{ s|escapejs }}"{% if not forloop.Last %},{% endif %}{% endfor %}{% endif %}{% endfor %}],
+     "topClasses":[{% for k, cls in cm.TopClassesPerComm %}{% if k == id %}{% for s in cls %}"{{ s|escapejs }}"{% if not forloop.Last %},{% endif %}{% endfor %}{% endif %}{% endfor %}]
+    }{% if not forloop.Last %},{% endif %}
+    {% endfor %}
+]</script>
+    <script id="data-edges-between-comms-dashboard" type="application/json">[
+    {% for e in cm.EdgesBetweenCommunities %}
+    {"from":"{{ e.From|escapejs }}","to":"{{ e.To|escapejs }}","edges":{{ e.Edges }}}
+    {% if not forloop.Last %},{% endif %}
+    {% endfor %}
+]</script>
+    <script id="data-matrix-order-dashboard" type="application/json">[
+    {% for id in cm.MatrixOrder %}"{{ id|escapejs }}"{% if not forloop.Last %},{% endif %}{% endfor %}
+]</script>
+
+    <script>
+        // Toggle for dashboard layered map filters
+        document.addEventListener('DOMContentLoaded', function () {
+            const toggleFiltersBtn = document.getElementById('toggle-layered-filters-dashboard');
+            const filtersContainer = document.getElementById('layered-filters-dashboard');
+            if (toggleFiltersBtn && filtersContainer) {
+                toggleFiltersBtn.addEventListener('click', () => {
+                    filtersContainer.classList.toggle('hidden');
+                });
+            }
+
+            // Ensure D3 is loaded
+            (function ensureD3AndInit() {
+                function loadScript(src, onload) {
+                    const s = document.createElement('script');
+                    s.src = src;
+                    s.async = true;
+                    if (onload) {
+                        s.onload = onload;
+                        s.onerror = onload;
+                    }
+                    document.head.appendChild(s);
+                }
+
+                function hasD3v4plus() {
+                    return !!(window.d3 && typeof d3.scaleOrdinal === 'function');
+                }
+
+                function start() {
+                    if (window.d3) {
+                        initLayeredMapDashboard();
+                    }
+                }
+
+                if (!hasD3v4plus()) {
+                    loadScript('https://cdn.jsdelivr.net/npm/d3@7', start);
+                } else {
+                    start();
+                }
+            })();
+
+            function initLayeredMapDashboard() {
+                const communities = JSON.parse(document.getElementById('data-communities-dashboard').textContent || '[]');
+                const ebc = JSON.parse(document.getElementById('data-edges-between-comms-dashboard').textContent || '[]');
+                const order = JSON.parse(document.getElementById('data-matrix-order-dashboard').textContent || '[]');
+
+                // Tooltip helpers
+                if (!document.getElementById('graph-tooltip')) {
+                    const tip = document.createElement('div');
+                    tip.id = 'graph-tooltip';
+                    tip.className = 'graph-tooltip';
+                    tip.style.display = 'none';
+                    document.body.appendChild(tip);
+                }
+                const __tooltip = document.getElementById('graph-tooltip');
+                function showTooltip(html, event) {
+                    if (!__tooltip) return;
+                    __tooltip.innerHTML = html;
+                    __tooltip.style.display = 'block';
+                    __tooltip.classList.add('visible');
+                    moveTooltip(event);
+                }
+                function moveTooltip(event) {
+                    if (!__tooltip) return;
+                    const x = event.clientX;
+                    const y = event.clientY;
+                    __tooltip.style.left = x + 'px';
+                    __tooltip.style.top = y + 'px';
+                }
+                function hideTooltip() {
+                    if (!__tooltip) return;
+                    __tooltip.classList.remove('visible');
+                    __tooltip.style.display = 'none';
+                }
+
+                const colorCoupling = (c) => d3.interpolateRdYlGn(1 - Math.max(0, Math.min(1, c || 0)));
+
+                // Layered dependency map - Compact version for 2 columns
+                (function () {
+                    const svg = d3.select('#layered-map-dashboard');
+                    svg.selectAll('*').remove();
+                    const W = 800, H = 400, padX = 80, padY = 40;
+                    const defs = svg.append('defs');
+                    const gZoom = svg.append('g').attr('class', 'zoom-layer');
+                    const zoom = d3.zoom().scaleExtent([0.3, 10]).on('zoom', (event) => {
+                        gZoom.attr('transform', event.transform);
+                    });
+                    svg.call(zoom);
+                    const levels = d3.group(communities, d => d.level);
+                    const maxSize = d3.max(communities, d => d.size) || 1;
+                    const rScale = d3.scaleSqrt().domain([1, maxSize]).range([6, 30]);
+                    const maxEdges = d3.max(ebc, d => d.edges) || 1;
+                    const wScale = d3.scaleSqrt().domain([1, maxEdges]).range([0.5, 6]);
+                    const levelKeys = Array.from(levels.keys()).sort((a, b) => a - b);
+                    const pos = new Map();
+                    let layerHeight = 60;
+                    let layerSpacing = 25;
+                    let totalLayerHeight = levelKeys.length * layerHeight + (levelKeys.length - 1) * layerSpacing;
+                    const availableHeight = H - 2 * padY;
+                    if (totalLayerHeight > availableHeight) {
+                        if (levelKeys.length > 1) {
+                            layerSpacing = Math.max(5, (availableHeight - levelKeys.length * layerHeight) / (levelKeys.length - 1));
+                        }
+                        totalLayerHeight = levelKeys.length * layerHeight + (levelKeys.length - 1) * layerSpacing;
+                        if (totalLayerHeight > availableHeight) {
+                            layerHeight = Math.max(40, (availableHeight - (levelKeys.length - 1) * layerSpacing) / levelKeys.length);
+                            totalLayerHeight = levelKeys.length * layerHeight + (levelKeys.length - 1) * layerSpacing;
+                        }
+                    }
+                    const startY = padY + (availableHeight - totalLayerHeight) / 2 + layerHeight / 2;
+
+                    levelKeys.forEach((lv, li) => {
+                        const arr = levels.get(lv).slice().sort((a, b) => d3.ascending(a.id, b.id));
+                        const layerY = startY + li * (layerHeight + layerSpacing);
+                        arr.forEach((d, i) => {
+                            const x = padX + (i + 0.5) * ((W - 2 * padX) / arr.length);
+                            pos.set(d.id, { x, y: layerY, r: rScale(d.size), level: lv });
+                        });
+                    });
+                    const totalOut = d3.rollup(ebc, v => d3.sum(v, d => d.edges), d => d.from);
+                    let minPct = 0;
+
+                    function draw() {
+                        gZoom.selectAll('*').remove();
+
+                        levelKeys.forEach((lv, li) => {
+                            const layerCenterY = startY + li * (layerHeight + layerSpacing);
+                            const layerBg = gZoom.append('rect')
+                                .attr('class', 'layer-bg-dashboard')
+                                .attr('x', padX - 10)
+                                .attr('y', layerCenterY - layerHeight / 2)
+                                .attr('width', W - 2 * padX + 20)
+                                .attr('height', layerHeight)
+                                .attr('fill', li % 2 === 0 ? 'rgba(0, 0, 0, 0.01)' : 'rgba(0, 0, 0, 0.02)')
+                                .attr('stroke', 'none')
+                                .style('pointer-events', 'none');
+                            gZoom.append('text')
+                                .attr('class', 'layer-label-dashboard')
+                                .attr('x', padX - 15)
+                                .attr('y', layerCenterY)
+                                .attr('text-anchor', 'end')
+                                .attr('font-size', 10)
+                                .attr('font-weight', '400')
+                                .attr('fill', '#666')
+                                .attr('dominant-baseline', 'middle')
+                                .text(`L${lv}`)
+                                .style('pointer-events', 'none');
+                        });
+
+                        const links = ebc.filter(d => (totalOut.get(d.from) || 0) > 0)
+                            .map(d => ({ ...d, pct: d.edges / (totalOut.get(d.from) || 1) }))
+                            .filter(d => d.pct * 100 >= minPct);
+                        const onlyCross = document.getElementById('only-cross-layer-dashboard')?.checked || false;
+                        const links2 = links.filter(d => !onlyCross || ((communities.find(c => c.id === d.from)?.level) !== (communities.find(c => c.id === d.to)?.level)));
+
+                        const linkGroup = gZoom.append('g').attr('class', 'links-group');
+                        linkGroup.selectAll('path').data(links2).enter().append('path')
+                            .attr('class', 'layered-link-dashboard')
+                            .attr('d', function(d) {
+                                if (!d || !d.from || !d.to) return '';
+                                const s = pos.get(d.from), t = pos.get(d.to);
+                                if (!s || !t) return '';
+                                const bundle = document.getElementById('bundle-edges-dashboard')?.checked || false;
+                                const mx = bundle ? (s.x * 0.6 + t.x * 0.4) : (s.x + t.x) / 2;
+                                const my = bundle ? (s.y * 0.6 + t.y * 0.4) : s.y;
+                                const my2 = bundle ? (s.y * 0.4 + t.y * 0.6) : t.y;
+                                return `M${s.x},${s.y} C${mx},${my} ${mx},${my2} ${t.x},${t.y}`;
+                            })
+                            .attr('fill', 'none')
+                            .attr('stroke', '#cbd5e1')
+                            .attr('stroke-width', d => wScale(d.edges))
+                            .attr('stroke-opacity', 0.4)
+                            .attr('stroke-linecap', 'round')
+                            .style('cursor', 'pointer')
+                            .on('mouseenter', function (event, d) {
+                                const link = d3.select(this);
+                                link.transition()
+                                    .duration(150)
+                                    .ease(d3.easeCubicOut)
+                                    .attr('stroke-opacity', 0.7)
+                                    .attr('stroke', '#64748b');
+                                const nf = (communities.find(c => c.id === d.from)?.name) || d.from;
+                                const nt = (communities.find(c => c.id === d.to)?.name) || d.to;
+                                showTooltip(`${nf} → ${nt}<br>${d.edges} calls (${(d.pct * 100).toFixed(1)}%)`, event);
+                            })
+                            .on('mousemove', function (event) { moveTooltip(event); })
+                            .on('mouseleave', function (event, d) {
+                                const link = d3.select(this);
+                                link.transition()
+                                    .duration(150)
+                                    .ease(d3.easeCubicOut)
+                                    .attr('stroke-opacity', 0.4)
+                                    .attr('stroke', '#cbd5e1');
+                                hideTooltip();
+                            });
+
+                        const nodeG = gZoom.append('g').attr('class', 'nodes-group-dashboard')
+                            .selectAll('g').data(communities).enter().append('g')
+                            .attr('class', 'layered-node')
+                            .attr('transform', d => {
+                                const p = pos.get(d.id) || { x: 0, y: 0, r: 10 };
+                                return `translate(${p.x},${p.y})`;
+                            });
+
+                        function isBottleneck(id) {
+                            const vals = communities.map(c => c.betweenness).sort((a, b) => b - a);
+                            const cutoff = vals[Math.min(9, vals.length - 1)] || 0;
+                            const v = (communities.find(c => c.id === id)?.betweenness) || 0;
+                            return v >= cutoff;
+                        }
+
+                        nodeG.append('circle')
+                            .attr('class', 'node-circle')
+                            .attr('r', d => (pos.get(d.id)?.r) || 10)
+                            .attr('fill', d => colorCoupling(d.coupling))
+                            .attr('fill-opacity', 0.85)
+                            .attr('stroke', d => {
+                                if (document.getElementById('highlight-bottlenecks-dashboard')?.checked && isBottleneck(d.id)) {
+                                    return '#ef4444';
+                                }
+                                return '#e2e8f0';
+                            })
+                            .attr('stroke-width', d => {
+                                if (document.getElementById('highlight-bottlenecks-dashboard')?.checked && isBottleneck(d.id)) {
+                                    return 2.5;
+                                }
+                                return 1.5;
+                            })
+                            .style('cursor', 'pointer')
+                            .on('mouseenter', function (event, d) {
+                                const circle = d3.select(this);
+                                circle.transition()
+                                    .duration(150)
+                                    .ease(d3.easeCubicOut)
+                                    .attr('stroke-width', 3)
+                                    .attr('fill-opacity', 1);
+                                const title = d.name || d.id;
+                                const purity = Math.round((d.purity || 0) * 100);
+                                const coupling = Math.round((d.coupling || 0) * 100);
+                                const betweenness = (d.betweenness || 0).toFixed(3);
+                                const html = `${title}<br>Size: ${d.size} | Purity: ${purity}% | Coupling: ${coupling}%<br>Betweenness: ${betweenness}`;
+                                showTooltip(html, event);
+                            })
+                            .on('mousemove', function (event) { moveTooltip(event); })
+                            .on('mouseleave', function (event, d) {
+                                const circle = d3.select(this);
+                                const isBottleneckNode = document.getElementById('highlight-bottlenecks-dashboard')?.checked && isBottleneck(d.id);
+                                circle.transition()
+                                    .duration(150)
+                                    .ease(d3.easeCubicOut)
+                                    .attr('stroke-width', isBottleneckNode ? 2.5 : 1.5)
+                                    .attr('fill-opacity', 0.85);
+                                hideTooltip();
+                            });
+
+                        nodeG.append('text')
+                            .attr('class', 'node-label-dashboard')
+                            .attr('y', d => (pos.get(d.id)?.r || 10) + 12)
+                            .attr('text-anchor', 'middle')
+                            .attr('font-size', d => {
+                                const r = pos.get(d.id)?.r || 10;
+                                return r > 25 ? 9 : r > 15 ? 8 : 7;
+                            })
+                            .attr('font-weight', '400')
+                            .attr('fill', '#475569')
+                            .text(d => `${d.name || d.id}`)
+                            .each(function (d) {
+                                if ((pos.get(d.id)?.r || 10) < 12) this.setAttribute('display', 'none');
+                            });
+                    }
+
+                    draw();
+                    document.getElementById('min-edge-slider-dashboard')?.addEventListener('input', (e) => {
+                        minPct = parseInt(e.target.value || '0', 10);
+                        draw();
+                    });
+                    document.getElementById('highlight-bottlenecks-dashboard')?.addEventListener('change', draw);
+                    document.getElementById('only-cross-layer-dashboard')?.addEventListener('change', draw);
+                    document.getElementById('bundle-edges-dashboard')?.addEventListener('change', draw);
+                    document.getElementById('search-comm-dashboard')?.addEventListener('input', () => {
+                        const v = (document.getElementById('search-comm-dashboard').value || '').trim();
+                        d3.select('#layered-map-dashboard').selectAll('circle')
+                            .attr('stroke', d => {
+                                if (!v) return (document.getElementById('highlight-bottlenecks-dashboard')?.checked && isBottleneck(d.id) ? '#ef4444' : '#e2e8f0');
+                                return String(d.id).includes(v) ? '#10b981' : '#bbb';
+                            })
+                            .attr('stroke-width', d => {
+                                if (!v) return (document.getElementById('highlight-bottlenecks-dashboard')?.checked && isBottleneck(d.id) ? 2.5 : 1.5);
+                                return String(d.id).includes(v) ? 3 : 1.5;
+                            });
+                    });
+                    document.getElementById('export-layered-dashboard')?.addEventListener('click', () => {
+                        const svg = document.querySelector('#layered-map-dashboard');
+                        const xml = new XMLSerializer().serializeToString(svg);
+                        const svg64 = btoa(unescape(encodeURIComponent(xml)));
+                        const img = new Image();
+                        img.onload = function () {
+                            const canvas = document.createElement('canvas');
+                            canvas.width = svg.viewBox.baseVal.width;
+                            canvas.height = svg.viewBox.baseVal.height;
+                            const ctx = canvas.getContext('2d');
+                            ctx.drawImage(img, 0, 0);
+                            const a = document.createElement('a');
+                            a.download = 'layered-map-dashboard.png';
+                            a.href = canvas.toDataURL('image/png');
+                            a.click();
+                        };
+                        img.src = 'data:image/svg+xml;base64,' + svg64;
+                    });
+                })();
+            }
+        });
+    </script>
+    {% endif %}
+
+    {% else %}
+    <!-- LOC Card - Primary Metric -->
+    <div class="dashboard-card p-5 animate-fade-in-up stagger-2" style="border-left: 3px solid #3b82f6;">
+        <div class="flex flex-col h-full justify-between">
+            <div>
+                <h5 class="text-2.5xl font-bold text-gray-900 mb-1 metric-value tracking-tight">
+                    {{ currentView.Loc.Sum|stringifyNumber }}
+                </h5>
+                <p class="text-xs font-semibold text-gray-600 uppercase tracking-wide flex items-center gap-2 mb-3">
+                    {% if currentView.Comparaison %}
+                    {% include 'componentComparaisonBadge.html' with comparaisonMode='dontCare' diff=currentView.Comparaison.Loc round=0 %}
+                    {% endif %}
+                    Lines of Code
+                </p>
+            </div>
+            <div class="mt-3 chart-container flex justify-center" style="min-height: 180px;">
+                {% include "componentChartRadiusBarLoc.html" %}
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Complexity Card -->
+    <div class="dashboard-card p-5 animate-fade-in-up stagger-3">
+        <div>
+            <h5 class="text-2xl font-semibold text-gray-900 mb-0.5 metric-value tracking-tight">
+                {{ currentView.CyclomaticComplexityPerMethod.Avg | floatformat:2 }}
+            </h5>
+            <p class="text-xs font-medium text-gray-500 flex items-center gap-2 mb-3">
+                {% if currentView.Comparaison %}
+                {% include 'componentComparaisonBadge.html' with comparaisonMode='lowIsBetter' diff=currentView.Comparaison.AverageCyclomaticComplexityPerMethod round=2 %}
+                {% endif %}
+                Complexity / Method
+            </p>
+        </div>
+        <div class="card-graph mt-3">
+            {{ currentView|barchartCyclomaticByMethodRepartition}}
+        </div>
+        <p class="mt-3 text-xs text-gray-400 border-t border-gray-100 pt-2">
+            Avg. execution paths. Lower is better.
+        </p>
+    </div>
+
+    {% if not cm or cm.Communities|length == 0 %}
+    <!-- LCOM Card -->
+    <div class="dashboard-card p-5 animate-fade-in-up stagger-3">
+        <div>
+            <h5 class="text-2xl font-semibold text-gray-900 mb-0.5 metric-value tracking-tight flex items-center gap-2">
+                {% set color="red" %}
+                {% if currentView.Lcom4PerClass.Avg < 1.7 %} {% set color="emerald" %} {% elif currentView.Lcom4PerClass.Avg> 1.7 %} {% set color="amber" %} {% endif %}
+                    <span class="text-{{ color }}-600">{{ currentView.Lcom4PerClass.Avg | floatformat:1 }}</span>
+            </h5>
+            <p class="text-xs font-medium text-gray-500 flex items-center gap-2 mb-3">
+                {% if currentView.Comparaison %}
+                {% include 'componentComparaisonBadge.html' with comparaisonMode='lowIsBetter' diff=currentView.Comparaison.AverageLcom4 round=2 %}
+                {% endif %}
+                LCOM4
+            </p>
+        </div>
+        <div class="card-graph mt-3">
+            {{ currentView|barchartLcomRepartition}}
+        </div>
+        <p class="mt-3 text-xs text-gray-400 border-t border-gray-100 pt-2">
+            Lack of Cohesion. Lower is better.
+        </p>
+    </div>
+    {% endif %}
+
+    <!-- Maintainability Card -->
+    <div class="dashboard-card p-5 animate-fade-in-up stagger-4">
+        <div>
+            <h5 class="text-2xl font-semibold text-gray-900 mb-0.5 metric-value tracking-tight flex items-center gap-2">
+                {% set color="red" %}
+                {% if currentView.MaintainabilityIndex.Avg > 84 %} {% set color="emerald" %} {% elif currentView.MaintainabilityIndex.Avg > 64 %} {% set color="amber" %} {% endif %}
+                <span class="text-{{ color }}-600">{{ currentView.MaintainabilityIndex.Avg | floatformat:0 }}</span>
+            </h5>
+            <p class="text-xs font-medium text-gray-500 flex items-center gap-2 mb-3">
+                {% if currentView.Comparaison %}
+                {% include 'componentComparaisonBadge.html' with comparaisonMode='highIsBetter' diff=currentView.Comparaison.AverageMI round=2 %}
+                {% endif %}
+                Maintainability Index
+            </p>
+        </div>
+        <div class="card-graph mt-3">
+            {{ currentView|barchartMaintainabilityIndexRepartition}}
+        </div>
+        <p class="mt-3 text-xs text-gray-400 border-t border-gray-100 pt-2">
+            Higher is better (> 85).
+        </p>
+    </div>
+
+    <!-- LOC/Method Card -->
+    <div class="dashboard-card p-5 animate-fade-in-up stagger-4">
+        <div>
+            <h5 class="text-2xl font-semibold text-gray-900 mb-0.5 metric-value tracking-tight">
+                {{ currentView.LocPerMethod.Avg | floatformat:0 }}
+            </h5>
+            <p class="text-xs font-medium text-gray-500 flex items-center gap-2 mb-3">
+                {% if currentView.Comparaison %}
+                {% include 'componentComparaisonBadge.html' with comparaisonMode='lowIsBetter' diff=currentView.Comparaison.AverageLocPerMethod round=2 %}
+                {% endif %}
+                LOC / Method
+            </p>
+        </div>
+        <div class="card-graph mt-3">
+            {{ currentView|barchartLocPerMethodRepartition}}
+        </div>
+        <p class="mt-3 text-xs text-gray-400 border-t border-gray-100 pt-2">
+            Ideally lower than 20.
+        </p>
+    </div>
+
+    <!-- LCOM Card -->
+    <div class="dashboard-card p-5 animate-fade-in-up stagger-4">
+        <div>
+            <h5 class="text-2xl font-semibold text-gray-900 mb-0.5 metric-value tracking-tight flex items-center gap-2">
+                {% set color="red" %}
+                {% if currentView.Lcom4PerClass.Avg < 1.7 %} {% set color="emerald" %} {% elif currentView.Lcom4PerClass.Avg> 1.7 %} {% set color="amber" %} {% endif %}
+                    <span class="text-{{ color }}-600">{{ currentView.Lcom4PerClass.Avg | floatformat:1 }}</span>
+            </h5>
+            <p class="text-xs font-medium text-gray-500 flex items-center gap-2 mb-3">
+                {% if currentView.Comparaison %}
+                {% include 'componentComparaisonBadge.html' with comparaisonMode='lowIsBetter' diff=currentView.Comparaison.AverageLcom4 round=2 %}
+                {% endif %}
+                LCOM4
+            </p>
+        </div>
+        <div class="card-graph mt-3">
+            {{ currentView|barchartLcomRepartition}}
+        </div>
+        <p class="mt-3 text-xs text-gray-400 border-t border-gray-100 pt-2">
+            Lack of Cohesion. Lower is better.
+        </p>
+    </div>
+</div>
+
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mt-6">
+    <!-- Git Activity Card (1 col) -->
+    <div class="dashboard-card md:col-span-2 p-4 animate-fade-in-up stagger-5 mt-8">
+        {% if currentView.ResultOfGitAnalysis %}
+        <div class="mb-3">
+            <h5 class="text-xl font-bold text-gray-900 metric-value tracking-tight">
+                {{ currentView.CommitCountForPeriod | stringifyNumber }}
+            </h5>
+            <p class="text-xs text-gray-500">Commits (12m)</p>
+        </div>
+        <div class="card-graph w-full h-24 mb-3">
+            {{ currentView|lineChartGitActivity}}
+        </div>
+        <div class="overflow-x-auto">
+            <table class="w-full text-left border-collapse text-xs">
+                <thead>
+                    <tr class="text-xs text-gray-400 border-b border-gray-100">
+                        <th class="py-1 font-medium">Repo</th>
+                        <th class="py-1 font-medium">Total</th>
+                        <th class="py-1 font-medium">Imp.</th>
+                    </tr>
+                </thead>
+                <tbody class="text-xs text-gray-600">
+                    {% for commitAnalysis in currentView.ResultOfGitAnalysis %}
+                    <tr class="border-b border-gray-50 last:border-0 hover:bg-gray-50 transition-colors">
+                        <td class="py-1 font-medium text-gray-900 truncate max-w-[100px]" title="{{ commitAnalysis.ReportRootDir }}">
+                            {{ commitAnalysis.ReportRootDir|truncatechars:15 }}
+                        </td>
+                        <td class="py-1">{{ commitAnalysis.CountCommits }}</td>
+                        <td class="py-1">{{ commitAnalysis.CountCommitsForLanguage }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="mb-3">
+            <h5 class="text-xl font-bold text-gray-900 metric-value tracking-tight">
+                {{ currentView.CommitCountForPeriod | stringifyNumber }}
+            </h5>
+            <p class="text-xs text-gray-500">Commits</p>
+        </div>
+        <div class="card-graph h-24">
+            {{ currentView|lineChartGitActivity}}
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Bus Factor Card -->
+    <div class="dashboard-card p-4 animate-fade-in-up stagger-5 mt-8">
+        <h5 class="text-xl font-bold text-gray-900 metric-value tracking-tight mb-1">
+            {{ currentView.BusFactor }}
+        </h5>
+        <p class="text-xs text-gray-500 mb-3">Bus Factor</p>
+
+        <div class="overflow-y-auto max-h-32">
+            <table class="w-full text-left">
+                <thead class="text-xs text-gray-400 border-b border-gray-100">
+                    <tr>
+                        <th class="py-1 font-medium text-xs">Committers</th>
+                    </tr>
+                </thead>
+                <tbody class="text-xs text-gray-600">
+                    {% for committer in currentView.TopCommitters %}
+                    <tr class="border-b border-gray-50 last:border-0">
+                        <td class="py-1 flex justify-between items-center">
+                            <span class="font-medium text-gray-900 truncate max-w-[120px]" title="{{ committer.Name }}">{{ committer.Name }}</span>
+                            <span class="text-xs text-gray-400 bg-gray-100 px-1.5 py-0.5 rounded-full flex-shrink-0">
+                                {{ committer.Count }}
+                            </span>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        <p class="mt-2 text-xs text-gray-400 border-t border-gray-100 pt-2">
+            Ideally > 3.
+        </p>
+    </div>
+
+    <!-- Refactoring Candidates (2 cols) -->
+    <div class="col-span-1 md:col-span-1 dashboard-card p-6 animate-fade-in-up stagger-5 mt-8">
+        <div class="flex items-center justify-between mb-4">
+            <h5 class="text-lg font-semibold text-gray-900">Refactoring Candidates</h5>
+            <a href="risks.html" class="text-xs font-medium text-blue-600 hover:text-blue-700 hover:underline">View all</a>
+        </div>
+        <p class="text-sm text-gray-500 mb-4">Components with low maintainability & high churn.</p>
+        <div class="overflow-x-auto">
+            {% include "componentTableRisks.html" with detailled=false linesToDisplay=5 %}
+        </div>
+    </div>
+</div>
 
 
-    
+<div class="grid grid-cols-1 md:grid-cols-2  gap-4 mt-6">
+    <!-- Packages / Dependency Diagram -->
+    <div class="dashboard-card p-6 animate-fade-in-up stagger-6 mt-8">
+        <h5 class="text-lg font-semibold text-gray-900 mb-1">Packages</h5>
+        <p class="text-sm text-gray-500 mb-4">Relations map</p>
+        <div class="chart-container  justify-center">
+            {% include "componentDependencyDiagram.html" %}
+        </div>
+    </div>
+
+    <div>
+    <!-- Instability -->
+    <div class="dashboard-card p-6 animate-fade-in-up stagger-6  mt-8">
+        <h5 class="text-3xl font-bold text-gray-900 metric-value tracking-tight mb-1">
+            {% if currentView.Instability.Avg == 0.00 %} - {% else %} {{ currentView.Instability.Avg | floatformat:2 }} {% endif %}
+        </h5>
+        <p class="text-sm text-gray-500 mb-4">Avg. Instability</p>
+
+        {% if currentView.Instability.Avg != 0.00 %}
+        <div class="grid grid-cols-2 gap-4">
+            <div class="text-center">
+                <div class="chart-container scale-75 origin-top" style="min-height: 200px;">
+                    {% include "componentChartRadiusBarAfferent.html" %}
+                </div>
+                <p class="text-xs text-gray-400 mt-1">Afferent</p>
+            </div>
+            <div class="text-center">
+                <div class="chart-container scale-75 origin-top" style="min-height: 200px;">
+                    {% include "componentChartRadiusBarEfferent.html" %}
+                </div>
+                <p class="text-xs text-gray-400 mt-1">Efferent</p>
+            </div>
+        </div>
+        {% else %}
+        <p class="text-xs text-gray-400 italic">Not available for this language.</p>
+        {% endif %}
+    </div>
+</div>
+
+    </div> <!-- End Bento Grid -->
+</div>
 {% endblock %}

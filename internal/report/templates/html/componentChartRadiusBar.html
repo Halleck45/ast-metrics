@@ -4,20 +4,25 @@
     // avoid blinking
     var element = document.getElementById("chart_bar_{{ chart_name }}");
     if (element){
-        var elementWidth = document.getElementById("chart_bar_{{ chart_name }}").clientWidth;
-        element.style.height = elementWidth + "px";
+        var elementWidth = element.clientWidth || 200;
+        if (elementWidth > 0) {
+            element.style.height = elementWidth + "px";
+        }
     }
 
     document.addEventListener('DOMContentLoaded', function() {
         let json = document.getElementById("{{ chart_datasource_dom_element_identifier }}").textContent;
         const domElement = document.getElementById("chart_bar_{{ chart_name }}");
+        if (!domElement) return;
+        
         json = json.replace(/},]/g, '}]'); // remove },]
         let data = JSON.parse(json);
 
         // find parent .chart-container element
         const parent = domElement.closest(".chart-container");
+        if (!parent) return;
 
-        const width = parent.clientWidth;
+        const width = parent.clientWidth || 200;
         const padding = 0;
         const height = width;
         const innerRadius = 50;
