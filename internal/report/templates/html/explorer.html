@@ -1,515 +1,639 @@
 {% extends "layout.html" %}
 
 {% block title %}
-    Explorer
+Explorer
 {% endblock %}
 
 {% block pageTitle %}
-    AST Metrics - Explorer
+AST Metrics - Explorer
 {% endblock %}
 
 {% block content %}
 
 <style>
-    .dashboard-card {
-        background: white;
-        border: 1px solid #e2e8f0;
-        border-radius: 16px;
-        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-        position: relative;
-        overflow: hidden;
+  .dashboard-card {
+    background: white;
+    border: 1px solid #e2e8f0;
+    border-radius: 16px;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .dashboard-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+    border-color: #cbd5e1;
+  }
+
+  .dashboard-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(90deg, #3b82f6, #8b5cf6);
+    opacity: 0;
+    transition: opacity 0.3s ease;
+  }
+
+  .dashboard-card:hover::before {
+    opacity: 1;
+  }
+
+  @keyframes fadeIn {
+    from {
+      opacity: 0;
+      transform: translateY(10px);
     }
 
-    .dashboard-card:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
-        border-color: #cbd5e1;
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  @keyframes slideIn {
+    from {
+      opacity: 0;
+      transform: translateX(-10px);
     }
 
-    .dashboard-card::before {
-        content: '';
-        position: absolute;
-        top: 0;
-        left: 0;
-        right: 0;
-        height: 4px;
-        background: linear-gradient(90deg, #3b82f6, #8b5cf6);
-        opacity: 0;
-        transition: opacity 0.3s ease;
+    to {
+      opacity: 1;
+      transform: translateX(0);
     }
+  }
 
-    .dashboard-card:hover::before {
-        opacity: 1;
-    }
+  .animate-fade-in-up {
+    animation: fadeIn 0.5s ease-out backwards;
+  }
 
-    @keyframes fadeIn {
-        from { opacity: 0; transform: translateY(10px); }
-        to { opacity: 1; transform: translateY(0); }
-    }
+  .animate-slide-in {
+    animation: slideIn 0.3s ease-out backwards;
+  }
 
-    @keyframes slideIn {
-        from { opacity: 0; transform: translateX(-10px); }
-        to { opacity: 1; transform: translateX(0); }
-    }
+  /* Antigravity-inspired search */
+  .search-input {
+    transition: all 0.2s ease;
+    border: 1.5px solid #e2e8f0;
+  }
 
-    .animate-fade-in-up {
-        animation: fadeIn 0.5s ease-out backwards;
-    }
+  .search-input:focus {
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+    outline: none;
+  }
 
-    .animate-slide-in {
-        animation: slideIn 0.3s ease-out backwards;
-    }
+  /* File tree styling */
+  .file-item {
+    transition: all 0.15s ease;
+    border-radius: 8px;
+  }
 
-    /* Antigravity-inspired search */
-    .search-input {
-        transition: all 0.2s ease;
-        border: 1.5px solid #e2e8f0;
-    }
+  .file-item:hover {
+    background: #f8fafc;
+    transform: translateX(2px);
+  }
 
-    .search-input:focus {
-        border-color: #3b82f6;
-        box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
-        outline: none;
-    }
+  .file-item.selected {
+    background: linear-gradient(90deg, #eff6ff, #dbeafe);
+    border-left: 3px solid #3b82f6;
+  }
 
-    /* File tree styling */
-    .file-item {
-        transition: all 0.15s ease;
-        border-radius: 8px;
-    }
+  /* Metric cards */
+  .metric-card {
+    transition: all 0.2s ease;
+  }
 
-    .file-item:hover {
-        background: #f8fafc;
-        transform: translateX(2px);
-    }
+  .metric-card:hover {
+    transform: translateY(-1px);
+  }
 
-    .file-item.selected {
-        background: linear-gradient(90deg, #eff6ff, #dbeafe);
-        border-left: 3px solid #3b82f6;
-    }
+  /* Empty state */
+  .empty-state {
+    opacity: 0.6;
+  }
 
-    /* Metric cards */
-    .metric-card {
-        transition: all 0.2s ease;
-    }
-
-    .metric-card:hover {
-        transform: translateY(-1px);
-    }
-
-    /* Empty state */
-    .empty-state {
-        opacity: 0.6;
-    }
-
-    /* Badge improvements */
-    .badge-modern {
-        font-weight: 500;
-        letter-spacing: 0.01em;
-    }
+  /* Badge improvements */
+  .badge-modern {
+    font-weight: 500;
+    letter-spacing: 0.01em;
+  }
 </style>
 
-<!-- Hero Section -->
-<div class="mb-8 animate-fade-in-up">
-    <h1 class="text-4xl font-bold text-gray-900 mb-3" style="letter-spacing: -0.02em;">File Explorer</h1>
-    <p class="text-base text-gray-600 font-light">Browse, analyze, and understand your codebase structure</p>
-</div>
-<div x-data="explorer()" x-init="init()" class="grid grid-cols-1 lg:grid-cols-3 gap-4">
-  
-  <!-- Left: Tree, search and filters -->
-  <div class="lg:col-span-1">
+<div x-data="explorer()" x-init="init()">
+  <div :inert="openGlossary" :aria-hidden="openGlossary ? 'true' : 'false'">
+    <!-- Hero Section -->
+    <div class="mb-8 animate-fade-in-up">
+      <h1 class="text-4xl font-bold text-gray-900 mb-3" style="letter-spacing: -0.02em;">File Explorer</h1>
+      <p class="text-base text-gray-600 font-light">Browse, analyze, and understand your codebase structure</p>
+    </div>
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
 
-    <div class="dashboard-card p-6 animate-fade-in-up">
+      <!-- Left: Tree, search and filters -->
+      <div class="lg:col-span-1">
 
-      <!-- start: filters-->
-      <div class="space-y-4 mb-6">
-        <!-- start: search -->
-        <div>
-          <label class="block text-xs font-semibold text-gray-700 mb-2 uppercase tracking-wide">Search files</label>
-          <div class="flex justify-start items-center relative">
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="absolute left-3 text-gray-400 size-5">
-              <path stroke-linecap="round" stroke-linejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z" />
-            </svg>
-            <input x-model="filters.q" type="text" placeholder="Type to search..." class="search-input pl-10 w-full rounded-xl px-4 py-3 text-sm bg-gray-50 focus:bg-white" />
-          </div>
-        </div>
-        <!-- end: search -->
+        <div class="dashboard-card p-6 animate-fade-in-up">
 
-        <!-- start: min -->
-        <div>
-          <label for="ipt-min-risks" class="block text-xs font-semibold text-gray-700 mb-2 uppercase tracking-wide">Minimum risks</label>
-          <input id="ipt-min-risks" x-model.number="filters.minRisks" type="number" min="0" class="search-input w-full rounded-xl px-4 py-3 text-sm bg-gray-50 focus:bg-white" />
-        </div>
-        <!-- end: min -->
-      </div>
-      <!-- end: filters-->
-
-      <div class="max-h-[65vh] overflow-auto pr-2 -mr-2">
-        <!-- start: no result-->
-        <template x-if="tree.length === 0">
-          <div class="empty-state text-center py-12 px-4">
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-12 h-12 text-gray-300 mx-auto mb-3">
-              <path stroke-linecap="round" stroke-linejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z" />
-            </svg>
-            <p class="text-sm font-medium text-gray-400">No files match your filters</p>
-            <p class="text-xs text-gray-400 mt-1">Try adjusting your search criteria</p>
-          </div>
-        </template>
-        <!-- end: no result-->
-
-        <!-- start: tree -->
-        <ul class="text-sm space-y-1">
-          <template x-for="root in tree" :key="root.name">
-            <li class="mt-3 first:mt-0">
-              <div class="cursor-pointer font-semibold text-gray-800 hover:text-gray-900 flex items-center gap-2 py-2 px-2 rounded-lg hover:bg-gray-50 transition-colors" @click="root.expanded = !root.expanded">
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="text-gray-500 size-4 transition-transform" :class="root.expanded ? 'rotate-90' : ''">
-                  <path stroke-linecap="round" stroke-linejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
+          <!-- start: filters-->
+          <div class="space-y-4 mb-6">
+            <!-- start: search -->
+            <div>
+              <label class="block text-xs font-semibold text-gray-700 mb-2 uppercase tracking-wide">Search files</label>
+              <div class="flex justify-start items-center relative">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2"
+                  stroke="currentColor" class="absolute left-3 text-gray-400 size-5">
+                  <path stroke-linecap="round" stroke-linejoin="round"
+                    d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z" />
                 </svg>
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="text-gray-400 size-4">
-                  <path stroke-linecap="round" stroke-linejoin="round" d="M6.429 9.75 2.25 12l4.179 2.25m0-4.5 5.571 3 5.571-3m-11.142 0L2.25 7.5 12 2.25l9.75 5.25-4.179 2.25m0 0L21.75 12l-4.179 2.25m0 0 4.179 2.25L12 21.75 2.25 16.5l4.179-2.25m11.142 0-5.571 3-5.571-3" />
-                </svg>
-                <span class="font-medium" x-text="root.name"></span>
+                <input x-model="filters.q" type="text" placeholder="Type to search..."
+                  class="search-input pl-10 w-full rounded-xl px-4 py-3 text-sm bg-gray-50 focus:bg-white" />
               </div>
-              <ul class="ml-6 mt-1 space-y-0.5" x-show="root.expanded" x-transition>
-                <template x-for="dir in root.dirs" :key="dir.path">
-                  <li class="my-1">
-                    <div class="cursor-pointer font-medium text-gray-700 hover:text-gray-900 flex items-center gap-2 py-1.5 px-2 rounded-lg hover:bg-gray-50 transition-colors" @click="dir.expanded = !dir.expanded">
-                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="text-gray-400 size-3.5 transition-transform" :class="dir.expanded ? 'rotate-90' : ''">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
-                      </svg>
-                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="text-gray-400 size-3.5">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 12.75V12A2.25 2.25 0 0 1 4.5 9.75h15A2.25 2.25 0 0 1 21.75 12v.75m-8.69-6.44-2.12-2.12a1.5 1.5 0 0 0-1.061-.44H4.5A2.25 2.25 0 0 0 2.25 6v12a2.25 2.25 0 0 0 2.25 2.25h15A2.25 2.25 0 0 0 21.75 18V9a2.25 2.25 0 0 0-2.25-2.25h-5.379a1.5 1.5 0 0 1-1.06-.44Z" />
-                      </svg>
-                      <span class="text-sm" x-text="dir.name.split('/').pop()"></span>
-                    </div>
-                    <ul class="ml-6 mt-0.5 space-y-0.5" x-show="dir.expanded" x-transition>
-                      <template x-for="f in dir.files" :key="f.path">
-                        <li @click="select(f)" class="file-item px-3 py-2 rounded-lg cursor-pointer my-0.5" :class="selected && selected.path === f.path ? 'selected' : ''">
-                          <div class="flex items-start justify-between gap-2">
-                            <div class="flex-1 min-w-0">
-                              <div class="flex items-center gap-2 mb-1">
-                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="text-gray-400 size-3.5 shrink-0 mt-0.5">
-                                  <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m2.25 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z" />
-                                </svg>
-                                <span class="text-sm font-medium text-gray-900 truncate" :class="riskColorByCount(nbRisksFor(f))" x-text="f.shortPath ? f.shortPath.split('/').pop() : f.path.split('/').pop()"></span>
+            </div>
+            <!-- end: search -->
+
+            <!-- start: min -->
+            <div>
+              <label for="ipt-min-risks"
+                class="block text-xs font-semibold text-gray-700 mb-2 uppercase tracking-wide">Minimum risks</label>
+              <input id="ipt-min-risks" x-model.number="filters.minRisks" type="number" min="0"
+                class="search-input w-full rounded-xl px-4 py-3 text-sm bg-gray-50 focus:bg-white" />
+            </div>
+            <!-- end: min -->
+          </div>
+          <!-- end: filters-->
+
+          <div class="max-h-[65vh] overflow-auto pr-2 -mr-2">
+            <!-- start: no result-->
+            <template x-if="tree.length === 0">
+              <div class="empty-state text-center py-12 px-4">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
+                  stroke="currentColor" class="w-12 h-12 text-gray-300 mx-auto mb-3">
+                  <path stroke-linecap="round" stroke-linejoin="round"
+                    d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z" />
+                </svg>
+                <p class="text-sm font-medium text-gray-400">No files match your filters</p>
+                <p class="text-xs text-gray-400 mt-1">Try adjusting your search criteria</p>
+              </div>
+            </template>
+            <!-- end: no result-->
+
+            <!-- start: tree -->
+            <ul class="text-sm space-y-1">
+              <template x-for="root in tree" :key="root.name">
+                <li class="mt-3 first:mt-0">
+                  <div
+                    class="cursor-pointer font-semibold text-gray-800 hover:text-gray-900 flex items-center gap-2 py-2 px-2 rounded-lg hover:bg-gray-50 transition-colors"
+                    @click="root.expanded = !root.expanded">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2"
+                      stroke="currentColor" class="text-gray-500 size-4 transition-transform"
+                      :class="root.expanded ? 'rotate-90' : ''">
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
+                    </svg>
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
+                      stroke="currentColor" class="text-gray-400 size-4">
+                      <path stroke-linecap="round" stroke-linejoin="round"
+                        d="M6.429 9.75 2.25 12l4.179 2.25m0-4.5 5.571 3 5.571-3m-11.142 0L2.25 7.5 12 2.25l9.75 5.25-4.179 2.25m0 0L21.75 12l-4.179 2.25m0 0 4.179 2.25L12 21.75 2.25 16.5l4.179-2.25m11.142 0-5.571 3-5.571-3" />
+                    </svg>
+                    <span class="font-medium" x-text="root.name"></span>
+                  </div>
+                  <ul class="ml-6 mt-1 space-y-0.5" x-show="root.expanded" x-transition>
+                    <template x-for="dir in root.dirs" :key="dir.path">
+                      <li class="my-1">
+                        <div
+                          class="cursor-pointer font-medium text-gray-700 hover:text-gray-900 flex items-center gap-2 py-1.5 px-2 rounded-lg hover:bg-gray-50 transition-colors"
+                          @click="dir.expanded = !dir.expanded">
+                          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2"
+                            stroke="currentColor" class="text-gray-400 size-3.5 transition-transform"
+                            :class="dir.expanded ? 'rotate-90' : ''">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
+                          </svg>
+                          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
+                            stroke="currentColor" class="text-gray-400 size-3.5">
+                            <path stroke-linecap="round" stroke-linejoin="round"
+                              d="M2.25 12.75V12A2.25 2.25 0 0 1 4.5 9.75h15A2.25 2.25 0 0 1 21.75 12v.75m-8.69-6.44-2.12-2.12a1.5 1.5 0 0 0-1.061-.44H4.5A2.25 2.25 0 0 0 2.25 6v12a2.25 2.25 0 0 0 2.25 2.25h15A2.25 2.25 0 0 0 21.75 18V9a2.25 2.25 0 0 0-2.25-2.25h-5.379a1.5 1.5 0 0 1-1.06-.44Z" />
+                          </svg>
+                          <span class="text-sm" x-text="dir.name.split('/').pop()"></span>
+                        </div>
+                        <ul class="ml-6 mt-0.5 space-y-0.5" x-show="dir.expanded" x-transition>
+                          <template x-for="f in dir.files" :key="f.path">
+                            <li @click="select(f)" class="file-item px-3 py-2 rounded-lg cursor-pointer my-0.5"
+                              :class="selected && selected.path === f.path ? 'selected' : ''">
+                              <div class="flex items-start justify-between gap-2">
+                                <div class="flex-1 min-w-0">
+                                  <div class="flex items-center gap-2 mb-1">
+                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+                                      stroke-width="1.5" stroke="currentColor"
+                                      class="text-gray-400 size-3.5 shrink-0 mt-0.5">
+                                      <path stroke-linecap="round" stroke-linejoin="round"
+                                        d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m2.25 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z" />
+                                    </svg>
+                                    <span class="text-sm font-medium text-gray-900 truncate"
+                                      :class="riskColorByCount(nbRisksFor(f))"
+                                      x-text="f.shortPath ? f.shortPath.split('/').pop() : f.path.split('/').pop()"></span>
+                                  </div>
+                                  <div class="flex items-center gap-2 text-xs text-gray-500 ml-5">
+                                    <span class="badge-modern"
+                                      :class="nbRisksFor(f) > 0 ? 'text-amber-600' : 'text-green-600'">
+                                      <span x-text="nbRisksFor(f)"></span> risk<span
+                                        x-text="nbRisksFor(f) !== 1 ? 's' : ''"></span>
+                                    </span>
+                                    <span class="text-gray-300">•</span>
+                                    <span class="text-gray-400" x-text="fileRiskScore(f).toFixed(1)"></span>
+                                  </div>
+                                </div>
                               </div>
-                              <div class="flex items-center gap-2 text-xs text-gray-500 ml-5">
-                                <span class="badge-modern" :class="nbRisksFor(f) > 0 ? 'text-amber-600' : 'text-green-600'">
-                                  <span x-text="nbRisksFor(f)"></span> risk<span x-text="nbRisksFor(f) !== 1 ? 's' : ''"></span>
-                                </span>
-                                <span class="text-gray-300">•</span>
-                                <span class="text-gray-400" x-text="fileRiskScore(f).toFixed(1)"></span>
+                            </li>
+                          </template>
+                        </ul>
+                      </li>
+                    </template>
+                  </ul>
+                </li>
+              </template>
+            </ul>
+            <!-- end: tree -->
+          </div>
+        </div>
+      </div>
+
+      <!-- Right: Details panel -->
+      <div class="lg:col-span-2">
+        <div class="dashboard-card p-8 animate-fade-in-up">
+          <template x-if="!selected">
+            <div class="empty-state text-center py-16 px-4">
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
+                stroke="currentColor" class="w-16 h-16 text-gray-200 mx-auto mb-4">
+                <path stroke-linecap="round" stroke-linejoin="round"
+                  d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z" />
+              </svg>
+              <h2 class="text-lg font-semibold text-gray-700 mb-2">No file selected</h2>
+              <p class="text-sm text-gray-700 max-w-sm mx-auto">Select a file from the tree to view detailed metrics,
+                risks, and guidance</p>
+            </div>
+          </template>
+          <template x-if="selected">
+            <div>
+              <!-- Header -->
+              <div class="mb-8 pb-6 border-b border-gray-100">
+                <div class="flex items-start justify-between gap-4">
+                  <div class="flex-1 min-w-0">
+                    <h2 class="text-2xl font-bold text-gray-900 mb-3 break-words" style="letter-spacing: -0.02em;"
+                      x-text="selected.path"></h2>
+                    <div class="flex flex-wrap items-center gap-2">
+                      <span
+                        class="inline-flex items-center px-3 py-1 rounded-full bg-gray-100 text-gray-700 text-xs font-medium badge-modern">
+                        <span class="mr-1.5" x-text="selected.programmingLanguage || 'Unknown'"></span>
+                      </span>
+                      <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium badge-modern"
+                        :class="risks.length > 0 ? 'bg-amber-100 text-amber-700' : 'bg-green-100 text-green-700'">
+                        <span x-text="risks.length"></span> risk<span x-text="risks.length !== 1 ? 's' : ''"></span>
+                      </span>
+                      <span
+                        class="inline-flex items-center px-3 py-1 rounded-full bg-blue-50 text-blue-700 text-xs font-medium badge-modern">
+                        Score: <span class="ml-1 font-semibold" x-text="fileRiskScore(selected).toFixed(1)"></span>
+                      </span>
+                      <span
+                        class="inline-flex items-center px-3 py-1 rounded-full bg-slate-100 text-slate-700 text-xs font-medium badge-modern"
+                        x-show="(selected.commits?.count)||0 > 0">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2"
+                          stroke="currentColor" class="size-3 mr-1">
+                          <path stroke-linecap="round" stroke-linejoin="round"
+                            d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
+                        </svg>
+                        <span x-text="(selected.commits?.count)||0"></span> commits
+                      </span>
+                    </div>
+                  </div>
+                  <button @click="openGlossary=true"
+                    class="shrink-0 inline-flex items-center gap-2 px-4 py-2 rounded-xl border border-gray-200 hover:bg-gray-50 hover:border-gray-300 transition-colors text-sm font-medium text-gray-700">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-4">
+                      <path d="M11.25 3.042A8.25 8.25 0 1 0 19.46 11.25h-1.577a6.75 6.75 0 1 1-6.633-8.208z" />
+                      <path
+                        d="M12.75 6.75a.75.75 0 0 0-1.5 0v6a.75.75 0 0 0 1.5 0zM12 16.5a.75.75 0 1 0 0 1.5.75.75 0 0 0 0-1.5z" />
+                    </svg>
+                    Guide
+                  </button>
+                </div>
+              </div>
+
+              <!-- Overview KPIs -->
+              <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4 mb-8">
+                <div class="metric-card bg-gradient-to-br from-white to-gray-50 p-5 rounded-xl border border-gray-100">
+                  <div class="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">Maintainability</div>
+                  <div class="flex items-baseline justify-between mb-3">
+                    <span class="text-3xl font-bold text-gray-900" style="letter-spacing: -0.03em;"
+                      x-text="formatMI(worstMI)"></span>
+                    <span :class="miBadgeClass(worstMI)" class="badge-modern"><span
+                        x-text="formatMI(worstMI)"></span></span>
+                  </div>
+                  <div class="h-2 w-full rounded-full bg-gray-200 overflow-hidden">
+                    <div class="h-2 rounded-full transition-all duration-500" :class="miBarClass(worstMI)"
+                      :style="`width: ${miPct(worstMI)}%`"></div>
+                  </div>
+                  <p class="mt-2 text-xs text-gray-500">Target ≥ 85</p>
+                </div>
+                <div class="metric-card bg-gradient-to-br from-white to-gray-50 p-5 rounded-xl border border-gray-100">
+                  <div class="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">Cyclomatic</div>
+                  <div class="text-3xl font-bold text-gray-900 mb-2" style="letter-spacing: -0.03em;"
+                    x-text="avgCyclomatic.toFixed(1)"></div>
+                  <p class="text-xs font-medium" :class="complexityTextClass(avgCyclomatic)">
+                    <span x-text="complexityBand(avgCyclomatic)"></span>
+                  </p>
+                </div>
+                <div class="metric-card bg-gradient-to-br from-white to-gray-50 p-5 rounded-xl border border-gray-100">
+                  <div class="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">LCOM4</div>
+                  <div class="text-3xl font-bold text-gray-900 mb-2" style="letter-spacing: -0.03em;"
+                    x-text="avgLCOM4Display"></div>
+                  <p class="text-xs text-gray-500">Lower is better</p>
+                </div>
+                <div class="metric-card bg-gradient-to-br from-white to-gray-50 p-5 rounded-xl border border-gray-100">
+                  <div class="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">LLOC</div>
+                  <div class="text-3xl font-bold text-gray-900 mb-2" style="letter-spacing: -0.03em;"
+                    x-text="fileLLocDisplay"></div>
+                  <p class="text-xs text-gray-500">Logical lines</p>
+                </div>
+              </div>
+
+              <!-- Panels -->
+              <div class="space-y-6">
+                <!-- Classes & Methods -->
+                <div>
+                  <div class="dashboard-card p-6">
+                    <div class="flex items-center justify-between mb-6">
+                      <h3 class="text-lg font-bold text-gray-900">Classes</h3>
+                      <span class="text-sm text-gray-500 font-medium" x-text="classes.length + ' total'"></span>
+                    </div>
+                    <div class="overflow-x-auto -mx-6 px-6">
+                      <table class="w-full text-sm">
+                        <thead>
+                          <tr class="border-b border-gray-200">
+                            <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wide">
+                              Name</th>
+                            <th
+                              class="px-4 py-3 text-right text-xs font-semibold text-gray-600 uppercase tracking-wide">
+                              MI</th>
+                            <th
+                              class="px-4 py-3 text-right text-xs font-semibold text-gray-600 uppercase tracking-wide">
+                              Instability</th>
+                            <th
+                              class="px-4 py-3 text-right text-xs font-semibold text-gray-600 uppercase tracking-wide">
+                              LCOM4</th>
+                            <th
+                              class="px-4 py-3 text-right text-xs font-semibold text-gray-600 uppercase tracking-wide">
+                              LLOC</th>
+                            <th
+                              class="px-4 py-3 text-right text-xs font-semibold text-gray-600 uppercase tracking-wide">
+                              Bugs</th>
+                          </tr>
+                        </thead>
+                        <tbody class="divide-y divide-gray-100">
+                          <template x-if="classes.length === 0">
+                            <tr>
+                              <td colspan="6" class="px-4 py-8 text-center text-gray-400">No classes in this file</td>
+                            </tr>
+                          </template>
+                          <template x-for="c in classes" :key="c.name?.qualified || c.name?.short || Math.random()">
+                            <tr class="hover:bg-gray-50 transition-colors">
+                              <td class="px-4 py-3 font-medium text-gray-900" x-text="c.name ? c.name.qualified : '-' ">
+                              </td>
+                              <td class="px-4 py-3 text-right"><span :class="miBadgeClass(miRaw(c))"
+                                  class="badge-modern px-2 py-1 rounded-md text-xs" x-text="mi(c)"></span></td>
+                              <td class="px-4 py-3 text-right text-gray-700 font-mono text-xs"
+                                x-text="fmtNumber(c.stmts?.analyze?.coupling?.instability)"></td>
+                              <td class="px-4 py-3 text-right text-gray-700 font-mono text-xs"
+                                x-text="fmtNumber(c.stmts?.analyze?.classCohesion?.lcom4)"></td>
+                              <td class="px-4 py-3 text-right text-gray-700 font-mono text-xs"
+                                x-text="c.stmts?.analyze?.volume?.lloc ?? '-' "></td>
+                              <td class="px-4 py-3 text-right text-gray-700 font-mono text-xs"
+                                x-text="fmtFixed(c.stmts?.analyze?.volume?.halsteadBugs,4)"></td>
+                            </tr>
+                          </template>
+                        </tbody>
+                      </table>
+                    </div>
+
+                    <h4 class="font-semibold text-gray-900 mt-8 mb-4">Methods</h4>
+                    <div class="overflow-x-auto -mx-6 px-6">
+                      <table class="w-full text-sm">
+                        <thead>
+                          <tr class="border-b border-gray-200">
+                            <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wide">
+                              Signature</th>
+                            <th
+                              class="px-4 py-3 text-right text-xs font-semibold text-gray-600 uppercase tracking-wide">
+                              Cyclomatic</th>
+                          </tr>
+                        </thead>
+                        <tbody class="divide-y divide-gray-100">
+                          <template x-if="methods.length === 0">
+                            <tr>
+                              <td colspan="2" class="px-4 py-6 text-center text-gray-400">No methods detected</td>
+                            </tr>
+                          </template>
+                          <template x-for="m in methods" :key="m.name?.qualified || m.name?.short || Math.random()">
+                            <tr class="hover:bg-gray-50 transition-colors">
+                              <td class="px-4 py-2.5 font-mono text-xs text-gray-700"
+                                x-text="m.name ? (m.name.describer || m.name.qualified || m.name.short) : '-' "></td>
+                              <td class="px-4 py-2.5 text-right">
+                                <span class="px-2 py-1 rounded-md text-xs font-medium badge-modern"
+                                  :class="complexityBadgeClass(m.stmts?.analyze?.complexity?.cyclomatic)"
+                                  x-text="m.stmts?.analyze?.complexity?.cyclomatic ?? '-' "></span>
+                              </td>
+                            </tr>
+                          </template>
+                        </tbody>
+                      </table>
+                    </div>
+
+                    <div class="mt-6 p-4 bg-blue-50 rounded-lg border border-blue-100">
+                      <p class="text-xs text-blue-800">
+                        <span class="font-semibold">💡 Tip:</span> Higher MI is better. Lower cyclomatic complexity
+                        keeps code simpler. LCOM4 close to 1 means cohesive classes.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Risks -->
+                <div>
+                  <div class="dashboard-card p-6">
+                    <div class="flex items-center justify-between mb-6">
+                      <h3 class="text-lg font-bold text-gray-900">Detected Risks <span
+                          class="text-base font-normal text-gray-500" x-text="'(' + risks.length + ')'"></span></h3>
+                      <div class="flex items-center gap-3 text-sm">
+                        <label class="inline-flex items-center gap-2 cursor-pointer">
+                          <input type="checkbox" class="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                            x-model="filters.onlyHigh" />
+                          <span class="text-gray-600">High only</span>
+                        </label>
+                        <label class="inline-flex items-center gap-2 cursor-pointer">
+                          <input type="checkbox" class="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                            x-model="filters.groupByCategory" />
+                          <span class="text-gray-600">Group</span>
+                        </label>
+                      </div>
+                    </div>
+
+                    <template x-if="risks.length === 0">
+                      <div class="text-center py-12">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
+                          stroke="currentColor" class="w-12 h-12 text-green-300 mx-auto mb-3">
+                          <path stroke-linecap="round" stroke-linejoin="round"
+                            d="M9 12.75 11.25 15 15 9.75m-3-7.036A11.959 11.959 0 0 1 3.598 6 11.99 11.99 0 0 0 3 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-4.902Z" />
+                        </svg>
+                        <p class="text-sm font-medium text-gray-400">No risks detected</p>
+                        <p class="text-xs text-gray-400 mt-1">This file looks healthy!</p>
+                      </div>
+                    </template>
+
+                    <!-- Grouped view -->
+                    <template x-if="filters.groupByCategory && groupedRisksKeys.length">
+                      <div class="space-y-6">
+                        <template x-for="cat in groupedRisksKeys" :key="cat">
+                          <div>
+                            <div class="text-xs font-semibold uppercase tracking-wide text-gray-500 mb-3"
+                              x-text="cat || 'Uncategorized'"></div>
+                            <div class="space-y-3">
+                              <template x-for="r in groupedRisks[cat]">
+                                <div class="border rounded-xl p-4 hover:shadow-sm transition-all"
+                                  :class="riskCardClass(r) + ' bg-white'">
+                                  <div class="flex items-start justify-between gap-4">
+                                    <div class="flex-1 min-w-0">
+                                      <div class="flex items-center gap-2 mb-2">
+                                        <span class="text-sm font-semibold text-gray-900" x-text="r.title"></span>
+                                        <span class="px-2 py-1 rounded-md text-xs font-medium badge-modern"
+                                          :class="severityBadgeClass(r.severity)"
+                                          x-text="severityLevel(r.severity)"></span>
+                                      </div>
+                                      <p class="text-sm text-gray-600 mb-2" x-text="r.details"></p>
+                                      <template x-if="r.hint">
+                                        <div class="text-xs text-gray-500 bg-gray-50 rounded-lg p-2 mt-2">
+                                          <span class="font-semibold text-gray-700">💡 Fix:</span> <span
+                                            x-text="r.hint"></span>
+                                        </div>
+                                      </template>
+                                    </div>
+                                    <div class="text-right shrink-0">
+                                      <div class="text-xs font-medium text-gray-500 mb-1">Severity</div>
+                                      <div class="h-2 w-24 rounded-full bg-gray-200 overflow-hidden">
+                                        <div class="h-2 rounded-full transition-all duration-300"
+                                          :class="severityBarClass(r.severity)"
+                                          :style="`width: ${severityPct(r.severity)}%`"></div>
+                                      </div>
+                                    </div>
+                                  </div>
+                                </div>
+                              </template>
+                            </div>
+                          </div>
+                        </template>
+                      </div>
+                    </template>
+
+                    <!-- Flat list -->
+                    <template x-if="!filters.groupByCategory && risksSorted.length">
+                      <div class="space-y-3">
+                        <template x-for="r in risksSorted">
+                          <div class="border rounded-xl p-4 hover:shadow-sm transition-all"
+                            :class="riskCardClass(r) + ' bg-white'">
+                            <div class="flex items-start justify-between gap-4">
+                              <div class="flex-1 min-w-0">
+                                <div class="flex items-center gap-2 mb-2">
+                                  <span class="text-sm font-semibold text-gray-900" x-text="r.title"></span>
+                                  <span class="px-2 py-1 rounded-md text-xs font-medium badge-modern"
+                                    :class="severityBadgeClass(r.severity)" x-text="severityLevel(r.severity)"></span>
+                                </div>
+                                <p class="text-sm text-gray-600 mb-2" x-text="r.details"></p>
+                                <template x-if="r.hint">
+                                  <div class="text-xs text-gray-500 bg-gray-50 rounded-lg p-2 mt-2">
+                                    <span class="font-semibold text-gray-700">💡 Fix:</span> <span
+                                      x-text="r.hint"></span>
+                                  </div>
+                                </template>
+                              </div>
+                              <div class="text-right shrink-0">
+                                <div class="text-xs font-medium text-gray-500 mb-1">Severity</div>
+                                <div class="h-2 w-24 rounded-full bg-gray-200 overflow-hidden">
+                                  <div class="h-2 rounded-full transition-all duration-300"
+                                    :class="severityBarClass(r.severity)" :style="`width: ${severityPct(r.severity)}%`">
+                                  </div>
+                                </div>
                               </div>
                             </div>
                           </div>
-                        </li>
-                      </template>
-                    </ul>
-                  </li>
-                </template>
-              </ul>
-            </li>
+                        </template>
+                      </div>
+                    </template>
+
+                    <div class="mt-6 p-4 bg-amber-50 rounded-lg border border-amber-100" x-show="risks.length > 0">
+                      <p class="text-xs text-amber-800">
+                        <span class="font-semibold">📋 Note:</span> Risks are sorted by severity. Use the hints to plan
+                        your refactoring strategy.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+
+
+            </div>
           </template>
-        </ul>
-        <!-- end: tree -->
+        </div>
       </div>
     </div>
   </div>
 
-  <!-- Right: Details panel -->
-  <div class="lg:col-span-2">
-    <div class="dashboard-card p-8 animate-fade-in-up">
-      <template x-if="!selected">
-        <div class="empty-state text-center py-16 px-4">
-          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-16 h-16 text-gray-200 mx-auto mb-4">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z" />
+  <!-- Glossary modal -->
+  <div x-show="openGlossary" x-cloak class="fixed inset-0 z-50 flex items-center justify-center p-4"
+    style="backdrop-filter: blur(4px);">
+    <div class="absolute inset-0 bg-black/40" @click="openGlossary=false"></div>
+    <div class="relative dashboard-card w-full max-w-3xl p-8 max-h-[90vh] overflow-y-auto">
+      <div class="flex items-center justify-between mb-6 pb-4 border-b border-gray-200">
+        <h3 class="text-xl font-bold text-gray-900">Metric Guide</h3>
+        <button class="text-gray-400 hover:text-gray-600 transition-colors p-1 rounded-lg hover:bg-gray-100"
+          @click="openGlossary=false">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"
+            class="w-5 h-5">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" />
           </svg>
-          <h3 class="text-lg font-semibold text-gray-400 mb-2">No file selected</h3>
-          <p class="text-sm text-gray-400 max-w-sm mx-auto">Select a file from the tree to view detailed metrics, risks, and guidance</p>
+        </button>
+      </div>
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
+        <div class="p-4 bg-gray-50 rounded-xl">
+          <div class="font-semibold text-gray-900 mb-2">Maintainability Index (MI)</div>
+          <p class="text-gray-600 text-sm leading-relaxed">0–128. Higher is better. Aggregates complexity, size, and
+            churn. Aim ≥ 85.</p>
         </div>
-      </template>
-      <template x-if="selected">
-        <div>
-          <!-- Header -->
-          <div class="mb-8 pb-6 border-b border-gray-100">
-            <div class="flex items-start justify-between gap-4">
-              <div class="flex-1 min-w-0">
-                <h2 class="text-2xl font-bold text-gray-900 mb-3 break-words" style="letter-spacing: -0.02em;" x-text="selected.path"></h2>
-                <div class="flex flex-wrap items-center gap-2">
-                  <span class="inline-flex items-center px-3 py-1 rounded-full bg-gray-100 text-gray-700 text-xs font-medium badge-modern">
-                    <span class="mr-1.5" x-text="selected.programmingLanguage || 'Unknown'"></span>
-                  </span>
-                  <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium badge-modern" :class="risks.length > 0 ? 'bg-amber-100 text-amber-700' : 'bg-green-100 text-green-700'">
-                    <span x-text="risks.length"></span> risk<span x-text="risks.length !== 1 ? 's' : ''"></span>
-                  </span>
-                  <span class="inline-flex items-center px-3 py-1 rounded-full bg-blue-50 text-blue-700 text-xs font-medium badge-modern">
-                    Score: <span class="ml-1 font-semibold" x-text="fileRiskScore(selected).toFixed(1)"></span>
-                  </span>
-                  <span class="inline-flex items-center px-3 py-1 rounded-full bg-slate-100 text-slate-700 text-xs font-medium badge-modern" x-show="(selected.commits?.count)||0 > 0">
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="size-3 mr-1">
-                      <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
-                    </svg>
-                    <span x-text="(selected.commits?.count)||0"></span> commits
-                  </span>
-                </div>
-              </div>
-              <button @click="openGlossary=true" class="shrink-0 inline-flex items-center gap-2 px-4 py-2 rounded-xl border border-gray-200 hover:bg-gray-50 hover:border-gray-300 transition-colors text-sm font-medium text-gray-700">
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-4"><path d="M11.25 3.042A8.25 8.25 0 1 0 19.46 11.25h-1.577a6.75 6.75 0 1 1-6.633-8.208z"/><path d="M12.75 6.75a.75.75 0 0 0-1.5 0v6a.75.75 0 0 0 1.5 0zM12 16.5a.75.75 0 1 0 0 1.5.75.75 0 0 0 0-1.5z"/></svg>
-                Guide
-              </button>
-            </div>
-          </div>
-
-          <!-- Overview KPIs -->
-          <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4 mb-8">
-            <div class="metric-card bg-gradient-to-br from-white to-gray-50 p-5 rounded-xl border border-gray-100">
-              <div class="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">Maintainability</div>
-              <div class="flex items-baseline justify-between mb-3">
-                <span class="text-3xl font-bold text-gray-900" style="letter-spacing: -0.03em;" x-text="formatMI(worstMI)"></span>
-                <span :class="miBadgeClass(worstMI)" class="badge-modern"><span x-text="formatMI(worstMI)"></span></span>
-              </div>
-              <div class="h-2 w-full rounded-full bg-gray-200 overflow-hidden">
-                <div class="h-2 rounded-full transition-all duration-500" :class="miBarClass(worstMI)" :style="`width: ${miPct(worstMI)}%`"></div>
-              </div>
-              <p class="mt-2 text-xs text-gray-500">Target ≥ 85</p>
-            </div>
-            <div class="metric-card bg-gradient-to-br from-white to-gray-50 p-5 rounded-xl border border-gray-100">
-              <div class="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">Cyclomatic</div>
-              <div class="text-3xl font-bold text-gray-900 mb-2" style="letter-spacing: -0.03em;" x-text="avgCyclomatic.toFixed(1)"></div>
-              <p class="text-xs font-medium" :class="complexityTextClass(avgCyclomatic)">
-                <span x-text="complexityBand(avgCyclomatic)"></span>
-              </p>
-            </div>
-            <div class="metric-card bg-gradient-to-br from-white to-gray-50 p-5 rounded-xl border border-gray-100">
-              <div class="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">LCOM4</div>
-              <div class="text-3xl font-bold text-gray-900 mb-2" style="letter-spacing: -0.03em;" x-text="avgLCOM4Display"></div>
-              <p class="text-xs text-gray-500">Lower is better</p>
-            </div>
-            <div class="metric-card bg-gradient-to-br from-white to-gray-50 p-5 rounded-xl border border-gray-100">
-              <div class="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">LLOC</div>
-              <div class="text-3xl font-bold text-gray-900 mb-2" style="letter-spacing: -0.03em;" x-text="fileLLocDisplay"></div>
-              <p class="text-xs text-gray-500">Logical lines</p>
-            </div>
-          </div>
-
-          <!-- Panels -->
-          <div class="space-y-6">
-            <!-- Classes & Methods -->
-            <div>
-              <div class="dashboard-card p-6">
-                <div class="flex items-center justify-between mb-6">
-                  <h3 class="text-lg font-bold text-gray-900">Classes</h3>
-                  <span class="text-sm text-gray-500 font-medium" x-text="classes.length + ' total'"></span>
-                </div>
-                <div class="overflow-x-auto -mx-6 px-6">
-                  <table class="w-full text-sm">
-                    <thead>
-                      <tr class="border-b border-gray-200">
-                        <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wide">Name</th>
-                        <th class="px-4 py-3 text-right text-xs font-semibold text-gray-600 uppercase tracking-wide">MI</th>
-                        <th class="px-4 py-3 text-right text-xs font-semibold text-gray-600 uppercase tracking-wide">Instability</th>
-                        <th class="px-4 py-3 text-right text-xs font-semibold text-gray-600 uppercase tracking-wide">LCOM4</th>
-                        <th class="px-4 py-3 text-right text-xs font-semibold text-gray-600 uppercase tracking-wide">LLOC</th>
-                        <th class="px-4 py-3 text-right text-xs font-semibold text-gray-600 uppercase tracking-wide">Bugs</th>
-                      </tr>
-                    </thead>
-                    <tbody class="divide-y divide-gray-100">
-                      <template x-if="classes.length === 0">
-                        <tr><td colspan="6" class="px-4 py-8 text-center text-gray-400">No classes in this file</td></tr>
-                      </template>
-                      <template x-for="c in classes" :key="c.name?.qualified || c.name?.short || Math.random()">
-                        <tr class="hover:bg-gray-50 transition-colors">
-                          <td class="px-4 py-3 font-medium text-gray-900" x-text="c.name ? c.name.qualified : '-' "></td>
-                          <td class="px-4 py-3 text-right"><span :class="miBadgeClass(miRaw(c))" class="badge-modern px-2 py-1 rounded-md text-xs" x-text="mi(c)"></span></td>
-                          <td class="px-4 py-3 text-right text-gray-700 font-mono text-xs" x-text="fmtNumber(c.stmts?.analyze?.coupling?.instability)"></td>
-                          <td class="px-4 py-3 text-right text-gray-700 font-mono text-xs" x-text="fmtNumber(c.stmts?.analyze?.classCohesion?.lcom4)"></td>
-                          <td class="px-4 py-3 text-right text-gray-700 font-mono text-xs" x-text="c.stmts?.analyze?.volume?.lloc ?? '-' "></td>
-                          <td class="px-4 py-3 text-right text-gray-700 font-mono text-xs" x-text="fmtFixed(c.stmts?.analyze?.volume?.halsteadBugs,4)"></td>
-                        </tr>
-                      </template>
-                    </tbody>
-                  </table>
-                </div>
-
-                <h4 class="font-semibold text-gray-900 mt-8 mb-4">Methods</h4>
-                <div class="overflow-x-auto -mx-6 px-6">
-                  <table class="w-full text-sm">
-                    <thead>
-                      <tr class="border-b border-gray-200">
-                        <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wide">Signature</th>
-                        <th class="px-4 py-3 text-right text-xs font-semibold text-gray-600 uppercase tracking-wide">Cyclomatic</th>
-                      </tr>
-                    </thead>
-                    <tbody class="divide-y divide-gray-100">
-                      <template x-if="methods.length === 0">
-                        <tr><td colspan="2" class="px-4 py-6 text-center text-gray-400">No methods detected</td></tr>
-                      </template>
-                      <template x-for="m in methods" :key="m.name?.qualified || m.name?.short || Math.random()">
-                        <tr class="hover:bg-gray-50 transition-colors">
-                          <td class="px-4 py-2.5 font-mono text-xs text-gray-700" x-text="m.name ? (m.name.describer || m.name.qualified || m.name.short) : '-' "></td>
-                          <td class="px-4 py-2.5 text-right">
-                            <span class="px-2 py-1 rounded-md text-xs font-medium badge-modern" :class="complexityBadgeClass(m.stmts?.analyze?.complexity?.cyclomatic)" x-text="m.stmts?.analyze?.complexity?.cyclomatic ?? '-' "></span>
-                          </td>
-                        </tr>
-                      </template>
-                    </tbody>
-                  </table>
-                </div>
-
-                <div class="mt-6 p-4 bg-blue-50 rounded-lg border border-blue-100">
-                  <p class="text-xs text-blue-800">
-                    <span class="font-semibold">💡 Tip:</span> Higher MI is better. Lower cyclomatic complexity keeps code simpler. LCOM4 close to 1 means cohesive classes.
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            <!-- Risks -->
-            <div>
-              <div class="dashboard-card p-6">
-                <div class="flex items-center justify-between mb-6">
-                  <h3 class="text-lg font-bold text-gray-900">Detected Risks <span class="text-base font-normal text-gray-500" x-text="'(' + risks.length + ')'"></span></h3>
-                  <div class="flex items-center gap-3 text-sm">
-                    <label class="inline-flex items-center gap-2 cursor-pointer">
-                      <input type="checkbox" class="rounded border-gray-300 text-blue-600 focus:ring-blue-500" x-model="filters.onlyHigh"/>
-                      <span class="text-gray-600">High only</span>
-                    </label>
-                    <label class="inline-flex items-center gap-2 cursor-pointer">
-                      <input type="checkbox" class="rounded border-gray-300 text-blue-600 focus:ring-blue-500" x-model="filters.groupByCategory"/>
-                      <span class="text-gray-600">Group</span>
-                    </label>
-                  </div>
-                </div>
-
-                <template x-if="risks.length === 0">
-                  <div class="text-center py-12">
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-12 h-12 text-green-300 mx-auto mb-3">
-                      <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75 11.25 15 15 9.75m-3-7.036A11.959 11.959 0 0 1 3.598 6 11.99 11.99 0 0 0 3 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-4.902Z" />
-                    </svg>
-                    <p class="text-sm font-medium text-gray-400">No risks detected</p>
-                    <p class="text-xs text-gray-400 mt-1">This file looks healthy!</p>
-                  </div>
-                </template>
-
-                <!-- Grouped view -->
-                <template x-if="filters.groupByCategory && groupedRisksKeys.length">
-                  <div class="space-y-6">
-                    <template x-for="cat in groupedRisksKeys" :key="cat">
-                      <div>
-                        <div class="text-xs font-semibold uppercase tracking-wide text-gray-500 mb-3" x-text="cat || 'Uncategorized'"></div>
-                        <div class="space-y-3">
-                          <template x-for="r in groupedRisks[cat]">
-                            <div class="border rounded-xl p-4 hover:shadow-sm transition-all" :class="riskCardClass(r) + ' bg-white'">
-                              <div class="flex items-start justify-between gap-4">
-                                <div class="flex-1 min-w-0">
-                                  <div class="flex items-center gap-2 mb-2">
-                                    <span class="text-sm font-semibold text-gray-900" x-text="r.title"></span>
-                                    <span class="px-2 py-1 rounded-md text-xs font-medium badge-modern" :class="severityBadgeClass(r.severity)" x-text="severityLevel(r.severity)"></span>
-                                  </div>
-                                  <p class="text-sm text-gray-600 mb-2" x-text="r.details"></p>
-                                  <template x-if="r.hint">
-                                    <div class="text-xs text-gray-500 bg-gray-50 rounded-lg p-2 mt-2">
-                                      <span class="font-semibold text-gray-700">💡 Fix:</span> <span x-text="r.hint"></span>
-                                    </div>
-                                  </template>
-                                </div>
-                                <div class="text-right shrink-0">
-                                  <div class="text-xs font-medium text-gray-500 mb-1">Severity</div>
-                                  <div class="h-2 w-24 rounded-full bg-gray-200 overflow-hidden">
-                                    <div class="h-2 rounded-full transition-all duration-300" :class="severityBarClass(r.severity)" :style="`width: ${severityPct(r.severity)}%`"></div>
-                                  </div>
-                                </div>
-                              </div>
-                            </div>
-                          </template>
-                        </div>
-                      </div>
-                    </template>
-                  </div>
-                </template>
-
-                <!-- Flat list -->
-                <template x-if="!filters.groupByCategory && risksSorted.length">
-                  <div class="space-y-3">
-                    <template x-for="r in risksSorted">
-                      <div class="border rounded-xl p-4 hover:shadow-sm transition-all" :class="riskCardClass(r) + ' bg-white'">
-                        <div class="flex items-start justify-between gap-4">
-                          <div class="flex-1 min-w-0">
-                            <div class="flex items-center gap-2 mb-2">
-                              <span class="text-sm font-semibold text-gray-900" x-text="r.title"></span>
-                              <span class="px-2 py-1 rounded-md text-xs font-medium badge-modern" :class="severityBadgeClass(r.severity)" x-text="severityLevel(r.severity)"></span>
-                            </div>
-                            <p class="text-sm text-gray-600 mb-2" x-text="r.details"></p>
-                            <template x-if="r.hint">
-                              <div class="text-xs text-gray-500 bg-gray-50 rounded-lg p-2 mt-2">
-                                <span class="font-semibold text-gray-700">💡 Fix:</span> <span x-text="r.hint"></span>
-                              </div>
-                            </template>
-                          </div>
-                          <div class="text-right shrink-0">
-                            <div class="text-xs font-medium text-gray-500 mb-1">Severity</div>
-                            <div class="h-2 w-24 rounded-full bg-gray-200 overflow-hidden">
-                              <div class="h-2 rounded-full transition-all duration-300" :class="severityBarClass(r.severity)" :style="`width: ${severityPct(r.severity)}%`"></div>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    </template>
-                  </div>
-                </template>
-
-                <div class="mt-6 p-4 bg-amber-50 rounded-lg border border-amber-100" x-show="risks.length > 0">
-                  <p class="text-xs text-amber-800">
-                    <span class="font-semibold">📋 Note:</span> Risks are sorted by severity. Use the hints to plan your refactoring strategy.
-                  </p>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <!-- Glossary modal -->
-          <div x-show="openGlossary" x-cloak class="fixed inset-0 z-50 flex items-center justify-center p-4" style="backdrop-filter: blur(4px);">
-            <div class="absolute inset-0 bg-black/40" @click="openGlossary=false"></div>
-            <div class="relative dashboard-card w-full max-w-3xl p-8 max-h-[90vh] overflow-y-auto">
-              <div class="flex items-center justify-between mb-6 pb-4 border-b border-gray-200">
-                <h3 class="text-xl font-bold text-gray-900">Metric Guide</h3>
-                <button class="text-gray-400 hover:text-gray-600 transition-colors p-1 rounded-lg hover:bg-gray-100" @click="openGlossary=false">
-                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-5 h-5">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" />
-                  </svg>
-                </button>
-              </div>
-              <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
-                <div class="p-4 bg-gray-50 rounded-xl">
-                  <div class="font-semibold text-gray-900 mb-2">Maintainability Index (MI)</div>
-                  <p class="text-gray-600 text-sm leading-relaxed">0–128. Higher is better. Aggregates complexity, size, and churn. Aim ≥ 85.</p>
-                </div>
-                <div class="p-4 bg-gray-50 rounded-xl">
-                  <div class="font-semibold text-gray-900 mb-2">Cyclomatic complexity</div>
-                  <p class="text-gray-600 text-sm leading-relaxed">Number of independent paths. ≤ 10 is usually OK. Keep low to ease testing.</p>
-                </div>
-                <div class="p-4 bg-gray-50 rounded-xl">
-                  <div class="font-semibold text-gray-900 mb-2">LCOM4</div>
-                  <p class="text-gray-600 text-sm leading-relaxed">Class cohesion. 1 means cohesive. Higher implies split responsibilities.</p>
-                </div>
-                <div class="p-4 bg-gray-50 rounded-xl">
-                  <div class="font-semibold text-gray-900 mb-2">LLOC</div>
-                  <p class="text-gray-600 text-sm leading-relaxed">Logical lines of code. Measures size. Prefer smaller units.</p>
-                </div>
-                <div class="p-4 bg-gray-50 rounded-xl">
-                  <div class="font-semibold text-gray-900 mb-2">Instability</div>
-                  <p class="text-gray-600 text-sm leading-relaxed">0–1. Outgoing deps ratio. Close to 0 for stable modules, close to 1 for volatile.</p>
-                </div>
-                <div class="p-4 bg-gray-50 rounded-xl">
-                  <div class="font-semibold text-gray-900 mb-2">Halstead Bugs</div>
-                  <p class="text-gray-600 text-sm leading-relaxed">Theoretical bugs density from Halstead volume. Use as a relative indicator.</p>
-                </div>
-              </div>
-            </div>
-          </div>
-
+        <div class="p-4 bg-gray-50 rounded-xl">
+          <div class="font-semibold text-gray-900 mb-2">Cyclomatic complexity</div>
+          <p class="text-gray-600 text-sm leading-relaxed">Number of independent paths. ≤ 10 is usually OK. Keep low to
+            ease testing.</p>
         </div>
-      </template>
+        <div class="p-4 bg-gray-50 rounded-xl">
+          <div class="font-semibold text-gray-900 mb-2">LCOM4</div>
+          <p class="text-gray-600 text-sm leading-relaxed">Class cohesion. 1 means cohesive. Higher implies split
+            responsibilities.</p>
+        </div>
+        <div class="p-4 bg-gray-50 rounded-xl">
+          <div class="font-semibold text-gray-900 mb-2">LLOC</div>
+          <p class="text-gray-600 text-sm leading-relaxed">Logical lines of code. Measures size. Prefer smaller units.
+          </p>
+        </div>
+        <div class="p-4 bg-gray-50 rounded-xl">
+          <div class="font-semibold text-gray-900 mb-2">Instability</div>
+          <p class="text-gray-600 text-sm leading-relaxed">0–1. Outgoing deps ratio. Close to 0 for stable modules,
+            close to 1 for volatile.</p>
+        </div>
+        <div class="p-4 bg-gray-50 rounded-xl">
+          <div class="font-semibold text-gray-900 mb-2">Halstead Bugs</div>
+          <p class="text-gray-600 text-sm leading-relaxed">Theoretical bugs density from Halstead volume. Use as a
+            relative indicator.</p>
+        </div>
+      </div>
     </div>
   </div>
 </div>
@@ -522,7 +646,7 @@
 
 {% block javascripts %}
 <script defer>
-  function explorer(){
+  function explorer() {
     return {
       // state
       files: [],
@@ -547,52 +671,52 @@
       // ui
       openGlossary: false,
 
-      init(){
-        const parse = (id)=>{ try { return JSON.parse(document.getElementById(id)?.textContent||'null'); } catch(e){ return null; }};
+      init() {
+        const parse = (id) => { try { return JSON.parse(document.getElementById(id)?.textContent || 'null'); } catch (e) { return null; } };
         this.files = parse('files-data') || [];
         this.risksByPath = parse('risks-data') || {};
-        this.$watch('filters', ()=> this.rebuild(), { deep: true });
+        this.$watch('filters', () => this.rebuild(), { deep: true });
         this.rebuild();
       },
 
       // helpers
-      fmtFixed(v, n){ return (typeof v === 'number') ? v.toFixed(n) : '-'; },
-      fmtNumber(v){ return (typeof v === 'number') ? (Number.isInteger(v)? v : v.toFixed(2)) : '-'; },
-      fileRiskScore(f){ return f?.stmts?.analyze?.risk?.score || 0; },
-      riskColorByCount(count){ return count>=5?'text-red-700':count>=3?'text-orange-700':count>=1?'text-amber-700':'text-green-700'; },
-      fileMImax(f){
+      fmtFixed(v, n) { return (typeof v === 'number') ? v.toFixed(n) : '-'; },
+      fmtNumber(v) { return (typeof v === 'number') ? (Number.isInteger(v) ? v : v.toFixed(2)) : '-'; },
+      fileRiskScore(f) { return f?.stmts?.analyze?.risk?.score || 0; },
+      riskColorByCount(count) { return count >= 5 ? 'text-red-700' : count >= 3 ? 'text-orange-700' : count >= 1 ? 'text-amber-700' : 'text-green-700'; },
+      fileMImax(f) {
         let minMI = 128;
-        const classes = f?.stmts?.stmtClass||[];
-        if(!classes.length) return "-";
-        for(const c of classes){
+        const classes = f?.stmts?.stmtClass || [];
+        if (!classes.length) return "-";
+        for (const c of classes) {
           const mi = c?.stmts?.analyze?.maintainability?.maintainabilityIndex;
           if (typeof mi === 'number' && mi < minMI) minMI = mi;
         }
         return minMI;
       },
-      displayWorstMI(f){ const v = this.fileMImax(f); return Number.isFinite(v) ? `worst MI: ${v.toFixed(0)}` : ''; },
-      nbRisksFor(f){ return (this.risksByPath[f.path]||[]).length; },
-      matchesFilters(f){
-        const q = (this.filters.q||'').toLowerCase();
-        if (q && !f.path.toLowerCase().includes(q) && !(f.shortPath||'').toLowerCase().includes(q)) return false;
+      displayWorstMI(f) { const v = this.fileMImax(f); return Number.isFinite(v) ? `worst MI: ${v.toFixed(0)}` : ''; },
+      nbRisksFor(f) { return (this.risksByPath[f.path] || []).length; },
+      matchesFilters(f) {
+        const q = (this.filters.q || '').toLowerCase();
+        if (q && !f.path.toLowerCase().includes(q) && !(f.shortPath || '').toLowerCase().includes(q)) return false;
         const miVal = this.fileMImax(f);
         if (!isNaN(this.filters.miMax) && miVal > this.filters.miMax) return false;
-        if (this.nbRisksFor(f) < (this.filters.minRisks||0)) return false;
+        if (this.nbRisksFor(f) < (this.filters.minRisks || 0)) return false;
         const currentLang = '{{ currentLanguage }}';
         if (currentLang && currentLang !== 'All' && f.programmingLanguage !== currentLang) return false;
         return true;
       },
-      rebuild(){
+      rebuild() {
         const filtered = this.files.filter(f => this.matchesFilters(f));
         const byDir = {};
-        for (const f of filtered){
+        for (const f of filtered) {
           const parts = (f.shortPath || f.path).split('/');
           let acc = '';
-          for (let i=0;i<parts.length-1;i++){
-            acc += (i?'/':'') + parts[i];
+          for (let i = 0; i < parts.length - 1; i++) {
+            acc += (i ? '/' : '') + parts[i];
             if (!byDir[acc]) byDir[acc] = { files: [] };
           }
-          const dir = parts.slice(0,-1).join('/');
+          const dir = parts.slice(0, -1).join('/');
           if (!byDir[dir]) byDir[dir] = { files: [] };
           byDir[dir].files.push(f);
         }
@@ -609,28 +733,28 @@
             name: d,
             path: d,
             expanded: true,
-            files: (byDir[d].files||[]).sort((a,b)=> a.path.localeCompare(b.path))
+            files: (byDir[d].files || []).sort((a, b) => a.path.localeCompare(b.path))
           }))
         }));
       },
-      select(f){
+      select(f) {
         this.selected = f;
         this.risks = (this.risksByPath[f.path] || []).slice();
         const classes = f?.stmts?.stmtClass || [];
         this.classes = classes;
-        this.methods = classes.flatMap(c => (c?.stmts?.stmtFunction)||[]);
+        this.methods = classes.flatMap(c => (c?.stmts?.stmtFunction) || []);
 
         // KPIs
         this.worstMI = this.fileMImax(f) || 0;
         const cyclo = this.methods.map(m => m?.stmts?.analyze?.complexity?.cyclomatic).filter(x => typeof x === 'number');
-        this.avgCyclomatic = cyclo.length ? (cyclo.reduce((a,b)=>a+b,0) / cyclo.length) : 0;
+        this.avgCyclomatic = cyclo.length ? (cyclo.reduce((a, b) => a + b, 0) / cyclo.length) : 0;
         const lcom = classes.map(c => c?.stmts?.analyze?.classCohesion?.lcom4).filter(x => typeof x === 'number');
-        this.avgLCOM4Display = lcom.length ? (lcom.reduce((a,b)=>a+b,0)/lcom.length).toFixed(2) : '-';
+        this.avgLCOM4Display = lcom.length ? (lcom.reduce((a, b) => a + b, 0) / lcom.length).toFixed(2) : '-';
         const vol = f?.stmts?.analyze?.volume;
         const fileLLOC = (vol && typeof vol.lloc === 'number') ? vol.lloc : null;
         if (fileLLOC !== null) this.fileLLocDisplay = String(fileLLOC); else {
           const classLL = classes.map(c => c?.stmts?.analyze?.volume?.lloc).filter(x => typeof x === 'number');
-          this.fileLLocDisplay = classLL.length ? String(classLL.reduce((a,b)=>a+b,0)) : '-';
+          this.fileLLocDisplay = classLL.length ? String(classLL.reduce((a, b) => a + b, 0)) : '-';
         }
 
         // Risks grouping
@@ -638,49 +762,49 @@
       },
 
       // MI formatting
-      mi(c){ const v = this.miRaw(c); return typeof v==='number'? v.toFixed(2):'-'; },
-      miRaw(c){ return c?.stmts?.analyze?.maintainability?.maintainabilityIndex; },
-      miPct(v){ const x = Math.max(0, Math.min(128, Number(v)||0)); return (x/128*100).toFixed(0); },
-      formatMI(v){ return Number.isFinite(v) ? v.toFixed(0) : '-'; },
-      miBadgeClass(v){
-        const val = Number(v)||0;
+      mi(c) { const v = this.miRaw(c); return typeof v === 'number' ? v.toFixed(2) : '-'; },
+      miRaw(c) { return c?.stmts?.analyze?.maintainability?.maintainabilityIndex; },
+      miPct(v) { const x = Math.max(0, Math.min(128, Number(v) || 0)); return (x / 128 * 100).toFixed(0); },
+      formatMI(v) { return Number.isFinite(v) ? v.toFixed(0) : '-'; },
+      miBadgeClass(v) {
+        const val = Number(v) || 0;
         if (val >= 85) return 'bg-green-100 text-green-700 px-1.5 py-0.5 rounded text-xs';
         if (val >= 65) return 'bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded text-xs';
         return 'bg-rose-100 text-rose-700 px-1.5 py-0.5 rounded text-xs';
       },
-      miBarClass(v){
-        const val = Number(v)||0;
+      miBarClass(v) {
+        const val = Number(v) || 0;
         if (val >= 85) return 'bg-green-500';
         if (val >= 65) return 'bg-amber-500';
         return 'bg-rose-500';
       },
 
       // Complexity formatting
-      complexityBand(v){ if(v<=5) return 'Low'; if(v<=10) return 'Moderate'; if(v<=20) return 'High'; return 'Very high'; },
-      complexityTextClass(v){ if(v<=5) return 'text-green-700'; if(v<=10) return 'text-amber-700'; if(v<=20) return 'text-orange-700'; return 'text-rose-700'; },
-      complexityBadgeClass(v){ if(v<=5) return 'bg-green-100 text-green-700'; if(v<=10) return 'bg-amber-100 text-amber-700'; if(v<=20) return 'bg-orange-100 text-orange-700'; return 'bg-rose-100 text-rose-700'; },
+      complexityBand(v) { if (v <= 5) return 'Low'; if (v <= 10) return 'Moderate'; if (v <= 20) return 'High'; return 'Very high'; },
+      complexityTextClass(v) { if (v <= 5) return 'text-green-700'; if (v <= 10) return 'text-amber-700'; if (v <= 20) return 'text-orange-700'; return 'text-rose-700'; },
+      complexityBadgeClass(v) { if (v <= 5) return 'bg-green-100 text-green-700'; if (v <= 10) return 'bg-amber-100 text-amber-700'; if (v <= 20) return 'bg-orange-100 text-orange-700'; return 'bg-rose-100 text-rose-700'; },
 
       // Risks
-      risksSorted(){
-        const list = this.risks.slice().sort((a,b)=> (b.severity||0)-(a.severity||0));
-        return this.filters.onlyHigh ? list.filter(r=> (r.severity||0) >= 0.75) : list;
+      risksSorted() {
+        const list = this.risks.slice().sort((a, b) => (b.severity || 0) - (a.severity || 0));
+        return this.filters.onlyHigh ? list.filter(r => (r.severity || 0) >= 0.75) : list;
       },
-      computeGroupedRisks(){
+      computeGroupedRisks() {
         const byCat = {};
         const list = this.risksSorted();
-        for(const r of list){
+        for (const r of list) {
           const cat = r.category || r.rule || '';
-          if(!byCat[cat]) byCat[cat] = [];
+          if (!byCat[cat]) byCat[cat] = [];
           byCat[cat].push(r);
         }
         this.groupedRisks = byCat;
-        this.groupedRisksKeys = Object.keys(byCat).sort((a,b)=> a.localeCompare(b));
+        this.groupedRisksKeys = Object.keys(byCat).sort((a, b) => a.localeCompare(b));
       },
-      severityLevel(s){ const v = Number(s)||0; if(v>=0.9) return 'Critical'; if(v>=0.75) return 'High'; if(v>=0.5) return 'Medium'; if(v>0) return 'Low'; return 'Info'; },
-      severityBadgeClass(s){ const v=Number(s)||0; if(v>=0.75) return 'bg-rose-100 text-rose-700'; if(v>=0.5) return 'bg-orange-100 text-orange-700'; if(v>0) return 'bg-amber-100 text-amber-700'; return 'bg-slate-100 text-slate-700'; },
-      severityBarClass(s){ const v=Number(s)||0; if(v>=0.75) return 'bg-rose-500'; if(v>=0.5) return 'bg-orange-500'; if(v>0) return 'bg-amber-500'; return 'bg-slate-400'; },
-      severityPct(s){ const v = Math.max(0, Math.min(1, Number(s)||0)); return (v*100).toFixed(0); },
-      riskCardClass(r){ return (r.severity||0) >= 0.75 ? 'border-rose-200' : (r.severity||0) >= 0.5 ? 'border-orange-200' : 'border-amber-200'; },
+      severityLevel(s) { const v = Number(s) || 0; if (v >= 0.9) return 'Critical'; if (v >= 0.75) return 'High'; if (v >= 0.5) return 'Medium'; if (v > 0) return 'Low'; return 'Info'; },
+      severityBadgeClass(s) { const v = Number(s) || 0; if (v >= 0.75) return 'bg-rose-100 text-rose-700'; if (v >= 0.5) return 'bg-orange-100 text-orange-700'; if (v > 0) return 'bg-amber-100 text-amber-700'; return 'bg-slate-100 text-slate-700'; },
+      severityBarClass(s) { const v = Number(s) || 0; if (v >= 0.75) return 'bg-rose-500'; if (v >= 0.5) return 'bg-orange-500'; if (v > 0) return 'bg-amber-500'; return 'bg-slate-400'; },
+      severityPct(s) { const v = Math.max(0, Math.min(1, Number(s) || 0)); return (v * 100).toFixed(0); },
+      riskCardClass(r) { return (r.severity || 0) >= 0.75 ? 'border-rose-200' : (r.severity || 0) >= 0.5 ? 'border-orange-200' : 'border-amber-200'; },
     }
   }
 </script>
