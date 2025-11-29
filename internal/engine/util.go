@@ -606,3 +606,60 @@ func GetDependenciesInFile(file *pb.File) []*pb.StmtExternalDependency {
 
 	return res
 }
+
+func GetFirstStatementName(file *pb.File) string {
+	if file.Stmts == nil {
+		return ""
+	}
+
+	// we dome the same thing than previousliy (k := dep.Namespace + "|" + dep.ClassName + "|" + dep.FunctionName + ...)
+	namespace := ""
+	classname := ""
+	functionname := ""
+
+	var explorer func(*pb.Stmts) (string, string, string)
+
+	explorer = func(stmts *pb.Stmts) (string, string, string) {
+		if stmts == nil {
+			return "", "", ""
+		}
+
+		// namespaces
+		if stmts.StmtNamespace != nil && len(stmts.StmtNamespace) > 0 {
+			firstNs := stmts.StmtNamespace[0]
+			if firstNs != nil && firstNs.Stmts != nil {
+				return explorer(firstNs.Stmts)
+			}
+		}
+
+		// classes
+		if stmts.StmtClass != nil && len(stmts.StmtClass) > 0 {
+			firstClass := stmts.StmtClass[0]
+			if firstClass != nil && firstClass.Name != nil {
+				return "", firstClass.Name.Qualified, ""
+			}
+		}
+
+		// functions
+		if stmts.StmtFunction != nil && len(stmts.StmtFunction) > 0 {
+			firstFunction := stmts.StmtFunction[0]
+			if firstFunction != nil && firstFunction.Name != nil {
+				return "", "", firstFunction.Name.Qualified
+			}
+		}
+
+		return "", "", ""
+	}
+
+	if classname != "" {
+		return classname // -> we use the Qualified name of the class if any
+	}
+
+	namespace, classname, functionname = explorer(file.Stmts)
+	fullName := namespace + "|" + classname + "|" + functionname
+
+	// trim leading and trailing pipes
+	fullName = strings.Trim(fullName, "|")
+
+	return fullName
+}
