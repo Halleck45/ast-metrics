@@ -13,8 +13,8 @@ import (
 	"github.com/flosch/pongo2/v5"
 	"github.com/halleck45/ast-metrics/internal/analyzer"
 	"github.com/halleck45/ast-metrics/internal/engine"
-	pb "github.com/halleck45/ast-metrics/pb"
 	"github.com/halleck45/ast-metrics/internal/ui"
+	pb "github.com/halleck45/ast-metrics/pb"
 	"google.golang.org/protobuf/encoding/protojson"
 	"google.golang.org/protobuf/proto"
 )
@@ -80,6 +80,7 @@ func (v *HtmlReportGenerator) Generate(files []*pb.File, projectAggregated analy
 		"componentComparaisonBadge.html",
 		"componentComparaisonOperator.html",
 		"communities.html",
+		"busfactor.html",
 		"partials/suggestions.html",
 	} {
 		// read the file
@@ -144,6 +145,12 @@ func (v *HtmlReportGenerator) Generate(files []*pb.File, projectAggregated analy
 	v.GenerateLanguagePage("linters.html", "All", projectAggregated.Combined, files, projectAggregated)
 	for language, currentView := range projectAggregated.ByProgrammingLanguage {
 		v.GenerateLanguagePage("linters.html", language, currentView, files, projectAggregated)
+	}
+
+	// Bus Factor page
+	v.GenerateLanguagePage("busfactor.html", "All", projectAggregated.Combined, files, projectAggregated)
+	for language, currentView := range projectAggregated.ByProgrammingLanguage {
+		v.GenerateLanguagePage("busfactor.html", language, currentView, files, projectAggregated)
 	}
 
 	// copy images

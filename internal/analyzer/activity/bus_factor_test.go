@@ -35,7 +35,7 @@ func TestBusFactorCalculate(t *testing.T) {
 			},
 			expected: analyzer.Aggregated{
 				TopCommitters: []analyzer.TopCommitter{
-					{Name: "author1", Count: 1},
+					{Name: "author1", Count: 1, Percentage: 100.0},
 				},
 				BusFactor: 1,
 			},
@@ -55,8 +55,8 @@ func TestBusFactorCalculate(t *testing.T) {
 			},
 			expected: analyzer.Aggregated{
 				TopCommitters: []analyzer.TopCommitter{
-					{Name: "author1", Count: 2},
-					{Name: "author2", Count: 1},
+					{Name: "author1", Count: 2, Percentage: 66.66666666666666},
+					{Name: "author2", Count: 1, Percentage: 33.33333333333333},
 				},
 				BusFactor: 1,
 			},
@@ -76,7 +76,7 @@ func TestBusFactorCalculate(t *testing.T) {
 			},
 			expected: analyzer.Aggregated{
 				TopCommitters: []analyzer.TopCommitter{
-					{Name: "author1", Count: 1},
+					{Name: "author1", Count: 1, Percentage: 100.0},
 				},
 				BusFactor: 1,
 			},

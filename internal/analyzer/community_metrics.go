@@ -1,8 +1,6 @@
 package analyzer
 
 import (
-	"fmt"
-
 	"github.com/halleck45/ast-metrics/internal/engine"
 )
 
@@ -126,8 +124,4 @@ func (c *CommunitySubMetricsCalculator) Calculate(aggregate *Aggregated) {
 		}
 		aggregate.Community.BusFactorPerCommunity[communityID] = busFactor
 	}
-
-	fmt.Println("Community Top Committers:", aggregate.Community.TopCommittersPerCommunity)
-	fmt.Println("Community Bus Factor:", aggregate.Community.BusFactorPerCommunity)
-
 }

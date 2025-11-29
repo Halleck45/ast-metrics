@@ -57,8 +57,10 @@ func (busFactor *BusFactor) Calculate(aggregate *analyzer.Aggregated) {
 	resultBusFactor := 0
 	// 50% sum of commits value
 	midPercentBoundary := 0
+	totalCommits := 0
 	for _, kv := range ss {
 		midPercentBoundary += kv.Value
+		totalCommits += kv.Value
 	}
 	midPercentBoundary = midPercentBoundary / 2
 
@@ -77,9 +79,14 @@ func (busFactor *BusFactor) Calculate(aggregate *analyzer.Aggregated) {
 		if i > 3 {
 			break
 		}
+		percentage := 0.0
+		if totalCommits > 0 {
+			percentage = (float64(kv.Value) / float64(totalCommits)) * 100.0
+		}
 		commiter := analyzer.TopCommitter{
-			Name:  kv.Key,
-			Count: kv.Value,
+			Name:       kv.Key,
+			Count:      kv.Value,
+			Percentage: percentage,
 		}
 		aggregate.TopCommitters = append(aggregate.TopCommitters, commiter)
 	}

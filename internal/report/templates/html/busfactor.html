@@ -1,0 +1,280 @@
+{% extends "layout.html" %}
+
+{% block title %}
+Bus Factor
+{% endblock %}
+
+{% block pageTitle %}
+AST Metrics - Bus Factor
+{% endblock %}
+
+{% block content %}
+
+<style>
+    .dashboard-card {
+        background: white;
+        border: 1px solid #e2e8f0;
+        border-radius: 16px;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        position: relative;
+        overflow: hidden;
+    }
+
+    .dashboard-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        border-color: #cbd5e1;
+    }
+
+    .dashboard-card::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 4px;
+        background: linear-gradient(90deg, #3b82f6, #8b5cf6);
+        opacity: 0;
+        transition: opacity 0.3s ease;
+    }
+
+    .dashboard-card:hover::before {
+        opacity: 1;
+    }
+
+    .metric-value {
+        font-family: var(--font-mono);
+        letter-spacing: -0.05em;
+    }
+
+    @keyframes fadeInUp {
+        from {
+            opacity: 0;
+            transform: translateY(10px);
+        }
+
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    .animate-fade-in-up {
+        animation: fadeInUp 0.5s ease-out backwards;
+    }
+
+    .stagger-1 {
+        animation-delay: 0.1s;
+    }
+
+    .stagger-2 {
+        animation-delay: 0.2s;
+    }
+
+    .stagger-3 {
+        animation-delay: 0.3s;
+    }
+
+    .stagger-4 {
+        animation-delay: 0.4s;
+    }
+
+    .stagger-5 {
+        animation-delay: 0.5s;
+    }
+</style>
+
+<!-- Language tabs -->
+<div class="flex overflow-x-auto overflow-y-hidden border-b border-gray-200 whitespace-nowrap">
+    <a tabindex="-1" href="busfactor.html"
+        class="inline-flex items-center h-10 px-2 py-2 -mb-px text-center {% if currentLanguage == 'All'%}text-blue-600 border-blue-500{% endif %} bg-transparent border-b-2 sm:px-4 -px-1 focus:outline-none">
+        <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 mx-1 sm:w-6 sm:h-6" fill="none" viewBox="0 0 24 24"
+            stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+        </svg>
+        <span class="mx-1 text-sm sm:text-base">
+            All languages <span class="text-xs sm:text-sm">({{ projectAggregated.Combined.ConcernedFiles|length }}
+                files)</span>
+        </span>
+    </a>
+
+    {% for languageName, lang in projectAggregated.ByProgrammingLanguage %}
+    <a tabindex="0" href="busfactor_{{ languageName }}.html"
+        class="inline-flex items-center h-10 px-2 py-2 -mb-px text-center bg-transparent border-b-2 {% if currentLanguage == languageName %}text-blue-600 border-blue-500{% else %}text-gray-700 border-transparent{% endif %} sm:px-4 -px-1 hover:border-gray-400">
+        <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 mx-1 sm:w-6 sm:h-6" fill="none" viewBox="0 0 24 24"
+            stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+        </svg>
+        <span class="mx-1 text-sm sm:text-base">
+            {{ languageName }} <span class="text-xs sm:text-sm">({{ lang.ConcernedFiles|length }} files)</span>
+        </span>
+    </a>
+    {% endfor %}
+</div>
+
+<!-- Global Metrics Section -->
+<div class="grid grid-cols-1 md:grid-cols-3 gap-4 mt-8">
+    <!-- Global Bus Factor Card -->
+    <div class="dashboard-card p-6 animate-fade-in-up stagger-1">
+        <h5 class="text-4xl font-bold text-gray-900 metric-value tracking-tight mb-2">
+            {{ currentView.BusFactor }}
+        </h5>
+        <p class="text-sm font-medium text-gray-500 mb-3">Global Bus Factor</p>
+        <p class="text-xs text-gray-400 border-t border-gray-100 pt-3">
+            Number of developers who account for 50% of commits
+        </p>
+    </div>
+
+    <!-- Commit Trends Card -->
+    <div class="dashboard-card md:col-span-2 p-6 animate-fade-in-up stagger-2">
+        {% if currentView.ResultOfGitAnalysis %}
+        <div class="mb-3">
+            <h5 class="text-2xl font-bold text-gray-900 metric-value tracking-tight">
+                {{ currentView.CommitCountForPeriod | stringifyNumber }}
+            </h5>
+            <p class="text-sm text-gray-500">Commits (12m)</p>
+        </div>
+        <div class="card-graph w-full h-24 mb-3">
+            {{ currentView|lineChartGitActivity}}
+        </div>
+        <div class="overflow-x-auto">
+            <table class="w-full text-left border-collapse text-xs">
+                <thead>
+                    <tr class="text-xs text-gray-400 border-b border-gray-100">
+                        <th class="py-1 font-medium">Repo</th>
+                        <th class="py-1 font-medium">Total</th>
+                        <th class="py-1 font-medium">Imp.</th>
+                    </tr>
+                </thead>
+                <tbody class="text-xs text-gray-600">
+                    {% for commitAnalysis in currentView.ResultOfGitAnalysis %}
+                    <tr class="border-b border-gray-50 last:border-0 hover:bg-gray-50 transition-colors">
+                        <td class="py-1 font-medium text-gray-900 truncate max-w-[100px]"
+                            title="{{ commitAnalysis.ReportRootDir }}">
+                            {{ commitAnalysis.ReportRootDir|truncatechars:15 }}
+                        </td>
+                        <td class="py-1">{{ commitAnalysis.CountCommits }}</td>
+                        <td class="py-1">{{ commitAnalysis.CountCommitsForLanguage }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="mb-3">
+            <h5 class="text-2xl font-bold text-gray-900 metric-value tracking-tight">
+                {{ currentView.CommitCountForPeriod | stringifyNumber }}
+            </h5>
+            <p class="text-sm text-gray-500">Commits</p>
+        </div>
+        <div class="card-graph h-24">
+            {{ currentView|lineChartGitActivity}}
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Global Top Committers -->
+<div class="dashboard-card p-6 mt-6 animate-fade-in-up stagger-3">
+    <h3 class="text-xl font-bold text-gray-900 mb-4">Top Contributors (Global)</h3>
+    <div class="overflow-x-auto">
+        <table class="w-full text-left border-collapse">
+            <thead>
+                <tr class="text-xs text-gray-400 border-b border-gray-100">
+                    <th class="py-2 font-medium">Rank</th>
+                    <th class="py-2 font-medium">Contributor</th>
+                    <th class="py-2 font-medium text-right">Commits</th>
+                    <th class="py-2 font-medium text-right">Percentage</th>
+                </tr>
+            </thead>
+            <tbody class="text-sm text-gray-600">
+                {% for committer in currentView.TopCommitters %}
+                <tr class="border-b border-gray-50 last:border-0 hover:bg-gray-50 transition-colors">
+                    <td class="py-2 font-medium text-gray-900">{{ forloop.Counter }}</td>
+                    <td class="py-2 font-medium text-gray-900">{{ committer.Name }}</td>
+                    <td class="py-2 text-right">{{ committer.Count }}</td>
+                    <td class="py-2 text-right">
+                        <span class="bg-blue-100 text-blue-800 px-2 py-0.5 rounded-full text-xs font-medium">
+                            {{ committer.Percentage|floatformat:1 }}%
+                        </span>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Per-Community Section -->
+{% set cm = currentView.Community %}
+{% if cm and cm.TopCommittersPerCommunity %}
+<div class="mt-8">
+    <h2 class="text-2xl font-bold text-gray-900 mb-6">Bus Factor by Community</h2>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        {% for communityID, committers in cm.TopCommittersPerCommunity %}
+        <div class="dashboard-card p-5 animate-fade-in-up">
+            <div class="flex items-start justify-between mb-3">
+                <div class="flex-1">
+                    <h4 class="text-lg font-semibold text-gray-900 mb-1">
+                        {% for k, n in cm.DisplayNamePerComm %}{% if k == communityID %}{{ n }}{% endif %}{% endfor %}
+                    </h4>
+                    <p class="text-xs text-gray-500">Community {{ communityID }}</p>
+                </div>
+                <div class="text-right">
+                    <div class="text-2xl font-bold text-blue-600 metric-value">
+                        {% for k, bf in cm.BusFactorPerCommunity %}
+                        {% if k == communityID %}{{ bf }}{% endif %}
+                        {%endfor%}
+                    </div>
+                    <p class="text-xs text-gray-500">Bus Factor</p>
+                    <div class="mt-2 text-sm text-gray-600">
+                        <span class="font-medium">{{ committers|length }}</span>
+                        <span class="text-xs text-gray-400">contributors</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Sparkline Timeline -->
+            <div class="mb-3">
+                <div class="flex items-end justify-between h-8 gap-0.5">
+                    {% for author, count in committers %}
+                    {% if forloop.Counter <= 10 %} <div class="flex-1 bg-blue-500 opacity-70 rounded-t"
+                        style="height: {{ count }}px; max-height: 32px;">
+                </div>
+                {% endif %}
+                {% endfor %}
+            </div>
+            <p class="text-xs text-gray-400 mt-1">Commit distribution</p>
+        </div>
+
+        <!-- Top Contributors -->
+        <div class="border-t border-gray-100 pt-3">
+            <p class="text-xs font-medium text-gray-500 mb-2">Top Contributors</p>
+            <div class="space-y-1">
+                {% for author, count in committers %}
+                {% if forloop.Counter <= 5 %} <div class="flex justify-between items-center text-xs">
+                    <span class="text-gray-900 truncate max-w-[150px]" title="{{ author }}">{{ author }}</span>
+                    <span class="text-gray-500 bg-gray-100 px-2 py-0.5 rounded-full font-medium">{{ count }}</span>
+            </div>
+            {% endif %}
+            {% endfor %}
+            {% if committers|length > 5 %}
+            <p class="text-xs text-gray-400 mt-2">+ {{ committers|length|add:"-5" }} more</p>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endfor %}
+</div>
+</div>
+{% else %}
+<div class="dashboard-card p-6 mt-8">
+    <p class="text-gray-600">No community data available. Run community detection to see per-community bus factor
+        metrics.</p>
+</div>
+{% endif %}
+
+{% endblock %}
