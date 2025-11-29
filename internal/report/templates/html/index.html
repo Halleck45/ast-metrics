@@ -171,6 +171,26 @@ AST Metrics - Overview
     .nodes-group-dashboard g:nth-child(n+6) {
         animation-delay: 0.12s;
     }
+
+    .contributor-avatar {
+        width: 36px;
+        height: 36px;
+        border-radius: 50%;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 600;
+        font-size: 14px;
+        color: white;
+        flex-shrink: 0;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+
+    .contributor-avatar-small {
+        width: 28px;
+        height: 28px;
+        font-size: 11px;
+    }
 </style>
 
 <!-- start: bento grid -->
@@ -730,7 +750,7 @@ AST Metrics - Overview
 
 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mt-6">
     <!-- Git Activity Card (1 col) -->
-    <div class="dashboard-card md:col-span-2 p-4 animate-fade-in-up stagger-5 mt-8">
+    <div class="dashboard-card md:col-span-1 p-4 animate-fade-in-up stagger-5 mt-8">
         {% if currentView.ResultOfGitAnalysis %}
         <div class="mb-3">
             <h5 class="text-xl font-bold text-gray-900 metric-value tracking-tight">
@@ -777,36 +797,70 @@ AST Metrics - Overview
     </div>
 
     <!-- Bus Factor Card -->
-    <div class="dashboard-card p-4 animate-fade-in-up stagger-5 mt-8">
-        <h5 class="text-xl font-bold text-gray-900 metric-value tracking-tight mb-1">
-            {{ currentView.BusFactor }}
-        </h5>
-        <p class="text-xs text-gray-500 mb-3">Bus Factor</p>
-
-        <div class="overflow-y-auto max-h-32">
-            <table class="w-full text-left">
-                <thead class="text-xs text-gray-400 border-b border-gray-100">
-                    <tr>
-                        <th class="py-1 font-medium text-xs">Committers</th>
-                    </tr>
-                </thead>
-                <tbody class="text-xs text-gray-600">
-                    {% for committer in currentView.TopCommitters %}
-                    <tr class="border-b border-gray-50 last:border-0">
-                        <td class="py-1 flex justify-between items-center">
-                            <span class="font-medium text-gray-900 truncate max-w-[120px]" title="{{ committer.Name }}">{{ committer.Name }}</span>
-                            <span class="text-xs text-gray-400 bg-gray-100 px-1.5 py-0.5 rounded-full flex-shrink-0">
-                                {{ committer.Count }}
-                            </span>
-                        </td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
+    <div class="dashboard-card md:col-span-2 p-6 animate-fade-in-up stagger-5 mt-8">
+        <div class="flex items-start justify-between mb-4">
+            <div>
+                <h5 class="text-4xl font-bold text-gray-900 metric-value tracking-tight mb-1">
+                    {{ currentView.BusFactor }}
+                </h5>
+                <p class="text-sm font-medium text-gray-500 mb-1">Bus Factor</p>
+                <p class="text-xs text-gray-400">Ideally > 3</p>
+            </div>
         </div>
-        <p class="mt-2 text-xs text-gray-400 border-t border-gray-100 pt-2">
-            Ideally > 3.
-        </p>
+
+        <!-- Sparkline Timeline -->
+        {% if currentView.TopCommitters|length > 0 %}
+        <div class="mb-4">
+            <div class="flex items-end justify-between h-8 gap-0.5" id="sparkline-committers">
+                {% for committer in currentView.TopCommitters %}
+                {% if forloop.Counter <= 10 %}
+                <div class="flex-1 rounded-t opacity-80 hover:opacity-100 transition-opacity sparkline-bar" 
+                    data-count="{{ committer.Count }}"
+                    style="background-color: {{ committer.Name|contributorColor }};"
+                    title="{{ committer.Name }}: {{ committer.Count }} commits">
+                </div>
+                {% endif %}
+                {% endfor %}
+            </div>
+            <p class="text-xs text-gray-400 mt-1">Commit distribution</p>
+        </div>
+        <script>
+            // Normalize sparkline heights
+            (function() {
+                const bars = document.querySelectorAll('#sparkline-committers .sparkline-bar');
+                if (bars.length === 0) return;
+                
+                const counts = Array.from(bars).map(bar => parseInt(bar.getAttribute('data-count')) || 0);
+                const maxCount = Math.max(...counts, 1);
+                
+                bars.forEach((bar, index) => {
+                    const count = counts[index];
+                    const height = maxCount > 0 ? (count / maxCount) * 32 : 0;
+                    bar.style.height = Math.max(2, height) + 'px';
+                });
+            })();
+        </script>
+        {% endif %}
+
+        <!-- Top Contributors -->
+        <div class="border-t border-gray-100 pt-3">
+            <p class="text-xs font-medium text-gray-500 mb-2">Top Contributors</p>
+            <div class="space-y-1">
+                {% for committer in currentView.TopCommitters %}
+                <div class="flex justify-between items-center text-xs">
+                    <div class="flex items-center gap-2 flex-1 min-w-0">
+                        <div class="contributor-avatar contributor-avatar-small" style="background-color: {{ committer.Name|contributorColor }};">
+                            {{ committer.Name|contributorInitials }}
+                        </div>
+                        <span class="text-gray-900 truncate" title="{{ committer.Name }}">{{ committer.Name }}</span>
+                    </div>
+                    <span class="text-gray-500 bg-blue-100 text-blue-800 px-2 py-0.5 rounded-full font-medium ml-2 flex-shrink-0">
+                        {{ committer.Percentage|floatformat:1 }}%
+                    </span>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
     </div>
 
     <!-- Refactoring Candidates (2 cols) -->

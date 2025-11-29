@@ -2,6 +2,7 @@ package analyzer
 
 import (
 	"fmt"
+
 	graph "github.com/halleck45/ast-metrics/internal/analyzer/graph"
 	pb "github.com/halleck45/ast-metrics/pb"
 )
@@ -32,6 +33,10 @@ type CommunityMetrics struct {
 
 	// Human-friendly display names derived generically (no project-specific rules)
 	DisplayNamePerComm map[string]string // community id -> display name
+
+	// Commiters per community
+	TopCommittersPerCommunity map[string]map[string]int // community -> {commiter -> commits}
+	BusFactorPerCommunity     map[string]int            // community -> bus factor
 }
 
 // EdgeBetweenCommunities represents an aggregated directed edge between communities
@@ -868,9 +873,9 @@ func (ca *CommunityAggregator) Calculate(aggregate *Aggregated) {
 			msg := fmt.Sprintf("Split module for community %s (size %d, purity %d%%)", cid, size, int(pur*100+0.5))
 			if !seen[msg] {
 				aggregate.Suggestions = append(aggregate.Suggestions, Suggestion{
-					Summary:  "Split module for community " + cid,
-					Location: cid,
-					Why:      fmt.Sprintf("Large and impure community: size=%d (>50), purity=%d%% (<60%%)", size, int(pur*100+0.5)),
+					Summary:             "Split module for community " + cid,
+					Location:            cid,
+					Why:                 fmt.Sprintf("Large and impure community: size=%d (>50), purity=%d%% (<60%%)", size, int(pur*100+0.5)),
 					DetailedExplanation: "This community aggregates several concerns. Consider splitting it into smaller, cohesive modules aligned by domain or namespace to improve purity and maintainability.",
 				})
 				seen[msg] = true
@@ -886,12 +891,16 @@ func (ca *CommunityAggregator) Calculate(aggregate *Aggregated) {
 		msg := "Refactor boundary node " + nid + " (boundary crossing)"
 		if !seen[msg] {
 			aggregate.Suggestions = append(aggregate.Suggestions, Suggestion{
-				Summary:  "Refactor boundary node " + nid,
-				Location: nid,
-				Why:      "Boundary node detected: participates in edges crossing communities",
+				Summary:             "Refactor boundary node " + nid,
+				Location:            nid,
+				Why:                 "Boundary node detected: participates in edges crossing communities",
 				DetailedExplanation: "This node connects multiple communities and can create tight coupling. Consider introducing anti-corruption layers, moving responsibilities, or clarifying ownership to reduce boundary crossings.",
 			})
 			seen[msg] = true
 		}
 	}
+
+	// should maybe be moved
+	calculator := NewCommunitySubMetricsCalculator()
+	calculator.Calculate(aggregate)
 }

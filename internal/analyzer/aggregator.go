@@ -7,8 +7,8 @@ import (
 
 	requirement "github.com/halleck45/ast-metrics/internal/analyzer/requirement"
 	engine "github.com/halleck45/ast-metrics/internal/engine"
-	pb "github.com/halleck45/ast-metrics/pb"
 	Scm "github.com/halleck45/ast-metrics/internal/scm"
+	pb "github.com/halleck45/ast-metrics/pb"
 )
 
 type ProjectAggregated struct {
@@ -105,8 +105,9 @@ type Aggregator struct {
 }
 
 type TopCommitter struct {
-	Name  string
-	Count int
+	Name       string
+	Count      int
+	Percentage float64
 }
 
 type ResultOfGitAnalysis struct {
