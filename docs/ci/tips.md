@@ -16,6 +16,9 @@ If you manage multiple repositories in a GitHub organization, you can deploy AST
 ast-metrics deploy:github --token=<github-token> <organization-name>
 ```
 
+
+![Deploy to GitHub Organization](../../images/capture-deploy-github.png)
+
 ## Comparing with another branch
 
 You can compare the metrics of the current branch with another branch using the [`--compare-with`](../advanced-usage/compare-versions.md) flag.
