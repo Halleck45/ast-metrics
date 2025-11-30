@@ -36,14 +36,14 @@ To use this feature, you need a GitHub Personal Access Token with the following 
 ## Usage
 
 ```bash
-ast-metrics deploy github-org <organization-name>
+ast-metrics deploy:github --token=<github-token> <organization-name>
 ```
 
 ### Example
 
 ```bash
 # Deploy to all or selected repositories in your organization
-ast-metrics deploy github-org my-company
+ast-metrics deploy:github --token=ghp_xxxxxxxxxxxx my-company
 
 # The command will:
 # 1. Scan your organization
@@ -52,19 +52,19 @@ ast-metrics deploy github-org my-company
 # 4. Open a PR on each selected repository
 ```
 
-### Environment Variables
+### Using Environment Variables
 
-Set your GitHub token as an environment variable:
+You can also set your GitHub token as an environment variable to avoid passing it in the command:
 
 ```bash
 export GITHUB_TOKEN="your_personal_access_token"
-ast-metrics deploy github-org my-company
+ast-metrics deploy:github --token=$GITHUB_TOKEN my-company
 ```
 
 Or provide it inline:
 
 ```bash
-GITHUB_TOKEN="your_personal_access_token" ast-metrics deploy github-org my-company
+GITHUB_TOKEN="your_personal_access_token" ast-metrics deploy:github --token=$GITHUB_TOKEN my-company
 ```
 
 ## What gets added to each repository
