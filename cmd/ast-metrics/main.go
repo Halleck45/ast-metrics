@@ -550,6 +550,50 @@ func main() {
 				},
 			},
 			{
+				Name:  "deploy:github",
+				Usage: "Deploy AST-Metrics workflow to all repositories in a GitHub organization. It open a PR for each repository.",
+				Flags: []cliV2.Flag{
+					&cliV2.StringFlag{
+						Name:     "token",
+						Usage:    "GitHub personal access token (required)",
+						Required: true,
+					},
+					&cliV2.StringFlag{
+						Name:  "branch",
+						Usage: "Branch name to create (default: chore/ast-metrics-setup)",
+						Value: "chore/ast-metrics-setup",
+					},
+					&cliV2.StringFlag{
+						Name:  "workflow-path",
+						Usage: "Path to the workflow file (default: .github/workflows/ast-metrics.yml)",
+						Value: ".github/workflows/ast-metrics.yml",
+					},
+					&cliV2.BoolFlag{
+						Name:  "include-forks",
+						Usage: "Include forked repositories",
+						Value: false,
+					},
+				},
+				Action: func(cCtx *cliV2.Context) error {
+					if cCtx.Args().Len() == 0 {
+						return fmt.Errorf("usage: ast-metrics deploy:github --token <token> <org>")
+					}
+					org := cCtx.Args().First()
+					token := cCtx.String("token")
+					branch := cCtx.String("branch")
+					workflowPath := cCtx.String("workflow-path")
+					includeForks := cCtx.Bool("include-forks")
+
+					cmd := command.NewDeployGithubOrganizationCommand(org, token, branch, workflowPath, includeForks)
+					err := cmd.Execute()
+					if err != nil {
+						pterm.Error.Println(err.Error())
+						return err
+					}
+					return nil
+				},
+			},
+			{
 				Name:    "init",
 				Aliases: []string{"i"},
 				Usage:   "Create a default configuration file",
