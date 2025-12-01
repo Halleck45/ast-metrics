@@ -755,3 +755,49 @@ class Registry
 		t.Fatalf("incorrect Maintainability Index, got %f", *class1.Stmts.Analyze.Maintainability.MaintainabilityIndex)
 	}
 }
+
+func TestPhp85PipeOperator(t *testing.T) {
+	phpSource := `<?php
+
+function test() {
+	$result = 'Hello World'
+		|> strtoupper(...)
+		|> str_shuffle(...)
+		|> trim(...);
+	
+	return $result;
+}
+`
+	// Test that the pipe operator is detected in the source code
+	adapter := NewTreeSitterAdapter([]byte(phpSource))
+	ops, _ := adapter.ExtractOperatorsOperands([]byte(phpSource), 1, 10)
+
+	hasPipeOperator := false
+	pipeCount := 0
+	for _, op := range ops {
+		if op == "|>" {
+			hasPipeOperator = true
+			pipeCount++
+		}
+	}
+	assert.True(t, hasPipeOperator, "Expected pipe operator (|>) to be detected in source code")
+	assert.Equal(t, 3, pipeCount, "Expected 3 pipe operators in the source code")
+
+	// Now we check if we can parse code without errors and that the operators are recorded
+	result, err := engine.CreateTestFileWithCode(&PhpRunner{}, phpSource)
+	analyzer.AnalyzeFile(result)
+
+	assert.Nil(t, err, "Expected no error, got %s", err)
+	assert.Equal(t, 1, len(result.Stmts.StmtFunction), "Incorrect number of functions")
+	func1 := result.Stmts.StmtFunction[0]
+	assert.Equal(t, "test", func1.Name.Short, "Expected function name to be 'test', got %s", func1.Name)
+
+	cnt := 0
+	for _, op := range func1.Operators {
+		if op.Name == "|>" {
+			cnt++
+		}
+	}
+	assert.Equal(t, 3, cnt, "Incorrect number of pipe operators")
+
+}
