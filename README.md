@@ -163,7 +163,7 @@ jobs:
 + ✅ **Golang** `any version`
 + ✅ **Python** `Python 2, Python 3`
 + ✅ **Rust** `any version`
-+ ✅ **PHP** `<= PHP 8.4`
++ ✅ **PHP** `<= PHP 8.5`
 + 🕛 **TypeScript**
 + 🕛 **Flutter**
 + 🕛 **Java**

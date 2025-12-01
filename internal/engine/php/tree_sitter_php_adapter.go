@@ -546,7 +546,7 @@ func (a *TreeSitterAdapter) ExtractOperatorsOperands(src []byte, startLine, endL
 	oprnds := []string{}
 	addOp := func(op string) { ops = append(ops, op) }
 	// tokens ordered longest-first to avoid partial matches
-	tokens := []string{"<<=", ">>=", "**=", "===", "!==", "<=>", "??=", "<=", ">=", "<<", ">>", "&&", "||", "??", "&=", "|=", "^=", "+=", "-=", "*=", "/=", "%=", ".=", "==", "**", "+", "-", "*", "/", "%", ".", "&", "|", "^", "<", ">"}
+	tokens := []string{"<<=", ">>=", "**=", "===", "!==", "<=>", "??=", "<=", ">=", "<<", ">>", "&&", "||", "??", "&=", "|=", "^=", "+=", "-=", "*=", "/=", "%=", ".=", "==", "**", "|>", "+", "-", "*", "/", "%", ".", "&", "|", "^", "<", ">"}
 	addOperand := func(name string) { oprnds = append(oprnds, normalizePhpOperand(name)) }
 	// very naive scan in order
 	for i := startLine - 1; i < endLine && i < len(lines); i++ {
