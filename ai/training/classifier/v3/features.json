@@ -1,0 +1,1 @@
+["class_loc", "logical_loc", "comment_loc", "nb_comments", "nb_methods", "nb_extends", "nb_implements", "nb_traits", "count_if", "count_elseif", "count_else", "count_case", "count_switch", "count_loop", "nb_external_dependencies", "depth_estimate", "nb_method_calls"]
