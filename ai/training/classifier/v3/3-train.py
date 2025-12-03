@@ -2,14 +2,10 @@
 import pandas as pd
 from sklearn.model_selection import train_test_split
 from sklearn.ensemble import RandomForestClassifier
+from sklearn.preprocessing import LabelEncoder
 import joblib
 import json
 from argparse import ArgumentParser
-
-# DATA = "dataset/final_dataset.csv"
-# MODEL_OUT = "model.pkl"
-# FEATURES_OUT = "features.json"
-
 
 parser = ArgumentParser()
 parser.add_argument("data", help="Input dataset CSV")
@@ -32,9 +28,26 @@ IGNORE = ["class", "file", "namespace_raw", "externals_raw",
 # Garder seulement features numériques
 features = [c for c in df.columns if c not in IGNORE]
 
-print("[INFO] Features used:", features)
+# Identifier les colonnes catégorielles (non numériques)
+categorical_cols = []
+for col in features:
+    if df[col].dtype == 'object' or not pd.api.types.is_numeric_dtype(df[col]):
+        categorical_cols.append(col)
 
-X = df[features]
+print("[INFO] Features used:", features)
+if categorical_cols:
+    print("[INFO] Categorical columns to encode:", categorical_cols)
+
+# Encoder les colonnes catégorielles
+encoders = {}
+X = df[features].copy()
+
+for col in categorical_cols:
+    le = LabelEncoder()
+    X[col] = le.fit_transform(X[col].astype(str))
+    encoders[col] = le
+    print(f"[INFO] Encoded '{col}': {len(le.classes_)} unique values")
+
 y = df["label"]
 
 print("[INFO] Split…")
@@ -54,10 +67,19 @@ score = model.score(X_test, y_test)
 print("[INFO] Score:", score)
 
 print("[INFO] Saving model:", MODEL_OUT)
-joblib.dump(model, MODEL_OUT)
+# Sauvegarder le modèle et les encodeurs ensemble
+model_data = {
+    'model': model,
+    'encoders': encoders
+}
+joblib.dump(model_data, MODEL_OUT)
 
 print("[INFO] Saving features:", FEATURES_OUT)
+features_data = {
+    'features': features,
+    'categorical_cols': categorical_cols
+}
 with open(FEATURES_OUT, "w") as f:
-    json.dump(features, f)
+    json.dump(features_data, f, indent=2)
 
 print("[OK] Training finished.")

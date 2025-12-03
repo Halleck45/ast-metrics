@@ -54,7 +54,7 @@ Be patient, this can take a while depending on the number of lines to label and 
 Once you have labeled the dataset, you need to merge the labels with the original dataset.
 
 ```bash
-python 2-merge_dataset_.py <path-to-csv-dataset> <path-to-labeled-csv> <path-to-output-csv>
+python 2-merge_dataset.py <path-to-csv-dataset> <path-to-labeled-csv> <path-to-output-csv>
 ```
 
 For example:
@@ -95,6 +95,7 @@ python 4-predict.py dataset/samples.csv model.pkl features.json
 
 ```bash
 go run cmd/dev/ai_dataset.go --output=ai/training/classifier/v3/dataset/ai-service.csv /home/jflepine/workdir/globalexam/packages/services/ai-service.globalexam.cloud/app
+cd ai/training/classifier/v3
 python 1-labelize.py --count=50 dataset/ai-service.csv
 python 2-merge_dataset.py dataset/ai-service.csv classified_output/classified_c4.csv dataset/final_dataset.csv
 python 3-train.py dataset/final_dataset.csv model.pkl features.json

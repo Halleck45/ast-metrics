@@ -4,6 +4,7 @@ import pandas as pd
 import joblib
 import json
 from argparse import ArgumentParser
+
 parser = ArgumentParser()
 parser.add_argument("samples", help="Input samples CSV")
 parser.add_argument("model", help="Input model file")
@@ -14,8 +15,18 @@ MODEL = args.model
 FEATURES = args.features
 
 print("[INFO] Loading model and features…")
-model = joblib.load(MODEL)
-features = json.load(open(FEATURES, "r"))
+model_data = joblib.load(MODEL)
+model = model_data['model']
+encoders = model_data.get('encoders', {})
+
+features_data = json.load(open(FEATURES, "r"))
+if isinstance(features_data, dict):
+    features = features_data['features']
+    categorical_cols = features_data.get('categorical_cols', [])
+else:
+    # Compatibilité avec l'ancien format
+    features = features_data
+    categorical_cols = []
 
 print("[INFO] Loading samples:", SAMPLES)
 df = pd.read_csv(SAMPLES)
@@ -33,7 +44,23 @@ if missing:
     sys.exit(1)
 
 # On ne garde que les colonnes nécessaires
-X = df[features]
+X = df[features].copy()
+
+# Encoder les colonnes catégorielles avec les encodeurs sauvegardés
+for col in categorical_cols:
+    if col in encoders:
+        le = encoders[col]
+        # Gérer les valeurs inconnues (non vues pendant l'entraînement)
+        X[col] = X[col].astype(str)
+        # Remplacer les valeurs inconnues par la première classe (ou une valeur par défaut)
+        unknown_mask = ~X[col].isin(le.classes_)
+        if unknown_mask.any():
+            print(f"[WARNING] Found {unknown_mask.sum()} unknown values in '{col}', using default encoding")
+            # Utiliser la première classe comme valeur par défaut
+            X.loc[unknown_mask, col] = le.classes_[0]
+        X[col] = le.transform(X[col])
+    else:
+        print(f"[WARNING] No encoder found for categorical column '{col}', skipping encoding")
 
 print("[INFO] Predicting…")
 preds = model.predict(X)
