@@ -18,6 +18,9 @@ mkdir -p models
 curl -L "https://huggingface.co/TheBloke/Mistral-7B-Instruct-v0.2-GGUF/resolve/main/mistral-7b-instruct-v0.2.Q4_K_M.gguf" -o ./models/mistral-7b-instruct-v0.2.Q4_K_M.gguf
 ```
 
+I've tested many models from HuggingFace, and the Mistral 7B instruct model seems to work well for this task.
+
+
 ## Dataset
 
 Prepare the dataset
@@ -32,6 +35,15 @@ If you want to work on sample data, you can generate it with:
 make dev-prepare-examples
 go run cmd/dev/ai_dataset.go --output=ai/training/classifier/v3/dataset/samples.csv ./tmp/samples/
 ```
+
+The dataset I use locally has:
+
++ 4,881,687 lines of PHP code
++ 13,053,808 lines of Go code
++ 7,398,526 lines of Python code
++ 4,987,061 lines of Rust code
+
+Around 30 millions lines of code.
 
 ## Labeling
 
@@ -48,6 +60,8 @@ python 1-labelize.py --count=10000 dataset/samples.csv
 ```
 
 Be patient, this can take a while depending on the number of lines to label and your GPU performance.
+
+> If your GPU is not powerful enough, you can use a remote API (OpenAI). See the `1-labelize_remote.py` script for that.
 
 ## Merge labels
 
@@ -79,25 +93,27 @@ Make predictions
 python 4-predict.py <path-to-csv-you-want-to-test> <path-to-model> <path-to-feature>
 ```
 
+## Group the files
+
+You can group the files by their predicted label
+
+```bash
+mkdir -p build
+mv features.json build/
+mv model.pkl build/model_role_classifier.pkl
+```
+
 ## Evaluation
 
 @todo
 
-## Onshot
-You can do all the steps in one command with the `onshot.py` script.
+## Oneshot
+
+These is a oneshot example of the whole process:
 
 ```bash
 python 1-labelize.py --count=10000 dataset/samples.csv
 python 2-merge_dataset.py dataset/samples.csv classified_output/classified_c4.csv dataset/final_dataset.csv
 python 3-train.py dataset/final_dataset.csv model.pkl features.json
 python 4-predict.py dataset/samples.csv model.pkl features.json
-```
-
-```bash
-go run cmd/dev/ai_dataset.go --output=ai/training/classifier/v3/dataset/ai-service.csv /home/jflepine/workdir/globalexam/packages/services/ai-service.globalexam.cloud/app
-cd ai/training/classifier/v3
-python 1-labelize.py --count=50 dataset/ai-service.csv
-python 2-merge_dataset.py dataset/ai-service.csv classified_output/classified_c4.csv dataset/final_dataset.csv
-python 3-train.py dataset/final_dataset.csv model.pkl features.json
-python 4-predict.py dataset/ai-service.csv model.pkl features.json
 ```

@@ -118,6 +118,40 @@ dev-prepare-examples:
 	git clone --depth 1 https://github.com/nette/nette.git ./samples/php/nette || true
 	@echo "  Cloning Python projects..."
 	git clone --depth 1 https://github.com/WordPress/openverse.git ./samples/python/openverse || true
+	git clone --depth 1 https://github.com/pallets/flask.git ./samples/python/flask || true
+	git clone --depth 1 https://github.com/tiangolo/fastapi.git ./samples/python/fastapi || true
+	git clone --depth 1 https://github.com/encode/django-rest-framework.git ./samples/python/django-rest-framework || true
+	git clone --depth 1 https://github.com/psf/requests.git ./samples/python/requests || true
+	git clone --depth 1 https://github.com/sqlalchemy/sqlalchemy.git ./samples/python/sqlalchemy || true
+	git clone --depth 1 https://github.com/scrapy/scrapy.git ./samples/python/scrapy || true
+	git clone --depth 1 https://github.com/pydantic/pydantic.git ./samples/python/pydantic || true
+	git clone --depth 1 https://github.com/pytest-dev/pytest.git ./samples/python/pytest || true
+	git clone --depth 1 https://github.com/urllib3/urllib3.git ./samples/python/urllib3 || true
+	git clone --depth 1 https://github.com/redis/redis-py.git ./samples/python/redis-py || true
+	git clone --depth 1 https://github.com/aio-libs/aiohttp.git ./samples/python/aiohttp || true
+	git clone --depth 1 https://github.com/celery/celery.git ./samples/python/celery || true
+	git clone --depth 1 https://github.com/python-telegram-bot/python-telegram-bot.git ./samples/python/python-telegram-bot || true
+	git clone --depth 1 https://github.com/mirumee/saleor.git ./samples/python/saleor || true
+	git clone --depth 1 https://github.com/django-oscar/django-oscar.git ./samples/python/django-oscar || true
+	git clone --depth 1 https://github.com/killbill/killbill.git ./samples/python/killbill || true
+	git clone --depth 1 https://github.com/zulip/zulip.git ./samples/python/zulip || true
+	git clone --depth 1 https://github.com/openfoodfacts/openfoodfacts-server.git ./samples/python/openfoodfacts || true
+	git clone --depth 1 https://github.com/mozilla/addons-server.git ./samples/python/addons-server || true
+	git clone --depth 1 https://github.com/pretix/pretix.git ./samples/python/pretix || true
+	git clone --depth 1 https://github.com/hydrausb/hydrus.git ./samples/python/hydrus || true
+	git clone --depth 1 https://github.com/pandas-dev/pandas.git ./samples/python/pandas || true
+	git clone --depth 1 https://github.com/numpy/numpy.git ./samples/python/numpy || true
+	git clone --depth 1 https://github.com/scikit-learn/scikit-learn.git ./samples/python/scikit-learn || true
+	git clone --depth 1 https://github.com/airbytehq/airbyte.git ./samples/python/airbyte || true
+	git clone --depth 1 https://github.com/apache/airflow.git ./samples/python/airflow || true
+	git clone --depth 1 https://github.com/dbt-labs/dbt-core.git ./samples/python/dbt || true
+	git clone --depth 1 https://github.com/PrefectHQ/prefect.git ./samples/python/prefect || true
+	git clone --depth 1 https://github.com/graphql-python/graphql-core.git ./samples/python/graphql-core || true
+	git clone --depth 1 https://github.com/opentelemetry/opentelemetry-python.git ./samples/python/opentelemetry || true
+	git clone --depth 1 https://github.com/apache/pulsar.git ./samples/python/pulsar || true
+	git clone --depth 1 https://github.com/kubernetes-client/python.git ./samples/python/k8s-client || true
+	git clone --depth 1 https://github.com/googleapis/python-api-core.git ./samples/python/googleapi-core || true
+
 	@echo "\e[34m\033[1mDONE \033[0m\e[39m\n"
 	@echo "\e[32m\033[1mExample projects prepared in ./samples/\033[0m\e[39m\n"
 

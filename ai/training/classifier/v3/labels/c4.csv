@@ -40,11 +40,13 @@ infrastructure:error:handler,Logique centralisée pour intercepter et gérer les
 utility:helper:string,Fonctions d'aide pour la manipulation de chaînes de caractères.
 utility:helper:date_time,Fonctions d'aide pour la manipulation de dates et heures.
 utility:helper:math,Fonctions mathématiques transversales.
+utility:helper:component,Outils et composants
 utility:converter:format,Conversion entre formats (XML/JSON/CSV).
 utility:validator:input,Validation des données brutes reçues (ex: formulaires).
 utility:validator:model,Validation des règles d'intégrité du modèle de domaine.
 utility:serialization:serializer,Conversion d'objet en chaîne (et inversement) pour le transport/stockage.
 utility:serialization:deserializer,Reconstruction d'objet à partir d'une chaîne.
+framework:internal:infrastructure,Classes internes d’un framework ou d’une bibliothèque
 Label Complet,Description du Rôle Applicatif
 development:test:case,Classe contenant un ensemble de tests unitaires/intégration (votre test_case).
 development:test:fixture,Préparation des données/environnements pour l'exécution d'un test.
