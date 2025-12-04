@@ -33,7 +33,7 @@ If you want to work on sample data, you can generate it with:
 
 ```bash
 make dev-prepare-examples
-go run cmd/dev/ai_dataset.go --output=ai/training/classifier/v3/dataset/samples.csv ./tmp/samples/
+go run cmd/dev/ai_dataset.go --output=ai/training/classifier/v3/dataset/samples.csv ./samples/
 ```
 
 The dataset I use locally has:
@@ -112,8 +112,14 @@ mv model.pkl build/model_role_classifier.pkl
 These is a oneshot example of the whole process:
 
 ```bash
-python 1-labelize.py --count=10000 dataset/samples.csv
+go run cmd/dev/ai_dataset.go --output=ai/training/classifier/v3/dataset/samples.csv ./samples/
+cd ai/training/classifier/v3
+python 1-labelize_remote.py --count=2000 dataset/samples.csv
+# or python 1-labelize.py --count=2000 dataset/samples.csv
 python 2-merge_dataset.py dataset/samples.csv classified_output/classified_c4.csv dataset/final_dataset.csv
 python 3-train.py dataset/final_dataset.csv model.pkl features.json
 python 4-predict.py dataset/samples.csv model.pkl features.json
+mkdir -p build
+mv features.json build/
+mv model.pkl build/model_role_classifier.pkl
 ```

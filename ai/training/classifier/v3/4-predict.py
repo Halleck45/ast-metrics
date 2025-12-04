@@ -9,14 +9,17 @@ from argparse import ArgumentParser
 
 parser = ArgumentParser()
 parser.add_argument("samples", help="Input samples CSV")
-parser.add_argument("model", help="Input model file")
+parser.add_argument("model", help="Input model file (RandomForest only)")
 parser.add_argument("features", help="Input features JSON")
+parser.add_argument("--encoders", help="Input encoders file (defaults to encoders.pkl)", 
+                    default="encoders.pkl")
 parser.add_argument("--labels-def", help="Labels definition CSV (c4.csv)", 
                     default="labels/c4.csv")
 args = parser.parse_args()
 SAMPLES = args.samples
 MODEL = args.model
 FEATURES = args.features
+ENCODERS = args.encoders
 LABELS_DEF = args.labels_def
 
 # Charger le fichier de définition des labels pour créer le mapping inverse
@@ -51,11 +54,30 @@ with open(LABELS_DEF, 'r', encoding='utf-8') as f:
 
 print(f"[INFO] Loaded {len(number_to_label)} label mappings")
 
-print("[INFO] Loading model and features…")
-model_data = joblib.load(MODEL)
-model = model_data['model']
-encoders = model_data.get('encoders', {})
+print("[INFO] Loading model…")
+# Charger le modèle (RandomForest uniquement)
+model = joblib.load(MODEL)
 
+print("[INFO] Loading encoders from:", ENCODERS)
+# Charger les encoders depuis un fichier séparé
+if os.path.exists(ENCODERS):
+    encoders = joblib.load(ENCODERS)
+else:
+    # Compatibilité avec l'ancien format (modèle contenant model_data)
+    print("[WARNING] Encoders file not found, trying legacy format…")
+    try:
+        model_data = joblib.load(MODEL)
+        if isinstance(model_data, dict) and 'model' in model_data:
+            model = model_data['model']
+            encoders = model_data.get('encoders', {})
+        else:
+            encoders = {}
+    except:
+        encoders = {}
+    if not encoders:
+        print("[WARNING] No encoders found, categorical columns will not be encoded")
+
+print("[INFO] Loading features…")
 features_data = json.load(open(FEATURES, "r"))
 if isinstance(features_data, dict):
     features = features_data['features']
