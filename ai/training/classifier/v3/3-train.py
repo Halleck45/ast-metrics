@@ -22,7 +22,7 @@ print("[INFO] Loading dataset…")
 df = pd.read_csv(DATA)
 
 # Colonnes à ignorer
-IGNORE = ["class", "file", "namespace_raw", "externals_raw", 
+IGNORE = ["namespace_raw", "externals_raw", 
           "method_calls_raw", "uses_raw", "path_raw", "label", "stmt_type"]
 
 # Garder seulement features numériques

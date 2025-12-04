@@ -1,5 +1,7 @@
 # predict_batch.py
 import sys
+import os
+import csv
 import pandas as pd
 import joblib
 import json
@@ -9,10 +11,45 @@ parser = ArgumentParser()
 parser.add_argument("samples", help="Input samples CSV")
 parser.add_argument("model", help="Input model file")
 parser.add_argument("features", help="Input features JSON")
+parser.add_argument("--labels-def", help="Labels definition CSV (c4.csv)", 
+                    default="labels/c4.csv")
 args = parser.parse_args()
 SAMPLES = args.samples
 MODEL = args.model
 FEATURES = args.features
+LABELS_DEF = args.labels_def
+
+# Charger le fichier de définition des labels pour créer le mapping inverse
+print("[INFO] Loading labels definition from:", LABELS_DEF)
+if not os.path.exists(LABELS_DEF):
+    # Essayer depuis le répertoire du script
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    labels_def_path = os.path.join(script_dir, LABELS_DEF)
+    if os.path.exists(labels_def_path):
+        LABELS_DEF = labels_def_path
+    else:
+        print(f"[ERROR] Labels definition file not found: {LABELS_DEF}")
+        sys.exit(1)
+
+# Lire le CSV ligne par ligne pour obtenir le numéro de ligne exact
+number_to_label = {}
+line_number = 0
+with open(LABELS_DEF, 'r', encoding='utf-8') as f:
+    reader = csv.reader(f)
+    for row in reader:
+        line_number += 1
+        # Ignorer la ligne 1 (header) et les lignes qui sont des headers
+        if line_number == 1:
+            continue
+        if len(row) > 0:
+            label = row[0].strip()
+            # Ignorer les headers et lignes vides
+            if label and label != "Label" and label != "Label Complet" and not label.startswith("#"):
+                # Le numéro correspond au numéro de ligne dans le fichier (ligne 2 = numéro 1)
+                # car ligne 1 est le header, donc on soustrait 1
+                number_to_label[line_number - 1] = label
+
+print(f"[INFO] Loaded {len(number_to_label)} label mappings")
 
 print("[INFO] Loading model and features…")
 model_data = joblib.load(MODEL)
@@ -32,10 +69,14 @@ print("[INFO] Loading samples:", SAMPLES)
 df = pd.read_csv(SAMPLES)
 
 # Harmoniser avec merge + train
-df.rename(columns={
-    "stmt_name": "class",
-    "file_path": "file",
-}, inplace=True)
+# Garder les colonnes "class" et "file" pour l'affichage, même si elles ne sont pas dans les features
+has_class = "class" in df.columns or "stmt_name" in df.columns
+has_file = "file" in df.columns or "file_path" in df.columns
+
+if "stmt_name" in df.columns:
+    df.rename(columns={"stmt_name": "class"}, inplace=True)
+if "file_path" in df.columns:
+    df.rename(columns={"file_path": "file"}, inplace=True)
 
 print("[INFO] Preparing dataset…")
 missing = [c for c in features if c not in df.columns]
@@ -43,7 +84,7 @@ if missing:
     print("[ERROR] Missing required columns:", missing)
     sys.exit(1)
 
-# On ne garde que les colonnes nécessaires
+# On ne garde que les colonnes nécessaires pour la prédiction
 X = df[features].copy()
 
 # Encoder les colonnes catégorielles avec les encodeurs sauvegardés
@@ -66,7 +107,19 @@ print("[INFO] Predicting…")
 preds = model.predict(X)
 
 print("\n=== RESULTS ===\n")
-for (_, row), label in zip(df.iterrows(), preds):
-    cls = row["class"]
-    file = row["file"]
-    print(f"{cls} | {file} -> {label}")
+for (idx, row), label_num in zip(df.iterrows(), preds):
+    # Convertir le numéro de label en string
+    label_str = number_to_label.get(int(label_num), f"UNKNOWN({label_num})")
+    
+    # Afficher class et file si disponibles
+    if has_class and "class" in df.columns:
+        cls = row["class"]
+    else:
+        cls = "N/A"
+    
+    if has_file and "file" in df.columns:
+        file = row["file"]
+    else:
+        file = "N/A"
+    
+    print(f"{cls} | {file} => {label_str}")

@@ -1,17 +1,54 @@
 # merge_dataset.py
 import pandas as pd
 import sys
+import os
+import csv
 from argparse import ArgumentParser
 
 parser = ArgumentParser()
 parser.add_argument("csv", help="Input CSV")
 parser.add_argument("labels", help="Labels CSV")
 parser.add_argument("out", help="Output CSV")
+parser.add_argument("--labels-def", help="Labels definition CSV (c4.csv)", 
+                    default="labels/c4.csv")
 args = parser.parse_args()
 
 SAMPLES = args.csv
 LABELS = args.labels
 OUT = args.out
+LABELS_DEF = args.labels_def
+
+# Charger le fichier de définition des labels pour créer le mapping
+print("[INFO] Loading labels definition from:", LABELS_DEF)
+if not os.path.exists(LABELS_DEF):
+    # Essayer depuis le répertoire du script
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    labels_def_path = os.path.join(script_dir, LABELS_DEF)
+    if os.path.exists(labels_def_path):
+        LABELS_DEF = labels_def_path
+    else:
+        print(f"[ERROR] Labels definition file not found: {LABELS_DEF}")
+        sys.exit(1)
+
+# Lire le CSV ligne par ligne pour obtenir le numéro de ligne exact
+label_to_number = {}
+line_number = 0
+with open(LABELS_DEF, 'r', encoding='utf-8') as f:
+    reader = csv.reader(f)
+    for row in reader:
+        line_number += 1
+        # Ignorer la ligne 1 (header) et les lignes qui sont des headers
+        if line_number == 1:
+            continue
+        if len(row) > 0:
+            label = row[0].strip()
+            # Ignorer les headers et lignes vides
+            if label and label != "Label" and label != "Label Complet" and not label.startswith("#"):
+                # Le numéro correspond au numéro de ligne dans le fichier (ligne 2 = numéro 1)
+                # car ligne 1 est le header, donc on soustrait 1
+                label_to_number[label] = line_number - 1
+
+print(f"[INFO] Loaded {len(label_to_number)} label mappings")
 
 print("[INFO] Loading samples from:", SAMPLES)
 df_samples = pd.read_csv(SAMPLES)
@@ -69,10 +106,32 @@ if len(df) == 0:
     print("[WARNING] No rows remaining after removing UNKNOWN labels!")
     sys.exit(1)
 
-print(f"[INFO] Final dataset: {len(df)} rows")
+# Convertir les labels en numéros
+print("[INFO] Converting labels to numbers…")
+def label_to_num(label_str):
+    label_str = str(label_str).strip()
+    if label_str in label_to_number:
+        return label_to_number[label_str]
+    else:
+        print(f"[WARNING] Unknown label '{label_str}', skipping")
+        return None
+
+df["label"] = df["label"].apply(label_to_num)
+df = df.dropna(subset=["label"])
+df["label"] = df["label"].astype(int)
+
+if len(df) == 0:
+    print("[WARNING] No rows remaining after label conversion!")
+    sys.exit(1)
+
+# Retirer les colonnes "class" et "file" du CSV final
+print("[INFO] Removing 'class' and 'file' columns from final dataset…")
+df_final = df.drop(columns=["class", "file"])
+
+print(f"[INFO] Final dataset: {len(df_final)} rows")
 
 # Sauvegarder
 print("[INFO] Saving to:", OUT)
-df.to_csv(OUT, index=False)
+df_final.to_csv(OUT, index=False)
 
 print("[OK] final_dataset.csv ready.")
