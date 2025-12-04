@@ -22,30 +22,15 @@ It provides <b>architectural insights</b>, <b>complexity metrics</b>, and <b>act
 <a href="https://halleck45.github.io/ast-metrics/">Documentation</a> | <a href=".github/CONTRIBUTING.md">Contributing</a> | <a href="https://twitter.com/Halleck45">Twitter</a>
 </p>
 
+
+
+
+<img width="1280" height="640" alt="banner" src="https://github.com/user-attachments/assets/4a7d518d-82fe-4c18-880f-479fe1738878" />
+
 <br /><br/>
 
-<table>
-    <tr>
-        <td width="50%" style="text-align:center">
-            HTML Report
-        </td>
-        <td width="50%" style="text-align:center">
-            CLI
-        </td>
-    </tr>
-    <tr>
-        <td width="50%" style="text-align:center">
-            <img src="./docs/preview-ast-metrics.gif" alt="AST Metrics HTML report"/>
-        </td>
-        <td width="50%" style="text-align:center">
-            <img src="./docs/preview.gif" alt="AST Metrics CLI report"/>
-        </td>
-    </tr>
-</table>
-
-
-
 ## Getting Started
+
 
 Open your terminal and run the following command:
 
