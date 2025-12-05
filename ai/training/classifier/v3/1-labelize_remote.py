@@ -129,15 +129,19 @@ def detect_language(filepath):
 # ------------------------------------------
 def build_system_prompt(labels: List[str]) -> str:
     """Build system prompt with label list"""
-    numbered = "\n".join(f"{i+1}. {lbl}" for i, lbl in enumerate(labels))
     return f"""
 We want to classify code sourcefiles.
 
 For example, 
 - component:data_access:repository for DTO or repository.
 - component:messaging:subscriber for message handler.
+- component:logic:domain_service for domain logic service, or business logic.
+- utility:helper:component for helper or utility classes.
 
 This will help us to train an AI model to classify code sourcefiles. Your decision should be really accurate.
+
+All the classes or components are Open Source. you already have access to all the code and knowledge about them.
+use this knowledge to make the best possible classification. snippets will be provided for each class.
 
 For each file, select the most appropriate label.
 """

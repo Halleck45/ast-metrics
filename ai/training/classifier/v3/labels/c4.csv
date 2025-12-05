@@ -1,53 +1,65 @@
-Label,Description du Rôle Applicatif
+label
 component:interface:controller,Point d'entrée pour les requêtes externes (Web/API/CLI).
-component:interface:presenter,Prépare les données pour l'affichage (pattern MVP/MVVM).
+component:interface:presenter,Prépare les données pour l'affichage (MVP/MVVM).
 component:interface:view,Représentation de l'interface utilisateur.
 component:interface:view_model,Modèle de données spécifique à la vue.
-component:logic:service_layer,"Orchestrateur, couche de service applicatif (votre orchestrator, application_service)."
-component:logic:domain_model,"Entité, valeur, agrégat (le cœur du métier)."
-component:logic:domain_service,Service métier ne faisant pas partie d'une entité spécifique.
-component:logic:specification,Encapsule une règle ou une politique métier (votre policy).
-component:logic:use_case,Cas d'utilisation spécifique (pattern Clean Architecture/Hexagonale).
-component:data_access:repository,"Collection pour les entités (persistance, abstraction de la source)."
-component:data_access:gateway,"Point de sortie vers un service externe (API tierce, base de données)."
-component:data_access:mapper,Conversion entre le modèle de domaine et le modèle de persistance/transport.
-component:messaging:handler,"Traite un message, une commande ou un événement entrant (votre message_handler)."
-component:messaging:publisher,Envoie des événements ou des messages.
-component:messaging:subscriber,Écoute et réagit aux événements externes.
-component:messaging:bus,Mécanisme de routage des commandes/requêtes/événements.
-construction:factory:abstract,Définit une interface pour créer des familles d'objets sans spécifier leurs classes concrètes.
-construction:factory:method,Méthode ou classe statique pour instancier un objet.
-construction:builder:fluent,Construction d'objets complexes étape par étape.
-construction:builder:configurator,Applique des configurations après la création.
-construction:adapter:external,Transforme une interface en une autre pour l'intégration externe.
-construction:adapter:internal,Transforme une interface en une autre pour l'intégration interne.
-construction:transformer:data,Conversion structurelle de données (ex: DTO vers Entité).
-construction:transformer:view,Conversion de données pour l'affichage.
-infrastructure:client:http,Wrapper autour d'une librairie de client HTTP (ex: appels REST).
-infrastructure:client:database,Wrapper de connexion/pool de base de données.
-infrastructure:client:queue,Client de connexion à un système de file d'attente (ex: RabbitMQ).
-infrastructure:system:file_io,Gestion des opérations de lecture/écriture de fichiers.
-infrastructure:system:environment,Accès aux variables d'environnement.
-infrastructure:logging:logger,Service ou classe pour enregistrer les événements et diagnostics.
-infrastructure:monitoring:metric,Collecte et émission de métriques de performance/santé.
-infrastructure:security:token_handler,"Gestion de la création, validation et révocation de jetons."
-infrastructure:security:authenticator,Logique de vérification de l'identité de l'utilisateur.
-infrastructure:security:authorizer,Logique de vérification des permissions.
-infrastructure:cache:manager,"Contrôle les opérations de mise en cache (lecture, écriture, invalidation)."
-infrastructure:configuration:loader,"Charge les fichiers de configuration (YAML, JSON, etc.)."
-infrastructure:configuration:model,Représentation typée des options de configuration.
-infrastructure:error:handler,Logique centralisée pour intercepter et gérer les exceptions.
-utility:helper:string,Fonctions d'aide pour la manipulation de chaînes de caractères.
-utility:helper:date_time,Fonctions d'aide pour la manipulation de dates et heures.
-utility:helper:math,Fonctions mathématiques transversales.
-utility:helper:component,Outils et composants
-utility:converter:format,Conversion entre formats (XML/JSON/CSV).
-utility:validator:input,Validation des données brutes reçues (ex: formulaires).
-utility:validator:model,Validation des règles d'intégrité du modèle de domaine.
-utility:serialization:serializer,Conversion d'objet en chaîne (et inversement) pour le transport/stockage.
-utility:serialization:deserializer,Reconstruction d'objet à partir d'une chaîne.
-framework:internal:infrastructure,Classes internes d’un framework ou d’une bibliothèque
-Label Complet,Description du Rôle Applicatif
-development:test:case,Classe contenant un ensemble de tests unitaires/intégration (votre test_case).
-development:test:fixture,Préparation des données/environnements pour l'exécution d'un test.
-development:test:mock,Objet simulé pour isoler le code testé (votre mock).
+component:app:use_case,Cas d'utilisation métier unique (Clean/Hexagonal).
+component:app:service,Service applicatif coordonnant plusieurs composants.
+component:app:flow_orchestrator,Orchestre une séquence de traitements multi-étapes.
+component:app:transaction_manager,Gestion unitaire et transactionnelle d'opérations.
+component:app:mapper,Conversion entre modèles (Domaine/DTO/Infra).
+component:app:converter,Conversion multi-formats ou restructuration de données.
+component:domain:entity,Entité métier.
+component:domain:value_object,Objet-valeur métier.
+component:domain:aggregate_root,Entrée d'un agrégat métier.
+component:domain:service,Service métier sans dépendances techniques.
+component:domain:rule,Règle métier simple encapsulée.
+component:domain:policy,Politique métier structurante (multi-règles).
+component:domain:specification,Spécification métier booléenne complexe.
+component:data_access:repository,Abstraction d'accès aux entités.
+component:data_access:gateway,Point de sortie vers un service externe.
+component:data_access:mapper,Conversion Domaine <-> Persistance/Transport.
+component:data_access:dto,Objet de transfert sans logique métier.
+component:messaging:handler,Traite un message/commande/événement entrant.
+component:messaging:publisher,Émet des messages/événements.
+component:messaging:subscriber,Écoute des événements externes.
+component:messaging:bus,Bus de routage (commandes/requêtes/événements).
+construction:factory:abstract,Interface pour familles d'objets.
+construction:factory:method,Méthode ou classe statique d’instanciation.
+construction:builder:fluent,Construction progressive d'objets complexes.
+construction:builder:configurator,Ajout de configurations après construction.
+construction:adapter:external,Adaptateur vers interface externe.
+construction:adapter:internal,Adaptateur entre composants internes.
+construction:transformer:data,Conversion structurelle de données.
+construction:transformer:view,Transformation des données pour l'affichage.
+infrastructure:client:http,Wrapper pour appels HTTP.
+infrastructure:client:database,Wrapper driver/connexion BD.
+infrastructure:client:queue,Client file de messages (Kafka/RabbitMQ).
+infrastructure:system:file_io,Accès fichiers.
+infrastructure:system:environment,Accès aux variables d’environnement.
+infrastructure:logging:logger,Journalisation.
+infrastructure:monitoring:metric,Collecte de métriques.
+infrastructure:security:token_handler,Gestion de jetons.
+infrastructure:security:authenticator,Vérification d'identité.
+infrastructure:security:authorizer,Vérification des permissions.
+infrastructure:cache:manager,Gestion du cache.
+infrastructure:configuration:loader,Chargement des fichiers de config.
+infrastructure:configuration:model,Modèle typé de configuration.
+infrastructure:error:handler,Gestion centralisée des erreurs.
+component:core:library,Code bas-niveau générique, fonctions utilitaires internes.
+component:core:algorithm,Implémentation d'algorithmes ou structures de données.
+component:core:utility,Outils internes génériques non métier.
+component:core:runtime_support,Composants liés au fonctionnement bas niveau (threads, mémoire, scheduling…).
+utility:helper:string,Helpers string.
+utility:helper:date_time,Helpers date/heure.
+utility:helper:math,Helpers math.
+utility:helper:component,Utilitaires de composants.
+utility:converter:format,Conversions de formats (XML/JSON/etc.).
+utility:validator:input,Validation de données brutes.
+utility:validator:model,Validation d'intégrité du domaine.
+utility:serialization:serializer,Sérialisation d’objets.
+utility:serialization:deserializer,Désérialisation d’objets.
+framework:internal:infrastructure,Code interne fourni par un framework.
+development:test:case,Classe de tests unitaires/intégration.
+development:test:fixture,Données/état pour tests.
+development:test:mock,Objet simulé pour l'isolation.
