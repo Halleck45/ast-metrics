@@ -114,7 +114,7 @@ These is a oneshot example of the whole process:
 ```bash
 go run cmd/dev/ai_dataset.go --output=ai/training/classifier/v3/dataset/samples.csv ./samples/
 cd ai/training/classifier/v3
-python 1-labelize_remote.py --count=2000 dataset/samples.csv
+python 1-labelize_remote.py --count=4000 dataset/samples.csv
 # or python 1-labelize.py --count=2000 dataset/samples.csv
 python 2-merge_dataset.py dataset/samples.csv classified_output/classified_c4.csv dataset/final_dataset.csv
 python 3-train.py dataset/final_dataset.csv model.pkl features.json

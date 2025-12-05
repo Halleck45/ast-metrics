@@ -212,6 +212,36 @@ if len(df) == 0:
     print("[WARNING] No rows remaining after label conversion!")
     sys.exit(1)
 
+# S'assurer que programming_language est présent
+# Si absent, l'extraire de file_path si possible
+if "programming_language" not in df.columns:
+    print("[INFO] 'programming_language' column not found, extracting from file paths…")
+    def extract_language(file_path):
+        if pd.isna(file_path) or not file_path:
+            return "UNKNOWN"
+        file_path = str(file_path).lower()
+        # Détection basique par extension
+        if file_path.endswith('.php'):
+            return "PHP"
+        elif file_path.endswith('.go'):
+            return "Go"
+        elif file_path.endswith('.py'):
+            return "Python"
+        elif file_path.endswith('.rs'):
+            return "Rust"
+        elif file_path.endswith('.js') or file_path.endswith('.ts'):
+            return "JavaScript"
+        elif file_path.endswith('.java'):
+            return "Java"
+        else:
+            return "UNKNOWN"
+    
+    # Utiliser 'file' qui est le nom normalisé de 'file_path'
+    df["programming_language"] = df["file"].apply(extract_language)
+    print(f"[INFO] Extracted programming languages: {df['programming_language'].value_counts().to_dict()}")
+else:
+    print("[INFO] 'programming_language' column found and preserved")
+
 # Retirer les colonnes "class" et "file" du CSV final
 print("[INFO] Removing 'class' and 'file' columns from final dataset…")
 df_final = df.drop(columns=["class", "file"])

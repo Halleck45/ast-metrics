@@ -1,11 +1,13 @@
 package file
 
 import (
+	"os"
+	"path/filepath"
 	"regexp"
 	"strings"
 
 	"github.com/halleck45/ast-metrics/internal/configuration"
-	"github.com/yargevad/filepathx"
+	"github.com/pterm/pterm"
 )
 
 type FileList struct {
@@ -33,20 +35,44 @@ func (r Finder) Search(fileExtension string) FileList {
 
 		path := strings.TrimRight(path, "/")
 		var matches []string
+		var walkErr error
 		// if is a PHP file, add it
 		if strings.HasSuffix(path, fileExtension) {
 			matches = append(matches, path)
 		} else {
-			matches, _ = filepathx.Glob(path + "/**/*" + fileExtension)
+			// Use filepath.Walk for recursive search instead of filepathx.Glob
+			// which seems to have issues with absolute paths
+			walkErr = filepath.Walk(path, func(walkPath string, info os.FileInfo, err error) error {
+				if err != nil {
+					// Continue on errors (permission denied, etc.)
+					return nil
+				}
+				if !info.IsDir() && strings.HasSuffix(walkPath, fileExtension) {
+					matches = append(matches, walkPath)
+				}
+				return nil
+			})
+			if walkErr != nil {
+				pterm.Warning.Printf("Walk error for %s: %v\n", path, walkErr)
+			}
+		}
+
+		// Log how many files were found before exclusion
+		if len(matches) > 0 {
+			pterm.Info.Printf("Finder: Found %d %s file(s) in %s (before exclusion)\n", len(matches), fileExtension, path)
+		} else {
+			pterm.Warning.Printf("Finder: No %s files found with pattern: %s/**/*%s\n", fileExtension, path, fileExtension)
 		}
 
 		// deal with excluded files
+		excludedCount := 0
 		for _, file := range matches {
 			var excluded bool = false
 
 			for _, excludedFile := range r.Configuration.ExcludePatterns {
 				excluded, _ = regexp.MatchString(excludedFile, file)
 				if excluded {
+					excludedCount++
 					break
 				}
 			}
@@ -63,6 +89,11 @@ func (r Finder) Search(fileExtension string) FileList {
 				result.FilesByDirectory[directory] = append(result.FilesByDirectory[directory], file)
 
 			}
+		}
+
+		// Log final count
+		if len(matches) > 0 {
+			pterm.Info.Printf("Finder: %d %s file(s) after exclusion (%d excluded, pattern: %s)\n", len(result.Files), fileExtension, excludedCount, strings.Join(r.Configuration.ExcludePatterns, ", "))
 		}
 	}
 

@@ -19,12 +19,15 @@ import (
 )
 
 type AIDatasetCommand struct {
-	InputPath  string
-	OutputPath string
-	runners    []engine.Engine
+	InputPath   string
+	OutputPath  string
+	Verbose     bool
+	MaxFiles    int
+	Concurrency int
+	runners     []engine.Engine
 }
 
-func NewAIDatasetCommand(inputPath, outputPath string) *AIDatasetCommand {
+func NewAIDatasetCommand(inputPath, outputPath string, verbose bool, maxFiles, concurrency int) *AIDatasetCommand {
 	runnerPhp := php.PhpRunner{}
 	runnerGolang := golang.GolangRunner{}
 	runnerPython := python.PythonRunner{}
@@ -32,9 +35,12 @@ func NewAIDatasetCommand(inputPath, outputPath string) *AIDatasetCommand {
 	runners := []engine.Engine{&runnerPhp, &runnerGolang, &runnerPython, &runnerRust}
 
 	return &AIDatasetCommand{
-		InputPath:  inputPath,
-		OutputPath: outputPath,
-		runners:    runners,
+		InputPath:   inputPath,
+		OutputPath:  outputPath,
+		Verbose:     verbose,
+		MaxFiles:    maxFiles,
+		Concurrency: concurrency,
+		runners:     runners,
 	}
 }
 
@@ -56,25 +62,72 @@ func (c *AIDatasetCommand) Execute() error {
 		return fmt.Errorf("input path must be a directory")
 	}
 
-	pterm.Info.Printf("Analyzing directory: %s\n", c.InputPath)
+	// Resolve absolute path to avoid issues with relative paths
+	absInputPath, err := filepath.Abs(c.InputPath)
+	if err != nil {
+		return fmt.Errorf("failed to resolve absolute path: %w", err)
+	}
+
+	pterm.Info.Printf("Analyzing directory: %s\n", absInputPath)
+	if c.InputPath != absInputPath && c.Verbose {
+		pterm.Info.Printf("  (resolved from relative path: %s)\n", c.InputPath)
+	}
 	pterm.Info.Printf("Output CSV file: %s\n", c.OutputPath)
+	if c.Verbose {
+		pterm.Info.Println("Verbose mode enabled")
+	}
 
 	// Create configuration
 	config := configuration.NewConfiguration()
-	err = config.SetSourcesToAnalyzePath([]string{c.InputPath})
+	err = config.SetSourcesToAnalyzePath([]string{absInputPath})
 	if err != nil {
 		return fmt.Errorf("failed to set source path: %w", err)
+	}
+
+	// Store MaxFiles and Concurrency in configuration for runners to access
+	// We'll use a simple approach: modify DumpOptions directly in runners
+	if c.Verbose {
+		pterm.Info.Printf("Configuration created, sources: %v\n", []string{absInputPath})
+		if c.MaxFiles > 0 {
+			pterm.Info.Printf("Max files per language: %d\n", c.MaxFiles)
+		}
+		if c.Concurrency > 0 {
+			pterm.Info.Printf("Concurrency: %d\n", c.Concurrency)
+		}
 	}
 
 	// Prepare workdir
 	config.Storage.Purge()
 	config.Storage.Ensure()
+	if c.Verbose {
+		pterm.Info.Println("Storage workdir prepared")
+	}
+
+	// Set global dump options for all runners
+	engine.SetDumpOptions(c.MaxFiles, c.Concurrency)
 
 	// Set configuration for each runner
+	runnerCount := 0
 	for _, runner := range c.runners {
 		runner.SetConfiguration(config)
-		if !runner.IsRequired() {
-			continue
+
+		// Check if runner is required
+		isRequired := runner.IsRequired()
+		if c.Verbose {
+			pterm.Info.Printf("Runner %T: IsRequired() = %v\n", runner, isRequired)
+		}
+
+		// Force initialization even if IsRequired() returns false
+		// This helps debug cases where files exist but aren't detected initially
+		if !isRequired {
+			if c.Verbose {
+				pterm.Warning.Printf("Runner %T reports not required, but forcing initialization to check for files\n", runner)
+			}
+			// Still try to initialize to see if files are found during DumpAST
+		}
+
+		if c.Verbose {
+			pterm.Info.Printf("Initializing runner %T\n", runner)
 		}
 
 		err := runner.Ensure()
@@ -83,23 +136,57 @@ func (c *AIDatasetCommand) Execute() error {
 			continue
 		}
 
-		// Dump ASTs (in a goroutine like in analyze_command.go to avoid blocking)
-		done := make(chan struct{})
-		go func() {
-			runner.DumpAST()
-			close(done)
-		}()
-		<-done
+		// Limit files and control concurrency if needed
+		if c.Verbose {
+			pterm.Info.Printf("Dumping ASTs for runner %T\n", runner)
+		}
+
+		// Use a custom DumpAST with limits if specified
+		c.dumpASTWithLimits(runner, config)
+
+		if c.Verbose {
+			// Check storage to see how many AST files were created
+			astDir := config.Storage.AstDirectory()
+			entries, err := os.ReadDir(astDir)
+			if err == nil {
+				pterm.Info.Printf("Runner %T: DumpAST completed, %d AST file(s) in storage\n", runner, len(entries))
+			} else {
+				pterm.Warning.Printf("Runner %T: DumpAST completed, but could not read storage directory: %v\n", runner, err)
+			}
+		}
 
 		// Cleanup
 		err = runner.Finish()
 		if err != nil {
 			pterm.Warning.Printf("Failed to finish runner %T: %v\n", runner, err)
+		} else {
+			runnerCount++
+			if c.Verbose {
+				pterm.Info.Printf("Runner %T completed successfully\n", runner)
+			}
 		}
+	}
+
+	if c.Verbose {
+		pterm.Info.Printf("Completed %d runner(s), starting analysis\n", runnerCount)
 	}
 
 	// Analyze all AST files
 	allResults := analyzer.Start(config.Storage, nil)
+	if c.Verbose {
+		pterm.Info.Printf("Analysis completed, found %d file(s)\n", len(allResults))
+	}
+
+	if len(allResults) == 0 {
+		pterm.Warning.Println("No files were analyzed. This might indicate:")
+		pterm.Warning.Println("  - No supported source files found in the directory")
+		pterm.Warning.Println("  - All files failed to parse")
+		pterm.Warning.Println("  - Directory structure issue")
+		if c.Verbose {
+			pterm.Info.Printf("Input path: %s\n", c.InputPath)
+		}
+		return fmt.Errorf("no files to process")
+	}
 
 	// Extract metrics and generate CSV
 	err = c.generateCSV(allResults)
@@ -160,9 +247,31 @@ func (c *AIDatasetCommand) generateCSV(files []*pb.File) error {
 	}
 
 	// Process each file
-	for _, file := range files {
-		if file == nil || len(file.Errors) > 0 {
+	processedFiles := 0
+	skippedFiles := 0
+	totalRows := 0
+
+	for i, file := range files {
+		if file == nil {
+			skippedFiles++
+			if c.Verbose {
+				pterm.Warning.Printf("File at index %d is nil, skipping\n", i)
+			}
 			continue
+		}
+
+		if len(file.Errors) > 0 {
+			skippedFiles++
+			if c.Verbose {
+				pterm.Warning.Printf("File %s has %d error(s), skipping: %v\n", file.Path, len(file.Errors), file.Errors)
+			} else {
+				pterm.Warning.Printf("File %s has errors, skipping\n", file.Path)
+			}
+			continue
+		}
+
+		if c.Verbose {
+			pterm.Info.Printf("Processing file %d/%d: %s\n", i+1, len(files), file.Path)
 		}
 
 		// Analyze file first to compute metrics
@@ -174,19 +283,41 @@ func (c *AIDatasetCommand) generateCSV(files []*pb.File) error {
 		// Process classes
 		classes := engine.GetClassesInFile(file)
 		if len(classes) > 0 {
+			if c.Verbose {
+				pterm.Info.Printf("  Found %d class(es) in file\n", len(classes))
+			}
 			// If file has classes, process each class
 			for _, class := range classes {
 				row := c.extractClassMetrics(class, file, namespace)
 				if err := writer.Write(row); err != nil {
 					return err
 				}
+				totalRows++
 			}
 		} else {
+			if c.Verbose {
+				pterm.Info.Printf("  No classes found, using file-level metrics\n")
+			}
 			// If file has no classes, use filename as stmt_name
 			row := c.extractFileMetrics(file, namespace)
 			if err := writer.Write(row); err != nil {
 				return err
 			}
+			totalRows++
+		}
+		processedFiles++
+	}
+
+	if c.Verbose {
+		pterm.Info.Printf("CSV generation summary:\n")
+		pterm.Info.Printf("  Total files analyzed: %d\n", len(files))
+		pterm.Info.Printf("  Files processed: %d\n", processedFiles)
+		pterm.Info.Printf("  Files skipped: %d\n", skippedFiles)
+		pterm.Info.Printf("  Total rows written: %d\n", totalRows)
+	} else {
+		pterm.Info.Printf("Processed %d file(s), wrote %d row(s) to CSV\n", processedFiles, totalRows)
+		if skippedFiles > 0 {
+			pterm.Warning.Printf("Skipped %d file(s) due to errors\n", skippedFiles)
 		}
 	}
 
@@ -1155,4 +1286,15 @@ func (c *AIDatasetCommand) emptyRow() []string {
 		"", "", "", "", "", "", "", "0", "0", "0", "0", "0", "0", "0", "0",
 		"0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "", "0",
 	}
+}
+
+// dumpASTWithLimits calls DumpAST with file limits and concurrency control
+// Since we can't access getFileList() directly (it's private), we need to modify
+// the runners to pass options. For now, we'll use a workaround by modifying
+// DumpAST to accept options via a wrapper.
+func (c *AIDatasetCommand) dumpASTWithLimits(runner engine.Engine, config *configuration.Configuration) {
+	// For now, just call the standard DumpAST
+	// The limitation will be handled in getFileList() if we modify the runners
+	// or we can modify DumpFiles to accept MaxFiles option
+	runner.DumpAST()
 }
