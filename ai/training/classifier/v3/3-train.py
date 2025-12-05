@@ -29,10 +29,10 @@ ENCODERS_OUT = args.encoders_out
 
 # Colonnes Textuelles qui seront vectorisées (NLP léger)
 # Ces colonnes sont les plus puissantes pour la classification du rôle
-NLP_COLS = ["path_raw", "method_calls_raw", "uses_raw"] 
+NLP_COLS = ["path_raw", "method_calls_raw", "uses_raw", "stmt_type"] 
 
 # Colonnes à ignorer (brutes, non utiles après traitement, ou déjà incluses)
-IGNORE = ["namespace_raw", "externals_raw", "stmt_type"]
+IGNORE = ["namespace_raw", "externals_raw"]
 
 # Limite le vocabulaire pour chaque colonne textuelle (clé de la légèreté)
 # Augmenté pour améliorer le score (la compression réduit la taille du fichier)
