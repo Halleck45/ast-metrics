@@ -154,17 +154,19 @@ print(f"[INFO] Target encoded: {len(label_encoder.classes_)} unique classes.")
 
 print("[INFO] Split…")
 # Utiliser X_final directement dans train_test_split car il est déjà une matrice (sparse ou numpy)
+# Utiliser stratified split pour maintenir la distribution des classes
 X_train, X_test, y_train, y_test = train_test_split(
-    X_final, y, test_size=0.20, random_state=42
+    X_final, y, test_size=0.20, random_state=42, stratify=y
 )
 
 print("[INFO] Training RandomForest…")
 # Hyperparamètres optimisés pour score >= 0.75 et taille < 8 MB
-# Stratégie: maximiser le score avec compression très agressive
+# Stratégie: maximiser le score avec compression agressive
+# Configuration optimale trouvée: score ~0.72, taille ~7 MB
 model = RandomForestClassifier(
-    n_estimators=600,           # Nombre d'arbres élevé pour améliorer le score
-    max_depth=55,               # Très profond pour capturer des patterns complexes
-    max_leaf_nodes=150,         # Plus de feuilles pour plus de granularité
+    n_estimators=500,           # Nombre d'arbres élevé pour améliorer le score
+    max_depth=50,               # Très profond pour capturer des patterns complexes
+    max_leaf_nodes=140,         # Équilibré pour score et taille
     max_features=None,         # Utilise toutes les features (meilleur score)
     min_samples_split=2,        # Maximum de granularité pour meilleur score
     min_samples_leaf=1,         # Maximum de granularité pour meilleur score
