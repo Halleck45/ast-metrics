@@ -35,7 +35,8 @@ NLP_COLS = ["path_raw", "method_calls_raw", "uses_raw"]
 IGNORE = ["namespace_raw", "externals_raw", "stmt_type"]
 
 # Limite le vocabulaire pour chaque colonne textuelle (clé de la légèreté)
-MAX_NLP_FEATURES = 500 
+# Augmenté pour améliorer le score (la compression réduit la taille du fichier)
+MAX_NLP_FEATURES = 1050 
 
 # Seuil pour le regroupement des classes rares dans les colonnes catégorielles
 MIN_FREQUENCY = 10 
@@ -92,11 +93,11 @@ print(f"[INFO] Applying TfidfVectorizer to {NLP_COLS}...")
 for col in NLP_COLS:
     print(f"[INFO] Vectorizing '{col}' (Max features: {MAX_NLP_FEATURES})")
     
-    # Création du TfidfVectorizer léger
+    # Création du TfidfVectorizer optimisé
     vectorizer = TfidfVectorizer(
         max_features=MAX_NLP_FEATURES, 
         ngram_range=(1, 2), # Permet de capturer des paires de mots (e.g., 'http client')
-        token_pattern=r'\b\w{3,}\b', # N'inclut que les mots de 3 caractères ou plus
+        token_pattern=r'\b\w{2,}\b', # Réduit à 2 caractères pour capturer plus de tokens
         stop_words='english'
     )
     
@@ -122,7 +123,16 @@ else:
 final_feature_names = list(X_numerical.columns) + final_nlp_feature_names
 
 # Conversion des features numériques en matrice sparse pour la concaténation
-X_numerical_sparse = X_numerical.sparse.to_coo() if pd.api.types.is_sparse(X_numerical.iloc[:, 0]) else X_numerical.values
+# Correction de la dépréciation: vérifier directement avec SparseDtype
+try:
+    # Vérifier si le DataFrame a des colonnes sparse
+    if hasattr(X_numerical, 'sparse') and X_numerical.sparse.n_blocks > 0:
+        X_numerical_sparse = X_numerical.sparse.to_coo()
+    else:
+        X_numerical_sparse = X_numerical.values
+except (AttributeError, TypeError):
+    # Fallback: utiliser .values directement
+    X_numerical_sparse = X_numerical.values
 
 # Si les données NLP existent, concaténer tout
 if X_nlp_combined is not None:
@@ -149,12 +159,15 @@ X_train, X_test, y_train, y_test = train_test_split(
 )
 
 print("[INFO] Training RandomForest…")
+# Hyperparamètres optimisés pour score >= 0.75 et taille < 8 MB
+# Stratégie: maximiser le score avec compression très agressive
 model = RandomForestClassifier(
-    n_estimators=100,
-    max_depth=20,               
-    max_leaf_nodes=150,          
-    min_samples_split=10,        
-    min_samples_leaf=4,          
+    n_estimators=600,           # Nombre d'arbres élevé pour améliorer le score
+    max_depth=55,               # Très profond pour capturer des patterns complexes
+    max_leaf_nodes=150,         # Plus de feuilles pour plus de granularité
+    max_features=None,         # Utilise toutes les features (meilleur score)
+    min_samples_split=2,        # Maximum de granularité pour meilleur score
+    min_samples_leaf=1,         # Maximum de granularité pour meilleur score
     random_state=42,
     n_jobs=-1                    
 )
@@ -165,9 +178,10 @@ print(f"[INFO] Score: {score:.4f}")
 
 # --- 7. Sauvegarde des Composants Légers ---
 
-# 7.1 Sauvegarde du Modèle (RandomForest)
+# 7.1 Sauvegarde du Modèle (RandomForest) avec compression
 print("[INFO] Saving model (RandomForest only):", MODEL_OUT)
-joblib.dump(model, MODEL_OUT)
+# Utiliser compression pour réduire la taille du fichier
+joblib.dump(model, MODEL_OUT, compress=6)  # Niveau de compression 6 pour réduire davantage la taille
 model_size = os.path.getsize(MODEL_OUT)
 print(f"[INFO] Model file size: {model_size / (1024*1024):.2f} MB")
 
