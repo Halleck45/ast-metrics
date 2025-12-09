@@ -6,7 +6,10 @@
 AST Metrics is a <b>multi-language static code analyzer</b>.  
 <br />
 It provides <b>architectural insights</b>, <b>complexity metrics</b>, and <b>activity analysis</b> - all in a <b>fast, standalone binary</b> ready for CI/CD.
+<br /><br />
+<b>AST Metrics turns your codebase into clear, actionable architectural insights.</b>
 </p>
+<br />
 
 <p align="center" style="text-align:center">
 <a href="https://github.com/Halleck45/ast-metrics/actions/workflows/test.yml"><img src="https://github.com/Halleck45/ast-metrics/actions/workflows/test.yml/badge.svg" alt="CI"></a>
@@ -15,19 +18,41 @@ It provides <b>architectural insights</b>, <b>complexity metrics</b>, and <b>act
 <a href="https://github.com/sponsors/Halleck45"><img src="https://img.shields.io/static/v1?label=Sponsor&amp;message=%E2%9D%A4&amp;logo=GitHub&amp;color=%23fe8e86" alt=""></a>
 <img src="https://img.shields.io/github/downloads/Halleck45/ast-metrics/total" alt="GitHub all releases">
 <a href="https://goreportcard.com/report/github.com/Halleck45/ast-metrics"><img src="https://goreportcard.com/badge/github.com/Halleck45/ast-metrics" alt="Go Report Card"></a>
-<a href="https://codecov.io/gh/Halleck45/ast-metrics"><img src="https://codecov.io/gh/Halleck45/ast-metrics/branch/main/graph/badge.svg" alt="codecov"></a></p>
+<a href="https://codecov.io/gh/Halleck45/ast-metrics"><img src="https://codecov.io/gh/Halleck45/ast-metrics/branch/main/graph/badge.svg" alt="codecov"></a>
+<img src="https://img.shields.io/badge/Architecture%20insights%20for%20PHP%2C%20Go%2C%20Python%2C%20Rust-orange" />
+</p>
+</p>
+
+<p align="center">
+⭐ If you find AST Metrics useful, please consider giving it a star.  
+It helps the project grow and reach more developers.
 </p>
 
 <p align="center" style="text-align:center">
 <a href="https://halleck45.github.io/ast-metrics/">Documentation</a> | <a href=".github/CONTRIBUTING.md">Contributing</a> | <a href="https://twitter.com/Halleck45">Twitter</a>
 </p>
 
-
-
-
 <img width="1280" height="640" alt="banner" src="https://github.com/user-attachments/assets/4a7d518d-82fe-4c18-880f-479fe1738878" />
 
 <br /><br/>
+
+## Why AST Metrics?
+
+- **Catch issues early**: detect complex or tightly coupled code.
+- **Ensure architectural coherence**: validate dependencies and layering.
+- **Understand your project at scale**: from cyclomatic complexity to bus factor.
+
+## Features
+
++ **Architectural analysis**: community detection, coupling, instability.
++ **Linter**: enforce coding standards and best practices.
++ **CI/CD ready**: plug into GitHub Actions, GitLab CI, or any pipeline.
++ **Fast & dependency-free**: single binary, no setup required.
++ **Code metrics**: complexity, maintainability, size.
++ **Activity metrics**: commits, bus factor.
++ **Readable reports**: detailed HTML dashboards.
+
+[Read more in the documentation](https://halleck45.github.io/ast-metrics/)
 
 ## Getting Started
 
@@ -125,23 +150,6 @@ jobs:
         - uses: halleck45/action-ast-metrics@v1
 ```
 
-## Why AST Metrics?
-
-- **Catch issues early**: detect complex or tightly coupled code.
-- **Ensure architectural coherence**: validate dependencies and layering.
-- **Understand your project at scale**: from cyclomatic complexity to bus factor.
-
-## Features
-
-+ **Architectural analysis**: community detection, coupling, instability.
-+ **Linter**: enforce coding standards and best practices.
-+ **CI/CD ready**: plug into GitHub Actions, GitLab CI, or any pipeline.
-+ **Fast & dependency-free**: single binary, no setup required.
-+ **Code metrics**: complexity, maintainability, size.
-+ **Activity metrics**: commits, bus factor.
-+ **Readable reports**: detailed HTML dashboards.
-
-[Read more in the documentation](https://halleck45.github.io/ast-metrics/)
 
 ## Supported languages
 
@@ -167,3 +175,5 @@ AST Metrics is an actively evolving project.
 We welcome discussions, bug reports, and pull requests.
 
 ➡️ Start [contributing here](.github/CONTRIBUTING.md)
+
+[![Star History Chart](https://api.star-history.com/svg?repos=Halleck45/ast-metrics&type=Date)](https://star-history.com/#Halleck45/ast-metrics&Date)
