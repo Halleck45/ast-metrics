@@ -12,13 +12,14 @@ from llama_cpp import Llama
 parser = ArgumentParser()
 parser.add_argument("csv", help="Input CSV (all classes)")
 parser.add_argument("--count", type=int, default=1000, help="Max number of rows to classify")
+parser.add_argument("--output-dir", help="Output directory for classified CSVs", default="classified_output")
+parser.add_argument("--labels-dir", help="Directory containing label definitions", default="labels")
 args = parser.parse_args()
 
 INPUT_CSV = args.csv
 MAX_COUNT = args.count
-
-LABELS_DIR = "labels"
-OUTPUT_DIR = "classified_output"
+LABELS_DIR = args.labels_dir
+OUTPUT_DIR = args.output_dir
 os.makedirs(OUTPUT_DIR, exist_ok=True)
 
 
@@ -45,12 +46,17 @@ print("[INFO] Model ready.")
 # Each CSV in labels/ represents one family
 # ------------------------------------------
 def load_labels(path):
+    print(f"[DEBUG] Loading labels from: {path}")
     labels = []
     with open(path, encoding="utf-8") as f:
         for row in csv.reader(f):
             if row and row[0] != "Label":
                 #labels.append(row[0].strip())
-                labels.append(row[0].strip() + " # " + row[1].strip())
+                if len(row) > 1:
+                    labels.append(row[0].strip() + " # " + row[1].strip())
+                else:
+                    labels.append(row[0].strip())
+    print(f"[DEBUG] Loaded {len(labels)} labels from {path}")
     print(labels)
     return labels
 
@@ -106,9 +112,12 @@ def classify_one(fullname, system_prompt, labels):
 with open(INPUT_CSV, encoding="utf-8") as f:
     all_rows = [row for row in csv.reader(f) if row]
 
+print(f"[DEBUG] Total rows in CSV: {len(all_rows)}")
 if MAX_COUNT < len(all_rows):
+    print(f"[DEBUG] Sampling {MAX_COUNT} rows...")
     rows = random.sample(all_rows, MAX_COUNT)
 else:
+    print(f"[DEBUG] Using all {len(all_rows)} rows...")
     rows = all_rows
 
 print(f"[INFO] Using {len(rows)} sampled rows (requested {MAX_COUNT}).")
@@ -116,8 +125,10 @@ print(f"[INFO] Using {len(rows)} sampled rows (requested {MAX_COUNT}).")
 # ------------------------------------------
 # PROCESS EACH FAMILY
 # ------------------------------------------
+print("[DEBUG] Starting family processing loop...")
 for family, labels in label_families.items():
     print(f"\n[INFO] Processing family: {family}")
+    print(f"[DEBUG] Labels for {family}: {len(labels)}")
 
     system_prompt = build_system_prompt(labels)
     out_path = os.path.join(OUTPUT_DIR, f"classified_{family}.csv")

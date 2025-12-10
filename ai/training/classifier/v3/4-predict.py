@@ -14,16 +14,33 @@ parser = ArgumentParser()
 parser.add_argument("samples", help="Input samples CSV")
 parser.add_argument("model", help="Input model file (RandomForest only)")
 parser.add_argument("features", help="Input features JSON")
-parser.add_argument("--encoders", help="Input encoders file (defaults to encoders.joblib)", 
-                    default="encoders.joblib")
+parser.add_argument("--encoders", help="Input encoders file (defaults to encoders.joblib in model dir or current dir)", 
+                    default=None)
 parser.add_argument("--labels-def", help="Labels definition CSV (c4.csv)", 
                     default="labels/c4.csv")
 args = parser.parse_args()
 SAMPLES = args.samples
 MODEL = args.model
 FEATURES = args.features
-ENCODERS = args.encoders
 LABELS_DEF = args.labels_def
+
+# Auto-detect encoders if not specified
+if args.encoders:
+    ENCODERS = args.encoders
+else:
+    # 1. Try in the same directory as the model
+    model_dir = os.path.dirname(os.path.abspath(MODEL))
+    potential_encoders = os.path.join(model_dir, "encoders.joblib")
+    if os.path.exists(potential_encoders):
+        ENCODERS = potential_encoders
+        print(f"[INFO] Auto-detected encoders in model directory: {ENCODERS}")
+    # 2. Try in current directory (legacy behavior)
+    elif os.path.exists("encoders.joblib"):
+        ENCODERS = "encoders.joblib"
+        print(f"[INFO] Using default encoders in current directory: {ENCODERS}")
+    else:
+        # Default fallback
+        ENCODERS = "encoders.joblib"
 
 # Charger le fichier de définition des labels pour créer le mapping inverse
 print("[INFO] Loading labels definition from:", LABELS_DEF)
@@ -67,6 +84,13 @@ if isinstance(features_data, dict):
     final_feature_names = features_data.get('final_feature_names', [])
     categorical_cols = features_data.get('categorical_cols', [])
     nlp_cols = features_data.get('nlp_cols', [])
+    # Charger le label_mapping pour convertir les indices du modèle vers les numéros de ligne CSV
+    label_mapping = features_data.get('label_mapping', {})
+    if label_mapping:
+        print(f"[INFO] Loaded label_mapping with {len(label_mapping)} entries")
+    else:
+        print("[WARNING] No label_mapping found in features.json, will use direct mapping")
+        label_mapping = {}
     # Compatibilité avec l'ancien format
     if not final_feature_names:
         final_feature_names = features_data.get('features', [])
@@ -75,6 +99,7 @@ else:
     final_feature_names = features_data
     categorical_cols = []
     nlp_cols = []
+    label_mapping = {}
 
 print("[INFO] Loading encoders from:", ENCODERS)
 # Charger les encoders depuis un fichier séparé
@@ -287,14 +312,32 @@ preds = model.predict(X_final)
 # Debug: vérifier la distribution des prédictions
 unique_preds, counts = np.unique(preds, return_counts=True)
 print(f"[DEBUG] Predictions distribution: {len(unique_preds)} unique classes predicted")
+for pred_idx, count in zip(unique_preds, counts):
+    pred_idx_str = str(int(pred_idx))
+    if label_mapping and pred_idx_str in label_mapping:
+        csv_line = label_mapping[pred_idx_str]
+        label = number_to_label.get(int(csv_line), "UNKNOWN")
+        print(f"  Class {pred_idx} ({label}): {count} predictions")
+    else:
+        print(f"  Class {pred_idx}: {count} predictions")
 if len(unique_preds) == 1:
     print(f"[WARNING] All predictions are the same class: {unique_preds[0]}")
     print(f"[WARNING] This may indicate a problem with feature encoding or model")
 
 print("\n=== RESULTS ===\n")
-for (idx, row), label_num in zip(df.iterrows(), preds):
-    # Convertir le numéro de label en string
-    label_str = number_to_label.get(int(label_num), f"UNKNOWN({label_num})")
+for (idx, row), model_index in zip(df.iterrows(), preds):
+    # Convertir l'index du modèle vers le numéro de ligne dans le CSV
+    # Le modèle prédit un index (0, 1, 2...) qui correspond à l'ordre alphabétique des labels
+    # Le label_mapping convertit cet index vers le numéro de ligne dans le CSV
+    model_index_str = str(int(model_index))
+    
+    if label_mapping and model_index_str in label_mapping:
+        # Utiliser le label_mapping pour obtenir le numéro de ligne dans le CSV
+        csv_line_number = label_mapping[model_index_str]
+        label_str = number_to_label.get(int(csv_line_number), f"UNKNOWN(model_idx={model_index},csv_line={csv_line_number})")
+    else:
+        # Fallback: utiliser directement l'index (pour compatibilité avec ancien format)
+        label_str = number_to_label.get(int(model_index), f"UNKNOWN({model_index})")
     
     # Afficher class et file si disponibles
     if has_class and "class" in df.columns:
