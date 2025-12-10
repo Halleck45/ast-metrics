@@ -306,8 +306,16 @@ if hasattr(model, 'n_features_in_'):
 else:
     print("[WARNING] Model does not have n_features_in_ attribute, cannot verify feature count")
 
-print("[INFO] Predicting…")
-preds = model.predict(X_final)
+print("[INFO] Predicting probabilities…")
+# Utiliser predict_proba pour avoir les scores de confiance
+if hasattr(model, "predict_proba"):
+    probas = model.predict_proba(X_final)
+    # Obtenir les classes prédites (argmax) pour la compatibilité
+    preds = np.argmax(probas, axis=1)
+else:
+    print("[WARNING] Model does not support predict_proba, falling back to predict")
+    preds = model.predict(X_final)
+    probas = None
 
 # Debug: vérifier la distribution des prédictions
 unique_preds, counts = np.unique(preds, return_counts=True)
@@ -327,18 +335,41 @@ if len(unique_preds) == 1:
 print("\n=== RESULTS ===\n")
 for (idx, row), model_index in zip(df.iterrows(), preds):
     # Convertir l'index du modèle vers le numéro de ligne dans le CSV
-    # Le modèle prédit un index (0, 1, 2...) qui correspond à l'ordre alphabétique des labels
-    # Le label_mapping convertit cet index vers le numéro de ligne dans le CSV
     model_index_str = str(int(model_index))
     
+    # Récupérer le label principal
     if label_mapping and model_index_str in label_mapping:
-        # Utiliser le label_mapping pour obtenir le numéro de ligne dans le CSV
         csv_line_number = label_mapping[model_index_str]
-        label_str = number_to_label.get(int(csv_line_number), f"UNKNOWN(model_idx={model_index},csv_line={csv_line_number})")
+        main_label = number_to_label.get(int(csv_line_number), f"UNKNOWN(model_idx={model_index},csv_line={csv_line_number})")
     else:
-        # Fallback: utiliser directement l'index (pour compatibilité avec ancien format)
-        label_str = number_to_label.get(int(model_index), f"UNKNOWN({model_index})")
+        main_label = number_to_label.get(int(model_index), f"UNKNOWN({model_index})")
     
+    # Construire la chaîne de confiance
+    confidence_str = ""
+    if probas is not None:
+        # Obtenir les indices des 3 meilleures classes
+        # argsort trie par ordre croissant, donc on prend les 3 derniers et on inverse
+        top_n_indices = np.argsort(probas[idx])[-3:][::-1]
+        
+        confidences = []
+        for class_idx in top_n_indices:
+            score = probas[idx][class_idx]
+            if score < 0.01: # Ignorer les scores très faibles
+                continue
+                
+            class_idx_str = str(int(class_idx))
+            if label_mapping and class_idx_str in label_mapping:
+                csv_line = label_mapping[class_idx_str]
+                lbl = number_to_label.get(int(csv_line), f"UNKNOWN({class_idx})")
+            else:
+                lbl = number_to_label.get(int(class_idx), f"UNKNOWN({class_idx})")
+            
+            confidences.append(f"{lbl} ({score*100:.1f}%)")
+        
+        confidence_str = ", ".join(confidences)
+    else:
+        confidence_str = main_label
+
     # Afficher class et file si disponibles
     if has_class and "class" in df.columns:
         cls = row["class"]
@@ -350,4 +381,4 @@ for (idx, row), model_index in zip(df.iterrows(), preds):
     else:
         file = "N/A"
     
-    print(f"{cls} | {file} => {label_str}")
+    print(f"{cls} | {file} => {confidence_str}")
