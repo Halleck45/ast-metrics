@@ -6,6 +6,9 @@ LANGUAGE=""
 SOURCE=""
 COUNT="1000"
 
+SKIP_DATASET_GEN=true
+SKIP_LABELIZE=true
+
 # Parse arguments
 for i in "$@"; do
   case $i in
@@ -77,23 +80,32 @@ cd $BASE_DIR/../../../../
 pwd
 CMD="go run cmd/dev/ai_dataset.go --output=$DATASET_CSV $DATASET_REAL_PATH"
 echo "Running: $CMD"
-$CMD
+if [ "$SKIP_DATASET_GEN" = true ]; then
+    echo "Skipping dataset generation as per configuration."
+else
+    $CMD
+fi
 cd $BASE_DIR
 
 # 2. Balance Dataset
-echo ""
-echo "[2/5] Balancing dataset..."
-CMD="python 0-balance_dataset.py $DATASET_CSV --output=$BALANCED_CSV"
-echo "Running: $CMD"
-$CMD
+# echo ""
+# echo "[2/5] Balancing dataset..."
+# CMD="python 0-balance_dataset.py $DATASET_CSV --output=$BALANCED_CSV"
+# echo "Running: $CMD"
+# $CMD
 
 # 3. Labelize
 echo ""
 echo "[3/5] Labelizing dataset..."
 # Default count 
-CMD="python 1-labelize.py --count=$COUNT --output-dir=$CLASSIFIED_DIR $BALANCED_CSV"
-echo "Running: $CMD"
-$CMD
+# CMD="python 1-labelize_remote.py --count=$COUNT --output-dir=$CLASSIFIED_DIR $BALANCED_CSV"
+CMD="python 1-labelize_remote.py --count=$COUNT --output-dir=$CLASSIFIED_DIR $DATASET_CSV"
+if [ "$SKIP_LABELIZE" = true ]; then
+    echo "Skipping labelization as per configuration."
+else
+    echo "Running: $CMD"
+    $CMD
+fi
 
 # 4. Merge
 echo ""
@@ -105,7 +117,8 @@ if [ ! -f "$LABELED_CSV" ]; then
     exit 1
 fi
 
-CMD="python 2-merge_dataset.py $BALANCED_CSV $LABELED_CSV $MERGED_CSV"
+#CMD="python 2-merge_dataset.py $BALANCED_CSV $LABELED_CSV $MERGED_CSV"
+CMD="python 2-merge_dataset.py $DATASET_CSV $LABELED_CSV $MERGED_CSV"
 echo "Running: $CMD"
 $CMD
 

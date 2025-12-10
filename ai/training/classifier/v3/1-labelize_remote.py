@@ -14,13 +14,15 @@ from typing import List, Dict
 parser = ArgumentParser()
 parser.add_argument("csv", help="Input CSV (all classes)")
 parser.add_argument("--count", type=int, default=1000, help="Max number of rows to classify")
+parser.add_argument("--output-dir", help="Output directory for classified CSVs", default="classified_output")
+parser.add_argument("--labels-dir", help="Directory containing label definitions", default="labels")
 args = parser.parse_args()
 
 INPUT_CSV = args.csv
 MAX_COUNT = args.count
 
-LABELS_DIR = "labels"
-OUTPUT_DIR = "classified_output"
+LABELS_DIR = args.labels_dir
+OUTPUT_DIR = args.output_dir
 os.makedirs(OUTPUT_DIR, exist_ok=True)
 
 # ------------------------------------------
@@ -45,7 +47,10 @@ def load_labels(path):
     with open(path, encoding="utf-8") as f:
         for row in csv.reader(f):
             if row and row[0] != "Label":
-                labels.append(row[0].strip() + " # " + row[1].strip())
+                if len(row) > 1:
+                    labels.append(row[0].strip() + " # " + row[1].strip())
+                else:
+                    labels.append(row[0].strip())
     return labels
 
 
