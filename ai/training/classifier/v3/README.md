@@ -21,6 +21,15 @@ curl -L "https://huggingface.co/TheBloke/Mistral-7B-Instruct-v0.2-GGUF/resolve/m
 I've tested many models from HuggingFace, and the Mistral 7B instruct model seems to work well for this task.
 
 
+## Oneshot (if you don't want to go through all the steps)
+
+These is a oneshot example of the whole process:
+
+```bash
+cd ai/training/classifier/v3
+bash train_pipeline.bash --language=php --source=../../../../samples/php
+```
+
 ## Dataset
 
 Prepare the dataset
@@ -105,21 +114,3 @@ mv model.pkl build/model_role_classifier.pkl
 
 ## Evaluation
 
-@todo
-
-## Oneshot
-
-These is a oneshot example of the whole process:
-
-```bash
-go run cmd/dev/ai_dataset.go --output=ai/training/classifier/v3/dataset/samples.csv ./samples/
-cd ai/training/classifier/v3
-python 1-labelize_remote.py --count=4000 dataset/samples.csv
-# or python 1-labelize.py --count=2000 dataset/samples.csv
-python 2-merge_dataset.py dataset/samples.csv classified_output/classified_c4.csv dataset/final_dataset.csv
-python 3-train.py dataset/final_dataset.csv model.pkl features.json
-python 4-predict.py dataset/samples.csv model.pkl features.json
-mkdir -p build
-mv features.json build/
-mv model.pkl build/model_role_classifier.pkl
-```

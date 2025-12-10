@@ -4,10 +4,10 @@ set -e
 # Default values
 LANGUAGE=""
 SOURCE=""
-COUNT="1000"
+COUNT="2500"
 
 SKIP_DATASET_GEN=true
-SKIP_LABELIZE=true
+SKIP_LABELIZE=false
 
 # Parse arguments
 for i in "$@"; do
