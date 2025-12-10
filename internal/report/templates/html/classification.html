@@ -1,0 +1,76 @@
+{% extends "layout.html" %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row mb-4">
+        <div class="col-12">
+            <h1 class="text-2xl font-bold text-gray-800">Component Classification</h1>
+            <p class="text-gray-600">Components classified by the AI model based on their structure and metrics.</p>
+        </div>
+    </div>
+
+    {% if projectAggregated.Predictions|length == 0 %}
+    <div class="bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700 p-4" role="alert">
+        <p class="font-bold">No predictions found</p>
+        <p>Ensure the model is present and the analysis ran correctly. The model should be located in
+            <code>ai/training/classifier/v3/build/&lt;language&gt;/</code>.
+        </p>
+    </div>
+    {% else %}
+
+    {% set grouped = projectAggregated.Predictions|groupByLabel %}
+
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {% for label, items in grouped %}
+        <div class="bg-white rounded-lg shadow-md overflow-hidden">
+            <div class="bg-gray-50 px-4 py-3 border-b border-gray-200 flex justify-between items-center">
+                <h5 class="text-lg font-semibold text-gray-800">{{ label }}</h5>
+                <span class="bg-gray-200 text-gray-700 text-xs font-bold px-2 py-1 rounded-full">
+                    {{ items|length }}
+                </span>
+            </div>
+            <div class="max-h-96 overflow-y-auto">
+                <ul class="divide-y divide-gray-200">
+                    {% for item in items %}
+                    <li class="px-4 py-3 hover:bg-gray-50 transition duration-150 ease-in-out">
+                        <div class="flex justify-between items-start">
+                            <div class="flex-1 min-w-0 pr-4">
+                                <p class="text-sm font-medium text-gray-900 truncate" title="{{ item.Class }}">
+                                    {{ item.Class }}
+                                </p>
+                                <p class="text-xs text-gray-500 truncate" title="{{ item.File }}">
+                                    {{ item.File }}
+                                </p>
+                            </div>
+
+                            {% set top1 = item.Predictions.0 %}
+                            {% set top2 = item.Predictions.1 %}
+
+                            {% set colorClass = "bg-green-100 text-green-800" %}
+                            {% if top2 and (top1.Probability - top2.Probability) < 0.2 %} 
+                            {% set colorClass="bg-red-100 text-red-800" %} {% endif %} <span
+                                class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium {{ colorClass }}">
+                                {% set p = top1.Probability * 100 %}
+                                {{ (p|stringformat:"%.0f") }}%
+                                </span>
+                        </div>
+                        <div class="mt-2 text-xs text-gray-500">
+                            {% for pred in item.Predictions %}
+                            {% if loop.Index <= 3 %} <span class="mr-2">
+                                <span class="font-semibold">{{ pred.Label }}:</span>
+                                {% set p = pred.Probability * 100 %}
+                                {{ (p|stringformat:"%.0f") }}%
+                                </span>
+                                {% endif %}
+                                {% endfor %}
+                        </div>
+                    </li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

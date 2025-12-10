@@ -3,17 +3,19 @@ package command
 import (
 	"bufio"
 	"errors"
+	"os"
 
 	"github.com/fsnotify/fsnotify"
 	"github.com/halleck45/ast-metrics/internal/analyzer"
 	Activity "github.com/halleck45/ast-metrics/internal/analyzer/activity"
+	"github.com/halleck45/ast-metrics/internal/analyzer/classifier"
 	requirement "github.com/halleck45/ast-metrics/internal/analyzer/requirement"
 	"github.com/halleck45/ast-metrics/internal/cli"
 	"github.com/halleck45/ast-metrics/internal/configuration"
 	"github.com/halleck45/ast-metrics/internal/engine"
-	pb "github.com/halleck45/ast-metrics/pb"
 	"github.com/halleck45/ast-metrics/internal/report"
 	"github.com/halleck45/ast-metrics/internal/storage"
+	pb "github.com/halleck45/ast-metrics/pb"
 	"github.com/inancgumus/screen"
 	"github.com/pterm/pterm"
 	log "github.com/sirupsen/logrus"
@@ -166,6 +168,30 @@ func (v *AnalyzeCommand) Execute() error {
 		v.spinner.UpdateTitle("Aggregating...")
 	}
 	projectAggregated := aggregator.Aggregates()
+
+	// Classification
+	if v.spinner != nil {
+		v.spinner.UpdateTitle("Classifying components...")
+	}
+
+	// Model path (assuming running from source root or configured)
+	// TODO: Make this configurable via flags or config file
+	modelDir := "ai/training/classifier/v3/build"
+	scriptPath := "ai/training/classifier/v3/4-predict.py"
+
+	// Check if model directory exists
+	if _, err := os.Stat(modelDir); err == nil {
+		predictor := classifier.NewPredictor(modelDir, scriptPath)
+		predictions, err := predictor.Predict(allResults, v.Configuration.Storage.Path())
+		if err != nil {
+			log.Error("Classification failed: ", err)
+		} else {
+			projectAggregated.Predictions = predictions
+			if v.isInteractive && v.spinner != nil {
+				pterm.Success.Printf("Classified %d components\n", len(predictions))
+			}
+		}
+	}
 
 	// Evaluate requirements generating reports so templates can use results
 	if v.Configuration.Requirements != nil {

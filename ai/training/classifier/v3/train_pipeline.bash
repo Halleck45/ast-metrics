@@ -4,10 +4,11 @@ set -e
 # Default values
 LANGUAGE=""
 SOURCE=""
-COUNT="2500"
+COUNT="20000"
 
+# Flags to skip certain steps
 SKIP_DATASET_GEN=true
-SKIP_LABELIZE=false
+SKIP_LABELIZE=FALSE
 
 # Parse arguments
 for i in "$@"; do
@@ -129,10 +130,19 @@ CMD="python 3-train.py $MERGED_CSV $MODEL_OUT $FEATURES_OUT --encoders-out=$ENCO
 echo "Running: $CMD"
 $CMD
 
+# 6. Export Model to JSON
+echo ""
+echo "[6/6] Exporting model to JSON for Go runtime..."
+MODEL_JSON="$BUILD_DIR/model.json"
+CMD="python 5-export.py $MODEL_OUT $ENCODERS_OUT $FEATURES_OUT $MODEL_JSON"
+echo "Running: $CMD"
+$CMD
+
 echo ""
 echo "=============================================="
 echo "Pipeline Finished Successfully!"
 echo "Model: $MODEL_OUT"
+echo "Model JSON: $MODEL_JSON"
 echo "Features: $FEATURES_OUT"
 echo "Encoders: $ENCODERS_OUT"
 echo "=============================================="

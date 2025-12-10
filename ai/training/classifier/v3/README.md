@@ -30,6 +30,14 @@ cd ai/training/classifier/v3
 bash train_pipeline.bash --language=php --source=../../../../samples/php
 ```
 
+And update the labels:
+
+```bash
+python ai/training/classifier/v3/6-generate-labels.py \
+  ai/training/classifier/v3/labels/c4.csv \
+  internal/analyzer/classifier/labels.go
+```
+
 ## Dataset
 
 Prepare the dataset

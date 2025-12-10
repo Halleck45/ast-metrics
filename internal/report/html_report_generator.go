@@ -14,6 +14,7 @@ import (
 
 	"github.com/flosch/pongo2/v5"
 	"github.com/halleck45/ast-metrics/internal/analyzer"
+	"github.com/halleck45/ast-metrics/internal/analyzer/classifier"
 	"github.com/halleck45/ast-metrics/internal/engine"
 	"github.com/halleck45/ast-metrics/internal/ui"
 	pb "github.com/halleck45/ast-metrics/pb"
@@ -69,6 +70,7 @@ func (v *HtmlReportGenerator) Generate(files []*pb.File, projectAggregated analy
 		"compare.html",
 		"explorer.html",
 		"linters.html",
+		"classification.html",
 		"componentChartRadiusBar.html",
 		"componentTableRisks.html",
 		"componentTableCompareBranch.html",
@@ -153,6 +155,12 @@ func (v *HtmlReportGenerator) Generate(files []*pb.File, projectAggregated analy
 	v.GenerateLanguagePage("busfactor.html", "All", projectAggregated.Combined, files, projectAggregated)
 	for language, currentView := range projectAggregated.ByProgrammingLanguage {
 		v.GenerateLanguagePage("busfactor.html", language, currentView, files, projectAggregated)
+	}
+
+	// Classification page
+	v.GenerateLanguagePage("classification.html", "All", projectAggregated.Combined, files, projectAggregated)
+	for language, currentView := range projectAggregated.ByProgrammingLanguage {
+		v.GenerateLanguagePage("classification.html", language, currentView, files, projectAggregated)
 	}
 
 	// copy images
@@ -795,6 +803,25 @@ func (v *HtmlReportGenerator) RegisterFilters() {
 			Files:      files,
 		}
 		return pongo2.AsSafeValue(comp.AsHtml()), nil
+	})
+
+	// filter groupByLabel
+	pongo2.RegisterFilter("groupByLabel", func(in *pongo2.Value, param *pongo2.Value) (out *pongo2.Value, err *pongo2.Error) {
+		predictions, ok := in.Interface().([]classifier.ClassPrediction)
+		if !ok {
+			return pongo2.AsValue(map[string][]classifier.ClassPrediction{}), nil
+		}
+
+		grouped := make(map[string][]classifier.ClassPrediction)
+		for _, p := range predictions {
+			if len(p.Predictions) > 0 {
+				label := p.Predictions[0].Label
+				grouped[label] = append(grouped[label], p)
+			} else {
+				grouped["Unknown"] = append(grouped["Unknown"], p)
+			}
+		}
+		return pongo2.AsValue(grouped), nil
 	})
 
 	// filter convertOneFileToCollection
