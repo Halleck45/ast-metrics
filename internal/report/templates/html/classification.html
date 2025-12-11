@@ -192,35 +192,53 @@
         line-height: 1.5;
     }
 
-    .stats-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
-        gap: 1rem;
-        margin-bottom: 1.5rem;
-    }
-
-    .stat-card {
+    .family-card {
         background: white;
         border: 1px solid #e2e8f0;
         border-radius: 12px;
-        padding: 1.25rem;
-        text-align: center;
+        transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        margin-bottom: 2rem;
     }
 
-    .stat-number {
-        font-size: 1.875rem;
+    .family-card:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+        border-color: #cbd5e1;
+    }
+
+    .family-header {
+        padding: 1.5rem 1.5rem;
+        border-bottom: 1px solid #f1f5f9;
+    }
+
+    .family-title {
+        font-size: 1.25rem;
         font-weight: 700;
         color: #0f172a;
-        display: block;
-        font-family: ui-monospace, monospace;
-        letter-spacing: -0.05em;
+        margin: 0 0 0.5rem 0;
+        display: flex;
+        align-items: center;
     }
 
-    .stat-label {
-        font-size: 0.75rem;
+    .family-icon {
+        font-size: 1.5rem;
+        margin-right: 0.75rem;
+        opacity: 0.8;
+    }
+
+    .family-description {
+        font-size: 0.875rem;
         color: #64748b;
-        margin-top: 0.25rem;
-        font-weight: 500;
+        line-height: 1.6;
+        margin: 0;
+    }
+
+    .label-section {
+        border-top: 1px solid #f1f5f9;
+    }
+
+    .label-section:first-of-type {
+        border-top: none;
     }
 </style>
 
@@ -235,9 +253,9 @@
     </div>
     {% else %}
 
-    {# Group by top prediction label #}
-    {% set grouped = projectAggregated.Predictions|groupByLabel %}
-    {% set totalComponents = projectAggregated.Predictions|length %}
+    {# Group by family and label #}
+    {% set groupedByFamily = projectAggregated.Predictions|groupByFamilyAndLabel %}
+    {% set families = classificationFamilies %}
 
     {# Header #}
     <div class="mb-6">
@@ -245,91 +263,102 @@
         <p class="text-sm text-gray-600">AI-powered classification of your codebase components</p>
     </div>
 
-    {# Stats #}
-    <div class="stats-grid">
-        <div class="stat-card">
-            <span class="stat-number">{{ totalComponents }}</span>
-            <span class="stat-label">Components</span>
+    {# Display each family #}
+    {% for family in families %}
+    {% set familyData = groupedByFamily|getMapValue:family.Key %}
+    {% if familyData and familyData|length > 0 %}
+    <div class="family-card">
+        <div class="family-header">
+            <h2 class="family-title">
+                <span class="family-icon">🏗️</span>
+                {{ family.Key|capitalizeFirst }}
+            </h2>
+            <p class="family-description">{{ family.Description }}</p>
         </div>
-        <div class="stat-card">
-            <span class="stat-number">{{ grouped|length }}</span>
-            <span class="stat-label">Classifications</span>
-        </div>
-    </div>
 
-    {# Display each label as a card #}
-    {% for label, items in grouped %}
-    {% set parts = label|split:":" %}
-    {% set category = "Unknown" %}
-    {% set subcategory = "General" %}
-    {% set shortLabel = label %}
+        {# Display each label in this family #}
+        {% for label, items in familyData %}
+        {% set parts = label|split:":" %}
+        {% set category = "Unknown" %}
+        {% set subcategory = "General" %}
+        {% set shortLabel = label %}
 
-    {% if parts|length >= 3 %}
-    {% set category = parts.0 %}
-    {% set subcategory = parts.1 %}
-    {% set shortLabel = parts.2 %}
-    {% elif parts|length == 2 %}
-    {% set category = parts.0 %}
-    {% set subcategory = parts.1 %}
-    {% elif parts|length == 1 %}
-    {% set category = parts.0 %}
-    {% endif %}
+        {% if parts|length >= 3 %}
+        {% set category = parts.0 %}
+        {% set subcategory = parts.1 %}
+        {% set shortLabel = parts.2 %}
+        {% elif parts|length == 2 %}
+        {% set category = parts.0 %}
+        {% set subcategory = parts.1 %}
+        {% elif parts|length == 1 %}
+        {% set category = parts.0 %}
+        {% endif %}
 
-    <div class="classification-card">
-        <div class="category-header" onclick="toggleCategory(this)">
-            <div style="flex: 1;">
-                <h2 class="category-title">
-                    <span>
-                        <span class="category-icon">📦</span>
-                        {{ category }} › {{ subcategory }}
-                    </span>
-                    <span class="expand-icon">▼</span>
-                </h2>
-                <div class="category-meta">
-                    <span class="category-badge">{{ items|length }} components</span>
+        <div class="label-section">
+            <div class="category-header" onclick="toggleCategory(this)">
+                <div style="flex: 1;">
+                    <h3 class="category-title">
+                        <span>
+                            <span class="category-icon">📦</span>
+                            {{ category }} › {{ subcategory }}
+                        </span>
+                        <span class="expand-icon">▼</span>
+                    </h3>
+                    <div class="category-meta">
+                        <span class="category-badge">{{ items|length }} components</span>
+                    </div>
+                    {% set description = label|getLabelDescription %}
+                    {% if description %}
+                    <div class="category-description" style="margin-top: 0.5rem; font-size: 0.875rem; color: #64748b; line-height: 1.5;">
+                        {{ description }}
+                    </div>
+                    {% endif %}
                 </div>
             </div>
-        </div>
 
-        <div class="category-content">
-            {% for item in items %}
-            <div class="component-item">
-                <div class="component-header">
-                    <div class="component-info">
-                        <div class="component-name">{{ item.Class }}</div>
-                        <div class="component-file">{{ item.File }}</div>
+            <div class="category-content">
+                {% for item in items %}
+                <div class="component-item">
+                    <div class="component-header">
+                        <div class="component-info">
+                            <div class="component-name">{{ item.Class }}</div>
+                            <div class="component-file">{{ item.File }}</div>
+                        </div>
+
+                        {% set top1 = item.Predictions.0 %}
+                        {% set top2 = item.Predictions.1 %}
+                        {% set confidence = top1.Probability * 100 %}
+
+                        {% set confidenceClass = "confidence-high" %}
+                        {% if top2 and (top1.Probability - top2.Probability) < 0.2 %} 
+                        {% set confidenceClass="confidence-low" %} {% elif confidence < 70 %} 
+                            {% set confidenceClass="confidence-medium" %} {% endif %} 
+                            <div class="confidence-badge {{ confidenceClass }}">
+                            {{ confidence|stringformat:"%.0f" }}%
+                        </div>
                     </div>
 
-                    {% set top1 = item.Predictions.0 %}
-                    {% set top2 = item.Predictions.1 %}
-                    {% set confidence = top1.Probability * 100 %}
-
-                    {% set confidenceClass = "confidence-high" %}
-                    {% if top2 and (top1.Probability - top2.Probability) < 0.2 %} 
-                    {% set confidenceClass="confidence-low" %} {% elif confidence < 70 %} 
-                        {% set confidenceClass="confidence-medium" %} {% endif %} 
-                        <div class="confidence-badge {{ confidenceClass }}">
-                        {{ confidence|stringformat:"%.0f" }}%
+                    {% if item.Predictions|length > 1 %}
+                    <div class="predictions-detail">
+                        {% for pred in item.Predictions %}
+                        {% if loop.Index <= 3 %}
+                        <div class="prediction-tag">
+                            <span class="prediction-label">{{ pred.Label|split:":"|last }}</span>
+                            {% set p = pred.Probability * 100 %}
+                            <span class="prediction-probability">{{ p|stringformat:"%.0f" }}%</span>
+                        </div>
+                        {% endif %}
+                        {% endfor %}
+                    </div>
+                    {% endif %}
                 </div>
+                {% endfor %}
             </div>
-
-            {% if item.Predictions|length > 1 %}
-            <div class="predictions-detail">
-                {% for pred in item.Predictions %}
-                {% if loop.Index <= 3 %} <div class="prediction-tag">
-                    <span class="prediction-label">{{ pred.Label|split:":"|last }}</span>
-                    {% set p = pred.Probability * 100 %}
-                    <span class="prediction-probability">{{ p|stringformat:"%.0f" }}%</span>
-            </div>
-            {% endif %}
-            {% endfor %}
         </div>
-        {% endif %}
+        {% endfor %}
     </div>
+    {% endif %}
     {% endfor %}
-</div>
-</div>
-{% endfor %}
 
 {% endif %}
 </div>

@@ -1,65 +1,65 @@
 label
-component:interface:controller,Point d'entrée pour les requêtes externes (Web/API/CLI).
-component:interface:presenter,Prépare les données pour l'affichage (MVP/MVVM).
-component:interface:view,Représentation de l'interface utilisateur.
-component:interface:view_model,Modèle de données spécifique à la vue.
-component:app:use_case,Cas d'utilisation métier unique (Clean/Hexagonal).
-component:app:service,Service applicatif coordonnant plusieurs composants.
-component:app:flow_orchestrator,Orchestre une séquence de traitements multi-étapes.
-component:app:transaction_manager,Gestion unitaire et transactionnelle d'opérations.
-component:app:mapper,Conversion entre modèles (Domaine/DTO/Infra).
-component:app:converter,Conversion multi-formats ou restructuration de données.
-component:domain:entity,Entité métier.
-component:domain:value_object,Objet-valeur métier.
-component:domain:aggregate_root,Entrée d'un agrégat métier.
-component:domain:service,Service métier sans dépendances techniques.
-component:domain:rule,Règle métier simple encapsulée.
-component:domain:policy,Politique métier structurante (multi-règles).
-component:domain:specification,Spécification métier booléenne complexe.
-component:data_access:repository,Abstraction d'accès aux entités.
-component:data_access:gateway,Point de sortie vers un service externe.
-component:data_access:mapper,Conversion Domaine <-> Persistance/Transport.
-component:data_access:dto,Objet de transfert sans logique métier.
-component:messaging:handler,Traite un message/commande/événement entrant.
-component:messaging:publisher,Émet des messages/événements.
-component:messaging:subscriber,Écoute des événements externes.
-component:messaging:bus,Bus de routage (commandes/requêtes/événements).
-construction:factory:abstract,Interface pour familles d'objets.
-construction:factory:method,Méthode ou classe statique d’instanciation.
-construction:builder:fluent,Construction progressive d'objets complexes.
-construction:builder:configurator,Ajout de configurations après construction.
-construction:adapter:external,Adaptateur vers interface externe.
-construction:adapter:internal,Adaptateur entre composants internes.
-construction:transformer:data,Conversion structurelle de données.
-construction:transformer:view,Transformation des données pour l'affichage.
-infrastructure:client:http,Wrapper pour appels HTTP.
-infrastructure:client:database,Wrapper driver/connexion BD.
-infrastructure:client:queue,Client file de messages (Kafka/RabbitMQ).
-infrastructure:system:file_io,Accès fichiers.
-infrastructure:system:environment,Accès aux variables d’environnement.
-infrastructure:logging:logger,Journalisation.
-infrastructure:monitoring:metric,Collecte de métriques.
-infrastructure:security:token_handler,Gestion de jetons.
-infrastructure:security:authenticator,Vérification d'identité.
-infrastructure:security:authorizer,Vérification des permissions.
-infrastructure:cache:manager,Gestion du cache.
-infrastructure:configuration:loader,Chargement des fichiers de config.
-infrastructure:configuration:model,Modèle typé de configuration.
-infrastructure:error:handler,Gestion centralisée des erreurs.
-component:core:library,Code bas-niveau générique, fonctions utilitaires internes.
-component:core:algorithm,Implémentation d'algorithmes ou structures de données.
-component:core:utility,Outils internes génériques non métier.
-component:core:runtime_support,Composants liés au fonctionnement bas niveau (threads, mémoire, scheduling…).
-utility:helper:string,Helpers string.
-utility:helper:date_time,Helpers date/heure.
-utility:helper:math,Helpers math.
-utility:helper:component,Utilitaires de composants.
-utility:converter:format,Conversions de formats (XML/JSON/etc.).
-utility:validator:input,Validation de données brutes.
-utility:validator:model,Validation d'intégrité du domaine.
-utility:serialization:serializer,Sérialisation d’objets.
-utility:serialization:deserializer,Désérialisation d’objets.
-framework:internal:infrastructure,Code interne fourni par un framework.
-development:test:case,Classe de tests unitaires/intégration.
-development:test:fixture,Données/état pour tests.
-development:test:mock,Objet simulé pour l'isolation.
+component:interface:controller,Entry point for external requests (Web/API/CLI).
+component:interface:presenter,Prepares data for display (MVP/MVVM).
+component:interface:view,User interface representation.
+component:interface:view_model,View-specific data model.
+component:app:use_case,Single business use case (Clean/Hexagonal).
+component:app:service,Application service coordinating multiple components.
+component:app:flow_orchestrator,Orchestrates a sequence of multi-step processes.
+component:app:transaction_manager,Unitary and transactional management of operations.
+component:app:mapper,Conversion between models (Domain/DTO/Infra).
+component:app:converter,Multi-format conversion or data restructuring.
+component:domain:entity,Business entity.
+component:domain:value_object,Business value object.
+component:domain:aggregate_root,Entry point of a business aggregate.
+component:domain:service,Business service without technical dependencies.
+component:domain:rule,Simple encapsulated business rule.
+component:domain:policy,Structuring business policy (multi-rules).
+component:domain:specification,Complex boolean business specification.
+component:data_access:repository,Abstraction for entity access.
+component:data_access:gateway,Exit point to an external service.
+component:data_access:mapper,Domain <-> Persistence/Transport conversion.
+component:data_access:dto,Transfer object without business logic.
+component:messaging:handler,Processes an incoming message/command/event.
+component:messaging:publisher,Emits messages/events.
+component:messaging:subscriber,Listens to external events.
+component:messaging:bus,Routing bus (commands/requests/events).
+construction:factory:abstract,Interface for object families.
+construction:factory:method,Static method or class for instantiation.
+construction:builder:fluent,Progressive construction of complex objects.
+construction:builder:configurator,Adding configurations after construction.
+construction:adapter:external,Adapter to external interface.
+construction:adapter:internal,Adapter between internal components.
+construction:transformer:data,Structural data conversion.
+construction:transformer:view,Data transformation for display.
+infrastructure:client:http,Wrapper for HTTP calls.
+infrastructure:client:database,Database driver/connection wrapper.
+infrastructure:client:queue,Message queue client (Kafka/RabbitMQ).
+infrastructure:system:file_io,File access.
+infrastructure:system:environment,Environment variable access.
+infrastructure:logging:logger,Logging.
+infrastructure:monitoring:metric,Metric collection.
+infrastructure:security:token_handler,Token management.
+infrastructure:security:authenticator,Identity verification.
+infrastructure:security:authorizer,Permission verification.
+infrastructure:cache:manager,Cache management.
+infrastructure:configuration:loader,Configuration file loading.
+infrastructure:configuration:model,Typed configuration model.
+infrastructure:error:handler,Centralized error handling.
+component:core:library,Low-level generic code, internal utility functions.
+component:core:algorithm,Algorithm or data structure implementation.
+component:core:utility,Generic internal non-business tools.
+component:core:runtime_support,Components related to low-level operation (threads, memory, scheduling…).
+utility:helper:string,String helpers.
+utility:helper:date_time,Date/time helpers.
+utility:helper:math,Math helpers.
+utility:helper:component,Component utilities.
+utility:converter:format,Format conversions (XML/JSON/etc.).
+utility:validator:input,Raw data validation.
+utility:validator:model,Domain integrity validation.
+utility:serialization:serializer,Object serialization.
+utility:serialization:deserializer,Object deserialization.
+framework:internal:infrastructure,Internal code provided by a framework.
+development:test:case,Unit/integration test class.
+development:test:fixture,Test data/state.
+development:test:mock,Simulated object for isolation.

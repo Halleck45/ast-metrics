@@ -418,7 +418,7 @@ func (v *HtmlReportGenerator) GenerateLanguagePage(template string, language str
 
 	filesJSON := buildFilesJSONPruned(files, language)
 	risksJSON := buildRisksJSON(risksByPath)
-	out, err := tpl.Execute(pongo2.Context{"datetime": datetime, "page": template, "currentLanguage": language, "currentView": currentView, "projectAggregated": projectAggregated, "files": files, "risksByPath": risksByPath, "filesJSON": filesJSON, "risksJSON": risksJSON})
+	out, err := tpl.Execute(pongo2.Context{"datetime": datetime, "page": template, "currentLanguage": language, "currentView": currentView, "projectAggregated": projectAggregated, "files": files, "risksByPath": risksByPath, "filesJSON": filesJSON, "risksJSON": risksJSON, "classificationFamilies": classifier.ClassificationFamilies})
 	if err != nil {
 		log.Error(err)
 		return err
@@ -850,6 +850,49 @@ func (v *HtmlReportGenerator) RegisterFilters() {
 			}
 		}
 		return pongo2.AsValue(grouped), nil
+	})
+
+	// filter getLabelDescription: returns the description for a classification label
+	pongo2.RegisterFilter("getLabelDescription", func(in *pongo2.Value, param *pongo2.Value) (out *pongo2.Value, err *pongo2.Error) {
+		label := in.String()
+		description := classifier.GetDescription(label)
+		return pongo2.AsValue(description), nil
+	})
+
+	// filter groupByFamilyAndLabel: groups predictions by family first, then by label
+	pongo2.RegisterFilter("groupByFamilyAndLabel", func(in *pongo2.Value, param *pongo2.Value) (out *pongo2.Value, err *pongo2.Error) {
+		predictions, ok := in.Interface().([]classifier.ClassPrediction)
+		if !ok {
+			return pongo2.AsValue(classifier.FamilyGroupedPredictions{}), nil
+		}
+		grouped := classifier.GroupByFamilyAndLabel(predictions)
+		return pongo2.AsValue(grouped), nil
+	})
+
+	// filter capitalizeFirst: capitalizes the first letter of a string
+	pongo2.RegisterFilter("capitalizeFirst", func(in *pongo2.Value, param *pongo2.Value) (out *pongo2.Value, err *pongo2.Error) {
+		s := in.String()
+		if len(s) == 0 {
+			return pongo2.AsValue(""), nil
+		}
+		return pongo2.AsValue(strings.ToUpper(s[:1]) + s[1:]), nil
+	})
+
+	// filter getMapValue: gets a value from a map using a key
+	pongo2.RegisterFilter("getMapValue", func(in *pongo2.Value, param *pongo2.Value) (out *pongo2.Value, err *pongo2.Error) {
+		key := param.String()
+		// Try different map types
+		switch m := in.Interface().(type) {
+		case map[string]interface{}:
+			if val, exists := m[key]; exists {
+				return pongo2.AsValue(val), nil
+			}
+		case classifier.FamilyGroupedPredictions:
+			if val, exists := m[key]; exists {
+				return pongo2.AsValue(val), nil
+			}
+		}
+		return pongo2.AsValue(nil), nil
 	})
 
 	// filter convertOneFileToCollection

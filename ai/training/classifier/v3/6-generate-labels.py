@@ -11,8 +11,9 @@ import os
 def generate_labels_go(csv_path, output_path):
     """Generate a Go file with embedded labels from CSV."""
     
-    # Read labels from CSV
+    # Read labels and descriptions from CSV
     labels = []
+    label_descriptions = {}
     with open(csv_path, 'r', encoding='utf-8') as f:
         reader = csv.reader(f)
         for i, row in enumerate(reader):
@@ -22,6 +23,9 @@ def generate_labels_go(csv_path, output_path):
                 label = row[0].strip()
                 if label and label != "label" and not label.startswith("#"):
                     labels.append(label)
+                    # Get description from second column if available
+                    description = row[1].strip() if len(row) > 1 and row[1].strip() else ""
+                    label_descriptions[label] = description
     
     # Generate Go code
     go_code = '''package classifier
@@ -40,10 +44,31 @@ var ClassificationLabels = map[int]string{
     
     go_code += '''}
 
+// ClassificationDescriptions contains descriptions for each classification label.
+var ClassificationDescriptions = map[string]string{
+'''
+    
+    for label in labels:
+        # Escape quotes in label and description
+        escaped_label = label.replace('\\', '\\\\').replace('"', '\\"')
+        description = label_descriptions.get(label, "")
+        escaped_description = description.replace('\\', '\\\\').replace('"', '\\"')
+        go_code += f'\t"{escaped_label}": "{escaped_description}",\n'
+    
+    go_code += '''}
+
 // GetLabel returns the label for a given line number (1-indexed).
 func GetLabel(lineNumber int) string {
 	if label, ok := ClassificationLabels[lineNumber]; ok {
 		return label
+	}
+	return ""
+}
+
+// GetDescription returns the description for a given label.
+func GetDescription(label string) string {
+	if description, ok := ClassificationDescriptions[label]; ok {
+		return description
 	}
 	return ""
 }

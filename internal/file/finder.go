@@ -57,13 +57,6 @@ func (r Finder) Search(fileExtension string) FileList {
 			}
 		}
 
-		// Log how many files were found before exclusion
-		if len(matches) > 0 {
-			pterm.Info.Printf("Finder: Found %d %s file(s) in %s (before exclusion)\n", len(matches), fileExtension, path)
-		} else {
-			pterm.Warning.Printf("Finder: No %s files found with pattern: %s/**/*%s\n", fileExtension, path, fileExtension)
-		}
-
 		// deal with excluded files
 		excludedCount := 0
 		for _, file := range matches {
@@ -91,10 +84,6 @@ func (r Finder) Search(fileExtension string) FileList {
 			}
 		}
 
-		// Log final count
-		if len(matches) > 0 {
-			pterm.Info.Printf("Finder: %d %s file(s) after exclusion (%d excluded, pattern: %s)\n", len(result.Files), fileExtension, excludedCount, strings.Join(r.Configuration.ExcludePatterns, ", "))
-		}
 	}
 
 	return result
