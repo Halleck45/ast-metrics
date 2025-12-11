@@ -858,6 +858,15 @@
         console.error('Failed to parse architecture data:', e);
     }
 
+    // Store dependencies data
+    const dependenciesDataStr = '{{ projectAggregated.Predictions|getCategoryDependenciesWithFiles:files|escapejs }}';
+    let dependenciesData = [];
+    try {
+        dependenciesData = JSON.parse(dependenciesDataStr);
+    } catch (e) {
+        console.error('Failed to parse dependencies data:', e);
+    }
+
     // Render main architecture diagram on page load
     document.addEventListener('DOMContentLoaded', function() {
         renderMainArchitectureDiagram();
@@ -901,6 +910,9 @@
                 .text("No architecture data available");
             return;
         }
+        
+        // Store category positions for dependency arrows
+        const categoryPositions = new Map();
         
         // Configuration
         const layerHeight = Math.max(140, height / architectureData.length);
@@ -1072,9 +1084,79 @@
                         .text(descText);
                 }
                 
+                // Store position for dependency arrows
+                categoryPositions.set(category.label, {
+                    x: categoryX + categoryWidth / 2,
+                    y: categoryY + categoryHeight / 2,
+                    layerIndex: layerIndex
+                });
+                
                 currentX += categoryWidth + categorySpacing;
             });
         });
+        
+        // Draw dependency arrows
+        if (dependenciesData && dependenciesData.length > 0) {
+            dependenciesData.forEach(dep => {
+                const fromPos = categoryPositions.get(dep.fromCategory);
+                const toPos = categoryPositions.get(dep.toCategory);
+                
+                if (!fromPos || !toPos) {
+                    return; // Skip if positions not found
+                }
+                
+                // Only draw arrows between different layers
+                if (fromPos.layerIndex === toPos.layerIndex) {
+                    return;
+                }
+                
+                // Calculate arrow path
+                const dx = toPos.x - fromPos.x;
+                const dy = toPos.y - fromPos.y;
+                const distance = Math.sqrt(dx * dx + dy * dy);
+                
+                // Offset to start/end at rectangle edges
+                const offsetX = (dx / distance) * 70;
+                const offsetY = (dy / distance) * 35;
+                
+                const startX = fromPos.x + offsetX;
+                const startY = fromPos.y + offsetY;
+                const endX = toPos.x - offsetX;
+                const endY = toPos.y - offsetY;
+                
+                // Draw curved arrow
+                const midX = (startX + endX) / 2;
+                const midY = (startY + endY) / 2;
+                const curvature = 30;
+                const perpX = -dy / distance * curvature;
+                const perpY = dx / distance * curvature;
+                
+                const path = d3.path();
+                path.moveTo(startX, startY);
+                path.quadraticCurveTo(midX + perpX, midY + perpY, endX, endY);
+                
+                d3.select(svg).append("path")
+                    .attr("class", "dependency-arrow")
+                    .attr("d", path.toString())
+                    .attr("stroke", "#94a3b8")
+                    .attr("stroke-width", Math.min(3, 1 + dep.count / 5))
+                    .attr("fill", "none")
+                    .attr("marker-end", "url(#arrowhead)")
+                    .attr("opacity", 0.5 + Math.min(0.3, dep.count / 20))
+                    .on("mouseover", function() {
+                        d3.select(this)
+                            .attr("stroke", "#667eea")
+                            .attr("stroke-width", Math.min(4, 2 + dep.count / 5))
+                            .attr("opacity", 1);
+                    })
+                    .on("mouseout", function() {
+                        d3.select(this)
+                            .attr("stroke", "#94a3b8")
+                            .attr("stroke-width", Math.min(3, 1 + dep.count / 5))
+                            .attr("opacity", 0.5 + Math.min(0.3, dep.count / 20));
+                    });
+            });
+        }
     }
 
     function renderArchitectureDiagram(familyKey) {

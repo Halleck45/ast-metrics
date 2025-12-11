@@ -981,6 +981,416 @@ func (v *HtmlReportGenerator) RegisterFilters() {
 		return pongo2.AsValue(string(jsonData)), nil
 	})
 
+	// filter getCategoryDependenciesWithFiles: extracts dependencies between categories using files
+	pongo2.RegisterFilter("getCategoryDependenciesWithFiles", func(in *pongo2.Value, param *pongo2.Value) (out *pongo2.Value, err *pongo2.Error) {
+		// in should be projectAggregated.Predictions
+		// param should be files array
+		predictions, ok := in.Interface().([]classifier.ClassPrediction)
+		if !ok {
+			return pongo2.AsValue("[]"), nil
+		}
+
+		files, ok := param.Interface().([]*pb.File)
+		if !ok {
+			return pongo2.AsValue("[]"), nil
+		}
+
+		// Create map: class qualified name -> prediction label
+		classToLabel := make(map[string]string)
+		for _, pred := range predictions {
+			if len(pred.Predictions) > 0 {
+				classToLabel[pred.Class] = pred.Predictions[0].Label
+			}
+		}
+
+		// Create map: file path -> file object
+		fileMap := make(map[string]*pb.File)
+		for _, f := range files {
+			key := f.ShortPath
+			if key == "" {
+				key = f.Path
+			}
+			fileMap[key] = f
+		}
+
+		// Build dependency links between categories
+		type DependencyLink struct {
+			FromCategory string `json:"fromCategory"`
+			ToCategory   string `json:"toCategory"`
+			Count        int    `json:"count"`
+		}
+
+		linksMap := make(map[string]int) // "fromLabel->toLabel" -> count
+
+		// For each prediction, find its file and class, then extract dependencies
+		for _, pred := range predictions {
+			if len(pred.Predictions) == 0 {
+				continue
+			}
+			fromLabel := pred.Predictions[0].Label
+
+			// Find the file
+			file, exists := fileMap[pred.File]
+			if !exists {
+				continue
+			}
+
+			// Find the class in the file
+			classes := engine.GetClassesInFile(file)
+			var targetClass *pb.StmtClass
+			for _, class := range classes {
+				className := ""
+				if class.Name != nil {
+					className = class.Name.Qualified
+					if className == "" {
+						className = class.Name.Short
+					}
+				}
+				if className == pred.Class {
+					targetClass = class
+					break
+				}
+			}
+
+			if targetClass == nil {
+				continue
+			}
+
+			// Get dependencies for this specific class
+			className := pred.Class
+			var classDeps []*pb.StmtExternalDependency
+
+			// Get explicit dependencies from class stmts
+			if targetClass.Stmts != nil {
+				for _, dep := range targetClass.Stmts.StmtExternalDependencies {
+					if dep != nil {
+						depCopy := *dep
+						depCopy.From = className
+						classDeps = append(classDeps, &depCopy)
+					}
+				}
+			}
+
+			// Get dependencies from extends/implements/uses
+			for _, ext := range targetClass.Extends {
+				if ext != nil {
+					classDeps = append(classDeps, &pb.StmtExternalDependency{
+						Namespace: ext.Qualified,
+						ClassName: ext.Short,
+						From:      className,
+					})
+				}
+			}
+			for _, impl := range targetClass.Implements {
+				if impl != nil {
+					classDeps = append(classDeps, &pb.StmtExternalDependency{
+						Namespace: impl.Qualified,
+						ClassName: impl.Short,
+						From:      className,
+					})
+				}
+			}
+			for _, use := range targetClass.Uses {
+				if use != nil {
+					classDeps = append(classDeps, &pb.StmtExternalDependency{
+						Namespace: use.Qualified,
+						ClassName: use.Short,
+						From:      className,
+					})
+				}
+			}
+
+			// Get dependencies from methods
+			if targetClass.Stmts != nil {
+				for _, method := range targetClass.Stmts.StmtFunction {
+					for _, ext := range method.Externals {
+						if ext != nil {
+							ns := ext.Qualified
+							if ns == "" {
+								ns = ext.Short
+							}
+							classDeps = append(classDeps, &pb.StmtExternalDependency{
+								Namespace: ns,
+								ClassName: ext.Short,
+								From:      className,
+							})
+						}
+					}
+					// Also get explicit dependencies from method stmts
+					if method.Stmts != nil {
+						for _, dep := range method.Stmts.StmtExternalDependencies {
+							if dep != nil {
+								depCopy := *dep
+								depCopy.From = className
+								classDeps = append(classDeps, &depCopy)
+							}
+						}
+					}
+				}
+			}
+
+			// Process each dependency
+			for _, dep := range classDeps {
+				if dep == nil {
+					continue
+				}
+
+				// Find the target class in predictions
+				targetClassName := dep.ClassName
+				if dep.Namespace != "" {
+					// Try to construct qualified name
+					if !strings.Contains(targetClassName, "::") && !strings.Contains(targetClassName, ".") {
+						targetClassName = dep.Namespace + "::" + dep.ClassName
+					}
+				}
+
+				// Try different variations of the class name
+				toLabel := ""
+				if label, ok := classToLabel[targetClassName]; ok {
+					toLabel = label
+				} else if label, ok := classToLabel[dep.ClassName]; ok {
+					toLabel = label
+				} else if dep.Namespace != "" {
+					// Try namespace::className
+					fullName := dep.Namespace + "::" + dep.ClassName
+					if label, ok := classToLabel[fullName]; ok {
+						toLabel = label
+					}
+				}
+
+				if toLabel != "" && toLabel != fromLabel {
+					key := fromLabel + "->" + toLabel
+					linksMap[key]++
+				}
+			}
+		}
+
+		// Convert to list
+		linksList := make([]DependencyLink, 0, len(linksMap))
+		for key, count := range linksMap {
+			parts := strings.Split(key, "->")
+			if len(parts) == 2 {
+				linksList = append(linksList, DependencyLink{
+					FromCategory: parts[0],
+					ToCategory:   parts[1],
+					Count:        count,
+				})
+			}
+		}
+
+		jsonData, jsonErr := json.Marshal(linksList)
+		if jsonErr != nil {
+			return pongo2.AsValue("[]"), nil
+		}
+
+		return pongo2.AsValue(string(jsonData)), nil
+	})
+
+	// filter getCategoryDependenciesWithFiles: extracts dependencies between categories using files
+	pongo2.RegisterFilter("getCategoryDependenciesWithFiles", func(in *pongo2.Value, param *pongo2.Value) (out *pongo2.Value, err *pongo2.Error) {
+		// in should be projectAggregated.Predictions
+		// param should be files array
+		predictions, ok := in.Interface().([]classifier.ClassPrediction)
+		if !ok {
+			return pongo2.AsValue("[]"), nil
+		}
+
+		files, ok := param.Interface().([]*pb.File)
+		if !ok {
+			return pongo2.AsValue("[]"), nil
+		}
+
+		// Create map: class qualified name -> prediction label
+		classToLabel := make(map[string]string)
+		for _, pred := range predictions {
+			if len(pred.Predictions) > 0 {
+				classToLabel[pred.Class] = pred.Predictions[0].Label
+			}
+		}
+
+		// Create map: file path -> file object
+		fileMap := make(map[string]*pb.File)
+		for _, f := range files {
+			key := f.ShortPath
+			if key == "" {
+				key = f.Path
+			}
+			fileMap[key] = f
+		}
+
+		// Build dependency links between categories
+		type DependencyLink struct {
+			FromCategory string `json:"fromCategory"`
+			ToCategory   string `json:"toCategory"`
+			Count        int    `json:"count"`
+		}
+
+		linksMap := make(map[string]int) // "fromLabel->toLabel" -> count
+
+		// For each prediction, find its file and class, then extract dependencies
+		for _, pred := range predictions {
+			if len(pred.Predictions) == 0 {
+				continue
+			}
+			fromLabel := pred.Predictions[0].Label
+
+			// Find the file
+			file, exists := fileMap[pred.File]
+			if !exists {
+				continue
+			}
+
+			// Find the class in the file
+			classes := engine.GetClassesInFile(file)
+			var targetClass *pb.StmtClass
+			for _, class := range classes {
+				className := ""
+				if class.Name != nil {
+					className = class.Name.Qualified
+					if className == "" {
+						className = class.Name.Short
+					}
+				}
+				if className == pred.Class {
+					targetClass = class
+					break
+				}
+			}
+
+			if targetClass == nil {
+				continue
+			}
+
+			// Get dependencies for this specific class
+			className := pred.Class
+			var classDeps []*pb.StmtExternalDependency
+
+			// Get explicit dependencies from class stmts
+			if targetClass.Stmts != nil {
+				for _, dep := range targetClass.Stmts.StmtExternalDependencies {
+					if dep != nil {
+						depCopy := *dep
+						depCopy.From = className
+						classDeps = append(classDeps, &depCopy)
+					}
+				}
+			}
+
+			// Get dependencies from extends/implements/uses
+			for _, ext := range targetClass.Extends {
+				if ext != nil {
+					classDeps = append(classDeps, &pb.StmtExternalDependency{
+						Namespace: ext.Qualified,
+						ClassName: ext.Short,
+						From:      className,
+					})
+				}
+			}
+			for _, impl := range targetClass.Implements {
+				if impl != nil {
+					classDeps = append(classDeps, &pb.StmtExternalDependency{
+						Namespace: impl.Qualified,
+						ClassName: impl.Short,
+						From:      className,
+					})
+				}
+			}
+			for _, use := range targetClass.Uses {
+				if use != nil {
+					classDeps = append(classDeps, &pb.StmtExternalDependency{
+						Namespace: use.Qualified,
+						ClassName: use.Short,
+						From:      className,
+					})
+				}
+			}
+
+			// Get dependencies from methods
+			if targetClass.Stmts != nil {
+				for _, method := range targetClass.Stmts.StmtFunction {
+					for _, ext := range method.Externals {
+						if ext != nil {
+							ns := ext.Qualified
+							if ns == "" {
+								ns = ext.Short
+							}
+							classDeps = append(classDeps, &pb.StmtExternalDependency{
+								Namespace: ns,
+								ClassName: ext.Short,
+								From:      className,
+							})
+						}
+					}
+					// Also get explicit dependencies from method stmts
+					if method.Stmts != nil {
+						for _, dep := range method.Stmts.StmtExternalDependencies {
+							if dep != nil {
+								depCopy := *dep
+								depCopy.From = className
+								classDeps = append(classDeps, &depCopy)
+							}
+						}
+					}
+				}
+			}
+
+			// Process each dependency
+			for _, dep := range classDeps {
+				if dep == nil {
+					continue
+				}
+
+				// Find the target class in predictions
+				targetClassName := dep.ClassName
+				if dep.Namespace != "" {
+					// Try to construct qualified name
+					if !strings.Contains(targetClassName, "::") && !strings.Contains(targetClassName, ".") {
+						targetClassName = dep.Namespace + "::" + dep.ClassName
+					}
+				}
+
+				// Try different variations of the class name
+				toLabel := ""
+				if label, ok := classToLabel[targetClassName]; ok {
+					toLabel = label
+				} else if label, ok := classToLabel[dep.ClassName]; ok {
+					toLabel = label
+				} else if dep.Namespace != "" {
+					// Try namespace::className
+					fullName := dep.Namespace + "::" + dep.ClassName
+					if label, ok := classToLabel[fullName]; ok {
+						toLabel = label
+					}
+				}
+
+				if toLabel != "" && toLabel != fromLabel {
+					key := fromLabel + "->" + toLabel
+					linksMap[key]++
+				}
+			}
+		}
+
+		// Convert to list
+		linksList := make([]DependencyLink, 0, len(linksMap))
+		for key, count := range linksMap {
+			parts := strings.Split(key, "->")
+			if len(parts) == 2 {
+				linksList = append(linksList, DependencyLink{
+					FromCategory: parts[0],
+					ToCategory:   parts[1],
+					Count:        count,
+				})
+			}
+		}
+
+		jsonData, jsonErr := json.Marshal(linksList)
+		if jsonErr != nil {
+			return pongo2.AsValue("[]"), nil
+		}
+
+		return pongo2.AsValue(string(jsonData)), nil
+	})
+
 	// filter convertOneFileToCollection
 	pongo2.RegisterFilter("convertOneFileToCollection", func(in *pongo2.Value, param *pongo2.Value) (out *pongo2.Value, err *pongo2.Error) {
 		file := in.Interface().(*pb.File)
