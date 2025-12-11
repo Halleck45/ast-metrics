@@ -2,6 +2,218 @@
 
 {% block content %}
 <style>
+    .hero-section {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        border-radius: 16px;
+        padding: 3rem 2rem;
+        margin-bottom: 3rem;
+        color: white;
+        text-align: center;
+    }
+
+    .hero-title {
+        font-size: 2.5rem;
+        font-weight: 700;
+        margin: 0 0 1rem 0;
+        line-height: 1.2;
+    }
+
+    .hero-subtitle {
+        font-size: 1.125rem;
+        opacity: 0.95;
+        line-height: 1.6;
+        max-width: 700px;
+        margin: 0 auto;
+    }
+
+    .how-it-works {
+        background: white;
+        border: 1px solid #e2e8f0;
+        border-radius: 12px;
+        padding: 2rem;
+        margin-bottom: 3rem;
+    }
+
+    .how-it-works-title {
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: #0f172a;
+        margin: 0 0 2rem 0;
+        text-align: center;
+    }
+
+    .steps-container {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 2rem;
+    }
+
+    .step-item {
+        text-align: center;
+    }
+
+    .step-number {
+        width: 48px;
+        height: 48px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        font-size: 1.25rem;
+        font-weight: 700;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto 1rem;
+    }
+
+    .step-title {
+        font-size: 1rem;
+        font-weight: 600;
+        color: #0f172a;
+        margin: 0 0 0.5rem 0;
+    }
+
+    .step-description {
+        font-size: 0.875rem;
+        color: #64748b;
+        line-height: 1.5;
+        margin: 0;
+    }
+
+    .architecture-overview {
+        margin-bottom: 3rem;
+    }
+
+    .architecture-overview-title {
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: #0f172a;
+        margin: 0 0 1.5rem 0;
+    }
+
+    .family-cards-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 1.5rem;
+        margin-bottom: 3rem;
+    }
+
+    .family-overview-card {
+        background: white;
+        border: 1px solid #e2e8f0;
+        border-radius: 12px;
+        padding: 1.5rem;
+        transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        cursor: pointer;
+    }
+
+    .family-overview-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+        border-color: #cbd5e1;
+    }
+
+    .family-overview-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: start;
+        margin-bottom: 1rem;
+    }
+
+    .family-overview-info {
+        flex: 1;
+    }
+
+    .family-overview-name {
+        font-size: 1.125rem;
+        font-weight: 700;
+        color: #0f172a;
+        margin: 0 0 0.25rem 0;
+    }
+
+    .family-overview-count {
+        font-size: 0.875rem;
+        color: #64748b;
+        margin: 0;
+    }
+
+    .donut-chart {
+        width: 64px;
+        height: 64px;
+        position: relative;
+        flex-shrink: 0;
+    }
+
+    .donut-svg {
+        width: 100%;
+        height: 100%;
+        transform: rotate(-90deg);
+    }
+
+    .donut-circle-bg {
+        fill: none;
+        stroke: #f1f5f9;
+        stroke-width: 8;
+    }
+
+    .donut-circle-fill {
+        fill: none;
+        stroke: #667eea;
+        stroke-width: 8;
+        stroke-linecap: round;
+        transition: stroke-dashoffset 0.3s ease;
+    }
+
+    .donut-percentage {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        font-size: 0.75rem;
+        font-weight: 600;
+        color: #0f172a;
+    }
+
+    .family-top-labels {
+        margin-top: 1rem;
+        padding-top: 1rem;
+        border-top: 1px solid #f1f5f9;
+    }
+
+    .top-labels-title {
+        font-size: 0.75rem;
+        font-weight: 600;
+        color: #64748b;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        margin: 0 0 0.5rem 0;
+    }
+
+    .top-labels-list {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+    }
+
+    .top-label-tag {
+        background: #f8fafc;
+        border: 1px solid #e2e8f0;
+        padding: 0.25rem 0.5rem;
+        border-radius: 0.375rem;
+        font-size: 0.75rem;
+        color: #475569;
+    }
+
+    .top-label-name {
+        font-weight: 500;
+        color: #334155;
+    }
+
+    .top-label-count {
+        color: #64748b;
+        margin-left: 0.25rem;
+    }
+
     .classification-card {
         background: white;
         border: 1px solid #e2e8f0;
@@ -240,6 +452,38 @@
     .label-section:first-of-type {
         border-top: none;
     }
+
+    .details-section {
+        margin-top: 3rem;
+    }
+
+    .details-section-title {
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: #0f172a;
+        margin: 0 0 1.5rem 0;
+    }
+
+    @media (max-width: 1024px) {
+        .family-cards-grid {
+            grid-template-columns: repeat(2, 1fr);
+        }
+    }
+
+    @media (max-width: 768px) {
+        .hero-title {
+            font-size: 2rem;
+        }
+
+        .steps-container {
+            grid-template-columns: 1fr;
+            gap: 1.5rem;
+        }
+
+        .family-cards-grid {
+            grid-template-columns: 1fr;
+        }
+    }
 </style>
 
 <div class="container-fluid px-4 py-3">
@@ -257,17 +501,146 @@
     {% set groupedByFamily = projectAggregated.Predictions|groupByFamilyAndLabel %}
     {% set families = classificationFamilies %}
 
-    {# Header #}
-    <div class="mb-6">
-        <h1 class="text-2xl font-bold text-gray-900 mb-1">Component Classification</h1>
-        <p class="text-sm text-gray-600">AI-powered classification of your codebase components</p>
+    {# Calculate total components for percentage calculation #}
+    {% set totalComponents = projectAggregated.Predictions|length %}
+
+    {# Hero Section #}
+    <div class="hero-section">
+        <h1 class="hero-title">AI-powered Architecture Recognition</h1>
+        <p class="hero-subtitle">
+            Automatically detects the role of every component in your codebase from its structural fingerprint.
+        </p>
     </div>
 
-    {# Display each family #}
+    {# How it works Section #}
+    <div class="how-it-works">
+        <h2 class="how-it-works-title">How it works</h2>
+        <div class="steps-container">
+            <div class="step-item">
+                <div class="step-number">1</div>
+                <h3 class="step-title">Structural Fingerprint Extraction</h3>
+                <p class="step-description">
+                    We convert each component into a language-agnostic AST + metrics signature.
+                </p>
+            </div>
+            <div class="step-item">
+                <div class="step-number">2</div>
+                <h3 class="step-title">Embedding + Custom AI Model</h3>
+                <p class="step-description">
+                    A specialized classifier maps the fingerprint to an architectural role.
+                </p>
+            </div>
+            <div class="step-item">
+                <div class="step-number">3</div>
+                <h3 class="step-title">Layer & Role Assignment</h3>
+                <p class="step-description">
+                    Each component is grouped into familiar architecture layers and categories.
+                </p>
+            </div>
+        </div>
+    </div>
+
+    {# Architecture Overview Section #}
+    <div class="architecture-overview">
+        <h2 class="architecture-overview-title">Architecture Overview</h2>
+        <div class="family-cards-grid">
+            {% for family in families %}
+            {% set familyData = groupedByFamily|getMapValue:family.Key %}
+            {% if familyData %}
+            {% set familyCount = 0 %}
+            {% for label, items in familyData %}
+            {% set familyCount = familyCount + items|length %}
+            {% endfor %}
+            {% if familyCount > 0 %}
+            {% set familyPercentage = (familyCount * 100.0) / totalComponents %}
+            {% set circumference = 87.96 %}
+            {% set dashOffset = circumference - (familyPercentage / 100.0 * circumference) %}
+            <div class="family-overview-card" id="family-{{ family.Key }}">
+                <div class="family-overview-header">
+                    <div class="family-overview-info">
+                        <h3 class="family-overview-name">{{ family.Key|capitalizeFirst }}</h3>
+                        <p class="family-overview-count">{{ familyCount }} components</p>
+                    </div>
+                    <div class="donut-chart">
+                        <svg class="donut-svg" viewBox="0 0 36 36">
+                            <circle class="donut-circle-bg" cx="18" cy="18" r="14"></circle>
+                            <circle class="donut-circle-fill" cx="18" cy="18" r="14" 
+                                stroke-dasharray="{{ circumference }}" 
+                                stroke-dashoffset="{{ dashOffset }}"></circle>
+                        </svg>
+                        <div class="donut-percentage">{{ familyPercentage|stringformat:"%.0f" }}%</div>
+                    </div>
+                </div>
+                <div class="family-top-labels">
+                    <p class="top-labels-title">Top roles</p>
+                    <div class="top-labels-list">
+                        {% set max1 = 0 %}
+                        {% set max2 = 0 %}
+                        {% set max3 = 0 %}
+                        {% set label1 = "" %}
+                        {% set label2 = "" %}
+                        {% set label3 = "" %}
+                        {% for label, items in familyData %}
+                        {% set count = items|length %}
+                        {% if count > max1 %}
+                        {% set max3 = max2 %}
+                        {% set max2 = max1 %}
+                        {% set max1 = count %}
+                        {% set label3 = label2 %}
+                        {% set label2 = label1 %}
+                        {% set label1 = label %}
+                        {% elif count > max2 %}
+                        {% set max3 = max2 %}
+                        {% set max2 = count %}
+                        {% set label3 = label2 %}
+                        {% set label2 = label %}
+                        {% elif count > max3 %}
+                        {% set max3 = count %}
+                        {% set label3 = label %}
+                        {% endif %}
+                        {% endfor %}
+                        {% if max1 > 0 %}
+                        {% set labelParts1 = label1|split:":" %}
+                        {% set shortLabel1 = labelParts1|last %}
+                        <div class="top-label-tag">
+                            <span class="top-label-name">{{ shortLabel1 }}</span>
+                            <span class="top-label-count">({{ max1 }})</span>
+                        </div>
+                        {% endif %}
+                        {% if max2 > 0 %}
+                        {% set labelParts2 = label2|split:":" %}
+                        {% set shortLabel2 = labelParts2|last %}
+                        <div class="top-label-tag">
+                            <span class="top-label-name">{{ shortLabel2 }}</span>
+                            <span class="top-label-count">({{ max2 }})</span>
+                        </div>
+                        {% endif %}
+                        {% if max3 > 0 %}
+                        {% set labelParts3 = label3|split:":" %}
+                        {% set shortLabel3 = labelParts3|last %}
+                        <div class="top-label-tag">
+                            <span class="top-label-name">{{ shortLabel3 }}</span>
+                            <span class="top-label-count">({{ max3 }})</span>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+            {% endif %}
+            {% endfor %}
+        </div>
+    </div>
+
+    {# Detailed Classification Section #}
+    <div class="details-section">
+        <h2 class="details-section-title">Detailed Classification</h2>
+
+        {# Display each family #}
     {% for family in families %}
     {% set familyData = groupedByFamily|getMapValue:family.Key %}
     {% if familyData and familyData|length > 0 %}
-    <div class="family-card">
+    <div class="family-card" id="detail-family-{{ family.Key }}">
         <div class="family-header">
             <h2 class="family-title">
                 <span class="family-icon">🏗️</span>
@@ -357,10 +730,11 @@
         </div>
         {% endfor %}
     </div>
-    {% endif %}
-    {% endfor %}
+        {% endif %}
+        {% endfor %}
+    </div>
 
-{% endif %}
+    {% endif %}
 </div>
 
 <script>
@@ -377,6 +751,19 @@
             content.classList.add('expanded');
             icon.classList.add('expanded');
             header.classList.add('expanded');
+        }
+    }
+
+    function scrollToFamily(familyKey) {
+        const element = document.getElementById('detail-family-' + familyKey);
+        if (element) {
+            element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            // Highlight the card briefly
+            element.style.transition = 'box-shadow 0.3s ease';
+            element.style.boxShadow = '0 8px 16px -4px rgba(102, 126, 234, 0.3)';
+            setTimeout(() => {
+                element.style.boxShadow = '';
+            }, 2000);
         }
     }
 </script>
