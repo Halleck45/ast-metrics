@@ -190,6 +190,20 @@ func (v *AnalyzeCommand) Execute() error {
 			if v.isInteractive && v.spinner != nil {
 				pterm.Success.Printf("Classified %d components\n", len(predictions))
 			}
+
+			// Analyze architecture (violations, ambiguities, role flows)
+			if projectAggregated.Combined.Graph != nil && len(predictions) > 0 {
+				archMetrics := analyzer.AnalyzeArchitecture(&projectAggregated.Combined, predictions)
+				projectAggregated.Combined.Architecture = archMetrics
+				// Also add to language-specific views
+				for lang, langAggregate := range projectAggregated.ByProgrammingLanguage {
+					if langAggregate.Graph != nil {
+						langMetrics := analyzer.AnalyzeArchitecture(&langAggregate, predictions)
+						langAggregate.Architecture = langMetrics
+						projectAggregated.ByProgrammingLanguage[lang] = langAggregate
+					}
+				}
+			}
 		}
 	}
 

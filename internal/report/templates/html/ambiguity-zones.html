@@ -1,0 +1,98 @@
+{% extends "layout.html" %}
+
+{% block title %}
+Ambiguity Zones
+{% endblock %}
+
+{% block pageTitle %}
+AST Metrics - Ambiguity Zones
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row mb-4">
+        <div class="col-12">
+            <h1 class="text-2xl font-bold text-gray-800">Classes Ambiguës (Architecture Smells)</h1>
+            <p class="text-gray-600">Classes avec plusieurs labels - faiblesses architecturales détectées automatiquement.</p>
+            <p class="text-gray-600 mt-2"><strong>Niveau d'ambiguïté:</strong> Écart entre label 1 et label 2. Warning si > 10%</p>
+        </div>
+    </div>
+
+    {% if currentView.Architecture %}
+    <div class="bg-white rounded-lg shadow-md p-6">
+        <h2 class="text-xl font-semibold text-gray-800 mb-4">Classes Ambiguës</h2>
+        {% if currentView.Architecture.Ambiguities|length > 0 %}
+        <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-gray-200">
+                <thead class="bg-gray-50">
+                    <tr>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Classe</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Label 1</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Label 2</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Écart</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Pattern Détecté</th>
+                    </tr>
+                </thead>
+                <tbody class="bg-white divide-y divide-gray-200">
+                    {% for amb in currentView.Architecture.Ambiguities %}
+                    {% if amb.TopLabels|length >= 2 %}
+                    {% set label1 = amb.TopLabels.0 %}
+                    {% set label2 = amb.TopLabels.1 %}
+                    {% set score1_pct = label1.Score * 100 %}
+                    {% set score2_pct = label2.Score * 100 %}
+                    {% set ecart = amb.AmbiguityScore * 100 %}
+                    <tr class="hover:bg-gray-50">
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <strong>{{ amb.ClassName }}</strong>
+                            <div class="text-xs text-gray-500">{{ amb.File }}</div>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            {{ label1.Label }} ({{ score1_pct|floatformat:1 }}%)
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            {{ label2.Label }} ({{ score2_pct|floatformat:1 }}%)
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            {% if ecart < 10 %}
+                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
+                                {{ ecart|floatformat:1 }}%
+                            </span>
+                            {% else %}
+                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                {{ ecart|floatformat:1 }}%
+                            </span>
+                            {% endif %}
+                        </td>
+                        <td class="px-6 py-4 text-sm text-gray-500">{{ amb.Pattern }}</td>
+                    </tr>
+                    {% endif %}
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="bg-green-100 border-l-4 border-green-500 text-green-700 p-4" role="alert">
+            <p class="font-bold">Aucune classe ambiguë détectée</p>
+            <p>Toutes les classes ont des rôles clairement définis.</p>
+        </div>
+        {% endif %}
+    </div>
+
+    <div class="bg-white rounded-lg shadow-md p-6 mt-6">
+        <h2 class="text-xl font-semibold text-gray-800 mb-4">Patterns Détectés</h2>
+        <ul class="list-disc list-inside space-y-2 text-gray-700">
+            <li><strong>Entités qui contiennent du code de persistance:</strong> Classes avec labels entity + repository</li>
+            <li><strong>Services qui font de l'infrastructure:</strong> Classes avec labels app + infrastructure</li>
+            <li><strong>Handlers qui orchestrent trop de logique:</strong> Classes avec labels handler/controller + app</li>
+        </ul>
+    </div>
+    {% else %}
+    <div class="bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700 p-4" role="alert">
+        <p class="font-bold">Architecture analysis not available</p>
+        <p>Ensure predictions are available and the graph is built.</p>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+

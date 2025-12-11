@@ -1,0 +1,176 @@
+{% extends "layout.html" %}
+
+{% block title %}
+Role Flow Graph
+{% endblock %}
+
+{% block pageTitle %}
+AST Metrics - Role Flow Graph
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row mb-4">
+        <div class="col-12">
+            <h1 class="text-2xl font-bold text-gray-800">Role Flow Graph</h1>
+            <p class="text-gray-600">Comment les rôles communiquent entre eux - matrice et diagramme chord.</p>
+        </div>
+    </div>
+
+    {% if currentView.Architecture %}
+    <div class="bg-white rounded-lg shadow-md p-6 mb-6">
+        <h2 class="text-xl font-semibold text-gray-800 mb-4">Matrice Rôles → Rôles</h2>
+        <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-gray-200">
+                <thead class="bg-gray-50">
+                    <tr>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Caller / Callee</th>
+                        {% for role in currentView.Architecture.RoleFlows|getUniqueRoles %}
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{{ role|getRoleShortName }}</th>
+                        {% endfor %}
+                    </tr>
+                </thead>
+                <tbody class="bg-white divide-y divide-gray-200">
+                    {% for fromRole in currentView.Architecture.RoleFlows|getUniqueRoles %}
+                    <tr class="hover:bg-gray-50">
+                        <th class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{{ fromRole|getRoleShortName }}</th>
+                        {% for toRole in currentView.Architecture.RoleFlows|getUniqueRoles %}
+                        {% set flow_found = false %}
+                        {% set flow_count = 0 %}
+                        {% set flow_valid = true %}
+                        {% for flow in currentView.Architecture.RoleFlows %}
+                        {% if flow.FromRole == fromRole and flow.ToRole == toRole %}
+                        {% set flow_found = true %}
+                        {% set flow_count = flow.Count %}
+                        {% set flow_valid = flow.IsValid %}
+                        {% endif %}
+                        {% endfor %}
+                        <td class="px-6 py-4 whitespace-nowrap text-sm">
+                            {% if flow_found %}
+                            {% if flow_valid %}
+                            <span class="text-green-600">{{ flow_count }}</span>
+                            {% else %}
+                            <span class="text-red-600 font-semibold">{{ flow_count }} ❌</span>
+                            {% endif %}
+                            {% else %}
+                            <span class="text-gray-400">-</span>
+                            {% endif %}
+                        </td>
+                        {% endfor %}
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="bg-white rounded-lg shadow-md p-6">
+        <h2 class="text-xl font-semibold text-gray-800 mb-4">Diagramme Chord (Flux entre Rôles)</h2>
+        <div id="chord-diagram" style="width: 100%; height: 600px;"></div>
+    </div>
+    {% else %}
+    <div class="bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700 p-4" role="alert">
+        <p class="font-bold">Architecture analysis not available</p>
+        <p>Ensure predictions are available and the graph is built.</p>
+    </div>
+    {% endif %}
+</div>
+
+<script src="https://d3js.org/d3.v7.min.js"></script>
+<script>
+{% if currentView.Architecture and currentView.Architecture.RoleFlows|length > 0 %}
+// Collect unique roles
+const roles = [];
+const roleSet = new Set();
+{% for flow in currentView.Architecture.RoleFlows %}
+if (!roleSet.has("{{ flow.FromRole }}")) {
+    roles.push("{{ flow.FromRole }}");
+    roleSet.add("{{ flow.FromRole }}");
+}
+if (!roleSet.has("{{ flow.ToRole }}")) {
+    roles.push("{{ flow.ToRole }}");
+    roleSet.add("{{ flow.ToRole }}");
+}
+{% endfor %}
+
+// Build matrix
+const matrix = Array(roles.length).fill(null).map(() => Array(roles.length).fill(0));
+const roleIndex = {};
+roles.forEach((r, i) => { roleIndex[r] = i; });
+
+{% for flow in currentView.Architecture.RoleFlows %}
+const fromIdx = roleIndex["{{ flow.FromRole }}"];
+const toIdx = roleIndex["{{ flow.ToRole }}"];
+if (fromIdx !== undefined && toIdx !== undefined) {
+    matrix[fromIdx][toIdx] = {{ flow.Count }};
+}
+{% endfor %}
+
+// Create chord diagram
+const width = document.getElementById("chord-diagram").clientWidth;
+const height = 600;
+const outerRadius = Math.min(width, height) * 0.4 - 40;
+const innerRadius = outerRadius - 30;
+
+const svg = d3.select("#chord-diagram")
+    .append("svg")
+    .attr("width", width)
+    .attr("height", height);
+
+const g = svg.append("g")
+    .attr("transform", "translate(" + width / 2 + "," + height / 2 + ")");
+
+const chord = d3.chord()
+    .padAngle(0.05)
+    .sortSubgroups(d3.descending);
+
+const arc = d3.arc()
+    .innerRadius(innerRadius)
+    .outerRadius(outerRadius);
+
+const ribbon = d3.ribbon()
+    .radius(innerRadius);
+
+const color = d3.scaleOrdinal()
+    .domain(d3.range(roles.length))
+    .range(d3.schemeCategory20);
+
+const chords = chord(matrix);
+
+g.append("g")
+    .selectAll("path")
+    .data(chords)
+    .enter().append("path")
+    .attr("fill", d => color(d.target.index))
+    .attr("d", ribbon)
+    .style("opacity", 0.7);
+
+g.append("g")
+    .selectAll("g")
+    .data(chords.groups)
+    .enter().append("g")
+    .append("path")
+    .attr("fill", d => color(d.index))
+    .attr("stroke", d => d3.rgb(color(d.index)).darker())
+    .attr("d", arc);
+
+g.append("g")
+    .selectAll("text")
+    .data(chords.groups)
+    .enter().append("text")
+    .each(function(d) {
+        d.angle = (d.startAngle + d.endAngle) / 2;
+    })
+    .attr("dy", ".35em")
+    .attr("transform", function(d) {
+        return "rotate(" + (d.angle * 180 / Math.PI - 90) + ")"
+            + "translate(" + (outerRadius + 10) + ")"
+            + (d.angle > Math.PI ? "rotate(180)" : "");
+    })
+    .attr("text-anchor", d => d.angle > Math.PI ? "end" : null)
+    .text(d => roles[d.index]);
+{% endif %}
+</script>
+{% endblock %}
+
+

@@ -85,6 +85,10 @@ func (v *HtmlReportGenerator) Generate(files []*pb.File, projectAggregated analy
 		"componentComparaisonOperator.html",
 		"communities.html",
 		"busfactor.html",
+		"architecture-roles.html",
+		"layer-violations.html",
+		"ambiguity-zones.html",
+		"role-flow-graph.html",
 		"partials/suggestions.html",
 	} {
 		// read the file
@@ -161,6 +165,30 @@ func (v *HtmlReportGenerator) Generate(files []*pb.File, projectAggregated analy
 	v.GenerateLanguagePage("classification.html", "All", projectAggregated.Combined, files, projectAggregated)
 	for language, currentView := range projectAggregated.ByProgrammingLanguage {
 		v.GenerateLanguagePage("classification.html", language, currentView, files, projectAggregated)
+	}
+
+	// Architecture Roles page
+	v.GenerateLanguagePage("architecture-roles.html", "All", projectAggregated.Combined, files, projectAggregated)
+	for language, currentView := range projectAggregated.ByProgrammingLanguage {
+		v.GenerateLanguagePage("architecture-roles.html", language, currentView, files, projectAggregated)
+	}
+
+	// Layer Violations page
+	v.GenerateLanguagePage("layer-violations.html", "All", projectAggregated.Combined, files, projectAggregated)
+	for language, currentView := range projectAggregated.ByProgrammingLanguage {
+		v.GenerateLanguagePage("layer-violations.html", language, currentView, files, projectAggregated)
+	}
+
+	// Ambiguity Zones page
+	v.GenerateLanguagePage("ambiguity-zones.html", "All", projectAggregated.Combined, files, projectAggregated)
+	for language, currentView := range projectAggregated.ByProgrammingLanguage {
+		v.GenerateLanguagePage("ambiguity-zones.html", language, currentView, files, projectAggregated)
+	}
+
+	// Role Flow Graph page
+	v.GenerateLanguagePage("role-flow-graph.html", "All", projectAggregated.Combined, files, projectAggregated)
+	for language, currentView := range projectAggregated.ByProgrammingLanguage {
+		v.GenerateLanguagePage("role-flow-graph.html", language, currentView, files, projectAggregated)
 	}
 
 	// copy images
@@ -924,5 +952,63 @@ func (v *HtmlReportGenerator) RegisterFilters() {
 
 		colorIndex := int(hash) % len(colors)
 		return pongo2.AsValue(colors[colorIndex]), nil
+	})
+
+	// filter getRoleCategory: extracts category from a role label
+	pongo2.RegisterFilter("getRoleCategory", func(in *pongo2.Value, param *pongo2.Value) (out *pongo2.Value, err *pongo2.Error) {
+		label := in.String()
+		parts := strings.Split(label, ":")
+		if len(parts) >= 2 {
+			return pongo2.AsValue(parts[1]), nil
+		}
+		return pongo2.AsValue("unknown"), nil
+	})
+
+	// filter getRoleShortName: extracts short name from a role label
+	pongo2.RegisterFilter("getRoleShortName", func(in *pongo2.Value, param *pongo2.Value) (out *pongo2.Value, err *pongo2.Error) {
+		label := in.String()
+		parts := strings.Split(label, ":")
+		if len(parts) >= 3 {
+			return pongo2.AsValue(parts[2]), nil
+		}
+		if len(parts) >= 2 {
+			return pongo2.AsValue(parts[1]), nil
+		}
+		return pongo2.AsValue(label), nil
+	})
+
+	// filter getUniqueRoles: extracts unique roles from role flows
+	pongo2.RegisterFilter("getUniqueRoles", func(in *pongo2.Value, param *pongo2.Value) (out *pongo2.Value, err *pongo2.Error) {
+		flows, ok := in.Interface().([]analyzer.RoleFlow)
+		if !ok {
+			return pongo2.AsValue([]string{}), nil
+		}
+		roleSet := make(map[string]bool)
+		for _, flow := range flows {
+			roleSet[flow.FromRole] = true
+			roleSet[flow.ToRole] = true
+		}
+		roles := make([]string, 0, len(roleSet))
+		for role := range roleSet {
+			roles = append(roles, role)
+		}
+		sort.Strings(roles)
+		return pongo2.AsValue(roles), nil
+	})
+
+	// filter escapejs: escapes a string for safe use in JavaScript
+	pongo2.RegisterFilter("escapejs", func(in *pongo2.Value, param *pongo2.Value) (out *pongo2.Value, err *pongo2.Error) {
+		str := in.String()
+		// Escape backslashes first (important!)
+		str = strings.ReplaceAll(str, "\\", "\\\\")
+		// Escape quotes
+		str = strings.ReplaceAll(str, "\"", "\\\"")
+		str = strings.ReplaceAll(str, "'", "\\'")
+		// Escape newlines
+		str = strings.ReplaceAll(str, "\n", "\\n")
+		str = strings.ReplaceAll(str, "\r", "\\r")
+		// Escape tabs
+		str = strings.ReplaceAll(str, "\t", "\\t")
+		return pongo2.AsValue(str), nil
 	})
 }

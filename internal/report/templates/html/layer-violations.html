@@ -1,0 +1,80 @@
+{% extends "layout.html" %}
+
+{% block title %}
+Layer Violations
+{% endblock %}
+
+{% block pageTitle %}
+AST Metrics - Layer Violations
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row mb-4">
+        <div class="col-12">
+            <h1 class="text-2xl font-bold text-gray-800">Layer Violations</h1>
+            <p class="text-gray-600">Architecture Linter basé sur les labels. Détection automatique des violations de règles d'architecture.</p>
+        </div>
+    </div>
+
+    {% if currentView.Architecture %}
+    <div class="bg-white rounded-lg shadow-md p-6 mb-6">
+        <h2 class="text-xl font-semibold text-gray-800 mb-4">Règles d'Architecture</h2>
+        <ul class="list-disc list-inside space-y-2 text-gray-700">
+            <li><strong>Règle 1:</strong> Un component:interface:controller ne peut pas dépendre d'un infrastructure:*</li>
+            <li><strong>Règle 2:</strong> Un component:domain:* ne doit jamais dépendre d'un component:app:*</li>
+            <li><strong>Règle 3:</strong> Un component:data_access:* ne doit pas appeler un component:interface:*</li>
+            <li><strong>Règle 4:</strong> Un component:domain:rule ne doit dépendre que de domain:entity ou domain:value_object</li>
+        </ul>
+    </div>
+
+    <div class="bg-white rounded-lg shadow-md p-6">
+        <h2 class="text-xl font-semibold text-gray-800 mb-4">Violations Détectées</h2>
+        {% if currentView.Architecture.Violations|length > 0 %}
+        <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-gray-200">
+                <thead class="bg-gray-50">
+                    <tr>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">From → To</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Autorisé ?</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nb Infractions</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Liste</th>
+                    </tr>
+                </thead>
+                <tbody class="bg-white divide-y divide-gray-200">
+                    {% for violation in currentView.Architecture.Violations %}
+                    <tr class="hover:bg-gray-50">
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <strong>{{ violation.FromRole }}</strong> → <strong>{{ violation.ToRole }}</strong>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
+                                ❌ NON
+                            </span>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">1</td>
+                        <td class="px-6 py-4 text-sm text-gray-500">
+                            {{ violation.FromClass }} → {{ violation.ToClass }}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="bg-green-100 border-l-4 border-green-500 text-green-700 p-4" role="alert">
+            <p class="font-bold">Aucune violation détectée</p>
+            <p>L'architecture respecte toutes les règles définies.</p>
+        </div>
+        {% endif %}
+    </div>
+    {% else %}
+    <div class="bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700 p-4" role="alert">
+        <p class="font-bold">Architecture analysis not available</p>
+        <p>Ensure predictions are available and the graph is built.</p>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+

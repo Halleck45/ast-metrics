@@ -1,0 +1,197 @@
+{% extends "layout.html" %}
+
+{% block title %}
+Architecture Roles
+{% endblock %}
+
+{% block pageTitle %}
+AST Metrics - Architecture Roles
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row mb-4">
+        <div class="col-12">
+            <h1 class="text-2xl font-bold text-gray-800">Architecture Roles</h1>
+            <p class="text-gray-600">Première vraie carte d'architecture d'un projet sans documentation d'entreprise.</p>
+        </div>
+    </div>
+
+    {% if currentView.Architecture %}
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+        <div class="bg-gradient-to-br from-blue-500 to-purple-600 text-white p-6 rounded-lg shadow-md">
+            <h3 class="text-sm font-semibold mb-2">Classes</h3>
+            <div class="text-3xl font-bold">{{ currentView.NbClasses }}</div>
+        </div>
+        <div class="bg-gradient-to-br from-blue-500 to-purple-600 text-white p-6 rounded-lg shadow-md">
+            <h3 class="text-sm font-semibold mb-2">Communautés</h3>
+            <div class="text-3xl font-bold">{{ currentView.Community.CommunitiesCount|default:0 }}</div>
+        </div>
+        <div class="bg-gradient-to-br from-blue-500 to-purple-600 text-white p-6 rounded-lg shadow-md">
+            <h3 class="text-sm font-semibold mb-2">Violations</h3>
+            <div class="text-3xl font-bold">{{ currentView.Architecture.Violations|length }}</div>
+        </div>
+        <div class="bg-gradient-to-br from-blue-500 to-purple-600 text-white p-6 rounded-lg shadow-md">
+            <h3 class="text-sm font-semibold mb-2">Ambiguïtés</h3>
+            <div class="text-3xl font-bold">{{ currentView.Architecture.Ambiguities|length }}</div>
+        </div>
+    </div>
+
+    <div class="bg-white rounded-lg shadow-md p-6 mb-6">
+        <h2 class="text-xl font-semibold text-gray-800 mb-4">Carte d'Architecture</h2>
+        <div id="architecture-graph" style="width: 100%; height: 800px; border: 1px solid #ddd; border-radius: 8px;"></div>
+    </div>
+
+    <div class="bg-white rounded-lg shadow-md p-6">
+        <h2 class="text-xl font-semibold text-gray-800 mb-4">Légende</h2>
+        <ul class="list-disc list-inside space-y-2 text-gray-700">
+            <li><strong>Couleur:</strong> Catégorie (domain, app, interface, data_access, infrastructure)</li>
+            <li><strong>Groupe:</strong> Module / Namespace / Communauté Louvain</li>
+            <li><strong>Taille:</strong> Complexité / Centralité</li>
+        </ul>
+    </div>
+    {% else %}
+    <div class="bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700 p-4" role="alert">
+        <p class="font-bold">Architecture analysis not available</p>
+        <p>Ensure predictions are available and the graph is built.</p>
+    </div>
+    {% endif %}
+</div>
+
+<script src="https://d3js.org/d3.v7.min.js"></script>
+<script>
+{% if currentView.Graph and currentView.Architecture %}
+const graphData = {
+    nodes: [
+        {% for nodeId, node in currentView.Graph.Nodes %}
+        {% set nodeCategory = "unknown" %}
+        {% for pred in projectAggregated.Predictions %}
+        {% if pred.Class == nodeId and pred.Predictions|length > 0 %}
+        {% set nodeCategory = pred.Predictions.0.Label|getRoleCategory %}
+        {% endif %}
+        {% endfor %}
+        {% set nodeCommunity = "unknown" %}
+        {% if currentView.Community and currentView.Community.NodeToCommunity %}
+        {% for commNodeId, commId in currentView.Community.NodeToCommunity %}
+        {% if commNodeId == nodeId %}
+        {% set nodeCommunity = commId %}
+        {% endif %}
+        {% endfor %}
+        {% endif %}
+        {% set nodeComplexity = 0 %}
+        {% if node.Complexity %}
+        {% set nodeComplexity = node.Complexity %}
+        {% endif %}
+        {% set nodeCentrality = 0 %}
+        {% if node.Centrality %}
+        {% set nodeCentrality = node.Centrality %}
+        {% endif %}
+        {
+            id: "{{ nodeId|escapejs }}",
+            name: "{{ nodeId|escapejs }}",
+            category: "{{ nodeCategory|escapejs }}",
+            community: "{{ nodeCommunity|escapejs }}",
+            complexity: {{ nodeComplexity }},
+            centrality: {{ nodeCentrality }}
+        }{% if not forloop.last %},{% endif %}
+        {% endfor %}
+    ],
+    links: [
+        {% for nodeId, node in currentView.Graph.Nodes %}
+        {% for edge in node.Edges %}
+        { source: "{{ nodeId|escapejs }}", target: "{{ edge|escapejs }}" }{% if not forloop.last or not forloop.parent.last %},{% endif %}
+        {% endfor %}
+        {% endfor %}
+    ]
+};
+
+const svg = d3.select("#architecture-graph")
+    .append("svg")
+    .attr("width", "100%")
+    .attr("height", "100%");
+
+const width = document.getElementById("architecture-graph").clientWidth;
+const height = 800;
+
+const simulation = d3.forceSimulation(graphData.nodes)
+    .force("link", d3.forceLink(graphData.links).id(d => d.id).distance(100))
+    .force("charge", d3.forceManyBody().strength(-300))
+    .force("center", d3.forceCenter(width / 2, height / 2))
+    .force("collision", d3.forceCollide().radius(d => Math.sqrt((d.complexity || 10) + (d.centrality || 0) * 10) + 5));
+
+const colorScale = d3.scaleOrdinal()
+    .domain(["domain", "app", "interface", "data_access", "infrastructure", "core", "unknown"])
+    .range(["#3498db", "#2ecc71", "#e74c3c", "#f39c12", "#9b59b6", "#95a5a6", "#7f8c8d"]);
+
+const link = svg.append("g")
+    .selectAll("line")
+    .data(graphData.links)
+    .enter().append("line")
+    .attr("class", "link")
+    .attr("stroke", "#999")
+    .attr("stroke-opacity", 0.6)
+    .attr("stroke-width", 1.5);
+
+const node = svg.append("g")
+    .selectAll("circle")
+    .data(graphData.nodes)
+    .enter().append("circle")
+    .attr("class", "node")
+    .attr("r", d => Math.sqrt((d.complexity || 10) + (d.centrality || 0) * 10) + 3)
+    .attr("fill", d => colorScale(d.category))
+    .attr("stroke", "#fff")
+    .attr("stroke-width", 2)
+    .call(d3.drag()
+        .on("start", dragstarted)
+        .on("drag", dragged)
+        .on("end", dragended));
+
+const label = svg.append("g")
+    .selectAll("text")
+    .data(graphData.nodes)
+    .enter().append("text")
+    .text(d => d.name.split(".").pop() || d.name.split("\\").pop() || d.name)
+    .attr("font-size", "10px")
+    .attr("dx", 12)
+    .attr("dy", 4);
+
+node.append("title")
+    .text(d => d.name + "\nComplexity: " + (d.complexity || 0).toFixed(2));
+
+simulation.on("tick", () => {
+    link
+        .attr("x1", d => d.source.x)
+        .attr("y1", d => d.source.y)
+        .attr("x2", d => d.target.x)
+        .attr("y2", d => d.target.y);
+    
+    node
+        .attr("cx", d => d.x)
+        .attr("cy", d => d.y);
+    
+    label
+        .attr("x", d => d.x)
+        .attr("y", d => d.y);
+});
+
+function dragstarted(event, d) {
+    if (!event.active) simulation.alphaTarget(0.3).restart();
+    d.fx = d.x;
+    d.fy = d.y;
+}
+
+function dragged(event, d) {
+    d.fx = event.x;
+    d.fy = event.y;
+}
+
+function dragended(event, d) {
+    if (!event.active) simulation.alphaTarget(0);
+    d.fx = null;
+    d.fy = null;
+}
+{% endif %}
+</script>
+{% endblock %}
+
+

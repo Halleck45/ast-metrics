@@ -88,6 +88,7 @@ type Aggregated struct {
 	Graph                                   *pb.Graph
 	Community                               *CommunityMetrics
 	Suggestions                             []Suggestion
+	Architecture                            *ArchitectureMetrics
 }
 
 type ProjectComparaison struct {

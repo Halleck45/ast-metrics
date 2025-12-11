@@ -215,14 +215,6 @@ func (p *Predictor) rowToFeatures(row []string, model *RandomForestModel) ([]flo
 		}
 	}
 
-	// Debug: log first prediction for comparison with Python
-	if len(allFeatures) > 0 {
-		log.Debugf("Generated %d features (expected: %d)", len(allFeatures), model.Meta.NFeatures)
-		log.Debugf("First 30 features: %v", allFeatures[:min(30, len(allFeatures))])
-		log.Debugf("namespace_raw='%s' -> encoded=%v", namespaceRaw, allFeatures[0])
-		log.Debugf("class_name='%s', prog_lang='%s'", className, progLang)
-	}
-
 	return allFeatures, nil
 }
 
