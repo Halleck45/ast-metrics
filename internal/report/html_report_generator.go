@@ -201,6 +201,9 @@ func (v *HtmlReportGenerator) Generate(files []*pb.File, projectAggregated analy
 	for _, file := range []string{
 		"help-community.png",
 		"logo-ast-metrics-small.png",
+		"icon-ai.webp",
+		"icon-classifier.webp",
+		"icon-fingerprint.webp",
 	} {
 		// read the file
 		htmlContent, err := htmlContent.ReadFile(fmt.Sprintf("templates/html/images/%s", file))
@@ -893,6 +896,19 @@ func (v *HtmlReportGenerator) RegisterFilters() {
 			}
 		}
 		return pongo2.AsValue(nil), nil
+	})
+
+	// filter countFamilyItems: counts total items in a family data map
+	pongo2.RegisterFilter("countFamilyItems", func(in *pongo2.Value, param *pongo2.Value) (out *pongo2.Value, err *pongo2.Error) {
+		familyData, ok := in.Interface().(map[string][]classifier.ClassPrediction)
+		if !ok {
+			return pongo2.AsValue(0), nil
+		}
+		count := 0
+		for _, items := range familyData {
+			count += len(items)
+		}
+		return pongo2.AsValue(count), nil
 	})
 
 	// filter convertOneFileToCollection

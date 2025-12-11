@@ -2,86 +2,44 @@
 
 {% block content %}
 <style>
-    .hero-section {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        border-radius: 16px;
-        padding: 3rem 2rem;
-        margin-bottom: 3rem;
-        color: white;
-        text-align: center;
-    }
-
-    .hero-title {
-        font-size: 2.5rem;
-        font-weight: 700;
-        margin: 0 0 1rem 0;
-        line-height: 1.2;
-    }
-
-    .hero-subtitle {
-        font-size: 1.125rem;
-        opacity: 0.95;
-        line-height: 1.6;
-        max-width: 700px;
-        margin: 0 auto;
-    }
-
-    .how-it-works {
+    .dashboard-card {
         background: white;
         border: 1px solid #e2e8f0;
-        border-radius: 12px;
-        padding: 2rem;
-        margin-bottom: 3rem;
+        border-radius: 16px;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        position: relative;
+        overflow: hidden;
     }
 
-    .how-it-works-title {
-        font-size: 1.5rem;
-        font-weight: 700;
-        color: #0f172a;
-        margin: 0 0 2rem 0;
-        text-align: center;
+    .dashboard-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        border-color: #cbd5e1;
     }
 
-    .steps-container {
-        display: grid;
-        grid-template-columns: repeat(3, 1fr);
-        gap: 2rem;
+    .dashboard-card::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 4px;
+        background: linear-gradient(90deg, #3b82f6, #8b5cf6);
+        opacity: 0;
+        transition: opacity 0.3s ease;
     }
 
-    .step-item {
-        text-align: center;
+    .dashboard-card:hover::before {
+        opacity: 1;
     }
 
-    .step-number {
-        width: 48px;
-        height: 48px;
-        border-radius: 50%;
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        color: white;
-        font-size: 1.25rem;
-        font-weight: 700;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        margin: 0 auto 1rem;
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(10px); }
+        to { opacity: 1; transform: translateY(0); }
     }
 
-    .step-title {
-        font-size: 1rem;
-        font-weight: 600;
-        color: #0f172a;
-        margin: 0 0 0.5rem 0;
-    }
-
-    .step-description {
-        font-size: 0.875rem;
-        color: #64748b;
-        line-height: 1.5;
-        margin: 0;
-    }
-
-    .architecture-overview {
-        margin-bottom: 3rem;
+    .animate-fade-in-up {
+        animation: fadeIn 0.5s ease-out backwards;
     }
 
     .architecture-overview-title {
@@ -504,36 +462,32 @@
     {# Calculate total components for percentage calculation #}
     {% set totalComponents = projectAggregated.Predictions|length %}
 
-    {# Hero Section #}
-    <div class="hero-section">
-        <h1 class="hero-title">AI-powered Architecture Recognition</h1>
-        <p class="hero-subtitle">
-            Automatically detects the role of every component in your codebase from its structural fingerprint.
-        </p>
-    </div>
 
     {# How it works Section #}
-    <div class="how-it-works">
-        <h2 class="how-it-works-title">How it works</h2>
-        <div class="steps-container">
-            <div class="step-item">
-                <div class="step-number">1</div>
-                <h3 class="step-title">Structural Fingerprint Extraction</h3>
-                <p class="step-description">
+    
+<div class="dashboard-card p-6 mb-8 mt-8 animate-fade-in-up">
+    <h2 class="leading-none text-2xl font-bold text-gray-900 pb-2 mb-3">AI-powered Architecture Recognition - Help</h2>
+    <p class="text-sm text-gray-600">Automatically detects the role of every component in your codebase from its structural fingerprint.</p>
+            
+        <div class="grid grid-cols-3 gap-6 py-8">
+            <div class="text-center">
+                <img src="images/icon-fingerprint.webp" class="size-24 mx-auto mb-4" alt="Fingerprint Icon" />
+                <h3 class="text-lg font-semibold">1.  Structural Fingerprint Extraction</h3>
+                <p class="text-gray-600">
                     We convert each component into a language-agnostic AST + metrics signature.
                 </p>
             </div>
-            <div class="step-item">
-                <div class="step-number">2</div>
-                <h3 class="step-title">Embedding + Custom AI Model</h3>
-                <p class="step-description">
+            <div class="text-center">
+                <img src="images/icon-ai.webp" class="size-24 mx-auto mb-4" alt="Embedding Icon" />
+                <h3 class="text-lg font-semibold">2. Embedding + Custom AI Model</h3>
+                <p class="text-gray-600">
                     A specialized classifier maps the fingerprint to an architectural role.
                 </p>
             </div>
-            <div class="step-item">
-                <div class="step-number">3</div>
-                <h3 class="step-title">Layer & Role Assignment</h3>
-                <p class="step-description">
+            <div class="text-center">
+                <img src="images/icon-classifier.webp" class="size-24 mx-auto mb-4" alt="Layer & Role Icon" />
+                <h3 class="text-lg font-semibold">3. Layer & Role Assignment</h3>
+                <p class="text-gray-600">
                     Each component is grouped into familiar architecture layers and categories.
                 </p>
             </div>
@@ -546,11 +500,8 @@
         <div class="family-cards-grid">
             {% for family in families %}
             {% set familyData = groupedByFamily|getMapValue:family.Key %}
-            {% if familyData %}
-            {% set familyCount = 0 %}
-            {% for label, items in familyData %}
-            {% set familyCount = familyCount + items|length %}
-            {% endfor %}
+            {% if familyData and familyData|length > 0 %}
+            {% set familyCount = familyData|countFamilyItems %}
             {% if familyCount > 0 %}
             {% set familyPercentage = (familyCount * 100.0) / totalComponents %}
             {% set circumference = 87.96 %}
@@ -571,60 +522,25 @@
                         <div class="donut-percentage">{{ familyPercentage|stringformat:"%.0f" }}%</div>
                     </div>
                 </div>
+                {% if familyData|length > 0 %}
                 <div class="family-top-labels">
                     <p class="top-labels-title">Top roles</p>
                     <div class="top-labels-list">
-                        {% set max1 = 0 %}
-                        {% set max2 = 0 %}
-                        {% set max3 = 0 %}
-                        {% set label1 = "" %}
-                        {% set label2 = "" %}
-                        {% set label3 = "" %}
+                        {% set labelIndex = 0 %}
                         {% for label, items in familyData %}
-                        {% set count = items|length %}
-                        {% if count > max1 %}
-                        {% set max3 = max2 %}
-                        {% set max2 = max1 %}
-                        {% set max1 = count %}
-                        {% set label3 = label2 %}
-                        {% set label2 = label1 %}
-                        {% set label1 = label %}
-                        {% elif count > max2 %}
-                        {% set max3 = max2 %}
-                        {% set max2 = count %}
-                        {% set label3 = label2 %}
-                        {% set label2 = label %}
-                        {% elif count > max3 %}
-                        {% set max3 = count %}
-                        {% set label3 = label %}
+                        {% if labelIndex < 3 %}
+                        {% set labelParts = label|split:":" %}
+                        {% set shortLabel = labelParts|last %}
+                        <div class="top-label-tag">
+                            <span class="top-label-name">{{ shortLabel }}</span>
+                            <span class="top-label-count">({{ items|length }})</span>
+                        </div>
+                        {% set labelIndex = labelIndex + 1 %}
                         {% endif %}
                         {% endfor %}
-                        {% if max1 > 0 %}
-                        {% set labelParts1 = label1|split:":" %}
-                        {% set shortLabel1 = labelParts1|last %}
-                        <div class="top-label-tag">
-                            <span class="top-label-name">{{ shortLabel1 }}</span>
-                            <span class="top-label-count">({{ max1 }})</span>
-                        </div>
-                        {% endif %}
-                        {% if max2 > 0 %}
-                        {% set labelParts2 = label2|split:":" %}
-                        {% set shortLabel2 = labelParts2|last %}
-                        <div class="top-label-tag">
-                            <span class="top-label-name">{{ shortLabel2 }}</span>
-                            <span class="top-label-count">({{ max2 }})</span>
-                        </div>
-                        {% endif %}
-                        {% if max3 > 0 %}
-                        {% set labelParts3 = label3|split:":" %}
-                        {% set shortLabel3 = labelParts3|last %}
-                        <div class="top-label-tag">
-                            <span class="top-label-name">{{ shortLabel3 }}</span>
-                            <span class="top-label-count">({{ max3 }})</span>
-                        </div>
-                        {% endif %}
                     </div>
                 </div>
+                {% endif %}
             </div>
             {% endif %}
             {% endif %}
