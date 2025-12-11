@@ -2,6 +2,7 @@ package report
 
 import (
 	"embed"
+	"encoding/json"
 	"fmt"
 	"hash/fnv"
 	"os"
@@ -909,6 +910,75 @@ func (v *HtmlReportGenerator) RegisterFilters() {
 			count += len(items)
 		}
 		return pongo2.AsValue(count), nil
+	})
+
+	// filter getArchitectureDiagramData: returns JSON data for architecture diagram
+	pongo2.RegisterFilter("getArchitectureDiagramData", func(in *pongo2.Value, param *pongo2.Value) (out *pongo2.Value, err *pongo2.Error) {
+		grouped, ok := in.Interface().(classifier.FamilyGroupedPredictions)
+		if !ok {
+			return pongo2.AsValue("{}"), nil
+		}
+
+		// Build diagram data structure
+		type CategoryData struct {
+			Label       string `json:"label"`
+			ShortName   string `json:"shortName"`
+			Count       int    `json:"count"`
+			Family      string `json:"family"`
+			Description string `json:"description"`
+		}
+
+		type LayerData struct {
+			Family      string         `json:"family"`
+			Description string         `json:"description"`
+			Categories  []CategoryData `json:"categories"`
+		}
+
+		layers := make([]LayerData, 0)
+		families := classifier.ClassificationFamilies
+
+		for _, family := range families {
+			familyData, exists := grouped[family.Key]
+			if !exists || len(familyData) == 0 {
+				continue
+			}
+
+			categories := make([]CategoryData, 0)
+			for label, items := range familyData {
+				parts := strings.Split(label, ":")
+				shortName := label
+				// If we have at least 2 parts, use the last 2 (subcategory + name)
+				// Example: "component:messaging:handler" -> "messaging handler"
+				if len(parts) >= 2 {
+					shortName = parts[len(parts)-2] + " " + parts[len(parts)-1]
+				} else if len(parts) == 1 {
+					shortName = parts[0]
+				}
+				description := classifier.GetDescription(label)
+				categories = append(categories, CategoryData{
+					Label:       label,
+					ShortName:   shortName,
+					Count:       len(items),
+					Family:      family.Key,
+					Description: description,
+				})
+			}
+
+			if len(categories) > 0 {
+				layers = append(layers, LayerData{
+					Family:      family.Key,
+					Description: family.Description,
+					Categories:  categories,
+				})
+			}
+		}
+
+		jsonData, jsonErr := json.Marshal(layers)
+		if jsonErr != nil {
+			return pongo2.AsValue("{}"), nil
+		}
+
+		return pongo2.AsValue(string(jsonData)), nil
 	})
 
 	// filter convertOneFileToCollection
