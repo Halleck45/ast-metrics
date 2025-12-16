@@ -8,7 +8,7 @@ COUNT="20000"
 
 # Flags to skip certain steps
 SKIP_DATASET_GEN=true
-SKIP_LABELIZE=FALSE
+SKIP_LABELIZE=true
 
 # Parse arguments
 for i in "$@"; do
