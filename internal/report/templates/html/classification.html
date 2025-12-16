@@ -541,21 +541,21 @@
         <div class="architecture-diagram-container" id="mainArchitectureDiagram">
             <div class="controls-container">
                 <div class="heatmap-controls">
-                    <label class="heatmap-option" title="Default view">
-                        <input type="radio" name="heatmapMode" value="default" onchange="updateHeatmap(this.value)">
-                        Default
+                    <label class="radio-label">
+                        <input type="radio" name="heatmapMode" value="default" checked onclick="updateHeatmap('default')">
+                        <span>Default</span>
                     </label>
-                    <label class="heatmap-option" title="Cyclomatic Complexity">
-                        <input type="radio" name="heatmapMode" value="complexity" checked onchange="updateHeatmap(this.value)">
-                        Complexity
+                    <label class="radio-label">
+                        <input type="radio" name="heatmapMode" value="complexity" onclick="updateHeatmap('complexity')">
+                        <span>Complexity</span>
                     </label>
-                    <label class="heatmap-option" title="Maintainability Index">
-                        <input type="radio" name="heatmapMode" value="maintainability" onchange="updateHeatmap(this.value)">
-                        Maintainability
+                    <label class="radio-label">
+                        <input type="radio" name="heatmapMode" value="loc" onclick="updateHeatmap('loc')">
+                        <span>Lines of Code</span>
                     </label>
-                    <label class="heatmap-option" title="Lines of Code">
-                        <input type="radio" name="heatmapMode" value="dominance" onchange="updateHeatmap(this.value)">
-                        Dominance
+                    <label class="radio-label">
+                        <input type="radio" name="heatmapMode" value="commits" onclick="updateHeatmap('commits')">
+                        <span>Commits</span>
                     </label>
                 </div>
                 <label class="arrow-toggle">
@@ -899,8 +899,8 @@
                     {% for c in f.Stmts.StmtClass %}
                     {
                         "complexity": {{ c.Stmts.Analyze.Complexity.Cyclomatic|default:0 }},
-                        "mi": {{ c.Stmts.Analyze.Maintainability.MaintainabilityIndex|default:0 }},
-                        "loc": {{ c.Stmts.Analyze.Volume.Loc|default:0 }}
+                        "loc": {{ c.Stmts.Analyze.Volume.Loc|default:0 }},
+                        "commits": {{ f.Commits.Count|default:0 }}
                     },
                     {% endfor %}
                 {% endif %}
@@ -1331,29 +1331,39 @@
             if (r.value === mode) r.checked = true;
         });
         
-        // Calculate min/max for the current mode to ensure relative coloring
+        // Calculate min/max for the current mode across ALL classes to ensure global consistency
         let minVal = Infinity;
         let maxVal = -Infinity;
+        let allValues = [];
         
-        const labels = Object.keys(categoryMetrics);
-        labels.forEach(label => {
-            const m = categoryMetrics[label];
-            let val = 0;
-            if (mode === 'complexity') val = m.avgComplexity;
-            else if (mode === 'maintainability') val = m.avgMI;
-            else if (mode === 'dominance') val = m.totalLOC;
+        if (mode !== 'default') {
+            filesData.forEach(f => {
+                if (f.classes) {
+                    f.classes.forEach(c => {
+                        let val = 0;
+                        if (mode === 'complexity') val = c.complexity || 0;
+                        else if (mode === 'loc') val = c.loc || 0;
+                        else if (mode === 'commits') val = c.commits || 0;
+                        
+                        if (val < minVal) minVal = val;
+                        if (val > maxVal) maxVal = val;
+                        allValues.push(val);
+                    });
+                }
+            });
             
-            if (val < minVal) minVal = val;
-            if (val > maxVal) maxVal = val;
-        });
-        
-        // Avoid division by zero
-        if (minVal === Infinity) minVal = 0;
-        if (maxVal === -Infinity || maxVal === minVal) maxVal = minVal + 1;
+            // Handle edge case where all values are the same or empty
+            if (minVal === Infinity) minVal = 0;
+            if (maxVal === -Infinity) maxVal = 0;
+            if (minVal === maxVal) maxVal = minVal + 1;
+            
+            console.log(`Heatmap Mode: ${mode}, Min: ${minVal}, Max: ${maxVal}`);
+        }
 
         d3.selectAll('.category-group').each(function() {
             const group = d3.select(this);
             const label = group.attr('data-label');
+            
             // Select the inner HTML card div
             const cardDiv = group.select('.category-card-html');
             
@@ -1383,13 +1393,6 @@
             const paths = categoryFiles[label] || [];
             const classes = [];
             
-            // Debug matching for the first category only to avoid spam
-            const debugMatching = label === Object.keys(categoryFiles)[0];
-            if (debugMatching) {
-                console.log(`Debugging matching for category: ${label}`);
-                console.log(`Paths in category:`, paths);
-            }
-            
             paths.forEach(path => {
                 // Find file data
                 // Try exact match first
@@ -1400,10 +1403,6 @@
                     file = filesData.find(f => f.path.endsWith(path) || path.endsWith(f.path));
                 }
                 
-                if (debugMatching && !file) {
-                    console.warn(`Could not find file data for path: ${path}`);
-                }
-                
                 if (file && file.classes) {
                     file.classes.forEach(c => {
                         classes.push(c);
@@ -1411,20 +1410,17 @@
                 }
             });
             
-            // Sort classes by metric descending to show hotspots first?
-            // Or keep them random? Sorting helps see the "worst" offenders.
+            // Sort classes by metric descending to show hotspots first
             classes.sort((a, b) => {
                 let valA = 0, valB = 0;
                 if (mode === 'complexity') { valA = a.complexity; valB = b.complexity; }
-                else if (mode === 'maintainability') { valA = a.mi; valB = b.mi; } // Low MI is bad, so sort ascending?
-                else if (mode === 'dominance') { valA = a.loc; valB = b.loc; }
+                else if (mode === 'loc') { valA = a.loc; valB = b.loc; }
+                else if (mode === 'commits') { valA = a.commits; valB = b.commits; }
                 
-                if (mode === 'maintainability') return valA - valB; // Ascending (worst first)
-                return valB - valA; // Descending (worst first)
+                return valB - valA; // Descending (worst/highest first)
             });
             
-            // Limit number of squares to avoid performance issues/overflow?
-            // Max 100 squares?
+            // Limit number of squares
             const maxSquares = 150;
             const displayClasses = classes.slice(0, maxSquares);
             
@@ -1434,32 +1430,31 @@
                 
                 if (mode === 'complexity') {
                     val = c.complexity || 0;
-                    // Green -> Yellow -> Red
-                    // Ensure even low values are visible
-                    if (val < 10) {
-                        color = d3.interpolateRgb("#86efac", "#facc15")(val / 10); // Green-300 to Yellow-400
-                    } else {
-                        color = d3.interpolateRgb("#facc15", "#ef4444")(Math.min((val - 10) / 20, 1)); // Yellow to Red
-                    }
-                } else if (mode === 'maintainability') {
-                    val = c.mi || 0;
-                    // Red -> Yellow -> Green
-                    if (val < 65) {
-                        color = d3.interpolateRgb("#ef4444", "#facc15")(val / 65);
-                    } else {
-                        color = d3.interpolateRgb("#facc15", "#4ade80")((val - 65) / 35);
-                    }
-                } else if (mode === 'dominance') {
+                } else if (mode === 'loc') {
                     val = c.loc || 0;
-                    // Light Blue -> Dark Blue
-                    // Avoid white
-                    color = d3.interpolateRgb("#bfdbfe", "#1e40af")(Math.min(val / 200, 1));
+                } else if (mode === 'commits') {
+                    val = c.commits || 0;
+                }
+                
+                // Normalize value 0-1 based on global min/max
+                const t = (val - minVal) / (maxVal - minVal);
+                
+                if (mode === 'complexity') {
+                    // Green -> Yellow -> Red
+                    // Use d3.interpolateRgbBasis for multi-stop gradient
+                    color = d3.interpolateRgbBasis(["#86efac", "#facc15", "#ef4444"])(t);
+                } else if (mode === 'loc') {
+                    // White -> Blue
+                    color = d3.interpolateRgb("#eff6ff", "#3b82f6")(t);
+                } else if (mode === 'commits') {
+                    // White -> Purple (Hot/Activity)
+                    color = d3.interpolateRgb("#f3e8ff", "#a855f7")(t);
                 }
                 
                 heatmapContainer.append('div')
                     .attr('class', 'heatmap-square')
                     .style('background-color', color)
-                    .attr('title', `Complexity: ${c.complexity}, MI: ${c.mi}, LOC: ${c.loc}`);
+                    .attr('title', `Complexity: ${c.complexity}, LOC: ${c.loc}, Commits: ${c.commits}`);
             });
             
             if (classes.length > maxSquares) {
