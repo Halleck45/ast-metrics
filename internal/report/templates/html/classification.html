@@ -112,14 +112,127 @@
     
     .architecture-diagram-container.isometric {
         overflow: visible; /* Allow 3D elements to extend */
-        height: 800px; /* Fixed height for 3D view to establish perspective frame */
+        height: 1200px; /* Increased height for 3D view to prevent overlap */
+        cursor: grab;
+    }
+
+    .architecture-diagram-container.isometric:active {
+        cursor: grabbing;
     }
     
     .architecture-diagram-container.isometric svg {
-        transform: rotateX(55deg) rotateZ(-45deg) scale(0.8) translateX(50px);
+        transform: rotateX(30deg) rotateZ(-20deg) scale(0.9) translateX(50px);
         transform-style: preserve-3d;
-        transition: transform 0.8s cubic-bezier(0.2, 0, 0, 1);
+        transition: transform 0.1s linear; /* Faster transition for dragging */
         overflow: visible; /* Allow 3D elements to extend */
+        pointer-events: none; /* Let clicks pass through to rects, but we need to handle drag on container */
+    }
+    
+    /* Re-enable pointer events for interactive elements */
+    .architecture-diagram-container.isometric .category-group {
+        pointer-events: auto;
+        transition: all 0.3s ease;
+    }
+
+    .architecture-diagram-container.isometric .category-rect {
+        filter: drop-shadow(10px 10px 20px rgba(0,0,0,0.15));
+        transition: all 0.3s ease;
+    }
+    
+    .architecture-diagram-container.isometric .category-group:hover {
+        transform: translateZ(20px);
+    }
+    
+    .architecture-diagram-container.isometric .category-group:hover .category-card-html {
+        border-color: #3b82f6;
+        box-shadow: 0 20px 25px -5px rgba(59, 130, 246, 0.3), 0 8px 10px -6px rgba(59, 130, 246, 0.1);
+    }
+
+    /* New Card Styles */
+    .category-card-html {
+        width: 100%;
+        height: 100%;
+        background: #ffffff;
+        border: 1px solid #e2e8f0;
+        border-radius: 12px;
+        padding: 12px;
+        box-sizing: border-box;
+        display: flex;
+        flex-direction: column;
+        transition: all 0.3s ease;
+        overflow: hidden;
+        font-family: 'Inter', sans-serif;
+        /* Shadow for 2D mode */
+        box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px -1px rgba(0, 0, 0, 0.1);
+    }
+    
+    .category-group:hover .category-card-html {
+        border-color: #3b82f6;
+        box-shadow: 0 4px 6px -1px rgba(59, 130, 246, 0.1), 0 2px 4px -2px rgba(59, 130, 246, 0.1);
+    }
+
+    .card-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        margin-bottom: 8px;
+    }
+
+    .card-title {
+        font-weight: 700;
+        font-size: 13px;
+        color: #1e293b;
+        line-height: 1.4;
+        margin-right: 8px;
+        word-break: break-word;
+    }
+
+    .card-count {
+        font-size: 10px;
+        color: #64748b;
+        background: #f1f5f9;
+        padding: 2px 6px;
+        border-radius: 10px;
+        white-space: nowrap;
+        font-weight: 600;
+        flex-shrink: 0;
+    }
+
+    .card-desc {
+        font-size: 11px;
+        color: #64748b;
+        line-height: 1.5;
+        display: -webkit-box;
+        -webkit-line-clamp: 4; /* Limit to 4 lines */
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .controls-container {
+        position: absolute;
+        top: 20px;
+        right: 20px;
+        z-index: 10;
+        display: flex;
+        gap: 10px;
+        align-items: center;
+        background: rgba(255, 255, 255, 0.8);
+        padding: 8px;
+        border-radius: 12px;
+        backdrop-filter: blur(4px);
+        border: 1px solid var(--border-color);
+    }
+
+    .arrow-toggle {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 14px;
+        color: var(--text-secondary);
+        cursor: pointer;
+        margin-right: 10px;
+        user-select: none;
     }
 
     .architecture-diagram-container.isometric .category-rect {
@@ -376,6 +489,10 @@
         <h2 class="hero-title" style="font-size: 1.75rem; margin-bottom: 1.5rem;">System Map</h2>
         <div class="architecture-diagram-container" id="mainArchitectureDiagram">
             <div class="controls-container">
+                <label class="arrow-toggle">
+                    <input type="checkbox" id="showArrows" onchange="toggleArrows()">
+                    Show all arrows
+                </label>
                 <button class="control-btn active" onclick="setMode('flat')">2D Flat</button>
                 <button class="control-btn" onclick="setMode('isometric')">3D Isometric</button>
             </div>
@@ -504,25 +621,141 @@
         }
     }
 
+    let currentMode = 'flat';
+    let panX = 0;
+    let panY = 0;
+    let currentScale = 0.9;
+    let isDragging = false;
+    let startX, startY;
+
     function setMode(mode) {
+        currentMode = mode;
         const container = document.getElementById('mainArchitectureDiagram');
         const btns = document.querySelectorAll('.control-btn');
+        const svg = document.getElementById('mainDiagramSvg');
         
         btns.forEach(btn => btn.classList.remove('active'));
         
         if (mode === 'isometric') {
             container.classList.add('isometric');
-            container.style.height = '800px'; // Reset to fixed height for 3D
-            btns[1].classList.add('active');
+            container.style.height = '1200px'; // Reset to fixed height for 3D
+            btns[1].classList.add('active'); // Index 1 is 3D Isometric button
+            
+            // Reset pan and scale
+            panX = 0;
+            panY = 0;
+            currentScale = 0.9;
+            updateTransform();
+            
+            // Enable drag and zoom
+            container.addEventListener('mousedown', startDrag);
+            container.addEventListener('wheel', handleZoom, { passive: false });
+            window.addEventListener('mousemove', drag);
+            window.addEventListener('mouseup', endDrag);
+            
+            // Hide details section
+            const detailsSection = document.querySelector('.details-section');
+            if (detailsSection) detailsSection.style.display = 'none';
         } else {
             container.classList.remove('isometric');
             // Recalculate height for 2D
-            const svg = document.getElementById('mainDiagramSvg');
             if (svg) {
                 container.style.height = svg.getAttribute('height') + 'px';
             }
-            btns[0].classList.add('active');
+            btns[0].classList.add('active'); // Index 0 is 2D Flat button
+            
+            // Disable drag and zoom
+            container.removeEventListener('mousedown', startDrag);
+            container.removeEventListener('wheel', handleZoom);
+            window.removeEventListener('mousemove', drag);
+            window.removeEventListener('mouseup', endDrag);
+            
+            // Reset transform
+            svg.style.transform = '';
+            
+            // Show details section
+            const detailsSection = document.querySelector('.details-section');
+            if (detailsSection) detailsSection.style.display = 'block';
         }
+    }
+
+    function handleZoom(e) {
+        if (currentMode !== 'isometric') return;
+        e.preventDefault();
+        
+        const delta = -Math.sign(e.deltaY) * 0.1;
+        const newScale = Math.min(Math.max(0.5, currentScale + delta), 2.0);
+        
+        if (newScale !== currentScale) {
+            currentScale = newScale;
+            updateTransform();
+        }
+    }
+
+    function startDrag(e) {
+        if (currentMode !== 'isometric') return;
+        if (e.target.closest('.controls-container')) return; // Don't drag when clicking controls
+        
+        isDragging = true;
+        startX = e.clientX - panX;
+        startY = e.clientY - panY;
+        
+        const container = document.getElementById('mainArchitectureDiagram');
+        container.style.cursor = 'grabbing';
+    }
+
+    function drag(e) {
+        if (!isDragging) return;
+        e.preventDefault();
+        
+        panX = e.clientX - startX;
+        panY = e.clientY - startY;
+        
+        updateTransform();
+    }
+
+    function endDrag() {
+        isDragging = false;
+        const container = document.getElementById('mainArchitectureDiagram');
+        if (container) container.style.cursor = 'grab';
+    }
+
+    function updateTransform() {
+        const svg = document.getElementById('mainDiagramSvg');
+        if (!svg) return;
+        
+        // Base transform for isometric
+        // rotateX(30deg) rotateZ(-20deg) scale(currentScale) translateX(50px)
+        // We add panX and panY.
+        
+        svg.style.transform = `rotateX(30deg) rotateZ(-20deg) scale(${currentScale}) translateX(50px) translate3d(${panX}px, ${panY}px, 0)`;
+    }
+
+    function toggleArrows() {
+        const showAll = document.getElementById('showArrows').checked;
+        const arrows = document.querySelectorAll('.dependency-arrow');
+        
+        arrows.forEach(arrow => {
+            if (showAll) {
+                arrow.style.opacity = arrow.dataset.baseOpacity || 0.5;
+                arrow.style.display = 'block';
+            } else {
+                arrow.style.opacity = 0;
+                // We keep display block so hover still works if we hover the path? 
+                // But if opacity is 0, it might be hard to hover.
+                // The user wants "hover only".
+                // D3 hover logic handles opacity change on mouseover.
+                // But if it's 0, mouseover might not trigger if pointer-events is none?
+                // Let's set opacity 0 but keep pointer events?
+                // Actually, if opacity is 0, we want it hidden.
+                // But we want it to appear when we hover the *category*.
+                // The current D3 logic only highlights the arrow when hovering the *arrow*.
+                // We need to update D3 to highlight arrows when hovering categories.
+            }
+        });
+        
+        // Update global state for D3 rendering/interactions
+        window.showAllArrows = showAll;
     }
 
     function scrollToCategory(familyKey, categoryLabel) {
@@ -752,74 +985,79 @@
                 const categoryY = layerY + 60;
                 const categoryHeight = layerHeight - 100;
                 
-                // Category rectangle (clickable)
-                const catRect = d3.select(svg).append("rect")
-                    .attr("class", "category-rect")
-                    .attr("x", categoryX)
-                    .attr("y", categoryY)
-                    .attr("width", categoryWidth)
-                    .attr("height", categoryHeight)
-                    .attr("fill", "#f1f3f4")
-                    .attr("stroke", "transparent")
-                    .attr("stroke-width", 1)
-                    .attr("rx", 8)
+                // Create a group for the category
+                const categoryGroup = d3.select(svg).append("g")
+                    .attr("class", "category-group")
                     .style("cursor", "pointer")
                     .on("click", function() {
-                        scrollToCategory(layer.family, category.label);
+                        if (currentMode === 'isometric') {
+                            // In 3D mode, maybe switch back to flat to show details?
+                            // Or just scroll if we decide to keep details visible but hidden.
+                            // User asked to hide details.
+                            // Let's switch to flat mode then scroll?
+                            setMode('flat');
+                            setTimeout(() => {
+                                scrollToCategory(layer.family, category.label);
+                            }, 100);
+                        } else {
+                            scrollToCategory(layer.family, category.label);
+                        }
                     })
                     .on("mouseover", function() {
-                        d3.select(this)
-                            .attr("fill", "#ffffff")
-                            .attr("stroke", "#3b82f6")
-                            .attr("stroke-width", 2)
-                            .attr("filter", "drop-shadow(0 4px 6px rgba(59, 130, 246, 0.15))");
+                        // Highlight connected arrows
+                        const label = category.label;
+                        d3.selectAll('.dependency-arrow')
+                            .filter(function() {
+                                return d3.select(this).attr('data-from') === label || d3.select(this).attr('data-to') === label;
+                            })
+                            .style("opacity", 1)
+                            .style("display", "block")
+                            .attr("stroke", "#0b57d0")
+                            .attr("stroke-width", 3);
                     })
                     .on("mouseout", function() {
-                        d3.select(this)
-                            .attr("fill", "#f8fafc")
-                            .attr("stroke", "#e2e8f0")
-                            .attr("stroke-width", 1)
-                            .attr("filter", "drop-shadow(0 1px 2px rgba(0,0,0,0.05))");
+                        // Reset connected arrows
+                        const showAll = document.getElementById('showArrows').checked;
+                        const label = category.label;
+                        d3.selectAll('.dependency-arrow')
+                            .filter(function() {
+                                return d3.select(this).attr('data-from') === label || d3.select(this).attr('data-to') === label;
+                            })
+                            .style("opacity", function() {
+                                return showAll ? (d3.select(this).attr('data-base-opacity') || 0.5) : 0;
+                            })
+                            .style("display", showAll ? "block" : "none")
+                            .attr("stroke", "#c4c7c5")
+                            .attr("stroke-width", function() {
+                                return 2; 
+                            });
                     });
-                
-                // Category name (truncate if too long, but try to keep it readable)
-                const maxLength = 25;
-                let displayName = category.shortName;
-                if (displayName.length > maxLength) {
-                    displayName = displayName.substring(0, maxLength - 3) + '...';
-                }
-                d3.select(svg).append("text")
-                    .attr("class", "category-text")
-                    .attr("x", categoryX + categoryWidth / 2)
-                    .attr("y", categoryY + 20)
-                    .attr("text-anchor", "middle")
-                    .attr("font-size", "12px")
-                    .attr("font-weight", "600")
-                    .attr("pointer-events", "none")
-                    .text(displayName);
-                
-                // Category count
-                d3.select(svg).append("text")
-                    .attr("class", "category-count")
-                    .attr("x", categoryX + categoryWidth / 2)
-                    .attr("y", categoryY + 35)
-                    .attr("text-anchor", "middle")
-                    .attr("font-size", "10px")
-                    .attr("fill", "#64748b")
-                    .attr("pointer-events", "none")
-                    .text(`(${category.count})`);
-                
-                // Category description (small, wrapped)
+
+                // Use foreignObject for HTML content (better text wrapping and styling)
+                const fo = categoryGroup.append("foreignObject")
+                    .attr("width", categoryWidth)
+                    .attr("height", categoryHeight)
+                    .attr("x", categoryX)
+                    .attr("y", categoryY);
+
+                const cardDiv = fo.append("xhtml:div")
+                    .attr("class", "category-card-html");
+
+                const header = cardDiv.append("div")
+                    .attr("class", "card-header");
+
+                header.append("div")
+                    .attr("class", "card-title")
+                    .text(category.shortName);
+
+                header.append("div")
+                    .attr("class", "card-count")
+                    .text(category.count);
+
                 if (category.description) {
-                    const descText = category.description.length > 40 ? category.description.substring(0, 37) + '...' : category.description;
-                    d3.select(svg).append("text")
-                        .attr("x", categoryX + categoryWidth / 2)
-                        .attr("y", categoryY + 50)
-                        .attr("text-anchor", "middle")
-                        .attr("font-size", "9px")
-                        .attr("fill", "#94a3b8")
-                        .attr("pointer-events", "none")
-                        .text(descText);
+                    cardDiv.append("div")
+                        .attr("class", "card-desc")
+                        .text(category.description);
                 }
                 
                 // Store position for dependency arrows
@@ -882,25 +1120,35 @@
                 
                 d3.select(svg).append("path")
                     .attr("class", "dependency-arrow")
+                    .attr("data-from", dep.fromCategory)
+                    .attr("data-to", dep.toCategory)
                     .attr("d", path.toString())
                     .attr("stroke", "#c4c7c5")
                     .attr("stroke-width", Math.min(2, 1 + dep.count / 5))
                     .attr("fill", "none")
                     .attr("marker-end", "url(#arrowhead)")
                     .attr("opacity", 0.5 + Math.min(0.3, dep.count / 20))
+                    .style("display", "none") // Hidden by default
+                    .attr("data-base-opacity", 0.5 + Math.min(0.3, dep.count / 20))
                     .on("mouseover", function() {
                         d3.select(this)
                             .attr("stroke", "#0b57d0")
                             .attr("stroke-width", Math.min(3, 2 + dep.count / 5))
-                            .attr("opacity", 1);
+                            .style("opacity", 1)
+                            .style("display", "block");
                     })
                     .on("mouseout", function() {
+                        const showAll = document.getElementById('showArrows').checked;
                         d3.select(this)
                             .attr("stroke", "#c4c7c5")
                             .attr("stroke-width", Math.min(3, 1 + dep.count / 5))
-                            .attr("opacity", 0.5 + Math.min(0.3, dep.count / 20));
+                            .style("opacity", showAll ? (0.5 + Math.min(0.3, dep.count / 20)) : 0)
+                            .style("display", showAll ? "block" : "none");
                     });
             });
+            
+            // Initial check
+            toggleArrows();
         }
     }
 </script>
