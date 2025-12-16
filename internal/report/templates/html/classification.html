@@ -3,15 +3,15 @@
 {% block content %}
 <style>
     :root {
-        --bg-color: #ffffff;
-        --text-primary: #1f1f1f;
-        --text-secondary: #444746;
-        --border-color: #e3e3e3;
-        --accent-color: #0b57d0; /* Google Blue */
+        --bg-color: #f0f4f8; /* Softer, cooler gray */
+        --text-primary: #1e293b; /* Slate 800 */
+        --text-secondary: #64748b; /* Slate 500 */
+        --border-color: #e2e8f0; /* Slate 200 */
+        --accent-color: #3b82f6; /* Blue 500 */
         --card-bg: #ffffff;
-        --card-hover-shadow: 0 4px 8px 3px rgba(0, 0, 0, 0.15), 0 1px 3px rgba(0, 0, 0, 0.3);
-        --card-shadow: 0 1px 2px 0 rgba(60, 64, 67, 0.3), 0 1px 3px 1px rgba(60, 64, 67, 0.15);
-        --font-family: 'Google Sans', 'Roboto', Arial, sans-serif;
+        --card-hover-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+        --card-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        --font-family: 'Inter', 'Google Sans', 'Roboto', sans-serif; /* Prefer Inter if available */
     }
 
     body {
@@ -102,9 +102,73 @@
         background: white;
         border: 1px solid var(--border-color);
         border-radius: 24px;
-        overflow: hidden;
-        height: 700px;
+        /* overflow: hidden; Removed to allow 3D elements to extend if needed, or handle via specific mode */
+        overflow: hidden; /* Keep hidden for rounded corners in 2D, override in 3D */
+        min-height: 700px;
+        height: auto; /* Allow growth */
         position: relative;
+        perspective: 1000px; /* Enable 3D perspective */
+    }
+    
+    .architecture-diagram-container.isometric {
+        overflow: visible; /* Allow 3D elements to extend */
+        height: 800px; /* Fixed height for 3D view to establish perspective frame */
+    }
+    
+    .architecture-diagram-container.isometric svg {
+        transform: rotateX(55deg) rotateZ(-45deg) scale(0.8) translateX(50px);
+        transform-style: preserve-3d;
+        transition: transform 0.8s cubic-bezier(0.2, 0, 0, 1);
+        overflow: visible; /* Allow 3D elements to extend */
+    }
+
+    .architecture-diagram-container.isometric .category-rect {
+        filter: drop-shadow(10px 10px 20px rgba(0,0,0,0.15));
+        transition: all 0.3s ease;
+    }
+    
+    .architecture-diagram-container.isometric .category-rect:hover {
+        transform: translateZ(20px);
+        filter: drop-shadow(20px 20px 30px rgba(59, 130, 246, 0.3));
+    }
+
+    .architecture-diagram-container.isometric .layer-rect {
+        fill-opacity: 0.9;
+        backdrop-filter: blur(4px);
+    }
+
+    .controls-container {
+        position: absolute;
+        top: 20px;
+        right: 20px;
+        z-index: 10;
+        display: flex;
+        gap: 10px;
+    }
+
+    .control-btn {
+        background: white;
+        border: 1px solid var(--border-color);
+        border-radius: 8px;
+        padding: 8px 12px;
+        cursor: pointer;
+        font-size: 14px;
+        font-weight: 500;
+        color: var(--text-secondary);
+        transition: all 0.2s;
+        box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+    }
+
+    .control-btn:hover {
+        background: #f8fafc;
+        color: var(--accent-color);
+        border-color: var(--accent-color);
+    }
+
+    .control-btn.active {
+        background: var(--accent-color);
+        color: white;
+        border-color: var(--accent-color);
     }
 
     .layer-rect {
@@ -115,16 +179,19 @@
     }
 
     .category-rect {
-        fill: #f1f3f4; /* Google Grey 100 */
-        stroke: transparent;
+        fill: #f8fafc; /* Slate 50 */
+        stroke: #e2e8f0;
         rx: 8;
         transition: all 0.2s ease;
         cursor: pointer;
+        filter: drop-shadow(0 1px 2px rgba(0,0,0,0.05));
     }
 
     .category-rect:hover {
-        fill: #e8eaed; /* Google Grey 200 */
-        stroke: #dadce0;
+        fill: #ffffff;
+        stroke: var(--accent-color);
+        stroke-width: 2;
+        filter: drop-shadow(0 4px 6px rgba(59, 130, 246, 0.15));
     }
 
     .category-text {
@@ -308,10 +375,14 @@
     <div class="mb-5">
         <h2 class="hero-title" style="font-size: 1.75rem; margin-bottom: 1.5rem;">System Map</h2>
         <div class="architecture-diagram-container" id="mainArchitectureDiagram">
+            <div class="controls-container">
+                <button class="control-btn active" onclick="setMode('flat')">2D Flat</button>
+                <button class="control-btn" onclick="setMode('isometric')">3D Isometric</button>
+            </div>
             <svg id="mainDiagramSvg" width="100%" height="100%">
                 <defs>
                     <marker id="arrowhead" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto">
-                        <polygon points="0 0, 10 3, 0 6" fill="#c4c7c5" />
+                        <polygon points="0 0, 10 3, 0 6" fill="#94a3b8" />
                     </marker>
                 </defs>
             </svg>
@@ -356,7 +427,7 @@
         {% endif %}
 
         <div class="label-section">
-            <div class="category-header" onclick="toggleCategory(this)">
+            <div class="category-header" onclick="toggleCategory(this)" data-label="{{ label }}">
                 <div style="flex: 1;">
                     <h3 class="category-title">
                         <span>
@@ -377,7 +448,7 @@
                 </div>
             </div>
 
-            <div class="category-content">
+            <div class="category-content" style="display: none;">
                 {% for item in items %}
                 <div class="component-item">
                     <div class="component-header">
@@ -420,30 +491,83 @@
     function toggleCategory(header) {
         const content = header.nextElementSibling;
         const icon = header.querySelector('.expand-icon');
-        const isExpanded = content.classList.contains('expanded');
+        const isExpanded = content.style.display === 'block';
 
         if (isExpanded) {
-            content.classList.remove('expanded');
-            icon.classList.remove('expanded');
+            content.style.display = 'none';
+            icon.style.transform = 'rotate(0deg)';
             header.classList.remove('expanded');
         } else {
-            content.classList.add('expanded');
-            icon.classList.add('expanded');
+            content.style.display = 'block';
+            icon.style.transform = 'rotate(180deg)';
             header.classList.add('expanded');
         }
     }
 
-    function scrollToFamily(familyKey) {
-        const element = document.getElementById('family-details-' + familyKey);
-        if (element) {
-            element.scrollIntoView({ behavior: 'smooth', block: 'start' });
-            // Add a highlight effect
-            element.style.transition = 'box-shadow 0.5s ease';
-            element.style.boxShadow = '0 0 0 4px rgba(11, 87, 208, 0.2)';
-            setTimeout(() => {
-                element.style.boxShadow = '';
-            }, 2000);
+    function setMode(mode) {
+        const container = document.getElementById('mainArchitectureDiagram');
+        const btns = document.querySelectorAll('.control-btn');
+        
+        btns.forEach(btn => btn.classList.remove('active'));
+        
+        if (mode === 'isometric') {
+            container.classList.add('isometric');
+            container.style.height = '800px'; // Reset to fixed height for 3D
+            btns[1].classList.add('active');
+        } else {
+            container.classList.remove('isometric');
+            // Recalculate height for 2D
+            const svg = document.getElementById('mainDiagramSvg');
+            if (svg) {
+                container.style.height = svg.getAttribute('height') + 'px';
+            }
+            btns[0].classList.add('active');
         }
+    }
+
+    function scrollToCategory(familyKey, categoryLabel) {
+        // 1. Scroll to family
+        const familyElement = document.getElementById('family-details-' + familyKey);
+        if (!familyElement) return;
+        
+        familyElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        
+        // 2. Find category header
+        // We need to find the header that corresponds to this label. 
+        // The label in the diagram is "Category:Subcategory:Label" or similar.
+        // The DOM structure has headers with onclick="toggleCategory(this)".
+        // We can try to match the text content or add data attributes.
+        // Let's assume we can find it by text content for now, or better, let's add IDs to category headers in the loop above.
+        
+        // Wait for scroll to finish slightly
+        setTimeout(() => {
+            // Find all headers in this family
+            const headers = familyElement.querySelectorAll('.category-header');
+            for (const header of headers) {
+                const title = header.querySelector('.category-title').textContent.trim();
+                // Simple fuzzy match or check if title contains parts of the label
+                // Ideally we should have put data-label on the header.
+                // Let's assume the user will click and we can match roughly.
+                // For now, let's just highlight the family as a fallback if we can't find the exact category easily without modifying the template loop to add IDs.
+                // Actually, I can modify the template loop in a separate edit if needed, but let's try to match the text.
+                
+                // Better approach: Just expand all in the family? No, that's too much.
+                // Let's just highlight the family for now, as adding IDs requires re-rendering the template part which I didn't touch yet.
+                // Wait, I can modify the template loop in this same tool call? Yes.
+                
+                // Let's assume I will add data-label to the category header in a separate chunk or this one.
+                // I'll add data-label in the HTML loop.
+                if (header.dataset.label === categoryLabel) {
+                     if (header.nextElementSibling.style.display !== 'block') {
+                        toggleCategory(header);
+                    }
+                    header.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    header.style.background = '#e0f2fe'; // Light blue highlight
+                    setTimeout(() => { header.style.background = ''; }, 2000);
+                    break;
+                }
+            }
+        }, 500);
     }
 
     // Store architecture data globally
@@ -478,12 +602,20 @@
         
         const container = document.getElementById('mainArchitectureDiagram');
         const width = container.clientWidth || 1000;
-        const height = container.clientHeight || 700;
+        
+        // Calculate dynamic height based on content
+        const layerHeight = 220; // Fixed height per layer for consistency
+        const totalHeight = Math.max(700, architectureData.length * layerHeight + 100);
         
         // Clear previous content
         d3.select(svg).selectAll("*").remove();
         svg.setAttribute('width', width);
-        svg.setAttribute('height', height);
+        svg.setAttribute('height', totalHeight);
+        
+        // Update container height to match SVG in 2D mode
+        if (!container.classList.contains('isometric')) {
+            container.style.height = totalHeight + 'px';
+        }
         
         // Add defs for arrow markers
         const defs = d3.select(svg).append("defs");
@@ -512,8 +644,9 @@
         const categoryPositions = new Map();
         
         // Configuration
-        const layerHeight = Math.max(140, height / architectureData.length);
+        // const layerHeight = Math.max(140, height / architectureData.length); // Removed dynamic shrinking
         const padding = 40;
+
         const categorySpacing = 10;
         const minCategoryWidth = 140;
         const maxCategoryWidth = 220;
@@ -632,13 +765,21 @@
                     .attr("rx", 8)
                     .style("cursor", "pointer")
                     .on("click", function() {
-                        scrollToFamily(layer.family);
+                        scrollToCategory(layer.family, category.label);
                     })
                     .on("mouseover", function() {
-                        d3.select(this).attr("fill", "#e8eaed").attr("stroke", "#dadce0");
+                        d3.select(this)
+                            .attr("fill", "#ffffff")
+                            .attr("stroke", "#3b82f6")
+                            .attr("stroke-width", 2)
+                            .attr("filter", "drop-shadow(0 4px 6px rgba(59, 130, 246, 0.15))");
                     })
                     .on("mouseout", function() {
-                        d3.select(this).attr("fill", "#f1f3f4").attr("stroke", "transparent");
+                        d3.select(this)
+                            .attr("fill", "#f8fafc")
+                            .attr("stroke", "#e2e8f0")
+                            .attr("stroke-width", 1)
+                            .attr("filter", "drop-shadow(0 1px 2px rgba(0,0,0,0.05))");
                     });
                 
                 // Category name (truncate if too long, but try to keep it readable)
@@ -703,9 +844,16 @@
                 }
                 
                 // Only draw arrows between different layers
-                if (fromPos.layerIndex === toPos.layerIndex) {
-                    return;
-                }
+                // if (fromPos.layerIndex === toPos.layerIndex) {
+                //     return;
+                // }
+                // Allow same-layer arrows if they are far enough apart?
+                // For now, let's keep it simple and allow all valid arrows, but curve them nicely.
+                
+                // Check if we are pointing to/from Core
+                // If the user said "arrows under Core family but don't know where", it implies they are going off-screen or to missing nodes.
+                // We already check `if (!fromPos || !toPos) return;` so missing nodes are handled.
+                // The issue might be that `toPos` is correct but the arrow is drawn weirdly.
                 
                 // Calculate arrow path
                 const dx = toPos.x - fromPos.x;
@@ -754,167 +902,6 @@
                     });
             });
         }
-    }
-
-    function renderArchitectureDiagram(familyKey) {
-        const svg = document.getElementById('diagramSvg');
-        if (!svg || typeof d3 === 'undefined') {
-            console.warn('D3.js not available');
-            return;
-        }
-        
-        const container = document.getElementById('architectureDiagram');
-        const width = container.clientWidth || 1000;
-        const height = container.clientHeight || 600;
-        
-        // Clear previous content
-        d3.select(svg).selectAll("*").remove();
-        svg.setAttribute('width', width);
-        svg.setAttribute('height', height);
-        
-        // Add defs for arrow markers
-        const defs = d3.select(svg).append("defs");
-        defs.append("marker")
-            .attr("id", "arrowhead")
-            .attr("markerWidth", 10)
-            .attr("markerHeight", 10)
-            .attr("refX", 9)
-            .attr("refY", 3)
-            .attr("orient", "auto")
-            .append("polygon")
-            .attr("points", "0 0, 10 3, 0 6")
-            .attr("fill", "#94a3b8");
-        
-        if (!architectureData || architectureData.length === 0) {
-            d3.select(svg).append("text")
-                .attr("x", width / 2)
-                .attr("y", height / 2)
-                .attr("text-anchor", "middle")
-                .attr("fill", "#64748b")
-                .text("No architecture data available");
-            return;
-        }
-        
-        // Configuration
-        const layerHeight = Math.max(120, height / architectureData.length);
-        const padding = 40;
-        const categorySpacing = 10;
-        const minCategoryWidth = 120;
-        const maxCategoryWidth = 200;
-        const leftLabelWidth = 150;
-        
-        // Color palette for families
-        const familyColors = {
-            'interface': '#3b82f6',
-            'application': '#8b5cf6',
-            'domain': '#10b981',
-            'infrastructure': '#f59e0b',
-            'core': '#ef4444',
-            'utility': '#06b6d4',
-            'development': '#64748b'
-        };
-        
-        // Store category positions for dependency arrows
-        const categoryPositions = new Map();
-        
-        // Draw layers
-        architectureData.forEach((layer, layerIndex) => {
-            const layerY = layerIndex * layerHeight;
-            const layerColor = familyColors[layer.family] || '#94a3b8';
-            
-            // Draw layer background
-            d3.select(svg).append("rect")
-                .attr("class", "layer-rect")
-                .attr("x", leftLabelWidth + padding)
-                .attr("y", layerY + padding / 2)
-                .attr("width", width - leftLabelWidth - 2 * padding)
-                .attr("height", layerHeight - padding)
-                .attr("fill", "white")
-                .attr("stroke", "#e3e3e3")
-                .attr("stroke-width", 1)
-                .attr("rx", 12);
-            
-            // Layer label on the left
-            d3.select(svg).append("text")
-                .attr("x", padding)
-                .attr("y", layerY + layerHeight / 2)
-                .attr("font-size", "14px")
-                .attr("font-weight", "700")
-                .attr("fill", layerColor)
-                .attr("text-anchor", "start")
-                .attr("dominant-baseline", "middle")
-                .text(layer.family.charAt(0).toUpperCase() + layer.family.slice(1));
-            
-            // Calculate category positions
-            const totalCount = layer.categories.reduce((sum, cat) => sum + cat.count, 0);
-            let currentX = leftLabelWidth + padding + 20;
-            const availableWidth = width - leftLabelWidth - 2 * padding - 40;
-            const totalCategoryWidth = layer.categories.length * minCategoryWidth + (layer.categories.length - 1) * categorySpacing;
-            const scaleFactor = totalCategoryWidth > availableWidth ? availableWidth / totalCategoryWidth : 1;
-            
-            layer.categories.forEach((category, catIndex) => {
-                const categoryWidth = Math.max(
-                    minCategoryWidth * scaleFactor,
-                    Math.min(maxCategoryWidth * scaleFactor, (category.count / totalCount) * availableWidth * 0.8)
-                );
-                
-                const categoryX = currentX;
-                const categoryY = layerY + 50;
-                const categoryHeight = layerHeight - 80;
-                
-                // Category rectangle
-                d3.select(svg).append("rect")
-                    .attr("class", "category-rect")
-                    .attr("x", categoryX)
-                    .attr("y", categoryY)
-                    .attr("width", categoryWidth)
-                    .attr("height", categoryHeight)
-                    .attr("fill", "#f1f3f4")
-                    .attr("stroke", "transparent")
-                    .attr("stroke-width", 1)
-                    .attr("rx", 8)
-                    .on("mouseover", function() {
-                        d3.select(this).attr("fill", "#e8eaed").attr("stroke", "#dadce0");
-                    })
-                    .on("mouseout", function() {
-                        d3.select(this).attr("fill", "#f1f3f4").attr("stroke", "transparent");
-                    });
-                
-                // Category name (truncate if too long)
-                const shortName = category.shortName.length > 15 ? category.shortName.substring(0, 12) + '...' : category.shortName;
-                d3.select(svg).append("text")
-                    .attr("class", "category-text")
-                    .attr("x", categoryX + categoryWidth / 2)
-                    .attr("y", categoryY + 20)
-                    .attr("text-anchor", "middle")
-                    .attr("font-size", "11px")
-                    .attr("font-weight", "600")
-                    .text(shortName);
-                
-                // Category count
-                d3.select(svg).append("text")
-                    .attr("class", "category-count")
-                    .attr("x", categoryX + categoryWidth / 2)
-                    .attr("y", categoryY + 35)
-                    .attr("text-anchor", "middle")
-                    .attr("font-size", "10px")
-                    .text(`(${category.count})`);
-                
-                // Store position for dependency arrows
-                categoryPositions.set(category.label, {
-                    x: categoryX + categoryWidth / 2,
-                    y: categoryY + categoryHeight / 2,
-                    layerIndex: layerIndex,
-                    family: layer.family
-                });
-                
-                currentX += categoryWidth + categorySpacing;
-            });
-        });
-        
-        // TODO: Draw dependency arrows between categories
-        // This requires analyzing class dependencies and mapping them to category dependencies
-        // Will be implemented in next step
     }
 </script>
 
