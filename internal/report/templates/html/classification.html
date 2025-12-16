@@ -152,18 +152,29 @@
     .category-card-html {
         width: 100%;
         height: 100%;
-        background: #ffffff;
+        background: white;
         border: 1px solid #e2e8f0;
-        border-radius: 12px;
-        padding: 12px;
-        box-sizing: border-box;
+        border-radius: 6px;
+        box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+        padding: 8px;
         display: flex;
         flex-direction: column;
-        transition: all 0.3s ease;
         overflow: hidden;
+        transition: all 0.3s ease;
         font-family: 'Inter', sans-serif;
-        /* Shadow for 2D mode */
-        box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px -1px rgba(0, 0, 0, 0.1);
+    }
+    
+    .narrow-card .card-title {
+        writing-mode: vertical-rl;
+        text-orientation: mixed;
+        transform: rotate(180deg);
+        white-space: nowrap;
+        margin: 0 auto;
+        text-align: center;
+    }
+    
+    .narrow-card .card-count {
+        display: none; /* Hide count on very narrow cards to save space */
     }
     
     .category-group:hover .category-card-html {
@@ -894,12 +905,16 @@
         {% for f in files %}
         {
             "path": "{{ f.Path|escapejs }}",
+            "filename": "{{ f.Path|split:'/'|last|escapejs }}",
             "classes": [
                 {% if f.Stmts and f.Stmts.StmtClass %}
                     {% for c in f.Stmts.StmtClass %}
                     {
                         "complexity": {{ c.Stmts.Analyze.Complexity.Cyclomatic|default:0 }},
                         "loc": {{ c.Stmts.Analyze.Volume.Loc|default:0 }},
+                        "loc_alt": {% if c.LinesOfCode %}{{ c.LinesOfCode.LinesOfCode|default:0 }}{% else %}0{% endif %},
+                        "lloc": {% if c.LinesOfCode %}{{ c.LinesOfCode.LogicalLinesOfCode|default:0 }}{% else %}0{% endif %},
+                        "name": "{% if c.Name %}{{ c.Name.Qualified|escapejs }}{% else %}Unknown{% endif %}",
                         "commits": {{ f.Commits.Count|default:0 }}
                     },
                     {% endfor %}
@@ -917,7 +932,7 @@
             {% for label, items in categories %}
                 "{{ label }}": [
                     {% for item in items %}
-                        "{{ item.Source|escapejs }}",
+                        "{{ item.File|escapejs }}",
                     {% endfor %}
                 ],
             {% endfor %}
@@ -1209,6 +1224,10 @@
 
                 const cardDiv = fo.append("xhtml:div")
                     .attr("class", "category-card-html");
+                
+                if (categoryWidth < 60) {
+                    cardDiv.classed("narrow-card", true);
+                }
 
                 const header = cardDiv.append("div")
                     .attr("class", "card-header");
@@ -1323,6 +1342,9 @@
     }
     
     function updateHeatmap(mode) {
+        console.log('updateHeatmap called with mode:', mode);
+        console.log('filesData length:', filesData.length);
+        
         currentHeatmapMode = mode;
         
         // Update radio buttons
@@ -1332,32 +1354,37 @@
         });
         
         // Calculate min/max for the current mode across ALL classes to ensure global consistency
-        let minVal = Infinity;
-        let maxVal = -Infinity;
-        let allValues = [];
+        let minVal = 0; // Default to 0, will be updated
+        let maxVal = 0; // Default to 0, will be updated
         
         if (mode !== 'default') {
+            // Collect all values to determine P95 (95th percentile) to ignore outliers
+            let allValues = [];
             filesData.forEach(f => {
                 if (f.classes) {
                     f.classes.forEach(c => {
                         let val = 0;
                         if (mode === 'complexity') val = c.complexity || 0;
-                        else if (mode === 'loc') val = c.loc || 0;
-                        else if (mode === 'commits') val = c.commits || 0;
-                        
-                        if (val < minVal) minVal = val;
-                        if (val > maxVal) maxVal = val;
-                        allValues.push(val);
+                    else if (mode === 'loc') val = c.loc || c.loc_alt || 0;
+                    else if (mode === 'commits') val = c.commits || 0;
+                    allValues.push(val);
                     });
                 }
             });
             
-            // Handle edge case where all values are the same or empty
-            if (minVal === Infinity) minVal = 0;
-            if (maxVal === -Infinity) maxVal = 0;
-            if (minVal === maxVal) maxVal = minVal + 1;
+            allValues.sort((a, b) => a - b);
+            minVal = allValues.length > 0 ? allValues[0] : 0;
             
-            console.log(`Heatmap Mode: ${mode}, Min: ${minVal}, Max: ${maxVal}`);
+            // Use P95 as max to avoid outliers squashing the scale
+            let p95Index = Math.floor(allValues.length * 0.95);
+            // Ensure we have at least some data
+            if (p95Index >= allValues.length) p95Index = allValues.length - 1;
+            maxVal = allValues.length > 0 ? allValues[p95Index] : 0;
+            
+            // Ensure maxVal > minVal to avoid division by zero
+            if (maxVal <= minVal) maxVal = minVal + 1;
+            
+            console.log(`Heatmap Mode: ${mode}, Min: ${minVal}, Max (P95): ${maxVal}`);
         }
 
         d3.selectAll('.category-group').each(function() {
@@ -1389,18 +1416,43 @@
             
             heatmapContainer.style('display', 'flex');
             
+            // Debug matching for the first category only to avoid spam
+            const debugMatching = label === Object.keys(categoryFiles)[0];
+            
             // Get all classes for this category
             const paths = categoryFiles[label] || [];
             const classes = [];
             
+            if (debugMatching) {
+                console.log(`Category: ${label}, Paths: ${paths.length}`);
+            }
+
             paths.forEach(path => {
-                // Find file data
-                // Try exact match first
-                let file = filesData.find(f => f.path === path);
+            if (!path || path.trim() === '') return; // Skip empty paths
+
+            // Try to find the file in filesData
+            // 1. Exact match
+            let file = filesData.find(f => f.path === path);
+            
+            // 2. Fuzzy match (suffix) - only if path is long enough to be unique
+            if (!file && path.length > 3) {
+                file = filesData.find(f => f.path.endsWith(path) || (f.path.length > 3 && path.endsWith(f.path)));
+            }
+            
+            // 3. Filename match (fallback)
+            if (!file && path.length > 0) {
+                const filename = path.split('/').pop();
+                if (filename && filename.length > 3) {
+                     file = filesData.find(f => f.filename === filename);
+                }
+            }
                 
-                // If not found, try matching by suffix (basename)
-                if (!file) {
-                    file = filesData.find(f => f.path.endsWith(path) || path.endsWith(f.path));
+                if (debugMatching) {
+                     if (file) {
+                         // console.log(`  Found file for ${path}: ${file.path}`);
+                     } else {
+                         // console.warn(`  [No Match] Could not find file for path: "${path}"`);
+                     }
                 }
                 
                 if (file && file.classes) {
@@ -1427,28 +1479,45 @@
             displayClasses.forEach(c => {
                 let val = 0;
                 let color = '#ccc';
-                
                 if (mode === 'complexity') {
                     val = c.complexity || 0;
                 } else if (mode === 'loc') {
-                    val = c.loc || 0;
+                    val = c.loc || c.loc_alt || 0;
                 } else if (mode === 'commits') {
                     val = c.commits || 0;
                 }
                 
-                // Normalize value 0-1 based on global min/max
-                const t = (val - minVal) / (maxVal - minVal);
+                // Clamp value to P95 max
+                let displayVal = val;
+                if (displayVal > maxVal) displayVal = maxVal;
+
+                // Use Log scale for better distribution of code metrics (Power Law)
+                // Add 1 to avoid log(0)
+                const logVal = Math.log(displayVal + 1);
+                const logMin = Math.log(minVal + 1);
+                const logMax = Math.log(maxVal + 1);
+                
+                let t = 0;
+                if (logMax > logMin) {
+                    t = (logVal - logMin) / (logMax - logMin);
+                }
+
+                console.log(`Val: ${val}, DisplayVal: ${displayVal}, LogVal: ${logVal.toFixed(2)}, t: ${t.toFixed(2)}, Name: ${c.name}, LOC: ${c.loc}, LOC_Alt: ${c.loc_alt}, LLOC: ${c.lloc}`);
                 
                 if (mode === 'complexity') {
-                    // Green -> Yellow -> Red
-                    // Use d3.interpolateRgbBasis for multi-stop gradient
-                    color = d3.interpolateRgbBasis(["#86efac", "#facc15", "#ef4444"])(t);
+                    // White -> Dark Red
+                    color = d3.interpolateRgb("#ffffff", "#7f1d1d")(t); 
                 } else if (mode === 'loc') {
-                    // White -> Blue
-                    color = d3.interpolateRgb("#eff6ff", "#3b82f6")(t);
+                    // White -> Dark Blue
+                    color = d3.interpolateRgb("#ffffff", "#1e3a8a")(t); 
                 } else if (mode === 'commits') {
-                    // White -> Purple (Hot/Activity)
-                    color = d3.interpolateRgb("#f3e8ff", "#a855f7")(t);
+                    // White -> Dark Purple
+                    color = d3.interpolateRgb("#ffffff", "#581c87")(t); 
+                }
+                
+                // Debug first few items to check distribution
+                if (displayClasses.indexOf(c) < 3 && debugMatching) {
+                    console.log(`Mode: ${mode}, Val: ${val}, LogVal: ${logVal.toFixed(2)}, t: ${t.toFixed(2)}, Color: ${color}`);
                 }
                 
                 heatmapContainer.append('div')
