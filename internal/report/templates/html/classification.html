@@ -250,19 +250,59 @@
     }
 
     .controls-container {
-        position: absolute;
-        top: 20px;
-        right: 20px;
-        z-index: 100;
-        display: flex;
-        gap: 10px;
-        align-items: center;
-        background: rgba(255, 255, 255, 0.9);
-        padding: 8px 12px;
-        border-radius: 8px;
-        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1);
-        backdrop-filter: blur(4px);
-    }
+    position: sticky;
+    top: 20px;
+    z-index: 1000;
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(8px);
+    padding: 12px 20px;
+    border-radius: 12px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+    display: flex;
+    gap: 20px;
+    align-items: center;
+    max-width: fit-content;
+    margin: 0 auto 40px auto; /* Center and add space below */
+    border: 1px solid rgba(255, 255, 255, 0.5);
+}
+
+.family-container {
+    position: relative;
+    border: 2px solid; /* Color set inline */
+    border-radius: 16px;
+    padding: 20px;
+    margin-bottom: 40px;
+    background: rgba(255, 255, 255, 0.5);
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.family-header {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.family-title {
+    font-family: 'Google Sans Display', sans-serif;
+    font-size: 1.5rem;
+    font-weight: 500;
+    margin: 0;
+}
+
+.family-description {
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+    margin: 0;
+    max-width: 800px;
+}
+
+.family-content {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 16px;
+}
     
     .heatmap-controls {
         display: flex;
@@ -313,7 +353,6 @@
     }
 
     .controls-container {
-        position: absolute;
         top: 20px;
         right: 20px;
         z-index: 10;
@@ -347,8 +386,6 @@
     }
 
     .layer-rect {
-        fill: #ffffff;
-        stroke: #e3e3e3;
         stroke-width: 1;
         rx: 12;
     }
@@ -553,16 +590,12 @@
             <div class="controls-container">
                 <div class="heatmap-controls">
                     <label class="radio-label">
-                        <input type="radio" name="heatmapMode" value="default" checked onclick="updateHeatmap('default')">
-                        <span>Default</span>
+                        <input type="radio" name="heatmapMode" value="loc" checked onclick="updateHeatmap('loc')">
+                        <span>Lines of Code</span>
                     </label>
-                    <label class="radio-label">
+                     <label class="radio-label">
                         <input type="radio" name="heatmapMode" value="complexity" onclick="updateHeatmap('complexity')">
                         <span>Complexity</span>
-                    </label>
-                    <label class="radio-label">
-                        <input type="radio" name="heatmapMode" value="loc" onclick="updateHeatmap('loc')">
-                        <span>Lines of Code</span>
                     </label>
                     <label class="radio-label">
                         <input type="radio" name="heatmapMode" value="commits" onclick="updateHeatmap('commits')">
@@ -596,15 +629,15 @@
     {% for family in families %}
     {% set familyData = groupedByFamily|getMapValue:family.Key %}
     {% if familyData and familyData|length > 0 %}
-    <div class="family-card" id="family-details-{{ family.Key }}" data-family-key="{{ family.Key }}">
+    
+    <!-- Cloudcraft-style Grouping -->
+    <div class="family-container" style="border-color: {{ family.Color }}40; background: {{ family.Color }}05;">
         <div class="family-header">
-            <h2 class="family-title">
-                <span class="family-icon">📦</span>
-                {{ family.Key|capitalizeFirst }}
-            </h2>
+            <h3 class="family-title" style="color: {{ family.Color }};">{{ family.Key|capitalizeFirst }}</h3>
             <p class="family-description">{{ family.Description }}</p>
         </div>
 
+        <div class="family-content">
         {# Display each label in this family #}
         {% for label, items in familyData %}
         {% set parts = label|split:":" %}
@@ -675,9 +708,10 @@
             </div>
         </div>
         {% endfor %}
+        </div>
     </div>
-        {% endif %}
-        {% endfor %}
+    {% endif %}
+    {% endfor %}
     </div>
 
     {% endif %}
@@ -700,7 +734,8 @@
         }
     }
 
-    let currentMode = 'flat';
+    // Heatmap State
+    let currentMode = 'loc'; // Default to LOC as requested
     let panX = 0;
     let panY = 0;
     let currentScale = 0.9;
@@ -1000,7 +1035,7 @@
     
     calculateMetrics();
 
-    let currentHeatmapMode = 'complexity';
+    let currentHeatmapMode = 'loc';
 
     // Render main architecture diagram on page load
     document.addEventListener('DOMContentLoaded', function() {
@@ -1080,48 +1115,46 @@
         // Draw layers
         architectureData.forEach((layer, layerIndex) => {
             const layerY = layerIndex * layerHeight;
-            const layerColor = familyColors[layer.family] || '#94a3b8';
+            const layerColor = layer.color || familyColors[layer.family] || '#94a3b8';
             
             // Draw layer background
             d3.select(svg).append("rect")
                 .attr("class", "layer-rect")
-                .attr("x", leftLabelWidth + padding)
+                .attr("x", padding)
                 .attr("y", layerY + padding / 2)
-                .attr("width", width - leftLabelWidth - 2 * padding)
+                .attr("width", width - 2 * padding)
                 .attr("height", layerHeight - padding)
-                .attr("fill", "white")
+                .attr("fill", layerColor + "10") // 10% opacity
                 .attr("stroke", layerColor)
-                .attr("stroke-width", 3)
+                .attr("stroke-width", 2)
                 .attr("rx", 8);
             
-            // Layer label on the left
+            // Layer label inside the rect
             d3.select(svg).append("text")
-                .attr("x", padding)
-                .attr("y", layerY + 25)
-                .attr("font-size", "16px")
+                .attr("x", padding + 20)
+                .attr("y", layerY + padding / 2 + 30)
+                .attr("font-size", "18px")
                 .attr("font-weight", "700")
                 .attr("fill", layerColor)
                 .attr("text-anchor", "start")
                 .text(layer.family.charAt(0).toUpperCase() + layer.family.slice(1));
             
-            // Layer description on the left (wrapped to fit width)
+            // Layer description inside the rect
             if (layer.description) {
-                const maxWidth = leftLabelWidth - 20;
+                const maxWidth = 300; // Limit width for description
                 const words = layer.description.split(' ');
                 let line = '';
-                let yOffset = 45;
+                let yOffset = padding / 2 + 50;
                 const lineHeight = 14;
                 const maxLines = 4;
                 
                 words.forEach((word, wordIndex) => {
                     const testLine = line + (line ? ' ' : '') + word;
-                    // Approximate text width (rough estimate: 6px per character for 11px font)
                     const testWidth = testLine.length * 6;
                     
                     if (testWidth > maxWidth && line) {
-                        // Draw current line and start new one
                         d3.select(svg).append("text")
-                            .attr("x", padding)
+                            .attr("x", padding + 20)
                             .attr("y", layerY + yOffset)
                             .attr("font-size", "11px")
                             .attr("fill", "#64748b")
@@ -1129,18 +1162,15 @@
                             .text(line);
                         line = word;
                         yOffset += lineHeight;
-                        if (yOffset > layerY + 45 + (maxLines * lineHeight)) {
-                            return; // Stop if too many lines
-                        }
+                        if (yOffset > padding / 2 + 50 + (maxLines * lineHeight)) return;
                     } else {
                         line = testLine;
                     }
                 });
                 
-                // Draw remaining line
-                if (line && yOffset <= layerY + 45 + (maxLines * lineHeight)) {
+                if (line && yOffset <= padding / 2 + 50 + (maxLines * lineHeight)) {
                     d3.select(svg).append("text")
-                        .attr("x", padding)
+                        .attr("x", padding + 20)
                         .attr("y", layerY + yOffset)
                         .attr("font-size", "11px")
                         .attr("fill", "#64748b")
@@ -1151,8 +1181,9 @@
             
             // Calculate category positions
             const totalCount = layer.categories.reduce((sum, cat) => sum + cat.count, 0);
-            let currentX = leftLabelWidth + padding + 20;
-            const availableWidth = width - leftLabelWidth - 2 * padding - 40;
+            const descriptionWidth = 320;
+            let currentX = padding + descriptionWidth + 20;
+            const availableWidth = width - currentX - padding;
             const totalCategoryWidth = layer.categories.length * minCategoryWidth + (layer.categories.length - 1) * categorySpacing;
             const scaleFactor = totalCategoryWidth > availableWidth ? availableWidth / totalCategoryWidth : 1;
             
@@ -1523,7 +1554,7 @@
                 heatmapContainer.append('div')
                     .attr('class', 'heatmap-square')
                     .style('background-color', color)
-                    .attr('title', `Complexity: ${c.complexity}, LOC: ${c.loc}, Commits: ${c.commits}`);
+                    .attr('title', `Class: ${c.name}\nLOC: ${c.loc || c.loc_alt || 0}\nComplexity: ${c.complexity || 0}\nCommits: ${c.commits || 0}`);
             });
             
             if (classes.length > maxSquares) {

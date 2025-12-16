@@ -941,6 +941,7 @@ func (v *HtmlReportGenerator) RegisterFilters() {
 		type LayerData struct {
 			Family      string         `json:"family"`
 			Description string         `json:"description"`
+			Color       string         `json:"color"`
 			Categories  []CategoryData `json:"categories"`
 		}
 
@@ -978,6 +979,7 @@ func (v *HtmlReportGenerator) RegisterFilters() {
 				layers = append(layers, LayerData{
 					Family:      family.Key,
 					Description: family.Description,
+					Color:       family.Color,
 					Categories:  categories,
 				})
 			}
