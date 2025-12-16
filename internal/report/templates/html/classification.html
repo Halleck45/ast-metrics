@@ -2,605 +2,246 @@
 
 {% block content %}
 <style>
+    :root {
+        --bg-color: #ffffff;
+        --text-primary: #1f1f1f;
+        --text-secondary: #444746;
+        --border-color: #e3e3e3;
+        --accent-color: #0b57d0; /* Google Blue */
+        --card-bg: #ffffff;
+        --card-hover-shadow: 0 4px 8px 3px rgba(0, 0, 0, 0.15), 0 1px 3px rgba(0, 0, 0, 0.3);
+        --card-shadow: 0 1px 2px 0 rgba(60, 64, 67, 0.3), 0 1px 3px 1px rgba(60, 64, 67, 0.15);
+        --font-family: 'Google Sans', 'Roboto', Arial, sans-serif;
+    }
+
+    body {
+        background-color: #f8f9fa;
+        color: var(--text-primary);
+        font-family: var(--font-family);
+    }
+
     .dashboard-card {
-        background: white;
-        border: 1px solid #e2e8f0;
-        border-radius: 16px;
-        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-        position: relative;
-        overflow: hidden;
+        background: var(--card-bg);
+        border: 1px solid var(--border-color);
+        border-radius: 24px;
+        padding: 2rem;
+        margin-bottom: 2rem;
+        transition: box-shadow 0.2s cubic-bezier(0.2, 0, 0, 1);
     }
 
     .dashboard-card:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
-        border-color: #cbd5e1;
+        box-shadow: var(--card-shadow);
+        border-color: transparent;
     }
 
-    .dashboard-card::before {
-        content: '';
-        position: absolute;
-        top: 0;
-        left: 0;
-        right: 0;
-        height: 4px;
-        background: linear-gradient(90deg, #3b82f6, #8b5cf6);
-        opacity: 0;
-        transition: opacity 0.3s ease;
+    .hero-title {
+        font-family: 'Google Sans Display', sans-serif;
+        font-size: 2.25rem;
+        font-weight: 400;
+        color: var(--text-primary);
+        margin-bottom: 1rem;
+        letter-spacing: -0.5px;
     }
 
-    .dashboard-card:hover::before {
+    .hero-subtitle {
+        font-size: 1.125rem;
+        color: var(--text-secondary);
+        max-width: 800px;
+        line-height: 1.6;
+        margin-bottom: 3rem;
+    }
+    /* Modal removed */
+
+
+    .steps-container {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 2rem;
+        position: relative;
+    }
+
+    .step-card {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+        padding: 1.5rem;
+        background: #f8f9fa;
+        border-radius: 16px;
+        height: 100%;
+    }
+
+    .step-icon-wrapper {
+        width: 64px;
+        height: 64px;
+        background: white;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-bottom: 1.5rem;
+        box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+        font-size: 1.5rem;
+    }
+
+    .step-title {
+        font-family: 'Google Sans', sans-serif;
+        font-size: 1.125rem;
+        font-weight: 500;
+        margin-bottom: 0.75rem;
+        color: var(--text-primary);
+    }
+
+    .step-desc {
+        font-size: 0.875rem;
+        color: var(--text-secondary);
+        line-height: 1.5;
+    }
+
+    .architecture-diagram-container {
+        background: white;
+        border: 1px solid var(--border-color);
+        border-radius: 24px;
+        overflow: hidden;
+        height: 700px;
+        position: relative;
+    }
+
+    .layer-rect {
+        fill: #ffffff;
+        stroke: #e3e3e3;
+        stroke-width: 1;
+        rx: 12;
+    }
+
+    .category-rect {
+        fill: #f1f3f4; /* Google Grey 100 */
+        stroke: transparent;
+        rx: 8;
+        transition: all 0.2s ease;
+        cursor: pointer;
+    }
+
+    .category-rect:hover {
+        fill: #e8eaed; /* Google Grey 200 */
+        stroke: #dadce0;
+    }
+
+    .category-text {
+        font-family: 'Google Sans', sans-serif;
+        font-weight: 500;
+        fill: var(--text-primary);
+        font-size: 13px;
+    }
+
+    .category-count {
+        fill: var(--text-secondary);
+        font-size: 11px;
+    }
+
+    .dependency-arrow {
+        stroke: #c4c7c5;
+        stroke-width: 1.5;
+        fill: none;
+        opacity: 0.6;
+        transition: all 0.3s;
+    }
+
+    .dependency-arrow:hover {
+        stroke: var(--accent-color);
+        stroke-width: 2.5;
         opacity: 1;
     }
 
-    @keyframes fadeIn {
-        from { opacity: 0; transform: translateY(10px); }
-        to { opacity: 1; transform: translateY(0); }
-    }
-
-    .animate-fade-in-up {
-        animation: fadeIn 0.5s ease-out backwards;
-    }
-
-    .architecture-overview-title {
-        font-size: 1.5rem;
-        font-weight: 700;
-        color: #0f172a;
-        margin: 0 0 1.5rem 0;
-    }
-
-    .family-cards-grid {
-        display: grid;
-        grid-template-columns: repeat(3, 1fr);
-        gap: 1.5rem;
-        margin-bottom: 3rem;
-    }
-
-    .family-overview-card {
+    /* List Styles */
+    .family-card {
         background: white;
-        border: 1px solid #e2e8f0;
-        border-radius: 12px;
+        border: 1px solid var(--border-color);
+        border-radius: 16px;
+        margin-bottom: 1.5rem;
+        overflow: hidden;
+    }
+
+    .family-header {
         padding: 1.5rem;
-        transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-        cursor: pointer;
+        border-bottom: 1px solid var(--border-color);
+        background: #f8f9fa;
     }
 
-    .family-overview-card:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
-        border-color: #cbd5e1;
-    }
-
-    .family-overview-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: start;
-        margin-bottom: 1rem;
-    }
-
-    .family-overview-info {
-        flex: 1;
-    }
-
-    .family-overview-name {
-        font-size: 1.125rem;
-        font-weight: 700;
-        color: #0f172a;
-        margin: 0 0 0.25rem 0;
-    }
-
-    .family-overview-count {
-        font-size: 0.875rem;
-        color: #64748b;
-        margin: 0;
-    }
-
-    .donut-chart {
-        width: 64px;
-        height: 64px;
-        position: relative;
-        flex-shrink: 0;
-    }
-
-    .donut-svg {
-        width: 100%;
-        height: 100%;
-        transform: rotate(-90deg);
-    }
-
-    .donut-circle-bg {
-        fill: none;
-        stroke: #f1f5f9;
-        stroke-width: 8;
-    }
-
-    .donut-circle-fill {
-        fill: none;
-        stroke: #667eea;
-        stroke-width: 8;
-        stroke-linecap: round;
-        transition: stroke-dashoffset 0.3s ease;
-    }
-
-    .donut-percentage {
-        position: absolute;
-        top: 50%;
-        left: 50%;
-        transform: translate(-50%, -50%);
-        font-size: 0.75rem;
-        font-weight: 600;
-        color: #0f172a;
-    }
-
-    .family-top-labels {
-        margin-top: 1rem;
-        padding-top: 1rem;
-        border-top: 1px solid #f1f5f9;
-    }
-
-    .top-labels-title {
-        font-size: 0.75rem;
-        font-weight: 600;
-        color: #64748b;
-        text-transform: uppercase;
-        letter-spacing: 0.05em;
-        margin: 0 0 0.5rem 0;
-    }
-
-    .top-labels-list {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 0.5rem;
-    }
-
-    .top-label-tag {
-        background: #f8fafc;
-        border: 1px solid #e2e8f0;
-        padding: 0.25rem 0.5rem;
-        border-radius: 0.375rem;
-        font-size: 0.75rem;
-        color: #475569;
-    }
-
-    .top-label-name {
+    .family-title {
+        font-family: 'Google Sans', sans-serif;
+        font-size: 1.25rem;
         font-weight: 500;
-        color: #334155;
-    }
-
-    .top-label-count {
-        color: #64748b;
-        margin-left: 0.25rem;
-    }
-
-    .classification-card {
-        background: white;
-        border: 1px solid #e2e8f0;
-        border-radius: 12px;
-        transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-        margin-bottom: 1rem;
-    }
-
-    .classification-card:hover {
-        transform: translateY(-1px);
-        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
-        border-color: #cbd5e1;
+        color: var(--text-primary);
+        margin: 0;
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
     }
 
     .category-header {
-        padding: 1.25rem 1.5rem;
+        padding: 1rem 1.5rem;
         cursor: pointer;
-        border-bottom: 1px solid #f1f5f9;
-        transition: background-color 0.15s ease;
-    }
-
-    .category-header:hover {
-        background-color: #f8fafc;
-    }
-
-    .category-header.expanded {
-        background-color: #f8fafc;
-    }
-
-    .category-title {
-        font-size: 1rem;
-        font-weight: 600;
-        color: #1e293b;
         display: flex;
         align-items: center;
         justify-content: space-between;
-        margin: 0;
+        transition: background 0.2s;
     }
 
-    .category-icon {
-        font-size: 1.25rem;
-        margin-right: 0.75rem;
-        opacity: 0.7;
-    }
-
-    .category-meta {
-        display: flex;
-        gap: 1rem;
-        margin-top: 0.5rem;
-        font-size: 0.75rem;
-        color: #64748b;
-    }
-
-    .category-badge {
-        background: #f1f5f9;
-        padding: 0.25rem 0.5rem;
-        border-radius: 0.375rem;
-        font-weight: 500;
-        color: #475569;
-    }
-
-    .expand-icon {
-        transition: transform 0.2s ease;
-        font-size: 0.875rem;
-        color: #94a3b8;
-    }
-
-    .expand-icon.expanded {
-        transform: rotate(180deg);
-    }
-
-    .category-content {
-        max-height: 0;
-        overflow: hidden;
-        transition: max-height 0.3s ease;
-    }
-
-    .category-content.expanded {
-        max-height: 5000px;
+    .category-header:hover {
+        background: #f1f3f4;
     }
 
     .component-item {
-        padding: 1rem 1.5rem;
-        border-bottom: 1px solid #f1f5f9;
-        transition: background-color 0.15s ease;
-    }
-
-    .component-item:hover {
-        background-color: #fafbfc;
-    }
-
-    .component-item:last-child {
-        border-bottom: none;
-    }
-
-    .component-header {
+        padding: 0.75rem 1.5rem 0.75rem 3rem;
+        border-top: 1px solid var(--border-color);
         display: flex;
+        align-items: center;
         justify-content: space-between;
-        align-items: start;
-        gap: 1rem;
-    }
-
-    .component-info {
-        flex: 1;
-        min-width: 0;
     }
 
     .component-name {
+        font-family: 'Roboto Mono', monospace;
         font-size: 0.875rem;
-        font-weight: 600;
-        color: #0f172a;
-        margin-bottom: 0.25rem;
+        color: var(--text-primary);
+        font-weight: 500;
     }
 
     .component-file {
         font-size: 0.75rem;
-        color: #64748b;
-        font-family: ui-monospace, monospace;
+        color: var(--text-secondary);
+        margin-left: 1rem;
     }
 
-    .confidence-badge {
-        padding: 0.375rem 0.75rem;
-        border-radius: 0.375rem;
-        font-weight: 600;
-        font-size: 0.75rem;
-        white-space: nowrap;
-    }
-
-    .confidence-high {
-        background: #d1fae5;
-        color: #065f46;
-    }
-
-    .confidence-medium {
-        background: #fed7aa;
-        color: #92400e;
-    }
-
-    .confidence-low {
-        background: #fee2e2;
-        color: #991b1b;
-    }
-
-    .predictions-detail {
-        margin-top: 0.75rem;
-        padding-top: 0.75rem;
-        border-top: 1px solid #f1f5f9;
-        display: flex;
-        flex-wrap: wrap;
-        gap: 0.5rem;
-    }
-
-    .prediction-tag {
-        background: #f8fafc;
-        border: 1px solid #e2e8f0;
-        padding: 0.25rem 0.5rem;
-        border-radius: 0.375rem;
-        font-size: 0.75rem;
-        color: #475569;
-    }
-
-    .prediction-label {
-        font-weight: 500;
-        color: #334155;
-    }
-
-    .prediction-probability {
-        color: #64748b;
-        margin-left: 0.25rem;
-    }
-
-    .empty-state {
-        background: #fef3c7;
-        border-left: 3px solid #f59e0b;
-        padding: 1.5rem;
-        border-radius: 0.5rem;
-    }
-
-    .empty-state-title {
-        font-weight: 600;
-        color: #92400e;
-        margin-bottom: 0.5rem;
-    }
-
-    .empty-state-text {
-        color: #78350f;
-        font-size: 0.875rem;
-        line-height: 1.5;
-    }
-
-    .family-card {
-        background: white;
-        border: 1px solid #e2e8f0;
-        border-radius: 12px;
-        transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-        margin-bottom: 2rem;
-    }
-
-    .family-card:hover {
-        transform: translateY(-1px);
-        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
-        border-color: #cbd5e1;
-    }
-
-    .family-header {
-        padding: 1.5rem 1.5rem;
-        border-bottom: 1px solid #f1f5f9;
-    }
-
-    .family-title {
-        font-size: 1.25rem;
-        font-weight: 700;
-        color: #0f172a;
-        margin: 0 0 0.5rem 0;
-        display: flex;
-        align-items: center;
-    }
-
-    .family-icon {
-        font-size: 1.5rem;
-        margin-right: 0.75rem;
-        opacity: 0.8;
-    }
-
-    .family-description {
-        font-size: 0.875rem;
-        color: #64748b;
-        line-height: 1.6;
-        margin: 0;
-    }
-
-    .label-section {
-        border-top: 1px solid #f1f5f9;
-    }
-
-    .label-section:first-of-type {
-        border-top: none;
-    }
-
-    .details-section {
-        margin-top: 3rem;
-    }
-
-    .details-section-title {
-        font-size: 1.5rem;
-        font-weight: 700;
-        color: #0f172a;
-        margin: 0 0 1.5rem 0;
-    }
-
-    @media (max-width: 1024px) {
-        .family-cards-grid {
-            grid-template-columns: repeat(2, 1fr);
-        }
-    }
-
-    @media (max-width: 768px) {
-        .hero-title {
-            font-size: 2rem;
-        }
-
-        .steps-container {
-            grid-template-columns: 1fr;
-            gap: 1.5rem;
-        }
-
-        .family-cards-grid {
-            grid-template-columns: 1fr;
-        }
-    }
-
-    /* Modal Styles */
+    /* Modal */
     .modal-overlay {
-        display: none;
-        position: fixed;
-        top: 0;
-        left: 0;
-        right: 0;
-        bottom: 0;
-        background: rgba(0, 0, 0, 0.5);
-        backdrop-filter: blur(4px);
-        z-index: 1000;
-        align-items: center;
-        justify-content: center;
-        padding: 1rem;
-        overflow-y: auto;
+        background: rgba(0, 0, 0, 0.4);
+        backdrop-filter: blur(2px);
     }
-
-    .modal-overlay.active {
-        display: flex;
-    }
-
+    
     .modal-container {
-        background: white;
-        border-radius: 16px;
-        width: 100%;
-        max-width: 1200px;
-        max-height: 90vh;
-        display: flex;
-        flex-direction: column;
-        box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
-        animation: modalSlideIn 0.3s ease-out;
-    }
-
-    @keyframes modalSlideIn {
-        from {
-            opacity: 0;
-            transform: translateY(-20px) scale(0.95);
-        }
-        to {
-            opacity: 1;
-            transform: translateY(0) scale(1);
-        }
+        border-radius: 24px;
+        box-shadow: 0 24px 48px rgba(0,0,0,0.18);
+        border: none;
     }
 
     .modal-header {
+        border-bottom: 1px solid var(--border-color);
         padding: 1.5rem 2rem;
-        border-bottom: 1px solid #e2e8f0;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        flex-shrink: 0;
     }
 
     .modal-title {
-        font-size: 1.5rem;
-        font-weight: 700;
-        color: #0f172a;
-        margin: 0;
+        font-family: 'Google Sans', sans-serif;
     }
 
-    .modal-close {
-        background: none;
-        border: none;
-        font-size: 1.5rem;
-        color: #64748b;
-        cursor: pointer;
-        padding: 0.5rem;
-        line-height: 1;
-        transition: color 0.2s;
+    /* Utilities */
+    .animate-fade-in-up {
+        animation: fadeInUp 0.6s cubic-bezier(0.2, 0, 0, 1);
     }
 
-    .modal-close:hover {
-        color: #0f172a;
-    }
-
-    .modal-content {
-        padding: 2rem;
-        overflow-y: auto;
-        flex: 1;
-    }
-
-    /* Architecture Diagram Styles */
-    .architecture-diagram-container {
-        width: 100%;
-        height: 600px;
-        border: 1px solid #e2e8f0;
-        border-radius: 8px;
-        background: #f8fafc;
-        position: relative;
-        overflow: hidden;
-    }
-
-    .layer-rect {
-        fill: white;
-        stroke: #cbd5e1;
-        stroke-width: 2;
-        rx: 8;
-    }
-
-    .category-rect {
-        fill: #f1f5f9;
-        stroke: #94a3b8;
-        stroke-width: 1;
-        rx: 4;
-        cursor: pointer;
-        transition: all 0.2s;
-    }
-
-    .category-rect:hover {
-        fill: #e2e8f0;
-        stroke-width: 2;
-    }
-
-    .category-text {
-        font-size: 12px;
-        font-weight: 600;
-        fill: #0f172a;
-        pointer-events: none;
-    }
-
-    .category-count {
-        font-size: 10px;
-        fill: #64748b;
-        pointer-events: none;
-    }
-
-    .dependency-arrow {
-        stroke: #94a3b8;
-        stroke-width: 2;
-        fill: none;
-        marker-end: url(#arrowhead);
-        opacity: 0.6;
-    }
-
-    .dependency-arrow:hover {
-        stroke: #667eea;
-        stroke-width: 3;
-        opacity: 1;
-    }
-
-    @media (max-width: 768px) {
-        .modal-container {
-            max-width: 100%;
-            max-height: 100vh;
-            border-radius: 0;
-        }
-
-        .modal-header {
-            padding: 1rem 1.5rem;
-        }
-
-        .modal-content {
-            padding: 1rem;
-        }
-
-        .architecture-diagram-container {
-            height: 400px;
-        }
+    @keyframes fadeInUp {
+        from { opacity: 0; transform: translateY(20px); }
+        to { opacity: 1; transform: translateY(0); }
     }
 </style>
 
@@ -624,44 +265,53 @@
 
 
     {# How it works Section #}
-    
-<div class="dashboard-card p-6 mb-8 mt-8 animate-fade-in-up">
-    <h2 class="leading-none text-2xl font-bold text-gray-900 pb-2 mb-3">AI-powered Architecture Recognition - Help</h2>
-    <p class="text-sm text-gray-600">Automatically detects the role of every component in your codebase from its structural fingerprint.</p>
+    <div class="dashboard-card animate-fade-in-up">
+        <div class="text-center mb-5">
+            <h2 class="hero-title">Architecture Recognition</h2>
+            <p class="hero-subtitle mx-auto">
+                AST Metrics automatically detects the role of every component in your codebase by analyzing its structural fingerprint, dependencies, and code patterns.
+            </p>
+        </div>
             
-        <div class="grid grid-cols-3 gap-6 py-8">
-            <div class="text-center">
-                <img src="images/icon-fingerprint.webp" class="size-24 mx-auto mb-4" alt="Fingerprint Icon" />
-                <h3 class="text-lg font-semibold">1.  Structural Fingerprint Extraction</h3>
-                <p class="text-gray-600">
-                    We convert each component into a language-agnostic AST + metrics signature.
+        <div class="steps-container">
+            <div class="step-card">
+                <div class="step-icon-wrapper">
+                    <span style="font-size: 24px;">🧬</span>
+                </div>
+                <h3 class="step-title">1. Fingerprint Extraction</h3>
+                <p class="step-desc">
+                    We convert each component into a language-agnostic AST + metrics signature, capturing its DNA.
                 </p>
             </div>
-            <div class="text-center">
-                <img src="images/icon-ai.webp" class="size-24 mx-auto mb-4" alt="Embedding Icon" />
-                <h3 class="text-lg font-semibold">2. Embedding + Custom AI Model</h3>
-                <p class="text-gray-600">
-                    A specialized classifier maps the fingerprint to an architectural role.
+            <div class="step-card">
+                <div class="step-icon-wrapper">
+                    <span style="font-size: 24px;">🧠</span>
+                </div>
+                <h3 class="step-title">2. AI Classification</h3>
+                <p class="step-desc">
+                    A specialized model maps the fingerprint to an architectural role using learned patterns.
                 </p>
             </div>
-            <div class="text-center">
-                <img src="images/icon-classifier.webp" class="size-24 mx-auto mb-4" alt="Layer & Role Icon" />
-                <h3 class="text-lg font-semibold">3. Layer & Role Assignment</h3>
-                <p class="text-gray-600">
-                    Each component is grouped into familiar architecture layers and categories.
+            <div class="step-card">
+                <div class="step-icon-wrapper">
+                    <span style="font-size: 24px;">🏗️</span>
+                </div>
+                <h3 class="step-title">3. Layer Assignment</h3>
+                <p class="step-desc">
+                    Components are grouped into standard architecture layers (Domain, Infra, UI) for clarity.
                 </p>
             </div>
         </div>
     </div>
 
     {# Architecture Diagram Section #}
-    <div class="architecture-diagram-section" style="margin-bottom: 3rem;">
-        <h2 class="architecture-overview-title">Architecture Diagram</h2>
-        <div class="architecture-diagram-container" id="mainArchitectureDiagram" style="height: 700px;">
+    <div class="mb-5">
+        <h2 class="hero-title" style="font-size: 1.75rem; margin-bottom: 1.5rem;">System Map</h2>
+        <div class="architecture-diagram-container" id="mainArchitectureDiagram">
             <svg id="mainDiagramSvg" width="100%" height="100%">
                 <defs>
                     <marker id="arrowhead" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto">
-                        <polygon points="0 0, 10 3, 0 6" fill="#94a3b8" />
+                        <polygon points="0 0, 10 3, 0 6" fill="#c4c7c5" />
                     </marker>
                 </defs>
             </svg>
@@ -669,26 +319,16 @@
     </div>
 
 
-    {# Modal for Family Details #}
-    <div class="modal-overlay" id="familyModal">
-        <div class="modal-container">
-            <div class="modal-header">
-                <h2 class="modal-title" id="modalTitle">Family Details</h2>
-                <button class="modal-close" onclick="closeFamilyModal()">&times;</button>
-            </div>
-            <div class="modal-content">
-                <div id="modalDetailsContent"></div>
-            </div>
-        </div>
-    </div>
 
-    {# Hidden content for modal (kept for reference, will be moved to modal) #}
-    <div style="display: none;">
+
+    {# Family Details Section #}
+    <div class="details-section">
+
         {# Display each family #}
     {% for family in families %}
     {% set familyData = groupedByFamily|getMapValue:family.Key %}
     {% if familyData and familyData|length > 0 %}
-    <div class="family-card" id="detail-family-{{ family.Key }}" data-family-key="{{ family.Key }}">
+    <div class="family-card" id="family-details-{{ family.Key }}" data-family-key="{{ family.Key }}">
         <div class="family-header">
             <h2 class="family-title">
                 <span class="family-icon">🏗️</span>
@@ -745,18 +385,6 @@
                             <div class="component-name">{{ item.Class }}</div>
                             <div class="component-file">{{ item.File }}</div>
                         </div>
-
-                        {% set top1 = item.Predictions.0 %}
-                        {% set top2 = item.Predictions.1 %}
-                        {% set confidence = top1.Probability * 100 %}
-
-                        {% set confidenceClass = "confidence-high" %}
-                        {% if top2 and (top1.Probability - top2.Probability) < 0.2 %} 
-                        {% set confidenceClass="confidence-low" %} {% elif confidence < 70 %} 
-                            {% set confidenceClass="confidence-medium" %} {% endif %} 
-                            <div class="hidden confidence-badge {{ confidenceClass }}">
-                            {{ confidence|stringformat:"%.0f" }}%
-                        </div>
                     </div>
 
                     {% if item.Predictions|length > 0 %}
@@ -805,52 +433,18 @@
         }
     }
 
-    function openFamilyModal(familyKey) {
-        const modal = document.getElementById('familyModal');
-        const modalTitle = document.getElementById('modalTitle');
-        const modalContent = document.getElementById('modalDetailsContent');
-        const detailElement = document.getElementById('detail-family-' + familyKey);
-        
-        if (!detailElement) return;
-        
-        // Get family name
-        const familyName = detailElement.querySelector('.family-title')?.textContent.trim() || familyKey;
-        modalTitle.textContent = familyName;
-        modalTitle.setAttribute('data-family-key', familyKey);
-        
-        // Copy content to modal
-        modalContent.innerHTML = detailElement.innerHTML;
-        
-        // Reinitialize expand/collapse
-        modalContent.querySelectorAll('.category-header').forEach(header => {
-            header.onclick = function() { toggleCategory(this); };
-        });
-        
-        // Show modal
-        modal.classList.add('active');
-        document.body.style.overflow = 'hidden';
-    }
-
-    function closeFamilyModal() {
-        const modal = document.getElementById('familyModal');
-        modal.classList.remove('active');
-        document.body.style.overflow = '';
-    }
-
-
-    // Close modal on overlay click
-    document.getElementById('familyModal')?.addEventListener('click', function(e) {
-        if (e.target === this) {
-            closeFamilyModal();
+    function scrollToFamily(familyKey) {
+        const element = document.getElementById('family-details-' + familyKey);
+        if (element) {
+            element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            // Add a highlight effect
+            element.style.transition = 'box-shadow 0.5s ease';
+            element.style.boxShadow = '0 0 0 4px rgba(11, 87, 208, 0.2)';
+            setTimeout(() => {
+                element.style.boxShadow = '';
+            }, 2000);
         }
-    });
-
-    // Close modal on Escape key
-    document.addEventListener('keydown', function(e) {
-        if (e.key === 'Escape') {
-            closeFamilyModal();
-        }
-    });
+    }
 
     // Store architecture data globally
     const architectureDataStr = '{{ groupedByFamily|getArchitectureDiagramData|escapejs }}';
@@ -1032,19 +626,19 @@
                     .attr("y", categoryY)
                     .attr("width", categoryWidth)
                     .attr("height", categoryHeight)
-                    .attr("fill", "#f1f5f9")
-                    .attr("stroke", layerColor)
-                    .attr("stroke-width", 1.5)
-                    .attr("rx", 4)
+                    .attr("fill", "#f1f3f4")
+                    .attr("stroke", "transparent")
+                    .attr("stroke-width", 1)
+                    .attr("rx", 8)
                     .style("cursor", "pointer")
                     .on("click", function() {
-                        openFamilyModal(layer.family);
+                        scrollToFamily(layer.family);
                     })
                     .on("mouseover", function() {
-                        d3.select(this).attr("fill", "#e2e8f0").attr("stroke-width", 2);
+                        d3.select(this).attr("fill", "#e8eaed").attr("stroke", "#dadce0");
                     })
                     .on("mouseout", function() {
-                        d3.select(this).attr("fill", "#f1f5f9").attr("stroke-width", 1.5);
+                        d3.select(this).attr("fill", "#f1f3f4").attr("stroke", "transparent");
                     });
                 
                 // Category name (truncate if too long, but try to keep it readable)
@@ -1141,20 +735,20 @@
                 d3.select(svg).append("path")
                     .attr("class", "dependency-arrow")
                     .attr("d", path.toString())
-                    .attr("stroke", "#94a3b8")
-                    .attr("stroke-width", Math.min(3, 1 + dep.count / 5))
+                    .attr("stroke", "#c4c7c5")
+                    .attr("stroke-width", Math.min(2, 1 + dep.count / 5))
                     .attr("fill", "none")
                     .attr("marker-end", "url(#arrowhead)")
                     .attr("opacity", 0.5 + Math.min(0.3, dep.count / 20))
                     .on("mouseover", function() {
                         d3.select(this)
-                            .attr("stroke", "#667eea")
-                            .attr("stroke-width", Math.min(4, 2 + dep.count / 5))
+                            .attr("stroke", "#0b57d0")
+                            .attr("stroke-width", Math.min(3, 2 + dep.count / 5))
                             .attr("opacity", 1);
                     })
                     .on("mouseout", function() {
                         d3.select(this)
-                            .attr("stroke", "#94a3b8")
+                            .attr("stroke", "#c4c7c5")
                             .attr("stroke-width", Math.min(3, 1 + dep.count / 5))
                             .attr("opacity", 0.5 + Math.min(0.3, dep.count / 20));
                     });
@@ -1236,9 +830,9 @@
                 .attr("width", width - leftLabelWidth - 2 * padding)
                 .attr("height", layerHeight - padding)
                 .attr("fill", "white")
-                .attr("stroke", layerColor)
-                .attr("stroke-width", 3)
-                .attr("rx", 8);
+                .attr("stroke", "#e3e3e3")
+                .attr("stroke-width", 1)
+                .attr("rx", 12);
             
             // Layer label on the left
             d3.select(svg).append("text")
@@ -1275,15 +869,15 @@
                     .attr("y", categoryY)
                     .attr("width", categoryWidth)
                     .attr("height", categoryHeight)
-                    .attr("fill", "#f1f5f9")
-                    .attr("stroke", layerColor)
-                    .attr("stroke-width", 1.5)
-                    .attr("rx", 4)
+                    .attr("fill", "#f1f3f4")
+                    .attr("stroke", "transparent")
+                    .attr("stroke-width", 1)
+                    .attr("rx", 8)
                     .on("mouseover", function() {
-                        d3.select(this).attr("fill", "#e2e8f0").attr("stroke-width", 2);
+                        d3.select(this).attr("fill", "#e8eaed").attr("stroke", "#dadce0");
                     })
                     .on("mouseout", function() {
-                        d3.select(this).attr("fill", "#f1f5f9").attr("stroke-width", 1.5);
+                        d3.select(this).attr("fill", "#f1f3f4").attr("stroke", "transparent");
                     });
                 
                 // Category name (truncate if too long)
