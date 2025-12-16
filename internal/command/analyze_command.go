@@ -177,11 +177,10 @@ func (v *AnalyzeCommand) Execute() error {
 	// Model path (assuming running from source root or configured)
 	// TODO: Make this configurable via flags or config file
 	modelDir := "ai/training/classifier/v3/build"
-	scriptPath := "ai/training/classifier/v3/4-predict.py"
 
 	// Check if model directory exists
 	if _, err := os.Stat(modelDir); err == nil {
-		predictor := classifier.NewPredictor(modelDir, scriptPath)
+		predictor := classifier.NewPredictor(modelDir)
 		predictions, err := predictor.Predict(allResults, v.Configuration.Storage.Path())
 		if err != nil {
 			log.Error("Classification failed: ", err)

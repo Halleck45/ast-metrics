@@ -525,6 +525,16 @@ func (v *HtmlReportGenerator) RegisterFilters() {
 					b.WriteString(",\"lcom4\":")
 					b.WriteString(fmt.Sprintf("%d", *c.Stmts.Analyze.ClassCohesion.Lcom4))
 				}
+				// complexity
+				if c.Stmts != nil && c.Stmts.Analyze != nil && c.Stmts.Analyze.Complexity != nil && c.Stmts.Analyze.Complexity.Cyclomatic != nil {
+					b.WriteString(",\"complexity\":")
+					b.WriteString(fmt.Sprintf("%d", *c.Stmts.Analyze.Complexity.Cyclomatic))
+				}
+				// loc
+				if c.Stmts != nil && c.Stmts.Analyze != nil && c.Stmts.Analyze.Volume != nil && c.Stmts.Analyze.Volume.Loc != nil {
+					b.WriteString(",\"loc\":")
+					b.WriteString(fmt.Sprintf("%d", *c.Stmts.Analyze.Volume.Loc))
+				}
 				b.WriteString("}")
 			}
 			b.WriteString("]}")

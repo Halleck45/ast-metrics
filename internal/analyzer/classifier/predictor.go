@@ -16,7 +16,7 @@ type Predictor struct {
 	ModelDir string
 }
 
-func NewPredictor(modelDir string, scriptPath string) *Predictor {
+func NewPredictor(modelDir string) *Predictor {
 	return &Predictor{
 		ModelDir: modelDir,
 	}
