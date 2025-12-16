@@ -204,26 +204,77 @@
         line-height: 1.5;
         display: -webkit-box;
         -webkit-line-clamp: 4; /* Limit to 4 lines */
+        line-clamp: 4; /* Standard property */
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+        display: -webkit-box;
+        -webkit-line-clamp: 4; /* Limit to 4 lines */
+        line-clamp: 4; /* Standard property */
         -webkit-box-orient: vertical;
         overflow: hidden;
         text-overflow: ellipsis;
+    }
+    
+    .heatmap-container {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 2px;
+        margin-top: auto; /* Push to bottom */
+        padding-top: 8px;
+        max-height: 60px;
+        overflow: hidden;
+    }
+    
+    .heatmap-square {
+        width: 8px;
+        height: 8px;
+        border-radius: 2px;
+        transition: transform 0.1s;
+    }
+    
+    .heatmap-square:hover {
+        transform: scale(1.5);
+        z-index: 10;
+        border: 1px solid #333;
     }
 
     .controls-container {
         position: absolute;
         top: 20px;
         right: 20px;
-        z-index: 10;
+        z-index: 100;
         display: flex;
         gap: 10px;
         align-items: center;
-        background: rgba(255, 255, 255, 0.8);
-        padding: 8px;
-        border-radius: 12px;
+        background: rgba(255, 255, 255, 0.9);
+        padding: 8px 12px;
+        border-radius: 8px;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1);
         backdrop-filter: blur(4px);
-        border: 1px solid var(--border-color);
     }
-
+    
+    .heatmap-controls {
+        display: flex;
+        gap: 8px;
+        margin-right: 16px;
+        border-right: 1px solid #e2e8f0;
+        padding-right: 16px;
+    }
+    
+    .heatmap-option {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 13px;
+        color: #475569;
+        cursor: pointer;
+        user-select: none;
+    }
+    
+    .heatmap-option input {
+        accent-color: #3b82f6;
+    }
+    
     .arrow-toggle {
         display: flex;
         align-items: center;
@@ -489,6 +540,24 @@
         <h2 class="hero-title" style="font-size: 1.75rem; margin-bottom: 1.5rem;">System Map</h2>
         <div class="architecture-diagram-container" id="mainArchitectureDiagram">
             <div class="controls-container">
+                <div class="heatmap-controls">
+                    <label class="heatmap-option" title="Default view">
+                        <input type="radio" name="heatmapMode" value="default" onchange="updateHeatmap(this.value)">
+                        Default
+                    </label>
+                    <label class="heatmap-option" title="Cyclomatic Complexity">
+                        <input type="radio" name="heatmapMode" value="complexity" checked onchange="updateHeatmap(this.value)">
+                        Complexity
+                    </label>
+                    <label class="heatmap-option" title="Maintainability Index">
+                        <input type="radio" name="heatmapMode" value="maintainability" onchange="updateHeatmap(this.value)">
+                        Maintainability
+                    </label>
+                    <label class="heatmap-option" title="Lines of Code">
+                        <input type="radio" name="heatmapMode" value="dominance" onchange="updateHeatmap(this.value)">
+                        Dominance
+                    </label>
+                </div>
                 <label class="arrow-toggle">
                     <input type="checkbox" id="showArrows" onchange="toggleArrows()">
                     Show all arrows
@@ -519,7 +588,7 @@
     <div class="family-card" id="family-details-{{ family.Key }}" data-family-key="{{ family.Key }}">
         <div class="family-header">
             <h2 class="family-title">
-                <span class="family-icon">🏗️</span>
+                <span class="family-icon">📦</span>
                 {{ family.Key|capitalizeFirst }}
             </h2>
             <p class="family-description">{{ family.Description }}</p>
@@ -548,8 +617,7 @@
                 <div style="flex: 1;">
                     <h3 class="category-title">
                         <span>
-                            <span class="category-icon">📦</span>
-                            {{ category }} › {{ subcategory }}
+                            {{ category }} › {{ subcategory }} › {{ shortLabel }}
                         </span>
                         <span class="expand-icon">▼</span>
                     </h3>
@@ -820,6 +888,104 @@
     } catch (e) {
         console.error('Failed to parse dependencies data:', e);
     }
+    
+    // Store files data with metrics (Generated directly in template to ensure data availability)
+    const filesData = [
+        {% for f in files %}
+        {
+            "path": "{{ f.Path|escapejs }}",
+            "classes": [
+                {% if f.Stmts and f.Stmts.StmtClass %}
+                    {% for c in f.Stmts.StmtClass %}
+                    {
+                        "complexity": {{ c.Stmts.Analyze.Complexity.Cyclomatic|default:0 }},
+                        "mi": {{ c.Stmts.Analyze.Maintainability.MaintainabilityIndex|default:0 }},
+                        "loc": {{ c.Stmts.Analyze.Volume.Loc|default:0 }}
+                    },
+                    {% endfor %}
+                {% endif %}
+            ]
+        },
+        {% endfor %}
+    ];
+    
+    console.log('FilesData loaded:', filesData);
+    
+    // Map files to categories
+    const categoryFiles = {
+        {% for family, categories in groupedByFamily %}
+            {% for label, items in categories %}
+                "{{ label }}": [
+                    {% for item in items %}
+                        "{{ item.Source|escapejs }}",
+                    {% endfor %}
+                ],
+            {% endfor %}
+        {% endfor %}
+    };
+    
+    // Pre-calculate metrics per category
+    const categoryMetrics = {};
+    
+    function calculateMetrics() {
+        // Create map of path -> metrics
+        const fileMetrics = new Map();
+        filesData.forEach(f => {
+            // Aggregate class metrics for the file
+            let totalComp = 0;
+            let totalMI = 0;
+            let totalLOC = 0;
+            let classCount = 0;
+            
+            if (f.classes) {
+                f.classes.forEach(c => {
+                    if (c.complexity) totalComp += c.complexity;
+                    if (c.mi) totalMI += c.mi;
+                    if (c.loc) totalLOC += c.loc;
+                    classCount++;
+                });
+            }
+            
+            fileMetrics.set(f.path, {
+                complexity: totalComp,
+                mi: classCount > 0 ? totalMI / classCount : 0,
+                loc: totalLOC
+            });
+        });
+        
+        // Calculate per category
+        for (const [label, paths] of Object.entries(categoryFiles)) {
+            let totalComp = 0;
+            let totalMI = 0;
+            let totalLOC = 0;
+            let count = 0;
+            
+            paths.forEach(path => {
+                const m = fileMetrics.get(path);
+                if (m) {
+                    totalComp += m.complexity;
+                    totalMI += m.mi; // Summing avg MI of files? Or should we average?
+                    // MI is usually averaged.
+                    totalLOC += m.loc;
+                    count++;
+                }
+            });
+            
+            categoryMetrics[label] = {
+                complexity: count > 0 ? totalComp / count : 0, // Avg complexity per file? Or total?
+                // Complexity is usually additive for volume, but for "density" it's average.
+                // "Where is the structural complexity?" -> High avg complexity per file/class is usually what we look for.
+                // Total complexity just correlates with size.
+                avgComplexity: count > 0 ? totalComp / count : 0,
+                avgMI: count > 0 ? totalMI / count : 0,
+                totalLOC: totalLOC
+            };
+        }
+    }
+    
+    calculateMetrics();
+
+    let currentHeatmapMode = 'complexity';
 
     // Render main architecture diagram on page load
     document.addEventListener('DOMContentLoaded', function() {
@@ -988,6 +1154,7 @@
                 // Create a group for the category
                 const categoryGroup = d3.select(svg).append("g")
                     .attr("class", "category-group")
+                    .attr("data-label", category.label) // Add data-label for heatmap
                     .style("cursor", "pointer")
                     .on("click", function() {
                         if (currentMode === 'isometric') {
@@ -1150,6 +1317,159 @@
             // Initial check
             toggleArrows();
         }
+        
+        // Apply heatmap
+        updateHeatmap(currentHeatmapMode);
+    }
+    
+    function updateHeatmap(mode) {
+        currentHeatmapMode = mode;
+        
+        // Update radio buttons
+        const radios = document.querySelectorAll('input[name="heatmapMode"]');
+        radios.forEach(r => {
+            if (r.value === mode) r.checked = true;
+        });
+        
+        // Calculate min/max for the current mode to ensure relative coloring
+        let minVal = Infinity;
+        let maxVal = -Infinity;
+        
+        const labels = Object.keys(categoryMetrics);
+        labels.forEach(label => {
+            const m = categoryMetrics[label];
+            let val = 0;
+            if (mode === 'complexity') val = m.avgComplexity;
+            else if (mode === 'maintainability') val = m.avgMI;
+            else if (mode === 'dominance') val = m.totalLOC;
+            
+            if (val < minVal) minVal = val;
+            if (val > maxVal) maxVal = val;
+        });
+        
+        // Avoid division by zero
+        if (minVal === Infinity) minVal = 0;
+        if (maxVal === -Infinity || maxVal === minVal) maxVal = minVal + 1;
+
+        d3.selectAll('.category-group').each(function() {
+            const group = d3.select(this);
+            const label = group.attr('data-label');
+            // Select the inner HTML card div
+            const cardDiv = group.select('.category-card-html');
+            
+            // Ensure heatmap container exists inside the card div
+            let heatmapContainer = cardDiv.select('.heatmap-container');
+            if (heatmapContainer.empty()) {
+                heatmapContainer = cardDiv.append('div').attr('class', 'heatmap-container');
+            }
+            
+            // Clear existing squares
+            heatmapContainer.html('');
+            
+            // Reset card style
+            cardDiv.style('background', '#ffffff');
+            cardDiv.style('border-color', '#e2e8f0');
+            cardDiv.style('border-width', '1px');
+            cardDiv.style('box-shadow', '0 1px 3px 0 rgba(0, 0, 0, 0.1)');
+            
+            if (mode === 'default') {
+                heatmapContainer.style('display', 'none');
+                return;
+            }
+            
+            heatmapContainer.style('display', 'flex');
+            
+            // Get all classes for this category
+            const paths = categoryFiles[label] || [];
+            const classes = [];
+            
+            // Debug matching for the first category only to avoid spam
+            const debugMatching = label === Object.keys(categoryFiles)[0];
+            if (debugMatching) {
+                console.log(`Debugging matching for category: ${label}`);
+                console.log(`Paths in category:`, paths);
+            }
+            
+            paths.forEach(path => {
+                // Find file data
+                // Try exact match first
+                let file = filesData.find(f => f.path === path);
+                
+                // If not found, try matching by suffix (basename)
+                if (!file) {
+                    file = filesData.find(f => f.path.endsWith(path) || path.endsWith(f.path));
+                }
+                
+                if (debugMatching && !file) {
+                    console.warn(`Could not find file data for path: ${path}`);
+                }
+                
+                if (file && file.classes) {
+                    file.classes.forEach(c => {
+                        classes.push(c);
+                    });
+                }
+            });
+            
+            // Sort classes by metric descending to show hotspots first?
+            // Or keep them random? Sorting helps see the "worst" offenders.
+            classes.sort((a, b) => {
+                let valA = 0, valB = 0;
+                if (mode === 'complexity') { valA = a.complexity; valB = b.complexity; }
+                else if (mode === 'maintainability') { valA = a.mi; valB = b.mi; } // Low MI is bad, so sort ascending?
+                else if (mode === 'dominance') { valA = a.loc; valB = b.loc; }
+                
+                if (mode === 'maintainability') return valA - valB; // Ascending (worst first)
+                return valB - valA; // Descending (worst first)
+            });
+            
+            // Limit number of squares to avoid performance issues/overflow?
+            // Max 100 squares?
+            const maxSquares = 150;
+            const displayClasses = classes.slice(0, maxSquares);
+            
+            displayClasses.forEach(c => {
+                let val = 0;
+                let color = '#ccc';
+                
+                if (mode === 'complexity') {
+                    val = c.complexity || 0;
+                    // Green -> Yellow -> Red
+                    // Ensure even low values are visible
+                    if (val < 10) {
+                        color = d3.interpolateRgb("#86efac", "#facc15")(val / 10); // Green-300 to Yellow-400
+                    } else {
+                        color = d3.interpolateRgb("#facc15", "#ef4444")(Math.min((val - 10) / 20, 1)); // Yellow to Red
+                    }
+                } else if (mode === 'maintainability') {
+                    val = c.mi || 0;
+                    // Red -> Yellow -> Green
+                    if (val < 65) {
+                        color = d3.interpolateRgb("#ef4444", "#facc15")(val / 65);
+                    } else {
+                        color = d3.interpolateRgb("#facc15", "#4ade80")((val - 65) / 35);
+                    }
+                } else if (mode === 'dominance') {
+                    val = c.loc || 0;
+                    // Light Blue -> Dark Blue
+                    // Avoid white
+                    color = d3.interpolateRgb("#bfdbfe", "#1e40af")(Math.min(val / 200, 1));
+                }
+                
+                heatmapContainer.append('div')
+                    .attr('class', 'heatmap-square')
+                    .style('background-color', color)
+                    .attr('title', `Complexity: ${c.complexity}, MI: ${c.mi}, LOC: ${c.loc}`);
+            });
+            
+            if (classes.length > maxSquares) {
+                 heatmapContainer.append('div')
+                    .style('font-size', '10px')
+                    .style('color', '#64748b')
+                    .style('padding-left', '4px')
+                    .text(`+${classes.length - maxSquares}`);
+            }
+        });
     }
 </script>
 
