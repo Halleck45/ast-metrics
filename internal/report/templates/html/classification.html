@@ -140,6 +140,13 @@
         visibility: visible;
         opacity: 1;
     }
+    
+    /* Hide card tooltip when hovering over a square */
+    .category-card-html:hover .heatmap-square:hover ~ .tooltip-text,
+    .category-card-html .heatmap-square:hover ~ .tooltip-text {
+        visibility: hidden;
+        opacity: 0;
+    }
 
     .architecture-diagram-container {
         background: white;
@@ -967,18 +974,63 @@
         tooltip.style.fontSize = '12px';
         tooltip.style.zIndex = '9999';
         tooltip.style.pointerEvents = 'none';
-        tooltip.style.maxWidth = '250px';
+        tooltip.style.width = 'auto';
+        tooltip.style.minWidth = '120px';
+        tooltip.style.maxWidth = '400px';
         tooltip.style.boxShadow = '0 4px 6px rgba(0,0,0,0.1)';
+        tooltip.style.whiteSpace = 'pre-line'; // Allow line breaks
         document.body.appendChild(tooltip);
 
+        let currentTarget = null;
+
         document.addEventListener('mouseover', function(e) {
-            const target = e.target.closest('[data-tooltip]');
-            if (target) {
-                const text = target.getAttribute('data-tooltip');
+            // Check if hovering over a heatmap square (priority)
+            // Check if target is directly a square or is inside a square
+            const square = e.target.classList.contains('heatmap-square') 
+                ? e.target 
+                : e.target.closest('.heatmap-square');
+            
+            if (square) {
+                const text = square.getAttribute('data-tooltip');
                 if (text) {
-                    tooltip.textContent = text;
+                    tooltip.textContent = text; // Use textContent for line breaks
                     tooltip.style.visibility = 'visible';
                     tooltip.style.opacity = '1';
+                    currentTarget = square;
+                    return;
+                }
+            }
+            
+            // Otherwise, check for card tooltip (only if not hovering over a square)
+            const card = e.target.closest('.category-card-html');
+            if (card) {
+                // Make sure we're not inside a square
+                const isInsideSquare = e.target.closest('.heatmap-square') !== null;
+                if (!isInsideSquare) {
+                    const text = card.getAttribute('data-tooltip');
+                    if (text) {
+                        tooltip.textContent = text;
+                        tooltip.style.visibility = 'visible';
+                        tooltip.style.opacity = '1';
+                        currentTarget = card;
+                        return;
+                    }
+                }
+            }
+            
+            // Fallback: check for any other data-tooltip (not square or card)
+            const target = e.target.closest('[data-tooltip]');
+            if (target) {
+                const isSquare = target.classList.contains('heatmap-square') || target.closest('.heatmap-square');
+                const isCard = target.classList.contains('category-card-html') || target.closest('.category-card-html');
+                if (!isSquare && !isCard) {
+                    const text = target.getAttribute('data-tooltip');
+                    if (text) {
+                        tooltip.textContent = text;
+                        tooltip.style.visibility = 'visible';
+                        tooltip.style.opacity = '1';
+                        currentTarget = target;
+                    }
                 }
             }
         });
@@ -1003,11 +1055,23 @@
         });
 
         document.addEventListener('mouseout', function(e) {
-            const target = e.target.closest('[data-tooltip]');
-            if (target) {
-                tooltip.style.visibility = 'hidden';
-                tooltip.style.opacity = '0';
+            // Only hide tooltip if we're not moving to another tooltip element
+            const relatedTarget = e.relatedTarget;
+            if (relatedTarget) {
+                // Check if we're moving to another tooltip element (square or card)
+                const square = relatedTarget.closest('.heatmap-square');
+                const card = relatedTarget.closest('.category-card-html');
+                
+                // If moving to another tooltip element, don't hide (mouseover will handle it)
+                if (square || card) {
+                    return;
+                }
             }
+            
+            // Hide tooltip if leaving all tooltip elements
+            tooltip.style.visibility = 'hidden';
+            tooltip.style.opacity = '0';
+            currentTarget = null;
         });
     }
 
@@ -1490,10 +1554,16 @@
                     console.log(`Mode: ${mode}, Val: ${val}, LogVal: ${logVal.toFixed(2)}, t: ${t.toFixed(2)}, Color: ${color}`);
                 }
                 
+                // Format tooltip text with better formatting
+                const loc = c.loc || c.loc_alt || 0;
+                const complexity = c.complexity || 0;
+                const commits = c.commits || 0;
+                const tooltipText = `Class: ${c.name}\nLOC: ${loc}\nComplexity: ${complexity}\nCommits: ${commits}`;
+                
                 heatmapContainer.append('div')
                     .attr('class', 'heatmap-square')
                     .style('background-color', color)
-                    .attr('title', `Class: ${c.name}\nLOC: ${c.loc || c.loc_alt || 0}\nComplexity: ${c.complexity || 0}\nCommits: ${c.commits || 0}`);
+                    .attr('data-tooltip', tooltipText);
             });
             
             if (classes.length > maxSquares) {
