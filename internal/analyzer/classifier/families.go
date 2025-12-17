@@ -12,7 +12,7 @@ var ClassificationFamilies = []Family{
 	{
 		Key:         "interface",
 		Description: "Entry points and presentation components. They expose the system through controllers, views, presenters, and transform data for display.",
-		Color:       "#2196F3", // Blue
+		Color:       "#F1F8FF", // Blue
 		Labels: []string{
 			"component:interface:controller",
 			"component:interface:presenter",
@@ -24,7 +24,7 @@ var ClassificationFamilies = []Family{
 	{
 		Key:         "application",
 		Description: "Application orchestration layer. Coordinates use cases, services, workflows, transactions, and message handlers. Contains logic that organizes domain operations.",
-		Color:       "#4CAF50", // Green
+		Color:       "#E3F2FD", // Green
 		Labels: []string{
 			"component:app:use_case",
 			"component:app:service",
@@ -38,7 +38,7 @@ var ClassificationFamilies = []Family{
 	{
 		Key:         "domain",
 		Description: "Pure domain logic and business rules: entities, value objects, aggregates, policies, rules, specifications, and domain services.",
-		Color:       "#FFC107", // Amber
+		Color:       "#D6EAFE", // Amber
 		Labels: []string{
 			"component:domain:entity",
 			"component:domain:value_object",
@@ -52,7 +52,7 @@ var ClassificationFamilies = []Family{
 	{
 		Key:         "infrastructure",
 		Description: "Technical implementation details: persistence, gateways, external systems, clients, caching, security, configuration, monitoring, logging, and messaging infrastructure.",
-		Color:       "#9C27B0", // Purple
+		Color:       "#CFE9FF", // Purple
 		Labels: []string{
 			"component:data_access:repository",
 			"component:data_access:gateway",
@@ -81,7 +81,7 @@ var ClassificationFamilies = []Family{
 	{
 		Key:         "core",
 		Description: "Low-level reusable components, algorithms, utilities, and runtime support structures used internally by the system.",
-		Color:       "#F44336", // Red
+		Color:       "#BFE0FF", // Red
 		Labels: []string{
 			"component:core:library",
 			"component:core:algorithm",
@@ -92,7 +92,7 @@ var ClassificationFamilies = []Family{
 	{
 		Key:         "utility",
 		Description: "General-purpose helpers, validators, serializers, converters and any cross-cutting utility unrelated to domain or application logic.",
-		Color:       "#607D8B", // Blue Grey
+		Color:       "#ADD6FF", // Blue Grey
 		Labels: []string{
 			"utility:helper:string",
 			"utility:helper:date_time",
@@ -108,7 +108,7 @@ var ClassificationFamilies = []Family{
 	{
 		Key:         "development",
 		Description: "Testing-related artefacts: test cases, fixtures, mocks, and development-only classes.",
-		Color:       "#795548", // Brown
+		Color:       "#CDEDEA", // Brown
 		Labels: []string{
 			"development:test:case",
 			"development:test:fixture",

@@ -195,7 +195,6 @@
     .category-card-html {
         width: 100%;
         height: 100%;
-        background: white;
         border: 1px solid #e2e8f0;
         border-radius: 6px;
         box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
@@ -293,7 +292,6 @@
     }
 
     .controls-container {
-    position: sticky;
     top: 20px;
     z-index: 1000;
     background: rgba(255, 255, 255, 0.95);
@@ -304,7 +302,6 @@
     display: flex;
     gap: 20px;
     align-items: center;
-    max-width: fit-content;
     margin: 0 auto 40px auto; /* Center and add space below */
     border: 1px solid rgba(255, 255, 255, 0.5);
 }
@@ -1096,9 +1093,10 @@
                 .attr("y", layerY + padding / 2)
                 .attr("width", width - 2 * padding)
                 .attr("height", layerHeight - padding)
-                .attr("fill", layerColor + "10") // 10% opacity
-                .attr("stroke", layerColor)
-                .attr("stroke-width", 2)
+                //.attr("fill", layerColor + "50") // 10% opacity
+                .attr("fill", layerColor)
+                //.attr("stroke", layerColor)
+                //.attr("stroke-width", 2)
                 .attr("rx", 8);
             
             // Layer Header (Title Left, Description Right)
@@ -1110,13 +1108,18 @@
 
             headerFO.append("xhtml:div")
                 .style("display", "flex")
-                .style("justify-content", "space-between")
+                //.style("justify-content", "space-between")
+                .style("gap", "20px")
                 .style("align-items", "center")
                 .style("padding", "0 20px")
                 .style("height", "100%")
+                //.html(`
+                //    <div style="font-size: 18px; font-weight: 700; color: ${layerColor};">${layer.family.charAt(0).toUpperCase() + layer.family.slice(1)}</div>
+                //    <div style="font-size: 12px; color: #64748b; text-align: right; max-width: 60%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${layer.description || ''}</div>
+                //`);
                 .html(`
-                    <div style="font-size: 18px; font-weight: 700; color: ${layerColor};">${layer.family.charAt(0).toUpperCase() + layer.family.slice(1)}</div>
-                    <div style="font-size: 12px; color: #64748b; text-align: right; max-width: 60%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${layer.description || ''}</div>
+                    <div style="font-size: 18px; font-weight: 700; color: #0F172A;">${layer.family.charAt(0).toUpperCase() + layer.family.slice(1)}</div>
+                    <div style="font-size: 12px; color: #475569; text-align: right; max-width: 60%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${layer.description || ''}</div>
                 `);
             
             // Calculate category positions
@@ -1194,7 +1197,7 @@
                     .attr("y", categoryY);
 
                 const cardDiv = fo.append("xhtml:div")
-                    .attr("class", "category-card-html");
+                    .attr("class", "category-card-html bg-white hover:bg-blue-500");
                 
                 if (categoryWidth < 60) {
                     cardDiv.classed("narrow-card", true);
@@ -1374,7 +1377,6 @@
             heatmapContainer.html('');
             
             // Reset card style
-            cardDiv.style('background', '#ffffff');
             cardDiv.style('border-color', '#e2e8f0');
             cardDiv.style('border-width', '1px');
             cardDiv.style('box-shadow', '0 1px 3px 0 rgba(0, 0, 0, 0.1)');
