@@ -98,6 +98,49 @@
         line-height: 1.5;
     }
 
+    /* Tooltip Styles */
+    .category-card-html {
+        position: relative;
+    }
+
+    .tooltip-text {
+        visibility: hidden;
+        width: 220px;
+        background-color: #1e293b;
+        color: #fff;
+        text-align: center;
+        border-radius: 6px;
+        padding: 8px;
+        position: absolute;
+        z-index: 100;
+        bottom: 105%;
+        left: 50%;
+        transform: translateX(-50%);
+        opacity: 0;
+        transition: opacity 0.1s;
+        pointer-events: none;
+        font-size: 0.75rem;
+        font-weight: normal;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        line-height: 1.4;
+    }
+
+    .tooltip-text::after {
+        content: "";
+        position: absolute;
+        top: 100%;
+        left: 50%;
+        margin-left: -5px;
+        border-width: 5px;
+        border-style: solid;
+        border-color: #1e293b transparent transparent transparent;
+    }
+
+    .category-card-html:hover .tooltip-text {
+        visibility: visible;
+        opacity: 1;
+    }
+
     .architecture-diagram-container {
         background: white;
         border: 1px solid var(--border-color);
@@ -912,7 +955,64 @@
     // Render main architecture diagram on page load
     document.addEventListener('DOMContentLoaded', function() {
         renderMainArchitectureDiagram();
+        initGlobalTooltip();
     });
+
+    function initGlobalTooltip() {
+        const tooltip = document.createElement('div');
+        tooltip.className = 'global-tooltip';
+        tooltip.style.position = 'fixed';
+        tooltip.style.visibility = 'hidden';
+        tooltip.style.backgroundColor = '#1e293b';
+        tooltip.style.color = '#fff';
+        tooltip.style.padding = '8px 12px';
+        tooltip.style.borderRadius = '6px';
+        tooltip.style.fontSize = '12px';
+        tooltip.style.zIndex = '9999';
+        tooltip.style.pointerEvents = 'none';
+        tooltip.style.maxWidth = '250px';
+        tooltip.style.boxShadow = '0 4px 6px rgba(0,0,0,0.1)';
+        document.body.appendChild(tooltip);
+
+        document.addEventListener('mouseover', function(e) {
+            const target = e.target.closest('[data-tooltip]');
+            if (target) {
+                const text = target.getAttribute('data-tooltip');
+                if (text) {
+                    tooltip.textContent = text;
+                    tooltip.style.visibility = 'visible';
+                    tooltip.style.opacity = '1';
+                }
+            }
+        });
+
+        document.addEventListener('mousemove', function(e) {
+            if (tooltip.style.visibility === 'visible') {
+                const x = e.clientX;
+                const y = e.clientY;
+                
+                // Position above cursor
+                let top = y - tooltip.offsetHeight - 10;
+                let left = x - tooltip.offsetWidth / 2;
+                
+                // Keep within viewport
+                if (top < 0) top = y + 20;
+                if (left < 0) left = 10;
+                if (left + tooltip.offsetWidth > window.innerWidth) left = window.innerWidth - tooltip.offsetWidth - 10;
+                
+                tooltip.style.top = top + 'px';
+                tooltip.style.left = left + 'px';
+            }
+        });
+
+        document.addEventListener('mouseout', function(e) {
+            const target = e.target.closest('[data-tooltip]');
+            if (target) {
+                tooltip.style.visibility = 'hidden';
+                tooltip.style.opacity = '0';
+            }
+        });
+    }
 
     function renderMainArchitectureDiagram() {
         const svg = document.getElementById('mainDiagramSvg');
@@ -925,7 +1025,7 @@
         const width = container.clientWidth || 1000;
         
         // Calculate dynamic height based on content
-        const layerHeight = 220; // Fixed height per layer for consistency
+        const layerHeight = 180; // Even more compact height
         const totalHeight = Math.max(700, architectureData.length * layerHeight + 100);
         
         // Clear previous content
@@ -966,7 +1066,7 @@
         
         // Configuration
         // const layerHeight = Math.max(140, height / architectureData.length); // Removed dynamic shrinking
-        const padding = 40;
+        const padding = 20; // Reduced padding for tighter layout
 
         const categorySpacing = 10;
         const minCategoryWidth = 140;
@@ -1001,60 +1101,28 @@
                 .attr("stroke-width", 2)
                 .attr("rx", 8);
             
-            // Layer label inside the rect
-            d3.select(svg).append("text")
-                .attr("x", padding + 20)
-                .attr("y", layerY + padding / 2 + 30)
-                .attr("font-size", "18px")
-                .attr("font-weight", "700")
-                .attr("fill", layerColor)
-                .attr("text-anchor", "start")
-                .text(layer.family.charAt(0).toUpperCase() + layer.family.slice(1));
-            
-            // Layer description inside the rect
-            if (layer.description) {
-                const maxWidth = 300; // Limit width for description
-                const words = layer.description.split(' ');
-                let line = '';
-                let yOffset = padding / 2 + 50;
-                const lineHeight = 14;
-                const maxLines = 4;
-                
-                words.forEach((word, wordIndex) => {
-                    const testLine = line + (line ? ' ' : '') + word;
-                    const testWidth = testLine.length * 6;
-                    
-                    if (testWidth > maxWidth && line) {
-                        d3.select(svg).append("text")
-                            .attr("x", padding + 20)
-                            .attr("y", layerY + yOffset)
-                            .attr("font-size", "11px")
-                            .attr("fill", "#64748b")
-                            .attr("text-anchor", "start")
-                            .text(line);
-                        line = word;
-                        yOffset += lineHeight;
-                        if (yOffset > padding / 2 + 50 + (maxLines * lineHeight)) return;
-                    } else {
-                        line = testLine;
-                    }
-                });
-                
-                if (line && yOffset <= padding / 2 + 50 + (maxLines * lineHeight)) {
-                    d3.select(svg).append("text")
-                        .attr("x", padding + 20)
-                        .attr("y", layerY + yOffset)
-                        .attr("font-size", "11px")
-                        .attr("fill", "#64748b")
-                        .attr("text-anchor", "start")
-                        .text(line);
-                }
-            }
+            // Layer Header (Title Left, Description Right)
+            const headerFO = d3.select(svg).append("foreignObject")
+                .attr("x", padding + 10) // Slight indent
+                .attr("y", layerY + 15) // More margin from top
+                .attr("width", width - 2 * padding - 20)
+                .attr("height", 40);
+
+            headerFO.append("xhtml:div")
+                .style("display", "flex")
+                .style("justify-content", "space-between")
+                .style("align-items", "center")
+                .style("padding", "0 20px")
+                .style("height", "100%")
+                .html(`
+                    <div style="font-size: 18px; font-weight: 700; color: ${layerColor};">${layer.family.charAt(0).toUpperCase() + layer.family.slice(1)}</div>
+                    <div style="font-size: 12px; color: #64748b; text-align: right; max-width: 60%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${layer.description || ''}</div>
+                `);
             
             // Calculate category positions
             const totalCount = layer.categories.reduce((sum, cat) => sum + cat.count, 0);
-            const descriptionWidth = 320;
-            let currentX = padding + descriptionWidth + 20;
+            // const descriptionWidth = 320; // No longer needed
+            let currentX = padding + 20;
             const availableWidth = width - currentX - padding;
             const totalCategoryWidth = layer.categories.length * minCategoryWidth + (layer.categories.length - 1) * categorySpacing;
             const scaleFactor = totalCategoryWidth > availableWidth ? availableWidth / totalCategoryWidth : 1;
@@ -1066,8 +1134,8 @@
                 );
                 
                 const categoryX = currentX;
-                const categoryY = layerY + 60;
-                const categoryHeight = layerHeight - 100;
+                const categoryY = layerY + 65; // Position below header
+                const categoryHeight = layerHeight - 90; // Much shorter cards (approx 90px)
                 
                 // Create a group for the category
                 const categoryGroup = d3.select(svg).append("g")
@@ -1144,9 +1212,8 @@
                     .text(category.count);
 
                 if (category.description) {
-                    cardDiv.append("div")
-                        .attr("class", "card-desc")
-                        .text(category.description);
+                    // Add data attribute for global tooltip
+                    cardDiv.attr("data-tooltip", category.description);
                 }
                 
                 // Store position for dependency arrows
@@ -1405,8 +1472,6 @@
                     t = (logVal - logMin) / (logMax - logMin);
                 }
 
-                console.log(`Val: ${val}, DisplayVal: ${displayVal}, LogVal: ${logVal.toFixed(2)}, t: ${t.toFixed(2)}, Name: ${c.name}, LOC: ${c.loc}, LOC_Alt: ${c.loc_alt}, LLOC: ${c.lloc}`);
-                
                 if (mode === 'complexity') {
                     // White -> Dark Red
                     color = d3.interpolateRgb("#ffffff", "#7f1d1d")(t); 
