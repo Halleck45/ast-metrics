@@ -543,49 +543,17 @@
     {% set totalComponents = projectAggregated.Predictions|length %}
 
 
-    {# How it works Section #}
-    <div class="dashboard-card animate-fade-in-up">
-        <div class="text-center mb-5">
-            <h2 class="hero-title">Architecture Recognition</h2>
-            <p class="hero-subtitle mx-auto">
-                AST Metrics automatically detects the role of every component in your codebase by analyzing its structural fingerprint, dependencies, and code patterns.
-            </p>
-        </div>
-            
-        <div class="steps-container">
-            <div class="step-card">
-                <div class="step-icon-wrapper">
-                    <span style="font-size: 24px;">🧬</span>
-                </div>
-                <h3 class="step-title">1. Fingerprint Extraction</h3>
-                <p class="step-desc">
-                    We convert each component into a language-agnostic AST + metrics signature, capturing its DNA.
-                </p>
-            </div>
-            <div class="step-card">
-                <div class="step-icon-wrapper">
-                    <span style="font-size: 24px;">🧠</span>
-                </div>
-                <h3 class="step-title">2. AI Classification</h3>
-                <p class="step-desc">
-                    A specialized model maps the fingerprint to an architectural role using learned patterns.
-                </p>
-            </div>
-            <div class="step-card">
-                <div class="step-icon-wrapper">
-                    <span style="font-size: 24px;">🏗️</span>
-                </div>
-                <h3 class="step-title">3. Layer Assignment</h3>
-                <p class="step-desc">
-                    Components are grouped into standard architecture layers (Domain, Infra, UI) for clarity.
-                </p>
-            </div>
-        </div>
-    </div>
+
+    <!-- Hero Section -->
+<div class="mb-8 animate-fade-in-up">
+    <h1 class="text-4xl font-bold text-gray-900 mb-3" style="letter-spacing: -0.02em;">System map</h1>
+    <p class="text-base text-gray-600 font-light">
+        Explore the architecture of your codebase with our system map. This interactive visualization helps you understand the relationships between components and identify potential issues.
+    </p>
+</div>
 
     {# Architecture Diagram Section #}
     <div class="mb-5">
-        <h2 class="hero-title" style="font-size: 1.75rem; margin-bottom: 1.5rem;">System Map</h2>
         <div class="architecture-diagram-container" id="mainArchitectureDiagram">
             <div class="controls-container">
                 <div class="heatmap-controls">
@@ -622,97 +590,7 @@
 
 
 
-    {# Family Details Section #}
-    <div class="details-section">
-
-        {# Display each family #}
-    {% for family in families %}
-    {% set familyData = groupedByFamily|getMapValue:family.Key %}
-    {% if familyData and familyData|length > 0 %}
     
-    <!-- Cloudcraft-style Grouping -->
-    <div class="family-container" style="border-color: {{ family.Color }}40; background: {{ family.Color }}05;">
-        <div class="family-header">
-            <h3 class="family-title" style="color: {{ family.Color }};">{{ family.Key|capitalizeFirst }}</h3>
-            <p class="family-description">{{ family.Description }}</p>
-        </div>
-
-        <div class="family-content">
-        {# Display each label in this family #}
-        {% for label, items in familyData %}
-        {% set parts = label|split:":" %}
-        {% set category = "Unknown" %}
-        {% set subcategory = "General" %}
-        {% set shortLabel = label %}
-
-        {% if parts|length >= 3 %}
-        {% set category = parts.0 %}
-        {% set subcategory = parts.1 %}
-        {% set shortLabel = parts.2 %}
-        {% elif parts|length == 2 %}
-        {% set category = parts.0 %}
-        {% set subcategory = parts.1 %}
-        {% elif parts|length == 1 %}
-        {% set category = parts.0 %}
-        {% endif %}
-
-        <div class="label-section">
-            <div class="category-header" onclick="toggleCategory(this)" data-label="{{ label }}">
-                <div style="flex: 1;">
-                    <h3 class="category-title">
-                        <span>
-                            {{ category }} › {{ subcategory }} › {{ shortLabel }}
-                        </span>
-                        <span class="expand-icon">▼</span>
-                    </h3>
-                    <div class="category-meta">
-                        <span class="category-badge">{{ items|length }} components</span>
-                    </div>
-                    {% set description = label|getLabelDescription %}
-                    {% if description %}
-                    <div class="category-description" style="margin-top: 0.5rem; font-size: 0.875rem; color: #64748b; line-height: 1.5;">
-                        {{ description }}
-                    </div>
-                    {% endif %}
-                </div>
-            </div>
-
-            <div class="category-content" style="display: none;">
-                {% for item in items %}
-                <div class="component-item">
-                    <div class="component-header">
-                        <div class="component-info">
-                            <div class="component-name">{{ item.Class }}</div>
-                            <div class="component-file">{{ item.File }}</div>
-                        </div>
-                    </div>
-
-                    {% if item.Predictions|length > 0 %}
-                    <div class="flex">
-                        <div class="rounded bg-black text-white text-sm px-2 py-1">
-                            {{ item.Predictions.0.Label }}
-                        </div>
-                        {% for pred in item.Predictions %}
-                            {% if loop.Index > 1 %}
-                                {% if loop.Index <= 3 %}
-                                    <div class="prediction-tag">
-                                        <span class="prediction-label">{{ pred.Label|split:":"|last }}</span>
-                                    </div>
-                                {% endif %}
-                            {% endif %}
-                        {% endfor %}
-                    </div>
-                    {% endif %}
-                </div>
-                {% endfor %}
-            </div>
-        </div>
-        {% endfor %}
-        </div>
-    </div>
-    {% endif %}
-    {% endfor %}
-    </div>
 
     {% endif %}
 </div>
@@ -767,9 +645,6 @@
             window.addEventListener('mousemove', drag);
             window.addEventListener('mouseup', endDrag);
             
-            // Hide details section
-            const detailsSection = document.querySelector('.details-section');
-            if (detailsSection) detailsSection.style.display = 'none';
         } else {
             container.classList.remove('isometric');
             // Recalculate height for 2D
@@ -787,9 +662,6 @@
             // Reset transform
             svg.style.transform = '';
             
-            // Show details section
-            const detailsSection = document.querySelector('.details-section');
-            if (detailsSection) detailsSection.style.display = 'block';
         }
     }
 
