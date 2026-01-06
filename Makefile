@@ -1,4 +1,4 @@
-.PHONY: install build monkey-test
+.PHONY: install build monkey-test bin/protoc
 
 PROTOC_VERSION=24.4
 ARCHITECTURE=linux-x86_64
@@ -18,7 +18,7 @@ build-protobuff: bin/protoc
 	@echo "\e[34m\033[1m-> Building protobuff\033[0m\e[39m\n"
 	rm -rf pb || true
 	mkdir -p pb
-	GOPATH=$(HOME)/go PATH=$$PATH:$(HOME)/go/bin ./bin/protoc --go_out=pb proto/NodeType.proto
+	GOPATH=$(shell go env GOPATH) PATH=$$PATH:$(shell go env GOPATH)/bin ./bin/protoc --go_out=pb proto/NodeType.proto
 	mv pb/github.com/halleck45/ast-metrics/pb/NodeType.pb.go pb/ || true
 	echo 'THIS DIRECTORY IS BUILT BY MAKEFILE (make build-protobuff)' > pb/README.md
 	rm -rf pb/github.com || true
@@ -31,7 +31,7 @@ build-release:
 	@echo "\e[34m\033[1m-> Building go binaries for supported platforms\033[0m\e[39m\n"
 	rm -Rf dist || true
 	go install github.com/goreleaser/goreleaser@latest
-	GOPATH=$(HOME)/go PATH=$$PATH:$(HOME)/go/bin goreleaser build --snapshot
+	GOPATH=$(shell go env GOPATH) PATH=$$PATH:$(shell go env GOPATH)/bin goreleaser build --snapshot
 	@echo "\e[34m\033[1mDONE \033[0m\e[39m\n"
 build: build-protobuff build-go
 	@echo "\n\e[42m  BUILD FINISHED  \e[49m\n"
