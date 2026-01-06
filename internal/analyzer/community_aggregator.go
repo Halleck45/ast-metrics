@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	graph "github.com/halleck45/ast-metrics/internal/analyzer/graph"
+	"github.com/halleck45/ast-metrics/internal/analyzer/namer"
 	pb "github.com/halleck45/ast-metrics/pb"
 )
 
@@ -783,28 +784,38 @@ func (ca *CommunityAggregator) Calculate(aggregate *Aggregated) {
 		topPaths[entry] = acc
 	}
 
-	// Derive display names per community using a simple rule:
-	// pick the member node with the highest number of outgoing edges ("out").
-	// In case of a tie, choose the lexicographically smallest node id.
+	// Derive display names per community using the namer
 	display := map[string]string{}
-	for cid, nodes := range comms {
-		bestNode := ""
-		bestOut := -1
-		for _, u := range nodes {
-			n := aggregate.Graph.Nodes[u]
-			out := 0
-			if n != nil {
-				out = len(n.Edges)
+	namerInstance, err := namer.NewNamer()
+	if err != nil {
+		// Fallback to community ID if namer initialization fails
+		for cid := range comms {
+			display[cid] = cid
+		}
+	} else {
+		for cid, nodes := range comms {
+			// Collect qualified names of nodes in this community
+			classNames := []string{}
+			for _, u := range nodes {
+				n := aggregate.Graph.Nodes[u]
+				if n != nil && n.Name != nil {
+					// Prefer Qualified, fallback to Short
+					name := n.Name.Qualified
+					if name == "" {
+						name = n.Name.Short
+					}
+					if name != "" {
+						classNames = append(classNames, name)
+					}
+				}
 			}
-			if out > bestOut || (out == bestOut && (bestNode == "" || u < bestNode)) {
-				bestOut = out
-				bestNode = u
+			// Use namer to generate display name
+			if len(classNames) > 0 {
+				display[cid] = namerInstance.Names(classNames)
+			} else {
+				display[cid] = cid
 			}
 		}
-		if bestNode == "" {
-			bestNode = cid
-		}
-		display[cid] = bestNode
 	}
 
 	aggregateCommunity := &CommunityMetrics{
