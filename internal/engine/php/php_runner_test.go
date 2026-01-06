@@ -99,7 +99,7 @@ class calculatrice {
 	// [==, / ]
 	// Convert to string (for easier comparison)
 	operatorsAsString = fmt.Sprintf("%v", func2.Operators)
-	operatorsExpectedAsString = "[name:\"==\" name:\"/\" name:\"+=\"]"
+	operatorsExpectedAsString = "[name:\"==\" name:\"/\" name:\"+=\" name:\"->\" name:\"->\"]"
 	assert.Equal(t, operatorsExpectedAsString, operatorsAsString, "Expected operators to be %s, got %s", operatorsExpectedAsString, operatorsAsString)
 
 	// Ensure LOC
@@ -731,12 +731,12 @@ class Registry
 
     public function method2()
     {
-        return array_keys($this->myArray);
+        return array_keys($this);
     }
 
     public function method3()
     {
-        return $this->myArray;
+        return $this;
     }
 }
 `
@@ -800,4 +800,56 @@ function test() {
 	}
 	assert.Equal(t, 3, cnt, "Incorrect number of pipe operators")
 
+}
+
+func TestPhpExtractOperators(t *testing.T) {
+	phpSource := `<?php
+function test() {
+	$myObject = new MyClass(
+		userId: 1,
+		userName: "John Doe",
+		forceLogout: true,
+		authTwoFactorEnabled: false
+	);
+	$myObject->myMethod1();
+	$myObject->myMethod2();
+	MyClass::myMethod3();
+	MyClass::myMethod4();
+	MyClass::myMethod5();
+}
+`
+	adapter := NewTreeSitterAdapter([]byte(phpSource))
+	ops, _ := adapter.ExtractOperatorsOperands([]byte(phpSource), 1, 13)
+
+	hasObjectOperator := false
+	hasDoubleColonOperator := false
+	hasCollonOperator := false
+
+	objectOperatorCount := 0
+	doubleCollonCount := 0
+	colonCount := 0
+	for _, op := range ops {
+		if op == "->" {
+			hasObjectOperator = true
+			objectOperatorCount++
+		}
+
+		if op == "::" {
+			hasDoubleColonOperator = true
+			doubleCollonCount++
+		}
+
+		if op == ":" {
+			hasCollonOperator = true
+			colonCount++
+		}
+	}
+	assert.True(t, hasObjectOperator, "Expected object operator (->) to be detected in source code")
+	assert.Equal(t, 2, objectOperatorCount, "Expected 2 object operators in the source code")
+
+	assert.True(t, hasDoubleColonOperator, "Expected double colon (::) to be detected in source code")
+	assert.Equal(t, 3, doubleCollonCount, "Expected 3 double colons in the source code")
+
+	assert.True(t, hasCollonOperator, "Expected colon (::) to be detected in source code")
+	assert.Equal(t, 4, colonCount, "Expected 4 colons in the source code")
 }
