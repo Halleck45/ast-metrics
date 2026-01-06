@@ -1,0 +1,23 @@
+# Python dependencies for code classifier training
+# Install with: pip install -r requirements.txt
+
+# Core data processing
+numpy>=1.24.0
+pandas>=2.0.0
+
+# Machine learning
+scikit-learn>=1.3.0
+
+# NLP and embeddings (optional, for advanced features)
+sentence-transformers>=2.2.0
+
+# Local LLM support (optional, for 1-labelize.py)
+llama-cpp-python>=0.1.0
+
+# OpenAI API support (optional, for 1-labelize_remote.py)
+openai>=1.0.0
+
+# Joblib for model serialization (included with scikit-learn but listed for clarity)
+joblib>=1.3.0
+
+

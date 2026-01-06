@@ -149,8 +149,8 @@
                         <span class="mx-4 font-medium">Browse</span>
                     </a>
 
-                    <a role="menuitem" aria-label="Communities" tabindex="0" href="communities.html"
-                        class="flex items-center px-4 py-2 mt-5 {% if page == 'communities.html'%}text-gray-700 bg-gray-100{% else %}text-gray-600{% endif %} transition-colors duration-300 transform rounded-md hover:opacity-70">
+                    <a role="menuitem" aria-label="architecture" tabindex="0" href="classification.html"
+                        class="flex items-center px-4 py-2 mt-5 {% if page == 'classification.html'%}text-gray-700 bg-gray-100{% else %}text-gray-600{% endif %} transition-colors duration-300 transform rounded-md hover:opacity-70">
 
                         <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px"
                             fill="#333333">
@@ -168,6 +168,17 @@
                                 d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
                         </svg>
                         <span class="mx-4 font-medium">Bus Factor</span>
+                    </a>
+
+                    <a role="menuitem" aria-label="Communities" tabindex="0" href="communities.html"
+                        class="flex items-center px-4 py-2 mt-5 {% if page == 'communities.html'%}text-gray-700 bg-gray-100{% else %}text-gray-600{% endif %} transition-colors duration-300 transform rounded-md hover:opacity-70">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
+                            stroke="currentColor" class="size-6">
+                            <path stroke-linecap="round" stroke-linejoin="round"
+                                d="M9.568 3H5.25A2.25 2.25 0 0 0 3 5.25v4.318c0 .597.237 1.17.659 1.591l9.581 9.581c.699.699 1.78.872 2.607.33a18.095 18.095 0 0 0 5.223-5.223c.542-.827.369-1.908-.33-2.607L11.16 3.66A2.25 2.25 0 0 0 9.568 3Z" />
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M6 6h.008v.008H6V6Z" />
+                        </svg>
+                        <span class="mx-4 font-medium">Communities</span>
                     </a>
 
 
@@ -296,23 +307,14 @@
         </main>
     </div>
 
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/tablesort/5.2.1/tablesort.min.js"
-        integrity="sha512-F/gIMdDfda6OD2rnzt/Iyp2V9JLHlFQ+EUyixDg9+rkwjqgW1snpkpx7FD5FV1+gG2fmFj7I3r6ReQDUidHelA=="
-        crossorigin="anonymous" referrerpolicy="no-referrer" defer></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/tablesort/5.2.1/sorts/tablesort.number.min.js"
-        integrity="sha512-dRD755QRxlybm0h3LXXIGrFcjNakuxW3reZqnPtUkMv6YsSWoJf+slPjY5v4lZvx2ss+wBZQFegepmA7a2W9eA=="
-        crossorigin="anonymous" referrerpolicy="no-referrer" defer></script>
+
     <script src="https://cdn.jsdelivr.net/npm/d3@7" defer></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"
         integrity="sha512-BNaRQnYJYiPSqHHDb58B0yaPfCu+Wgds8Gp/gU33kqBtgNS4tSPHuGibyoeqMV/TJlSKda6FXzoEyYGjTe+vXA=="
         crossorigin="anonymous" referrerpolicy="no-referrer" defer></script>
     <script type="text/javascript">
         document.addEventListener('DOMContentLoaded', function () {
-            // get .sortable tables
-            const tables = document.querySelectorAll('.sortable');
-            tables.forEach(function (table) {
-                new Tablesort(table);
-            });
+
 
 
             // Share buttons

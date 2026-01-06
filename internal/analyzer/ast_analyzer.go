@@ -11,19 +11,22 @@ import (
 	Component "github.com/halleck45/ast-metrics/internal/analyzer/component"
 	Volume "github.com/halleck45/ast-metrics/internal/analyzer/volume"
 	engine "github.com/halleck45/ast-metrics/internal/engine"
-	pb "github.com/halleck45/ast-metrics/pb"
 	storage "github.com/halleck45/ast-metrics/internal/storage"
+	pb "github.com/halleck45/ast-metrics/pb"
 	"github.com/pterm/pterm"
 	"github.com/yargevad/filepathx"
 	"google.golang.org/protobuf/proto"
 )
 
 func Start(workdir *storage.Workdir, progressbar *pterm.SpinnerPrinter) []*pb.File {
-
 	// List all ASTs files (*.bin) in the workdir
 	astFiles, err := filepathx.Glob(workdir.Path() + "/**/*.bin")
 	if err != nil {
 		panic(err)
+	}
+
+	if len(astFiles) == 0 {
+		return []*pb.File{}
 	}
 
 	// Wait for end of all goroutines
@@ -66,6 +69,7 @@ func Start(workdir *storage.Workdir, progressbar *pterm.SpinnerPrinter) []*pb.Fi
 
 	wg.Wait()
 	close(filesChan)
+	close(channelResult)
 
 	if progressbar != nil {
 		progressbar.Info("AST Analysis finished")
@@ -73,10 +77,9 @@ func Start(workdir *storage.Workdir, progressbar *pterm.SpinnerPrinter) []*pb.Fi
 
 	// Convert it to slice of pb.File
 	allResults := make([]*pb.File, 0, len(astFiles))
-	for i := 0; i < len(astFiles); i++ {
-		allResults = append(allResults, <-channelResult)
+	for result := range channelResult {
+		allResults = append(allResults, result)
 	}
-	defer close(channelResult)
 	return allResults
 }
 

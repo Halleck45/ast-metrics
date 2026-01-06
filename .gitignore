@@ -18,3 +18,11 @@ ast-metrics.mem
 # CI
 ast-metrics-report.json
 metrics.txt
+samples
+
+# AI
+ai/training/classifier/models
+dataset
+classified_output
+*.plk
+

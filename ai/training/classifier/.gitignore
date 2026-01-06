@@ -1,0 +1,45 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+*.egg-info/
+dist/
+build/
+*.egg
+
+# Model files and datasets (can be large)
+*.pkl
+*.joblib
+*.json.gz
+*.gguf
+models/
+build/
+dataset/
+classified_output/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Temporary files
+*.csv.bak
+*.csvbak
+*.tmp
+*.log
+
+# Environment
+.env
+venv/
+env/
+ENV/
+
+

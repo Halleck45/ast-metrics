@@ -2,6 +2,7 @@ package report
 
 import (
 	"embed"
+	"encoding/json"
 	"fmt"
 	"hash/fnv"
 	"os"
@@ -14,6 +15,7 @@ import (
 
 	"github.com/flosch/pongo2/v5"
 	"github.com/halleck45/ast-metrics/internal/analyzer"
+	"github.com/halleck45/ast-metrics/internal/analyzer/classifier"
 	"github.com/halleck45/ast-metrics/internal/engine"
 	"github.com/halleck45/ast-metrics/internal/ui"
 	pb "github.com/halleck45/ast-metrics/pb"
@@ -69,6 +71,7 @@ func (v *HtmlReportGenerator) Generate(files []*pb.File, projectAggregated analy
 		"compare.html",
 		"explorer.html",
 		"linters.html",
+		"classification.html",
 		"componentChartRadiusBar.html",
 		"componentTableRisks.html",
 		"componentTableCompareBranch.html",
@@ -155,6 +158,36 @@ func (v *HtmlReportGenerator) Generate(files []*pb.File, projectAggregated analy
 		v.GenerateLanguagePage("busfactor.html", language, currentView, files, projectAggregated)
 	}
 
+	// Classification page
+	v.GenerateLanguagePage("classification.html", "All", projectAggregated.Combined, files, projectAggregated)
+	for language, currentView := range projectAggregated.ByProgrammingLanguage {
+		v.GenerateLanguagePage("classification.html", language, currentView, files, projectAggregated)
+	}
+
+	// Architecture Roles page
+	v.GenerateLanguagePage("architecture-roles.html", "All", projectAggregated.Combined, files, projectAggregated)
+	for language, currentView := range projectAggregated.ByProgrammingLanguage {
+		v.GenerateLanguagePage("architecture-roles.html", language, currentView, files, projectAggregated)
+	}
+
+	// Layer Violations page
+	v.GenerateLanguagePage("layer-violations.html", "All", projectAggregated.Combined, files, projectAggregated)
+	for language, currentView := range projectAggregated.ByProgrammingLanguage {
+		v.GenerateLanguagePage("layer-violations.html", language, currentView, files, projectAggregated)
+	}
+
+	// Ambiguity Zones page
+	v.GenerateLanguagePage("ambiguity-zones.html", "All", projectAggregated.Combined, files, projectAggregated)
+	for language, currentView := range projectAggregated.ByProgrammingLanguage {
+		v.GenerateLanguagePage("ambiguity-zones.html", language, currentView, files, projectAggregated)
+	}
+
+	// Role Flow Graph page
+	v.GenerateLanguagePage("role-flow-graph.html", "All", projectAggregated.Combined, files, projectAggregated)
+	for language, currentView := range projectAggregated.ByProgrammingLanguage {
+		v.GenerateLanguagePage("role-flow-graph.html", language, currentView, files, projectAggregated)
+	}
+
 	// copy images
 	err = v.EnsureFolder(fmt.Sprintf("%s/images", v.ReportPath))
 	if err != nil {
@@ -165,6 +198,9 @@ func (v *HtmlReportGenerator) Generate(files []*pb.File, projectAggregated analy
 	for _, file := range []string{
 		"help-community.png",
 		"logo-ast-metrics-small.png",
+		"icon-ai.webp",
+		"icon-classifier.webp",
+		"icon-fingerprint.webp",
 	} {
 		// read the file
 		htmlContent, err := htmlContent.ReadFile(fmt.Sprintf("templates/html/images/%s", file))
@@ -382,7 +418,7 @@ func (v *HtmlReportGenerator) GenerateLanguagePage(template string, language str
 
 	filesJSON := buildFilesJSONPruned(files, language)
 	risksJSON := buildRisksJSON(risksByPath)
-	out, err := tpl.Execute(pongo2.Context{"datetime": datetime, "page": template, "currentLanguage": language, "currentView": currentView, "projectAggregated": projectAggregated, "files": files, "risksByPath": risksByPath, "filesJSON": filesJSON, "risksJSON": risksJSON})
+	out, err := tpl.Execute(pongo2.Context{"datetime": datetime, "page": template, "currentLanguage": language, "currentView": currentView, "projectAggregated": projectAggregated, "files": files, "risksByPath": risksByPath, "filesJSON": filesJSON, "risksJSON": risksJSON, "classificationFamilies": classifier.ClassificationFamilies})
 	if err != nil {
 		log.Error(err)
 		return err
@@ -484,6 +520,16 @@ func (v *HtmlReportGenerator) RegisterFilters() {
 				if c.Stmts != nil && c.Stmts.Analyze != nil && c.Stmts.Analyze.ClassCohesion != nil && c.Stmts.Analyze.ClassCohesion.Lcom4 != nil {
 					b.WriteString(",\"lcom4\":")
 					b.WriteString(fmt.Sprintf("%d", *c.Stmts.Analyze.ClassCohesion.Lcom4))
+				}
+				// complexity
+				if c.Stmts != nil && c.Stmts.Analyze != nil && c.Stmts.Analyze.Complexity != nil && c.Stmts.Analyze.Complexity.Cyclomatic != nil {
+					b.WriteString(",\"complexity\":")
+					b.WriteString(fmt.Sprintf("%d", *c.Stmts.Analyze.Complexity.Cyclomatic))
+				}
+				// loc
+				if c.Stmts != nil && c.Stmts.Analyze != nil && c.Stmts.Analyze.Volume != nil && c.Stmts.Analyze.Volume.Loc != nil {
+					b.WriteString(",\"loc\":")
+					b.WriteString(fmt.Sprintf("%d", *c.Stmts.Analyze.Volume.Loc))
 				}
 				b.WriteString("}")
 			}
@@ -797,6 +843,597 @@ func (v *HtmlReportGenerator) RegisterFilters() {
 		return pongo2.AsSafeValue(comp.AsHtml()), nil
 	})
 
+	// filter groupByLabel
+	pongo2.RegisterFilter("groupByLabel", func(in *pongo2.Value, param *pongo2.Value) (out *pongo2.Value, err *pongo2.Error) {
+		predictions, ok := in.Interface().([]classifier.ClassPrediction)
+		if !ok {
+			return pongo2.AsValue(map[string][]classifier.ClassPrediction{}), nil
+		}
+
+		grouped := make(map[string][]classifier.ClassPrediction)
+		for _, p := range predictions {
+			if len(p.Predictions) > 0 {
+				label := p.Predictions[0].Label
+				grouped[label] = append(grouped[label], p)
+			} else {
+				grouped["Unknown"] = append(grouped["Unknown"], p)
+			}
+		}
+		return pongo2.AsValue(grouped), nil
+	})
+
+	// filter getLabelDescription: returns the description for a classification label
+	pongo2.RegisterFilter("getLabelDescription", func(in *pongo2.Value, param *pongo2.Value) (out *pongo2.Value, err *pongo2.Error) {
+		label := in.String()
+		description := classifier.GetDescription(label)
+		return pongo2.AsValue(description), nil
+	})
+
+	// filter filterTestFiles: filters out predictions for test files
+	pongo2.RegisterFilter("filterTestFiles", func(in *pongo2.Value, param *pongo2.Value) (out *pongo2.Value, err *pongo2.Error) {
+		predictions, ok := in.Interface().([]classifier.ClassPrediction)
+		if !ok {
+			return pongo2.AsValue([]classifier.ClassPrediction{}), nil
+		}
+
+		files, ok := param.Interface().([]*pb.File)
+		if !ok {
+			// If files param is not provided, return all predictions
+			return pongo2.AsValue(predictions), nil
+		}
+
+		// Create a map of test file paths for quick lookup
+		testFilePaths := make(map[string]bool)
+		for _, f := range files {
+			if f.IsTest {
+				testFilePaths[f.Path] = true
+				if f.ShortPath != "" && f.ShortPath != f.Path {
+					testFilePaths[f.ShortPath] = true
+				}
+			}
+		}
+
+		// Filter out predictions for test files
+		filtered := make([]classifier.ClassPrediction, 0, len(predictions))
+		for _, pred := range predictions {
+			if !testFilePaths[pred.File] {
+				filtered = append(filtered, pred)
+			}
+		}
+
+		return pongo2.AsValue(filtered), nil
+	})
+
+	// filter groupByFamilyAndLabel: groups predictions by family first, then by label
+	pongo2.RegisterFilter("groupByFamilyAndLabel", func(in *pongo2.Value, param *pongo2.Value) (out *pongo2.Value, err *pongo2.Error) {
+		predictions, ok := in.Interface().([]classifier.ClassPrediction)
+		if !ok {
+			return pongo2.AsValue(classifier.FamilyGroupedPredictions{}), nil
+		}
+		grouped := classifier.GroupByFamilyAndLabel(predictions)
+		return pongo2.AsValue(grouped), nil
+	})
+
+	// filter capitalizeFirst: capitalizes the first letter of a string
+	pongo2.RegisterFilter("capitalizeFirst", func(in *pongo2.Value, param *pongo2.Value) (out *pongo2.Value, err *pongo2.Error) {
+		s := in.String()
+		if len(s) == 0 {
+			return pongo2.AsValue(""), nil
+		}
+		return pongo2.AsValue(strings.ToUpper(s[:1]) + s[1:]), nil
+	})
+
+	// filter getMapValue: gets a value from a map using a key
+	pongo2.RegisterFilter("getMapValue", func(in *pongo2.Value, param *pongo2.Value) (out *pongo2.Value, err *pongo2.Error) {
+		key := param.String()
+		// Try different map types
+		switch m := in.Interface().(type) {
+		case map[string]interface{}:
+			if val, exists := m[key]; exists {
+				return pongo2.AsValue(val), nil
+			}
+		case classifier.FamilyGroupedPredictions:
+			if val, exists := m[key]; exists {
+				return pongo2.AsValue(val), nil
+			}
+		}
+		return pongo2.AsValue(nil), nil
+	})
+
+	// filter countFamilyItems: counts total items in a family data map
+	pongo2.RegisterFilter("countFamilyItems", func(in *pongo2.Value, param *pongo2.Value) (out *pongo2.Value, err *pongo2.Error) {
+		familyData, ok := in.Interface().(map[string][]classifier.ClassPrediction)
+		if !ok {
+			return pongo2.AsValue(0), nil
+		}
+		count := 0
+		for _, items := range familyData {
+			count += len(items)
+		}
+		return pongo2.AsValue(count), nil
+	})
+
+	// filter getArchitectureDiagramData: returns JSON data for architecture diagram
+	pongo2.RegisterFilter("getArchitectureDiagramData", func(in *pongo2.Value, param *pongo2.Value) (out *pongo2.Value, err *pongo2.Error) {
+		grouped, ok := in.Interface().(classifier.FamilyGroupedPredictions)
+		if !ok {
+			return pongo2.AsValue("{}"), nil
+		}
+
+		// Build diagram data structure
+		type CategoryData struct {
+			Label       string `json:"label"`
+			ShortName   string `json:"shortName"`
+			Count       int    `json:"count"`
+			Family      string `json:"family"`
+			Description string `json:"description"`
+		}
+
+		type LayerData struct {
+			Family      string         `json:"family"`
+			Description string         `json:"description"`
+			Color       string         `json:"color"`
+			Categories  []CategoryData `json:"categories"`
+		}
+
+		layers := make([]LayerData, 0)
+		families := classifier.ClassificationFamilies
+
+		for _, family := range families {
+			familyData, exists := grouped[family.Key]
+			if !exists || len(familyData) == 0 {
+				continue
+			}
+
+			categories := make([]CategoryData, 0)
+			for label, items := range familyData {
+				parts := strings.Split(label, ":")
+				shortName := label
+				// If we have at least 2 parts, use the last 2 (subcategory + name)
+				// Example: "component:messaging:handler" -> "messaging handler"
+				if len(parts) >= 2 {
+					shortName = parts[len(parts)-2] + " " + parts[len(parts)-1]
+				} else if len(parts) == 1 {
+					shortName = parts[0]
+				}
+				description := classifier.GetDescription(label)
+				categories = append(categories, CategoryData{
+					Label:       label,
+					ShortName:   shortName,
+					Count:       len(items),
+					Family:      family.Key,
+					Description: description,
+				})
+			}
+
+			if len(categories) > 0 {
+				layers = append(layers, LayerData{
+					Family:      family.Key,
+					Description: family.Description,
+					Color:       family.Color,
+					Categories:  categories,
+				})
+			}
+		}
+
+		jsonData, jsonErr := json.Marshal(layers)
+		if jsonErr != nil {
+			return pongo2.AsValue("{}"), nil
+		}
+
+		return pongo2.AsValue(string(jsonData)), nil
+	})
+
+	// filter getCategoryDependenciesWithFiles: extracts dependencies between categories using files
+	pongo2.RegisterFilter("getCategoryDependenciesWithFiles", func(in *pongo2.Value, param *pongo2.Value) (out *pongo2.Value, err *pongo2.Error) {
+		// in should be projectAggregated.Predictions
+		// param should be files array
+		predictions, ok := in.Interface().([]classifier.ClassPrediction)
+		if !ok {
+			return pongo2.AsValue("[]"), nil
+		}
+
+		files, ok := param.Interface().([]*pb.File)
+		if !ok {
+			return pongo2.AsValue("[]"), nil
+		}
+
+		// Create map: class qualified name -> prediction label
+		classToLabel := make(map[string]string)
+		for _, pred := range predictions {
+			if len(pred.Predictions) > 0 {
+				classToLabel[pred.Class] = pred.Predictions[0].Label
+			}
+		}
+
+		// Create map: file path -> file object
+		fileMap := make(map[string]*pb.File)
+		for _, f := range files {
+			key := f.ShortPath
+			if key == "" {
+				key = f.Path
+			}
+			fileMap[key] = f
+		}
+
+		// Build dependency links between categories
+		type DependencyLink struct {
+			FromCategory string `json:"fromCategory"`
+			ToCategory   string `json:"toCategory"`
+			Count        int    `json:"count"`
+		}
+
+		linksMap := make(map[string]int) // "fromLabel->toLabel" -> count
+
+		// For each prediction, find its file and class, then extract dependencies
+		for _, pred := range predictions {
+			if len(pred.Predictions) == 0 {
+				continue
+			}
+			fromLabel := pred.Predictions[0].Label
+
+			// Find the file
+			file, exists := fileMap[pred.File]
+			if !exists {
+				continue
+			}
+
+			// Find the class in the file
+			classes := engine.GetClassesInFile(file)
+			var targetClass *pb.StmtClass
+			for _, class := range classes {
+				className := ""
+				if class.Name != nil {
+					className = class.Name.Qualified
+					if className == "" {
+						className = class.Name.Short
+					}
+				}
+				if className == pred.Class {
+					targetClass = class
+					break
+				}
+			}
+
+			if targetClass == nil {
+				continue
+			}
+
+			// Get dependencies for this specific class
+			className := pred.Class
+			var classDeps []*pb.StmtExternalDependency
+
+			// Get explicit dependencies from class stmts
+			if targetClass.Stmts != nil {
+				for _, dep := range targetClass.Stmts.StmtExternalDependencies {
+					if dep != nil {
+						depCopy := *dep
+						depCopy.From = className
+						classDeps = append(classDeps, &depCopy)
+					}
+				}
+			}
+
+			// Get dependencies from extends/implements/uses
+			for _, ext := range targetClass.Extends {
+				if ext != nil {
+					classDeps = append(classDeps, &pb.StmtExternalDependency{
+						Namespace: ext.Qualified,
+						ClassName: ext.Short,
+						From:      className,
+					})
+				}
+			}
+			for _, impl := range targetClass.Implements {
+				if impl != nil {
+					classDeps = append(classDeps, &pb.StmtExternalDependency{
+						Namespace: impl.Qualified,
+						ClassName: impl.Short,
+						From:      className,
+					})
+				}
+			}
+			for _, use := range targetClass.Uses {
+				if use != nil {
+					classDeps = append(classDeps, &pb.StmtExternalDependency{
+						Namespace: use.Qualified,
+						ClassName: use.Short,
+						From:      className,
+					})
+				}
+			}
+
+			// Get dependencies from methods
+			if targetClass.Stmts != nil {
+				for _, method := range targetClass.Stmts.StmtFunction {
+					for _, ext := range method.Externals {
+						if ext != nil {
+							ns := ext.Qualified
+							if ns == "" {
+								ns = ext.Short
+							}
+							classDeps = append(classDeps, &pb.StmtExternalDependency{
+								Namespace: ns,
+								ClassName: ext.Short,
+								From:      className,
+							})
+						}
+					}
+					// Also get explicit dependencies from method stmts
+					if method.Stmts != nil {
+						for _, dep := range method.Stmts.StmtExternalDependencies {
+							if dep != nil {
+								depCopy := *dep
+								depCopy.From = className
+								classDeps = append(classDeps, &depCopy)
+							}
+						}
+					}
+				}
+			}
+
+			// Process each dependency
+			for _, dep := range classDeps {
+				if dep == nil {
+					continue
+				}
+
+				// Find the target class in predictions
+				targetClassName := dep.ClassName
+				if dep.Namespace != "" {
+					// Try to construct qualified name
+					if !strings.Contains(targetClassName, "::") && !strings.Contains(targetClassName, ".") {
+						targetClassName = dep.Namespace + "::" + dep.ClassName
+					}
+				}
+
+				// Try different variations of the class name
+				toLabel := ""
+				if label, ok := classToLabel[targetClassName]; ok {
+					toLabel = label
+				} else if label, ok := classToLabel[dep.ClassName]; ok {
+					toLabel = label
+				} else if dep.Namespace != "" {
+					// Try namespace::className
+					fullName := dep.Namespace + "::" + dep.ClassName
+					if label, ok := classToLabel[fullName]; ok {
+						toLabel = label
+					}
+				}
+
+				if toLabel != "" && toLabel != fromLabel {
+					key := fromLabel + "->" + toLabel
+					linksMap[key]++
+				}
+			}
+		}
+
+		// Convert to list
+		linksList := make([]DependencyLink, 0, len(linksMap))
+		for key, count := range linksMap {
+			parts := strings.Split(key, "->")
+			if len(parts) == 2 {
+				linksList = append(linksList, DependencyLink{
+					FromCategory: parts[0],
+					ToCategory:   parts[1],
+					Count:        count,
+				})
+			}
+		}
+
+		jsonData, jsonErr := json.Marshal(linksList)
+		if jsonErr != nil {
+			return pongo2.AsValue("[]"), nil
+		}
+
+		return pongo2.AsValue(string(jsonData)), nil
+	})
+
+	// filter getCategoryDependenciesWithFiles: extracts dependencies between categories using files
+	pongo2.RegisterFilter("getCategoryDependenciesWithFiles", func(in *pongo2.Value, param *pongo2.Value) (out *pongo2.Value, err *pongo2.Error) {
+		// in should be projectAggregated.Predictions
+		// param should be files array
+		predictions, ok := in.Interface().([]classifier.ClassPrediction)
+		if !ok {
+			return pongo2.AsValue("[]"), nil
+		}
+
+		files, ok := param.Interface().([]*pb.File)
+		if !ok {
+			return pongo2.AsValue("[]"), nil
+		}
+
+		// Create map: class qualified name -> prediction label
+		classToLabel := make(map[string]string)
+		for _, pred := range predictions {
+			if len(pred.Predictions) > 0 {
+				classToLabel[pred.Class] = pred.Predictions[0].Label
+			}
+		}
+
+		// Create map: file path -> file object
+		fileMap := make(map[string]*pb.File)
+		for _, f := range files {
+			key := f.ShortPath
+			if key == "" {
+				key = f.Path
+			}
+			fileMap[key] = f
+		}
+
+		// Build dependency links between categories
+		type DependencyLink struct {
+			FromCategory string `json:"fromCategory"`
+			ToCategory   string `json:"toCategory"`
+			Count        int    `json:"count"`
+		}
+
+		linksMap := make(map[string]int) // "fromLabel->toLabel" -> count
+
+		// For each prediction, find its file and class, then extract dependencies
+		for _, pred := range predictions {
+			if len(pred.Predictions) == 0 {
+				continue
+			}
+			fromLabel := pred.Predictions[0].Label
+
+			// Find the file
+			file, exists := fileMap[pred.File]
+			if !exists {
+				continue
+			}
+
+			// Find the class in the file
+			classes := engine.GetClassesInFile(file)
+			var targetClass *pb.StmtClass
+			for _, class := range classes {
+				className := ""
+				if class.Name != nil {
+					className = class.Name.Qualified
+					if className == "" {
+						className = class.Name.Short
+					}
+				}
+				if className == pred.Class {
+					targetClass = class
+					break
+				}
+			}
+
+			if targetClass == nil {
+				continue
+			}
+
+			// Get dependencies for this specific class
+			className := pred.Class
+			var classDeps []*pb.StmtExternalDependency
+
+			// Get explicit dependencies from class stmts
+			if targetClass.Stmts != nil {
+				for _, dep := range targetClass.Stmts.StmtExternalDependencies {
+					if dep != nil {
+						depCopy := *dep
+						depCopy.From = className
+						classDeps = append(classDeps, &depCopy)
+					}
+				}
+			}
+
+			// Get dependencies from extends/implements/uses
+			for _, ext := range targetClass.Extends {
+				if ext != nil {
+					classDeps = append(classDeps, &pb.StmtExternalDependency{
+						Namespace: ext.Qualified,
+						ClassName: ext.Short,
+						From:      className,
+					})
+				}
+			}
+			for _, impl := range targetClass.Implements {
+				if impl != nil {
+					classDeps = append(classDeps, &pb.StmtExternalDependency{
+						Namespace: impl.Qualified,
+						ClassName: impl.Short,
+						From:      className,
+					})
+				}
+			}
+			for _, use := range targetClass.Uses {
+				if use != nil {
+					classDeps = append(classDeps, &pb.StmtExternalDependency{
+						Namespace: use.Qualified,
+						ClassName: use.Short,
+						From:      className,
+					})
+				}
+			}
+
+			// Get dependencies from methods
+			if targetClass.Stmts != nil {
+				for _, method := range targetClass.Stmts.StmtFunction {
+					for _, ext := range method.Externals {
+						if ext != nil {
+							ns := ext.Qualified
+							if ns == "" {
+								ns = ext.Short
+							}
+							classDeps = append(classDeps, &pb.StmtExternalDependency{
+								Namespace: ns,
+								ClassName: ext.Short,
+								From:      className,
+							})
+						}
+					}
+					// Also get explicit dependencies from method stmts
+					if method.Stmts != nil {
+						for _, dep := range method.Stmts.StmtExternalDependencies {
+							if dep != nil {
+								depCopy := *dep
+								depCopy.From = className
+								classDeps = append(classDeps, &depCopy)
+							}
+						}
+					}
+				}
+			}
+
+			// Process each dependency
+			for _, dep := range classDeps {
+				if dep == nil {
+					continue
+				}
+
+				// Find the target class in predictions
+				targetClassName := dep.ClassName
+				if dep.Namespace != "" {
+					// Try to construct qualified name
+					if !strings.Contains(targetClassName, "::") && !strings.Contains(targetClassName, ".") {
+						targetClassName = dep.Namespace + "::" + dep.ClassName
+					}
+				}
+
+				// Try different variations of the class name
+				toLabel := ""
+				if label, ok := classToLabel[targetClassName]; ok {
+					toLabel = label
+				} else if label, ok := classToLabel[dep.ClassName]; ok {
+					toLabel = label
+				} else if dep.Namespace != "" {
+					// Try namespace::className
+					fullName := dep.Namespace + "::" + dep.ClassName
+					if label, ok := classToLabel[fullName]; ok {
+						toLabel = label
+					}
+				}
+
+				if toLabel != "" && toLabel != fromLabel {
+					key := fromLabel + "->" + toLabel
+					linksMap[key]++
+				}
+			}
+		}
+
+		// Convert to list
+		linksList := make([]DependencyLink, 0, len(linksMap))
+		for key, count := range linksMap {
+			parts := strings.Split(key, "->")
+			if len(parts) == 2 {
+				linksList = append(linksList, DependencyLink{
+					FromCategory: parts[0],
+					ToCategory:   parts[1],
+					Count:        count,
+				})
+			}
+		}
+
+		jsonData, jsonErr := json.Marshal(linksList)
+		if jsonErr != nil {
+			return pongo2.AsValue("[]"), nil
+		}
+
+		return pongo2.AsValue(string(jsonData)), nil
+	})
+
 	// filter convertOneFileToCollection
 	pongo2.RegisterFilter("convertOneFileToCollection", func(in *pongo2.Value, param *pongo2.Value) (out *pongo2.Value, err *pongo2.Error) {
 		file := in.Interface().(*pb.File)
@@ -897,5 +1534,63 @@ func (v *HtmlReportGenerator) RegisterFilters() {
 
 		colorIndex := int(hash) % len(colors)
 		return pongo2.AsValue(colors[colorIndex]), nil
+	})
+
+	// filter getRoleCategory: extracts category from a role label
+	pongo2.RegisterFilter("getRoleCategory", func(in *pongo2.Value, param *pongo2.Value) (out *pongo2.Value, err *pongo2.Error) {
+		label := in.String()
+		parts := strings.Split(label, ":")
+		if len(parts) >= 2 {
+			return pongo2.AsValue(parts[1]), nil
+		}
+		return pongo2.AsValue("unknown"), nil
+	})
+
+	// filter getRoleShortName: extracts short name from a role label
+	pongo2.RegisterFilter("getRoleShortName", func(in *pongo2.Value, param *pongo2.Value) (out *pongo2.Value, err *pongo2.Error) {
+		label := in.String()
+		parts := strings.Split(label, ":")
+		if len(parts) >= 3 {
+			return pongo2.AsValue(parts[2]), nil
+		}
+		if len(parts) >= 2 {
+			return pongo2.AsValue(parts[1]), nil
+		}
+		return pongo2.AsValue(label), nil
+	})
+
+	// filter getUniqueRoles: extracts unique roles from role flows
+	pongo2.RegisterFilter("getUniqueRoles", func(in *pongo2.Value, param *pongo2.Value) (out *pongo2.Value, err *pongo2.Error) {
+		flows, ok := in.Interface().([]analyzer.RoleFlow)
+		if !ok {
+			return pongo2.AsValue([]string{}), nil
+		}
+		roleSet := make(map[string]bool)
+		for _, flow := range flows {
+			roleSet[flow.FromRole] = true
+			roleSet[flow.ToRole] = true
+		}
+		roles := make([]string, 0, len(roleSet))
+		for role := range roleSet {
+			roles = append(roles, role)
+		}
+		sort.Strings(roles)
+		return pongo2.AsValue(roles), nil
+	})
+
+	// filter escapejs: escapes a string for safe use in JavaScript
+	pongo2.RegisterFilter("escapejs", func(in *pongo2.Value, param *pongo2.Value) (out *pongo2.Value, err *pongo2.Error) {
+		str := in.String()
+		// Escape backslashes first (important!)
+		str = strings.ReplaceAll(str, "\\", "\\\\")
+		// Escape quotes
+		str = strings.ReplaceAll(str, "\"", "\\\"")
+		str = strings.ReplaceAll(str, "'", "\\'")
+		// Escape newlines
+		str = strings.ReplaceAll(str, "\n", "\\n")
+		str = strings.ReplaceAll(str, "\r", "\\r")
+		// Escape tabs
+		str = strings.ReplaceAll(str, "\t", "\\t")
+		return pongo2.AsValue(str), nil
 	})
 }

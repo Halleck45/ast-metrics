@@ -1,0 +1,1617 @@
+{% extends "layout.html" %}
+
+{% block content %}
+<style>
+    :root {
+        --bg-color: #f0f4f8; /* Softer, cooler gray */
+        --text-primary: #1e293b; /* Slate 800 */
+        --text-secondary: #64748b; /* Slate 500 */
+        --border-color: #e2e8f0; /* Slate 200 */
+        --accent-color: #3b82f6; /* Blue 500 */
+        --card-bg: #ffffff;
+        --card-hover-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+        --card-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        --font-family: 'Inter', 'Google Sans', 'Roboto', sans-serif; /* Prefer Inter if available */
+    }
+
+    body {
+        background-color: #f8f9fa;
+        color: var(--text-primary);
+        font-family: var(--font-family);
+    }
+
+    .dashboard-card {
+        background: var(--card-bg);
+        border: 1px solid var(--border-color);
+        border-radius: 24px;
+        padding: 2rem;
+        margin-bottom: 2rem;
+        transition: box-shadow 0.2s cubic-bezier(0.2, 0, 0, 1);
+    }
+
+    .dashboard-card:hover {
+        box-shadow: var(--card-shadow);
+        border-color: transparent;
+    }
+
+    .hero-title {
+        font-family: 'Google Sans Display', sans-serif;
+        font-size: 2.25rem;
+        font-weight: 400;
+        color: var(--text-primary);
+        margin-bottom: 1rem;
+        letter-spacing: -0.5px;
+    }
+
+    .hero-subtitle {
+        font-size: 1.125rem;
+        color: var(--text-secondary);
+        max-width: 800px;
+        line-height: 1.6;
+        margin-bottom: 3rem;
+    }
+    /* Modal removed */
+
+
+    .steps-container {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 2rem;
+        position: relative;
+    }
+
+    .step-card {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+        padding: 1.5rem;
+        background: #f8f9fa;
+        border-radius: 16px;
+        height: 100%;
+    }
+
+    .step-icon-wrapper {
+        width: 64px;
+        height: 64px;
+        background: white;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-bottom: 1.5rem;
+        box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+        font-size: 1.5rem;
+    }
+
+    .step-title {
+        font-family: 'Google Sans', sans-serif;
+        font-size: 1.125rem;
+        font-weight: 500;
+        margin-bottom: 0.75rem;
+        color: var(--text-primary);
+    }
+
+    .step-desc {
+        font-size: 0.875rem;
+        color: var(--text-secondary);
+        line-height: 1.5;
+    }
+
+    /* Tooltip Styles */
+    .category-card-html {
+        position: relative;
+    }
+
+    .tooltip-text {
+        visibility: hidden;
+        width: 220px;
+        background-color: #1e293b;
+        color: #fff;
+        text-align: center;
+        border-radius: 6px;
+        padding: 8px;
+        position: absolute;
+        z-index: 100;
+        bottom: 105%;
+        left: 50%;
+        transform: translateX(-50%);
+        opacity: 0;
+        transition: opacity 0.1s;
+        pointer-events: none;
+        font-size: 0.75rem;
+        font-weight: normal;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        line-height: 1.4;
+    }
+
+    .tooltip-text::after {
+        content: "";
+        position: absolute;
+        top: 100%;
+        left: 50%;
+        margin-left: -5px;
+        border-width: 5px;
+        border-style: solid;
+        border-color: #1e293b transparent transparent transparent;
+    }
+
+    .category-card-html:hover .tooltip-text {
+        visibility: visible;
+        opacity: 1;
+    }
+    
+    /* Hide card tooltip when hovering over a square */
+    .category-card-html:hover .heatmap-square:hover ~ .tooltip-text,
+    .category-card-html .heatmap-square:hover ~ .tooltip-text {
+        visibility: hidden;
+        opacity: 0;
+    }
+
+    .architecture-diagram-container {
+        background: white;
+        border: 1px solid var(--border-color);
+        border-radius: 24px;
+        overflow: hidden;
+        min-height: 700px;
+        height: auto; /* Allow growth */
+        position: relative;
+    }
+
+    /* New Card Styles */
+    .category-card-html {
+        width: 100%;
+        height: 100%;
+        border: 1px solid #e2e8f0;
+        border-radius: 6px;
+        box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+        padding: 8px;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+        transition: all 0.3s ease;
+        font-family: 'Inter', sans-serif;
+    }
+    
+    .narrow-card .card-title {
+        writing-mode: vertical-rl;
+        text-orientation: mixed;
+        transform: rotate(180deg);
+        white-space: nowrap;
+        margin: 0 auto;
+        text-align: center;
+    }
+    
+    .narrow-card .card-count {
+        display: none; /* Hide count on very narrow cards to save space */
+    }
+    
+    .category-group:hover .category-card-html {
+        border-color: #3b82f6;
+        box-shadow: 0 4px 6px -1px rgba(59, 130, 246, 0.1), 0 2px 4px -2px rgba(59, 130, 246, 0.1);
+    }
+
+    .card-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        margin-bottom: 8px;
+    }
+
+    .card-title {
+        font-weight: 700;
+        font-size: 13px;
+        color: #1e293b;
+        line-height: 1.4;
+        margin-right: 8px;
+        word-break: break-word;
+    }
+
+    .card-count {
+        font-size: 10px;
+        color: #64748b;
+        background: #f1f5f9;
+        padding: 2px 6px;
+        border-radius: 10px;
+        white-space: nowrap;
+        font-weight: 600;
+        flex-shrink: 0;
+    }
+
+    .card-desc {
+        font-size: 11px;
+        color: #64748b;
+        line-height: 1.5;
+        display: -webkit-box;
+        -webkit-line-clamp: 4; /* Limit to 4 lines */
+        line-clamp: 4; /* Standard property */
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+        display: -webkit-box;
+        -webkit-line-clamp: 4; /* Limit to 4 lines */
+        line-clamp: 4; /* Standard property */
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+    
+    .heatmap-container {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 2px;
+        margin-top: auto; /* Push to bottom */
+        padding-top: 8px;
+        max-height: 60px;
+        overflow: hidden;
+    }
+    
+    .heatmap-square {
+        width: 8px;
+        height: 8px;
+        border-radius: 2px;
+        transition: transform 0.1s;
+    }
+    
+    .heatmap-square:hover {
+        transform: scale(1.5);
+        z-index: 10;
+        border: 1px solid #333;
+    }
+
+    
+
+.family-container {
+    position: relative;
+    border: 2px solid; /* Color set inline */
+    border-radius: 16px;
+    padding: 20px;
+    margin-bottom: 40px;
+    background: rgba(255, 255, 255, 0.5);
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.family-header {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.family-title {
+    font-family: 'Google Sans Display', sans-serif;
+    font-size: 1.5rem;
+    font-weight: 500;
+    margin: 0;
+}
+
+.family-description {
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+    margin: 0;
+    max-width: 800px;
+}
+
+.family-content {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 16px;
+}
+    
+    .heatmap-controls {
+        display: flex;
+        gap: 8px;
+        margin-right: 16px;
+        border-right: 1px solid #e2e8f0;
+        padding-right: 16px;
+    }
+    
+    .heatmap-option {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 13px;
+        color: #475569;
+        cursor: pointer;
+        user-select: none;
+    }
+    
+    .heatmap-option input {
+        accent-color: #3b82f6;
+    }
+    
+    .arrow-toggle {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 14px;
+        color: var(--text-secondary);
+        cursor: pointer;
+        margin-right: 10px;
+        user-select: none;
+    }
+
+
+    .controls-container {
+        top: 20px;
+        right: 20px;
+        z-index: 10;
+        display: flex;
+        gap: 10px;
+    }
+
+    .control-btn {
+        background: white;
+        border: 1px solid var(--border-color);
+        border-radius: 8px;
+        padding: 8px 12px;
+        cursor: pointer;
+        font-size: 14px;
+        font-weight: 500;
+        color: var(--text-secondary);
+        transition: all 0.2s;
+        box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+        display: flex;
+        align-items: center;
+        gap: 4px;
+    }
+    
+    .control-btn svg {
+        display: inline-block;
+        vertical-align: middle;
+    }
+
+    .control-btn:hover {
+        background: #f8fafc;
+        color: var(--accent-color);
+        border-color: var(--accent-color);
+    }
+
+    .control-btn.active {
+        background: var(--accent-color);
+        color: white;
+        border-color: var(--accent-color);
+    }
+
+    .layer-rect {
+        stroke-width: 1;
+        rx: 12;
+    }
+
+    .category-rect {
+        fill: #f8fafc; /* Slate 50 */
+        stroke: #e2e8f0;
+        rx: 8;
+        transition: all 0.2s ease;
+        cursor: pointer;
+        filter: drop-shadow(0 1px 2px rgba(0,0,0,0.05));
+    }
+
+    .category-rect:hover {
+        fill: #ffffff;
+        stroke: var(--accent-color);
+        stroke-width: 2;
+        filter: drop-shadow(0 4px 6px rgba(59, 130, 246, 0.15));
+    }
+
+    .category-text {
+        font-family: 'Google Sans', sans-serif;
+        font-weight: 500;
+        fill: var(--text-primary);
+        font-size: 13px;
+    }
+
+    .category-count {
+        fill: var(--text-secondary);
+        font-size: 11px;
+    }
+
+    .dependency-arrow {
+        stroke: #c4c7c5;
+        stroke-width: 1.5;
+        fill: none;
+        opacity: 0.6;
+        transition: all 0.3s;
+    }
+
+    .dependency-arrow:hover {
+        stroke: var(--accent-color);
+        stroke-width: 2.5;
+        opacity: 1;
+    }
+
+    /* List Styles */
+    .family-card {
+        background: white;
+        border: 1px solid var(--border-color);
+        border-radius: 16px;
+        margin-bottom: 1.5rem;
+        overflow: hidden;
+    }
+
+    .family-header {
+        padding: 1.5rem;
+        border-bottom: 1px solid var(--border-color);
+        background: #f8f9fa;
+    }
+
+    .family-title {
+        font-family: 'Google Sans', sans-serif;
+        font-size: 1.25rem;
+        font-weight: 500;
+        color: var(--text-primary);
+        margin: 0;
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+    }
+
+    .category-header {
+        padding: 1rem 1.5rem;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        transition: background 0.2s;
+    }
+
+    .category-header:hover {
+        background: #f1f3f4;
+    }
+
+    .component-item {
+        padding: 0.75rem 1.5rem 0.75rem 3rem;
+        border-top: 1px solid var(--border-color);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+    }
+
+    .component-name {
+        font-family: 'Roboto Mono', monospace;
+        font-size: 0.875rem;
+        color: var(--text-primary);
+        font-weight: 500;
+    }
+
+    .component-file {
+        font-size: 0.75rem;
+        color: var(--text-secondary);
+        margin-left: 1rem;
+    }
+
+    /* Modal */
+    .modal-overlay {
+        background: rgba(0, 0, 0, 0.4);
+        backdrop-filter: blur(2px);
+    }
+    
+    .modal-container {
+        border-radius: 24px;
+        box-shadow: 0 24px 48px rgba(0,0,0,0.18);
+        border: none;
+    }
+
+    .modal-header {
+        border-bottom: 1px solid var(--border-color);
+        padding: 1.5rem 2rem;
+    }
+
+    .modal-title {
+        font-family: 'Google Sans', sans-serif;
+    }
+
+    /* Utilities */
+    .animate-fade-in-up {
+        animation: fadeInUp 0.6s cubic-bezier(0.2, 0, 0, 1);
+    }
+
+    @keyframes fadeInUp {
+        from { opacity: 0; transform: translateY(20px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+</style>
+
+<div class="container-fluid px-4 py-3">
+    {# Filter out test files from predictions #}
+    {% set filteredPredictions = projectAggregated.Predictions|filterTestFiles:files %}
+    
+    {% if filteredPredictions|length == 0 %}
+    <div class="empty-state">
+        <p class="empty-state-title">No predictions found</p>
+        <p class="empty-state-text">
+            The language is probably not yet supported. Feel free to contribute to the project by adding a new classifier model.
+        </p>
+    </div>
+    {% else %}
+
+    {# Group by family and label #}
+    {% set groupedByFamily = filteredPredictions|groupByFamilyAndLabel %}
+    {% set families = classificationFamilies %}
+
+    {# Calculate total components for percentage calculation #}
+    {% set totalComponents = filteredPredictions|length %}
+
+
+
+    <!-- Hero Section -->
+<div class="mb-8 animate-fade-in-up">
+    <h1 class="text-4xl font-bold text-gray-900 mb-3" style="letter-spacing: -0.02em;">Architecture Map</h1>
+    <p class="text-base text-gray-600 font-light">
+        Visualize your codebase through its architectural roles. This map highlights structure, dependencies, and imbalances across layers.
+    </p>
+    <p class="mt-2 text-base text-gray-600 font-bold">
+        Categories are statistically determined and may not always be accurate. Only the trends are important.
+    </p>
+</div>
+
+
+  
+
+  <div class="mt-16 flex items-center justify-center mb-4">
+    <div class="heatmap-controls">
+        <label class="radio-label">
+            <input type="radio" name="heatmapMode" value="loc" checked onclick="updateHeatmap('loc')">
+            <span>Lines of Code</span>
+        </label>
+         <label class="radio-label">
+            <input type="radio" name="heatmapMode" value="complexity" onclick="updateHeatmap('complexity')">
+            <span>Complexity</span>
+        </label>
+        <label class="radio-label">
+            <input type="radio" name="heatmapMode" value="commits" onclick="updateHeatmap('commits')">
+            <span>Commits</span>
+        </label>
+    </div>
+    <label class="arrow-toggle">
+        <input type="checkbox" id="showArrows" onchange="toggleArrows()">
+        Show all arrows
+    </label>
+    <!-- <button class="control-btn" onclick="exportToPNG()" title="Export as PNG">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+            <polyline points="7 10 12 15 17 10"></polyline>
+            <line x1="12" y1="15" x2="12" y2="3"></line>
+        </svg>
+        PNG
+    </button>
+    <button class="control-btn" onclick="exportToPDF()" title="Export as PDF">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+            <polyline points="14 2 14 8 20 8"></polyline>
+            <line x1="16" y1="13" x2="8" y2="13"></line>
+            <line x1="16" y1="17" x2="8" y2="17"></line>
+            <polyline points="10 9 9 9 8 9"></polyline>
+        </svg>
+        PDF
+    </button> -->
+</div>
+
+
+<div class=" items-center gap-2 text-xs text-slate-500 mb-8 text-center">
+    <span class="inline-block h-2.5 w-2.5 rounded-sm bg-slate-400"></span>
+    <span>
+      1 square = 1 class, grouped by predicted role
+    </span>
+  </div>
+
+
+    {# Architecture Diagram Section #}
+    <div class="mb-5">
+        <div class="architecture-diagram-container" id="mainArchitectureDiagram">
+            
+            <svg id="mainDiagramSvg" width="100%" height="100%">
+                <defs>
+                    <marker id="arrowhead" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto">
+                        <polygon points="0 0, 10 3, 0 6" fill="#94a3b8" />
+                    </marker>
+                </defs>
+            </svg>
+        </div>
+    </div>
+
+
+
+
+    
+
+    {% endif %}
+</div>
+
+<script>
+    function toggleCategory(header) {
+        const content = header.nextElementSibling;
+        const icon = header.querySelector('.expand-icon');
+        const isExpanded = content.style.display === 'block';
+
+        if (isExpanded) {
+            content.style.display = 'none';
+            icon.style.transform = 'rotate(0deg)';
+            header.classList.remove('expanded');
+        } else {
+            content.style.display = 'block';
+            icon.style.transform = 'rotate(180deg)';
+            header.classList.add('expanded');
+        }
+    }
+
+    // Heatmap State
+    let currentMode = 'loc'; // Default to LOC as requested
+
+    function toggleArrows() {
+        const showAll = document.getElementById('showArrows').checked;
+        const arrows = document.querySelectorAll('.dependency-arrow');
+        
+        arrows.forEach(arrow => {
+            if (showAll) {
+                arrow.style.opacity = arrow.dataset.baseOpacity || 0.5;
+                arrow.style.display = 'block';
+            } else {
+                arrow.style.opacity = 0;
+                // We keep display block so hover still works if we hover the path? 
+                // But if opacity is 0, it might be hard to hover.
+                // The user wants "hover only".
+                // D3 hover logic handles opacity change on mouseover.
+                // But if it's 0, mouseover might not trigger if pointer-events is none?
+                // Let's set opacity 0 but keep pointer events?
+                // Actually, if opacity is 0, we want it hidden.
+                // But we want it to appear when we hover the *category*.
+                // The current D3 logic only highlights the arrow when hovering the *arrow*.
+                // We need to update D3 to highlight arrows when hovering categories.
+            }
+        });
+        
+        // Update global state for D3 rendering/interactions
+        window.showAllArrows = showAll;
+    }
+
+    function exportToPNG() {
+        const container = document.getElementById('mainArchitectureDiagram');
+        if (!container) {
+            alert('Diagram not found');
+            return;
+        }
+        
+        // Check if html2canvas is available
+        if (typeof html2canvas === 'undefined') {
+            alert('Export library not loaded. Please refresh the page and try again.');
+            return;
+        }
+        
+        // Show loading indicator
+        const originalCursor = document.body.style.cursor;
+        document.body.style.cursor = 'wait';
+        
+        html2canvas(container, {
+            backgroundColor: '#ffffff',
+            scale: 2, // Higher quality
+            logging: false,
+            useCORS: true,
+            allowTaint: false,
+            width: container.scrollWidth,
+            height: container.scrollHeight
+        }).then(function(canvas) {
+            canvas.toBlob(function(blob) {
+                if (!blob) {
+                    alert('Error generating PNG file');
+                    document.body.style.cursor = originalCursor;
+                    return;
+                }
+                const url = URL.createObjectURL(blob);
+                const link = document.createElement('a');
+                link.download = 'architecture-diagram.png';
+                link.href = url;
+                link.click();
+                URL.revokeObjectURL(url);
+                document.body.style.cursor = originalCursor;
+            }, 'image/png');
+        }).catch(function(error) {
+            console.error('Error exporting to PNG:', error);
+            alert('Error exporting diagram: ' + error.message);
+            document.body.style.cursor = originalCursor;
+        });
+    }
+
+    function exportToPDF() {
+        const container = document.getElementById('mainArchitectureDiagram');
+        if (!container) {
+            alert('Diagram not found');
+            return;
+        }
+        
+        // Check if html2canvas is available
+        if (typeof html2canvas === 'undefined') {
+            alert('Export library not loaded. Please refresh the page and try again.');
+            return;
+        }
+        
+        // Check if jsPDF is available, if not load it
+        if (typeof window.jspdf === 'undefined') {
+            const script = document.createElement('script');
+            script.src = 'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js';
+            script.onload = function() {
+                performPDFExport();
+            };
+            script.onerror = function() {
+                alert('Failed to load PDF library. Please check your internet connection.');
+            };
+            document.head.appendChild(script);
+        } else {
+            performPDFExport();
+        }
+        
+        function performPDFExport() {
+            // Show loading indicator
+            const originalCursor = document.body.style.cursor;
+            document.body.style.cursor = 'wait';
+            
+            html2canvas(container, {
+                backgroundColor: '#ffffff',
+                scale: 2, // Higher quality
+                logging: false,
+                useCORS: true,
+                allowTaint: false,
+                width: container.scrollWidth,
+                height: container.scrollHeight
+            }).then(function(canvas) {
+                const imgData = canvas.toDataURL('image/png');
+                const { jsPDF } = window.jspdf;
+                
+                // Calculate dimensions in mm for PDF (A4 landscape or custom)
+                const mmPerPx = 0.264583; // 1px = 0.264583mm at 96dpi
+                const widthMm = canvas.width * mmPerPx;
+                const heightMm = canvas.height * mmPerPx;
+                
+                // Use A4 landscape if diagram fits, otherwise use custom size
+                const a4Landscape = [297, 210]; // A4 landscape in mm
+                let pdfWidth, pdfHeight;
+                
+                if (widthMm <= a4Landscape[0] && heightMm <= a4Landscape[1]) {
+                    pdfWidth = a4Landscape[0];
+                    pdfHeight = a4Landscape[1];
+                } else {
+                    // Scale to fit A4 while maintaining aspect ratio
+                    const scale = Math.min(a4Landscape[0] / widthMm, a4Landscape[1] / heightMm);
+                    pdfWidth = widthMm * scale;
+                    pdfHeight = heightMm * scale;
+                }
+                
+                const pdf = new jsPDF({
+                    orientation: pdfWidth > pdfHeight ? 'landscape' : 'portrait',
+                    unit: 'mm',
+                    format: [pdfWidth, pdfHeight]
+                });
+                
+                pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
+                pdf.save('architecture-diagram.pdf');
+                document.body.style.cursor = originalCursor;
+            }).catch(function(error) {
+                console.error('Error exporting to PDF:', error);
+                alert('Error exporting diagram: ' + error.message);
+                document.body.style.cursor = originalCursor;
+            });
+        }
+    }
+
+    function scrollToCategory(familyKey, categoryLabel) {
+        // 1. Scroll to family
+        const familyElement = document.getElementById('family-details-' + familyKey);
+        if (!familyElement) return;
+        
+        familyElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        
+        // 2. Find category header
+        // We need to find the header that corresponds to this label. 
+        // The label in the diagram is "Category:Subcategory:Label" or similar.
+        // The DOM structure has headers with onclick="toggleCategory(this)".
+        // We can try to match the text content or add data attributes.
+        // Let's assume we can find it by text content for now, or better, let's add IDs to category headers in the loop above.
+        
+        // Wait for scroll to finish slightly
+        setTimeout(() => {
+            // Find all headers in this family
+            const headers = familyElement.querySelectorAll('.category-header');
+            for (const header of headers) {
+                const title = header.querySelector('.category-title').textContent.trim();
+                // Simple fuzzy match or check if title contains parts of the label
+                // Ideally we should have put data-label on the header.
+                // Let's assume the user will click and we can match roughly.
+                // For now, let's just highlight the family as a fallback if we can't find the exact category easily without modifying the template loop to add IDs.
+                // Actually, I can modify the template loop in a separate edit if needed, but let's try to match the text.
+                
+                // Better approach: Just expand all in the family? No, that's too much.
+                // Let's just highlight the family for now, as adding IDs requires re-rendering the template part which I didn't touch yet.
+                // Wait, I can modify the template loop in this same tool call? Yes.
+                
+                // Let's assume I will add data-label to the category header in a separate chunk or this one.
+                // I'll add data-label in the HTML loop.
+                if (header.dataset.label === categoryLabel) {
+                     if (header.nextElementSibling.style.display !== 'block') {
+                        toggleCategory(header);
+                    }
+                    header.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    header.style.background = '#e0f2fe'; // Light blue highlight
+                    setTimeout(() => { header.style.background = ''; }, 2000);
+                    break;
+                }
+            }
+        }, 500);
+    }
+
+    // Store architecture data globally
+    const architectureDataStr = '{{ groupedByFamily|getArchitectureDiagramData|escapejs }}';
+    let architectureData = [];
+    try {
+        architectureData = JSON.parse(architectureDataStr);
+    } catch (e) {
+        console.error('Failed to parse architecture data:', e);
+    }
+
+    // Store dependencies data (using filtered predictions to exclude test files)
+    const dependenciesDataStr = '{{ filteredPredictions|getCategoryDependenciesWithFiles:files|escapejs }}';
+    let dependenciesData = [];
+    try {
+        dependenciesData = JSON.parse(dependenciesDataStr);
+    } catch (e) {
+        console.error('Failed to parse dependencies data:', e);
+    }
+    
+    // Create a map of test files for quick lookup
+    const testFiles = new Set([
+        {% for f in files %}
+            {% if f.IsTest %}
+                "{{ f.Path|escapejs }}",
+                {% if f.ShortPath and f.ShortPath != f.Path %}
+                    "{{ f.ShortPath|escapejs }}",
+                {% endif %}
+            {% endif %}
+        {% endfor %}
+    ]);
+    
+    // Store files data with metrics (Generated directly in template to ensure data availability)
+    const filesData = [
+        {% for f in files %}
+            {% if not f.IsTest %}
+            {
+                "path": "{{ f.Path|escapejs }}",
+                "filename": "{{ f.Path|split:'/'|last|escapejs }}",
+                "classes": [
+                    {% if f.Stmts and f.Stmts.StmtClass %}
+                        {% for c in f.Stmts.StmtClass %}
+                        {
+                            "complexity": {{ c.Stmts.Analyze.Complexity.Cyclomatic|default:0 }},
+                            "loc": {{ c.Stmts.Analyze.Volume.Loc|default:0 }},
+                            "loc_alt": {% if c.LinesOfCode %}{{ c.LinesOfCode.LinesOfCode|default:0 }}{% else %}0{% endif %},
+                            "lloc": {% if c.LinesOfCode %}{{ c.LinesOfCode.LogicalLinesOfCode|default:0 }}{% else %}0{% endif %},
+                            "name": "{% if c.Name %}{{ c.Name.Qualified|escapejs }}{% else %}Unknown{% endif %}",
+                            "commits": {{ f.Commits.Count|default:0 }}
+                        },
+                        {% endfor %}
+                    {% endif %}
+                ]
+            },
+            {% endif %}
+        {% endfor %}
+    ];
+    
+    console.log('FilesData loaded:', filesData);
+    
+    // Map files to categories (already filtered to exclude test files via filterTestFiles)
+    const categoryFiles = {
+        {% for family, categories in groupedByFamily %}
+            {% for label, items in categories %}
+                "{{ label }}": [
+                    {% for item in items %}
+                        "{{ item.File|escapejs }}",
+                    {% endfor %}
+                ],
+            {% endfor %}
+        {% endfor %}
+    };
+    
+    // Pre-calculate metrics per category
+    const categoryMetrics = {};
+    
+    function calculateMetrics() {
+        // Create map of path -> metrics
+        const fileMetrics = new Map();
+        filesData.forEach(f => {
+            // Aggregate class metrics for the file
+            let totalComp = 0;
+            let totalMI = 0;
+            let totalLOC = 0;
+            let classCount = 0;
+            
+            if (f.classes) {
+                f.classes.forEach(c => {
+                    if (c.complexity) totalComp += c.complexity;
+                    if (c.mi) totalMI += c.mi;
+                    if (c.loc) totalLOC += c.loc;
+                    classCount++;
+                });
+            }
+            
+            fileMetrics.set(f.path, {
+                complexity: totalComp,
+                mi: classCount > 0 ? totalMI / classCount : 0,
+                loc: totalLOC
+            });
+        });
+        
+        // Calculate per category
+        for (const [label, paths] of Object.entries(categoryFiles)) {
+            let totalComp = 0;
+            let totalMI = 0;
+            let totalLOC = 0;
+            let count = 0;
+            
+            paths.forEach(path => {
+                const m = fileMetrics.get(path);
+                if (m) {
+                    totalComp += m.complexity;
+                    totalMI += m.mi; // Summing avg MI of files? Or should we average?
+                    // MI is usually averaged.
+                    totalLOC += m.loc;
+                    count++;
+                }
+            });
+            
+            categoryMetrics[label] = {
+                complexity: count > 0 ? totalComp / count : 0, // Avg complexity per file? Or total?
+                // Complexity is usually additive for volume, but for "density" it's average.
+                // "Where is the structural complexity?" -> High avg complexity per file/class is usually what we look for.
+                // Total complexity just correlates with size.
+                avgComplexity: count > 0 ? totalComp / count : 0,
+                avgMI: count > 0 ? totalMI / count : 0,
+                totalLOC: totalLOC
+            };
+        }
+    }
+    
+    calculateMetrics();
+
+    let currentHeatmapMode = 'loc';
+
+    // Render main architecture diagram on page load
+    document.addEventListener('DOMContentLoaded', function() {
+        renderMainArchitectureDiagram();
+        initGlobalTooltip();
+    });
+
+    function initGlobalTooltip() {
+        const tooltip = document.createElement('div');
+        tooltip.className = 'global-tooltip';
+        tooltip.style.position = 'fixed';
+        tooltip.style.visibility = 'hidden';
+        tooltip.style.backgroundColor = '#1e293b';
+        tooltip.style.color = '#fff';
+        tooltip.style.padding = '8px 12px';
+        tooltip.style.borderRadius = '6px';
+        tooltip.style.fontSize = '12px';
+        tooltip.style.zIndex = '9999';
+        tooltip.style.pointerEvents = 'none';
+        tooltip.style.width = 'auto';
+        tooltip.style.minWidth = '120px';
+        tooltip.style.maxWidth = '400px';
+        tooltip.style.boxShadow = '0 4px 6px rgba(0,0,0,0.1)';
+        tooltip.style.whiteSpace = 'pre-line'; // Allow line breaks
+        document.body.appendChild(tooltip);
+
+        let currentTarget = null;
+
+        document.addEventListener('mouseover', function(e) {
+            // Check if hovering over a heatmap square (priority)
+            // Check if target is directly a square or is inside a square
+            const square = e.target.classList.contains('heatmap-square') 
+                ? e.target 
+                : e.target.closest('.heatmap-square');
+            
+            if (square) {
+                const text = square.getAttribute('data-tooltip');
+                if (text) {
+                    tooltip.textContent = text; // Use textContent for line breaks
+                    tooltip.style.visibility = 'visible';
+                    tooltip.style.opacity = '1';
+                    currentTarget = square;
+                    return;
+                }
+            }
+            
+            // Otherwise, check for card tooltip (only if not hovering over a square)
+            const card = e.target.closest('.category-card-html');
+            if (card) {
+                // Make sure we're not inside a square
+                const isInsideSquare = e.target.closest('.heatmap-square') !== null;
+                if (!isInsideSquare) {
+                    const text = card.getAttribute('data-tooltip');
+                    if (text) {
+                        tooltip.textContent = text;
+                        tooltip.style.visibility = 'visible';
+                        tooltip.style.opacity = '1';
+                        currentTarget = card;
+                        return;
+                    }
+                }
+            }
+            
+            // Fallback: check for any other data-tooltip (not square or card)
+            const target = e.target.closest('[data-tooltip]');
+            if (target) {
+                const isSquare = target.classList.contains('heatmap-square') || target.closest('.heatmap-square');
+                const isCard = target.classList.contains('category-card-html') || target.closest('.category-card-html');
+                if (!isSquare && !isCard) {
+                    const text = target.getAttribute('data-tooltip');
+                    if (text) {
+                        tooltip.textContent = text;
+                        tooltip.style.visibility = 'visible';
+                        tooltip.style.opacity = '1';
+                        currentTarget = target;
+                    }
+                }
+            }
+        });
+
+        document.addEventListener('mousemove', function(e) {
+            if (tooltip.style.visibility === 'visible') {
+                const x = e.clientX;
+                const y = e.clientY;
+                
+                // Position above cursor
+                let top = y - tooltip.offsetHeight - 10;
+                let left = x - tooltip.offsetWidth / 2;
+                
+                // Keep within viewport
+                if (top < 0) top = y + 20;
+                if (left < 0) left = 10;
+                if (left + tooltip.offsetWidth > window.innerWidth) left = window.innerWidth - tooltip.offsetWidth - 10;
+                
+                tooltip.style.top = top + 'px';
+                tooltip.style.left = left + 'px';
+            }
+        });
+
+        document.addEventListener('mouseout', function(e) {
+            // Only hide tooltip if we're not moving to another tooltip element
+            const relatedTarget = e.relatedTarget;
+            if (relatedTarget) {
+                // Check if we're moving to another tooltip element (square or card)
+                const square = relatedTarget.closest('.heatmap-square');
+                const card = relatedTarget.closest('.category-card-html');
+                
+                // If moving to another tooltip element, don't hide (mouseover will handle it)
+                if (square || card) {
+                    return;
+                }
+            }
+            
+            // Hide tooltip if leaving all tooltip elements
+            tooltip.style.visibility = 'hidden';
+            tooltip.style.opacity = '0';
+            currentTarget = null;
+        });
+    }
+
+    function renderMainArchitectureDiagram() {
+        const svg = document.getElementById('mainDiagramSvg');
+        if (!svg || typeof d3 === 'undefined') {
+            console.warn('D3.js not available');
+            return;
+        }
+        
+        const container = document.getElementById('mainArchitectureDiagram');
+        const width = container.clientWidth || 1000;
+        
+        // Calculate dynamic height based on content
+        const layerHeight = 180; // Even more compact height
+        const totalHeight = Math.max(700, architectureData.length * layerHeight + 100);
+        
+        // Clear previous content
+        d3.select(svg).selectAll("*").remove();
+        svg.setAttribute('width', width);
+        svg.setAttribute('height', totalHeight);
+        
+        // Update container height to match SVG
+        container.style.height = totalHeight + 'px';
+        
+        // Add defs for arrow markers
+        const defs = d3.select(svg).append("defs");
+        defs.append("marker")
+            .attr("id", "arrowhead")
+            .attr("markerWidth", 10)
+            .attr("markerHeight", 10)
+            .attr("refX", 9)
+            .attr("refY", 3)
+            .attr("orient", "auto")
+            .append("polygon")
+            .attr("points", "0 0, 10 3, 0 6")
+            .attr("fill", "#94a3b8");
+        
+        if (!architectureData || architectureData.length === 0) {
+            d3.select(svg).append("text")
+                .attr("x", width / 2)
+                .attr("y", height / 2)
+                .attr("text-anchor", "middle")
+                .attr("fill", "#64748b")
+                .text("No architecture data available");
+            return;
+        }
+        
+        // Store category positions for dependency arrows
+        const categoryPositions = new Map();
+        
+        // Configuration
+        // const layerHeight = Math.max(140, height / architectureData.length); // Removed dynamic shrinking
+        const padding = 20; // Reduced padding for tighter layout
+
+        const categorySpacing = 10;
+        const minCategoryWidth = 140;
+        const maxCategoryWidth = 220;
+        const leftLabelWidth = 180;
+        
+        // Color palette for families
+        const familyColors = {
+            'interface': '#3b82f6',
+            'application': '#8b5cf6',
+            'domain': '#10b981',
+            'infrastructure': '#f59e0b',
+            'core': '#ef4444',
+            'utility': '#06b6d4',
+            'development': '#64748b'
+        };
+        
+        // Draw layers
+        architectureData.forEach((layer, layerIndex) => {
+            const layerY = layerIndex * layerHeight;
+            const layerColor = layer.color || familyColors[layer.family] || '#94a3b8';
+            
+            // Draw layer background
+            d3.select(svg).append("rect")
+                .attr("class", "layer-rect")
+                .attr("x", padding)
+                .attr("y", layerY + padding / 2)
+                .attr("width", width - 2 * padding)
+                .attr("height", layerHeight - padding)
+                //.attr("fill", layerColor + "50") // 10% opacity
+                .attr("fill", layerColor)
+                //.attr("stroke", layerColor)
+                //.attr("stroke-width", 2)
+                .attr("rx", 8);
+            
+            // Layer Header (Title Left, Description Right)
+            const headerFO = d3.select(svg).append("foreignObject")
+                .attr("x", padding + 10) // Slight indent
+                .attr("y", layerY + 15) // More margin from top
+                .attr("width", width - 2 * padding - 20)
+                .attr("height", 40);
+
+            headerFO.append("xhtml:div")
+                .style("display", "flex")
+                //.style("justify-content", "space-between")
+                .style("gap", "20px")
+                .style("align-items", "center")
+                .style("padding", "0 20px")
+                .style("height", "100%")
+                //.html(`
+                //    <div style="font-size: 18px; font-weight: 700; color: ${layerColor};">${layer.family.charAt(0).toUpperCase() + layer.family.slice(1)}</div>
+                //    <div style="font-size: 12px; color: #64748b; text-align: right; max-width: 60%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${layer.description || ''}</div>
+                //`);
+                .html(`
+                    <div style="font-size: 18px; font-weight: 700; color: #0F172A;">${layer.family.charAt(0).toUpperCase() + layer.family.slice(1)}</div>
+                    <div style="font-size: 12px; color: #475569; text-align: right; max-width: 60%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${layer.description || ''}</div>
+                `);
+            
+            // Calculate category positions
+            const totalCount = layer.categories.reduce((sum, cat) => sum + cat.count, 0);
+            // const descriptionWidth = 320; // No longer needed
+            let currentX = padding + 20;
+            const availableWidth = width - currentX - padding;
+            const totalCategoryWidth = layer.categories.length * minCategoryWidth + (layer.categories.length - 1) * categorySpacing;
+            const scaleFactor = totalCategoryWidth > availableWidth ? availableWidth / totalCategoryWidth : 1;
+            
+            layer.categories.forEach((category, catIndex) => {
+                const categoryWidth = Math.max(
+                    minCategoryWidth * scaleFactor,
+                    Math.min(maxCategoryWidth * scaleFactor, (category.count / totalCount) * availableWidth * 0.8)
+                );
+                
+                const categoryX = currentX;
+                const categoryY = layerY + 65; // Position below header
+                const categoryHeight = layerHeight - 90; // Much shorter cards (approx 90px)
+                
+                // Create a group for the category
+                const categoryGroup = d3.select(svg).append("g")
+                    .attr("class", "category-group")
+                    .attr("data-label", category.label) // Add data-label for heatmap
+                    .style("cursor", "pointer")
+                    .on("click", function() {
+                        scrollToCategory(layer.family, category.label);
+                    })
+                    .on("mouseover", function() {
+                        // Highlight connected arrows
+                        const label = category.label;
+                        d3.selectAll('.dependency-arrow')
+                            .filter(function() {
+                                return d3.select(this).attr('data-from') === label || d3.select(this).attr('data-to') === label;
+                            })
+                            .style("opacity", 1)
+                            .style("display", "block")
+                            .attr("stroke", "#0b57d0")
+                            .attr("stroke-width", 3);
+                    })
+                    .on("mouseout", function() {
+                        // Reset connected arrows
+                        const showAll = document.getElementById('showArrows').checked;
+                        const label = category.label;
+                        d3.selectAll('.dependency-arrow')
+                            .filter(function() {
+                                return d3.select(this).attr('data-from') === label || d3.select(this).attr('data-to') === label;
+                            })
+                            .style("opacity", function() {
+                                return showAll ? (d3.select(this).attr('data-base-opacity') || 0.5) : 0;
+                            })
+                            .style("display", showAll ? "block" : "none")
+                            .attr("stroke", "#c4c7c5")
+                            .attr("stroke-width", function() {
+                                return 2; 
+                            });
+                    });
+
+                // Use foreignObject for HTML content (better text wrapping and styling)
+                const fo = categoryGroup.append("foreignObject")
+                    .attr("width", categoryWidth)
+                    .attr("height", categoryHeight)
+                    .attr("x", categoryX)
+                    .attr("y", categoryY);
+
+                const cardDiv = fo.append("xhtml:div")
+                    .attr("class", "category-card-html bg-white hover:bg-blue-500");
+                
+                if (categoryWidth < 60) {
+                    cardDiv.classed("narrow-card", true);
+                }
+
+                const header = cardDiv.append("div")
+                    .attr("class", "card-header");
+
+                name = category.shortName
+                // ucfirst
+                name = name.charAt(0).toUpperCase() + name.slice(1);
+                // replace _ with space
+                name = name.replace(/_/g, ' ');
+
+                header.append("div")
+                    .attr("class", "card-title")
+                    .text(name);
+
+                if (category.description) {
+                    // Add data attribute for global tooltip
+                    cardDiv.attr("data-tooltip", category.description);
+                }
+                
+                // Store position for dependency arrows
+                categoryPositions.set(category.label, {
+                    x: categoryX + categoryWidth / 2,
+                    y: categoryY + categoryHeight / 2,
+                    layerIndex: layerIndex
+                });
+                
+                currentX += categoryWidth + categorySpacing;
+            });
+        });
+        
+        // Draw dependency arrows
+        if (dependenciesData && dependenciesData.length > 0) {
+            dependenciesData.forEach(dep => {
+                const fromPos = categoryPositions.get(dep.fromCategory);
+                const toPos = categoryPositions.get(dep.toCategory);
+                
+                if (!fromPos || !toPos) {
+                    return; // Skip if positions not found
+                }
+                
+                // Only draw arrows between different layers
+                // if (fromPos.layerIndex === toPos.layerIndex) {
+                //     return;
+                // }
+                // Allow same-layer arrows if they are far enough apart?
+                // For now, let's keep it simple and allow all valid arrows, but curve them nicely.
+                
+                // Check if we are pointing to/from Core
+                // If the user said "arrows under Core family but don't know where", it implies they are going off-screen or to missing nodes.
+                // We already check `if (!fromPos || !toPos) return;` so missing nodes are handled.
+                // The issue might be that `toPos` is correct but the arrow is drawn weirdly.
+                
+                // Calculate arrow path
+                const dx = toPos.x - fromPos.x;
+                const dy = toPos.y - fromPos.y;
+                const distance = Math.sqrt(dx * dx + dy * dy);
+                
+                // Offset to start/end at rectangle edges
+                const offsetX = (dx / distance) * 70;
+                const offsetY = (dy / distance) * 35;
+                
+                const startX = fromPos.x + offsetX;
+                const startY = fromPos.y + offsetY;
+                const endX = toPos.x - offsetX;
+                const endY = toPos.y - offsetY;
+                
+                // Draw curved arrow
+                const midX = (startX + endX) / 2;
+                const midY = (startY + endY) / 2;
+                const curvature = 30;
+                const perpX = -dy / distance * curvature;
+                const perpY = dx / distance * curvature;
+                
+                const path = d3.path();
+                path.moveTo(startX, startY);
+                path.quadraticCurveTo(midX + perpX, midY + perpY, endX, endY);
+                
+                d3.select(svg).append("path")
+                    .attr("class", "dependency-arrow")
+                    .attr("data-from", dep.fromCategory)
+                    .attr("data-to", dep.toCategory)
+                    .attr("d", path.toString())
+                    .attr("stroke", "#c4c7c5")
+                    .attr("stroke-width", Math.min(2, 1 + dep.count / 5))
+                    .attr("fill", "none")
+                    .attr("marker-end", "url(#arrowhead)")
+                    .attr("opacity", 0.5 + Math.min(0.3, dep.count / 20))
+                    .style("display", "none") // Hidden by default
+                    .attr("data-base-opacity", 0.5 + Math.min(0.3, dep.count / 20))
+                    .on("mouseover", function() {
+                        d3.select(this)
+                            .attr("stroke", "#0b57d0")
+                            .attr("stroke-width", Math.min(3, 2 + dep.count / 5))
+                            .style("opacity", 1)
+                            .style("display", "block");
+                    })
+                    .on("mouseout", function() {
+                        const showAll = document.getElementById('showArrows').checked;
+                        d3.select(this)
+                            .attr("stroke", "#c4c7c5")
+                            .attr("stroke-width", Math.min(3, 1 + dep.count / 5))
+                            .style("opacity", showAll ? (0.5 + Math.min(0.3, dep.count / 20)) : 0)
+                            .style("display", showAll ? "block" : "none");
+                    });
+            });
+            
+            // Initial check
+            toggleArrows();
+        }
+        
+        // Apply heatmap
+        updateHeatmap(currentHeatmapMode);
+    }
+    
+    let isUpdatingHeatmap = false;
+    
+    function updateHeatmap(mode) {
+        // Prevent concurrent calls
+        if (isUpdatingHeatmap) {
+            console.log('updateHeatmap already in progress, skipping...');
+            return;
+        }
+        
+        isUpdatingHeatmap = true;
+        console.log('updateHeatmap called with mode:', mode);
+        console.log('filesData length:', filesData.length);
+        
+        currentHeatmapMode = mode;
+        
+        // Update radio buttons
+        const radios = document.querySelectorAll('input[name="heatmapMode"]');
+        radios.forEach(r => {
+            if (r.value === mode) r.checked = true;
+        });
+        
+        // Calculate min/max for the current mode across ALL classes to ensure global consistency
+        let minVal = 0; // Default to 0, will be updated
+        let maxVal = 0; // Default to 0, will be updated
+        
+        if (mode !== 'default') {
+            // Collect all values to determine P95 (95th percentile) to ignore outliers
+            let allValues = [];
+            filesData.forEach(f => {
+                if (f.classes) {
+                    f.classes.forEach(c => {
+                        let val = 0;
+                        if (mode === 'complexity') val = c.complexity || 0;
+                    else if (mode === 'loc') val = c.loc || c.loc_alt || 0;
+                    else if (mode === 'commits') val = c.commits || 0;
+                    allValues.push(val);
+                    });
+                }
+            });
+            
+            allValues.sort((a, b) => a - b);
+            minVal = allValues.length > 0 ? allValues[0] : 0;
+            
+            // Use P95 as max to avoid outliers squashing the scale
+            let p95Index = Math.floor(allValues.length * 0.95);
+            // Ensure we have at least some data
+            if (p95Index >= allValues.length) p95Index = allValues.length - 1;
+            maxVal = allValues.length > 0 ? allValues[p95Index] : 0;
+            
+            // Ensure maxVal > minVal to avoid division by zero
+            if (maxVal <= minVal) maxVal = minVal + 1;
+            
+            console.log(`Heatmap Mode: ${mode}, Min: ${minVal}, Max (P95): ${maxVal}`);
+        }
+
+        d3.selectAll('.category-group').each(function() {
+            const group = d3.select(this);
+            const label = group.attr('data-label');
+            
+            // Select the inner HTML card div
+            const cardDiv = group.select('.category-card-html');
+            
+            // Get the native DOM element to properly remove containers
+            const cardDivNode = cardDiv.node();
+            if (cardDivNode) {
+                // Remove all existing heatmap containers using native DOM
+                const existingContainers = cardDivNode.querySelectorAll('.heatmap-container');
+                existingContainers.forEach(container => container.remove());
+            }
+            
+            // Remove using D3 as well (double safety)
+            cardDiv.selectAll('.heatmap-container').remove();
+            
+            // Create a new heatmap container
+            const heatmapContainer = cardDiv.append('div').attr('class', 'heatmap-container');
+            
+            // Clear existing squares (should be empty, but just in case)
+            heatmapContainer.html('');
+            
+            // Reset card style
+            cardDiv.style('border-color', '#e2e8f0');
+            cardDiv.style('border-width', '1px');
+            cardDiv.style('box-shadow', '0 1px 3px 0 rgba(0, 0, 0, 0.1)');
+            
+            if (mode === 'default') {
+                heatmapContainer.style('display', 'none');
+                return;
+            }
+            
+            heatmapContainer.style('display', 'flex');
+            
+            // Debug matching for the first category only to avoid spam
+            const debugMatching = label === Object.keys(categoryFiles)[0];
+            
+            // Get all classes for this category
+            const paths = categoryFiles[label] || [];
+            const classes = [];
+            const seenFiles = new Set(); // Track files we've already processed
+            const seenClasses = new Set(); // Track classes we've already added
+            
+            if (debugMatching) {
+                console.log(`Category: ${label}, Paths: ${paths.length}`);
+            }
+
+            paths.forEach(path => {
+            if (!path || path.trim() === '') return; // Skip empty paths
+
+            // Try to find the file in filesData
+            // 1. Exact match
+            let file = filesData.find(f => f.path === path);
+            
+            // 2. Fuzzy match (suffix) - only if path is long enough to be unique
+            if (!file && path.length > 3) {
+                file = filesData.find(f => f.path.endsWith(path) || (f.path.length > 3 && path.endsWith(f.path)));
+            }
+            
+            // 3. Filename match (fallback)
+            if (!file && path.length > 0) {
+                const filename = path.split('/').pop();
+                if (filename && filename.length > 3) {
+                     file = filesData.find(f => f.filename === filename);
+                }
+            }
+                
+                if (debugMatching) {
+                     if (file) {
+                         // console.log(`  Found file for ${path}: ${file.path}`);
+                     } else {
+                         // console.warn(`  [No Match] Could not find file for path: "${path}"`);
+                     }
+                }
+                
+                // Skip if we've already processed this file
+                if (file && seenFiles.has(file.path)) {
+                    return;
+                }
+                
+                if (file && file.classes) {
+                    seenFiles.add(file.path);
+                    file.classes.forEach(c => {
+                        // Create a unique key for the class to avoid duplicates
+                        const classKey = `${c.name}_${c.loc}_${c.complexity}`;
+                        if (!seenClasses.has(classKey)) {
+                            seenClasses.add(classKey);
+                            classes.push(c);
+                        }
+                    });
+                }
+            });
+            
+            // Sort classes by metric descending to show hotspots first
+            classes.sort((a, b) => {
+                let valA = 0, valB = 0;
+                if (mode === 'complexity') { valA = a.complexity; valB = b.complexity; }
+                else if (mode === 'loc') { valA = a.loc; valB = b.loc; }
+                else if (mode === 'commits') { valA = a.commits; valB = b.commits; }
+                
+                return valB - valA; // Descending (worst/highest first)
+            });
+            
+            // Limit number of squares
+            const maxSquares = 150;
+            const displayClasses = classes.slice(0, maxSquares);
+            
+            displayClasses.forEach(c => {
+                let val = 0;
+                let color = '#ccc';
+                if (mode === 'complexity') {
+                    val = c.complexity || 0;
+                } else if (mode === 'loc') {
+                    val = c.loc || c.loc_alt || 0;
+                } else if (mode === 'commits') {
+                    val = c.commits || 0;
+                }
+                
+                // Clamp value to P95 max
+                let displayVal = val;
+                if (displayVal > maxVal) displayVal = maxVal;
+
+                // Use Log scale for better distribution of code metrics (Power Law)
+                // Add 1 to avoid log(0)
+                const logVal = Math.log(displayVal + 1);
+                const logMin = Math.log(minVal + 1);
+                const logMax = Math.log(maxVal + 1);
+                
+                let t = 0;
+                if (logMax > logMin) {
+                    t = (logVal - logMin) / (logMax - logMin);
+                }
+
+                if (mode === 'complexity') {
+                    // White -> Dark Red
+                    color = d3.interpolateRgb("#ffffff", "#7f1d1d")(t); 
+                } else if (mode === 'loc') {
+                    // White -> Dark Blue
+                    color = d3.interpolateRgb("#ffffff", "#1e3a8a")(t); 
+                } else if (mode === 'commits') {
+                    // White -> Dark Purple
+                    color = d3.interpolateRgb("#ffffff", "#581c87")(t); 
+                }
+                
+                // Debug first few items to check distribution
+                if (displayClasses.indexOf(c) < 3 && debugMatching) {
+                    console.log(`Mode: ${mode}, Val: ${val}, LogVal: ${logVal.toFixed(2)}, t: ${t.toFixed(2)}, Color: ${color}`);
+                }
+                
+                // Format tooltip text with better formatting
+                const loc = c.loc || c.loc_alt || 0;
+                const complexity = c.complexity || 0;
+                const commits = c.commits || 0;
+                const tooltipText = `Class: ${c.name}\nLOC: ${loc}\nComplexity: ${complexity}\nCommits: ${commits}`;
+                
+                heatmapContainer.append('div')
+                    .attr('class', 'heatmap-square')
+                    .style('background-color', color)
+                    .attr('data-tooltip', tooltipText);
+            });
+            
+            if (classes.length > maxSquares) {
+                 heatmapContainer.append('div')
+                    .style('font-size', '10px')
+                    .style('color', '#64748b')
+                    .style('padding-left', '4px')
+                    .text(`+${classes.length - maxSquares}`);
+            }
+        });
+        
+        isUpdatingHeatmap = false;
+    }
+</script>
+
+{% endblock %}
