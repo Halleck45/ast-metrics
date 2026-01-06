@@ -19,7 +19,7 @@ func TestRustRunner_IsRequired_NoFiles(t *testing.T) {
 	runner := RustRunner{
 		Configuration: &configuration.Configuration{},
 	}
-	
+
 	if runner.IsRequired() {
 		t.Error("expected IsRequired to be false when no Rust files found")
 	}
@@ -29,11 +29,11 @@ func TestRustRunner_Parse_ValidRustFile(t *testing.T) {
 	// Create temporary Rust file
 	tmpDir := t.TempDir()
 	tmpFile := filepath.Join(tmpDir, "test.rs")
-	
+
 	rustCode := `fn main() {
     println!("Hello, world!");
 }`
-	
+
 	err := os.WriteFile(tmpFile, []byte(rustCode), 0644)
 	if err != nil {
 		t.Fatalf("failed to create test file: %v", err)
@@ -85,5 +85,84 @@ func TestRustRunner_Finish(t *testing.T) {
 	err := runner.Finish()
 	if err != nil {
 		t.Errorf("expected no error from Finish, got %v", err)
+	}
+}
+
+func TestRustRunner_IsTest_ByFilename(t *testing.T) {
+	rustCode := `fn add(a: i32, b: i32) -> i32 {
+	a + b
+}
+`
+	// Create a temporary file with _test.rs suffix
+	tmpDir := t.TempDir()
+	tmpFile := filepath.Join(tmpDir, "calculator_test.rs")
+
+	err := os.WriteFile(tmpFile, []byte(rustCode), 0644)
+	if err != nil {
+		t.Fatalf("failed to create test file: %v", err)
+	}
+
+	runner := RustRunner{}
+	file, err := runner.Parse(tmpFile)
+
+	if err != nil {
+		t.Fatalf("expected no error, got %v", err)
+	}
+	if !file.IsTest {
+		t.Fatalf("expected file to be detected as test (_test.rs suffix)")
+	}
+}
+
+func TestRustRunner_IsTest_ByAttribute(t *testing.T) {
+	rustCode := `#[cfg(test)]
+mod tests {
+	#[test]
+	fn test_add() {
+		assert_eq!(3, 1 + 2);
+	}
+}
+`
+	// Create a temporary file
+	tmpDir := t.TempDir()
+	tmpFile := filepath.Join(tmpDir, "calculator.rs")
+
+	err := os.WriteFile(tmpFile, []byte(rustCode), 0644)
+	if err != nil {
+		t.Fatalf("failed to create test file: %v", err)
+	}
+
+	runner := RustRunner{}
+	file, err := runner.Parse(tmpFile)
+
+	if err != nil {
+		t.Fatalf("expected no error, got %v", err)
+	}
+	if !file.IsTest {
+		t.Fatalf("expected file to be detected as test (contains #[cfg(test)])")
+	}
+}
+
+func TestRustRunner_IsTest_NormalFile(t *testing.T) {
+	rustCode := `fn add(a: i32, b: i32) -> i32 {
+	a + b
+}
+`
+	// Create a temporary file
+	tmpDir := t.TempDir()
+	tmpFile := filepath.Join(tmpDir, "calculator.rs")
+
+	err := os.WriteFile(tmpFile, []byte(rustCode), 0644)
+	if err != nil {
+		t.Fatalf("failed to create test file: %v", err)
+	}
+
+	runner := RustRunner{}
+	file, err := runner.Parse(tmpFile)
+
+	if err != nil {
+		t.Fatalf("expected no error, got %v", err)
+	}
+	if file.IsTest {
+		t.Fatalf("expected file NOT to be detected as test")
 	}
 }

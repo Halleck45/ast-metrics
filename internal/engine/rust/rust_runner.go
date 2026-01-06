@@ -2,6 +2,7 @@ package rust
 
 import (
 	"os"
+	"strings"
 
 	"github.com/halleck45/ast-metrics/internal/configuration"
 	"github.com/halleck45/ast-metrics/internal/engine"
@@ -60,6 +61,10 @@ func (r RustRunner) Parse(path string) (*pb.File, error) {
 
 	file := v.Result()
 	file.ProgrammingLanguage = "Rust"
+
+	// Detect if file is a test file
+	file.IsTest = r.isTestFile(path, src)
+
 	return file, nil
 }
 
@@ -70,4 +75,22 @@ func (r *RustRunner) getFileList() file.FileList {
 	finder := file.Finder{Configuration: *r.Configuration}
 	r.foundFiles = finder.Search(".rs")
 	return r.foundFiles
+}
+
+// isTestFile determines if a Rust file is a test file based on:
+// 1. Filename pattern (ends with _test.rs)
+// 2. Source code contains #[test] or #[cfg(test)] attributes
+func (r RustRunner) isTestFile(path string, src []byte) bool {
+	// Check filename pattern
+	if strings.HasSuffix(path, "_test.rs") {
+		return true
+	}
+
+	// Check for test attributes in source code
+	source := string(src)
+	if strings.Contains(source, "#[test]") || strings.Contains(source, "#[cfg(test)]") {
+		return true
+	}
+
+	return false
 }
