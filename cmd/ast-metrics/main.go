@@ -614,5 +614,6 @@ func main() {
 
 	if err := app.Run(os.Args); err != nil {
 		logrus.Error(err)
+                os.Exit(1)
 	}
 }
