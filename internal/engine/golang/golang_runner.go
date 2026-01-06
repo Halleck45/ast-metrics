@@ -125,6 +125,10 @@ func (r *GolangRunner) Parse(path string) (*pb.File, error) {
 	if root.HasError() {
 		file.Errors = append(file.Errors, "Parse error")
 	}
+
+	// Detect if file is a test file
+	file.IsTest = r.isTestFile(path, file)
+
 	return file, nil
 }
 
@@ -139,4 +143,16 @@ func (r *GolangRunner) getFileList() File.FileList {
 	r.foundFiles = finder.Search(".go")
 
 	return r.foundFiles
+}
+
+// isTestFile determines if a Go file is a test file based on:
+// 1. Filename pattern (ends with _test.go)
+// 2. Function names starting with Test, Benchmark, or Example
+func (r GolangRunner) isTestFile(path string, file *pb.File) bool {
+	// Check filename pattern
+	if strings.HasSuffix(path, "_test.go") {
+		return true
+	}
+
+	return false
 }

@@ -1,6 +1,7 @@
 package golang
 
 import (
+	"os"
 	"testing"
 
 	enginePkg "github.com/halleck45/ast-metrics/internal/engine"
@@ -160,5 +161,48 @@ func TestGoParser_TreeSitter_Imports(t *testing.T) {
 	}
 	if !has("github.com/user/project/module/sub", "sub") {
 		t.Fatalf("missing import github.com/.../sub")
+	}
+}
+
+func TestGolangRunner_IsTest_ByFilename(t *testing.T) {
+	goCode := `package main
+
+func Add(a, b int) int {
+	return a + b
+}
+`
+	// Create a temporary file with _test.go suffix
+	tmpDir := t.TempDir()
+	tmpFile := tmpDir + "/calculator_test.go"
+
+	err := os.WriteFile(tmpFile, []byte(goCode), 0644)
+	if err != nil {
+		t.Fatalf("failed to create test file: %v", err)
+	}
+
+	runner := &GolangRunner{}
+	file, err := runner.Parse(tmpFile)
+
+	if err != nil {
+		t.Fatalf("expected no error, got %v", err)
+	}
+	if !file.IsTest {
+		t.Fatalf("expected file to be detected as test (_test.go suffix)")
+	}
+}
+
+func TestGolangRunner_IsTest_NormalFile(t *testing.T) {
+	goCode := `package main
+
+func Add(a, b int) int {
+	return a + b
+}
+`
+	file, err := enginePkg.CreateTestFileWithCode(&GolangRunner{}, goCode)
+	if err != nil {
+		t.Fatalf("parse error: %v", err)
+	}
+	if file.IsTest {
+		t.Fatalf("expected file NOT to be detected as test")
 	}
 }

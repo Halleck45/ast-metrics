@@ -43,6 +43,7 @@ message File {
   repeated string errors = 6;
   string checksum = 7;
   string shortPath = 8;
+  bool is_test = 9; // indicates if the file is a test file (unit, functional)
 }
 
 // Describe the location of statement in file.
