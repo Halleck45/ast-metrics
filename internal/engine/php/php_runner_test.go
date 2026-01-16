@@ -42,6 +42,13 @@ class calculatrice {
 		$e = $this->add($this->a1, $d);
 		return $e;
 	}
+
+	public function mod(
+		int $a,
+		int $b
+	) {
+		return $a % $b;
+	}
 }
 `
 
@@ -60,14 +67,16 @@ class calculatrice {
 	assert.Equal(t, "calculatrice", class1.Name.Short, "Expected class name to be 'calculatrice', got %s", class1.Name)
 
 	// Ensure functions
-	assert.Equal(t, 2, len(class1.Stmts.StmtFunction), "Incorrect number of functions in class")
-
+	assert.Equal(t, 3, len(class1.Stmts.StmtFunction), "Incorrect number of functions in class")
 	func1 := class1.Stmts.StmtFunction[0]
 	assert.Equal(t, "add", func1.Name.Short, "Expected function name to be 'add', got %s", func1.Name)
 	assert.Equal(t, "Foo\\Bar\\calculatrice::add", func1.Name.Qualified, "Expected function name")
 	func2 := class1.Stmts.StmtFunction[1]
 	assert.Equal(t, "divide", func2.Name.Short, "Expected function name to be 'divide', got %s", func2.Name)
 	assert.Equal(t, "Foo\\Bar\\calculatrice::divide", func2.Name.Qualified, "Expected function name")
+	func3 := class1.Stmts.StmtFunction[2]
+	assert.Equal(t, "mod", func3.Name.Short)
+	assert.Equal(t, "Foo\\Bar\\calculatrice::mod", func3.Name.Qualified)
 
 	// Ensure operands
 	// [name:"a" name:"b" name:"a" name:"b"]
@@ -88,6 +97,11 @@ class calculatrice {
 	methodCallsExpected := "[name:\"this.add\"]"
 	assert.Equal(t, methodCallsExpected, methodCallsAsString, "Expected method calls to be %s, got %s", methodCallsExpected, methodCallsAsString)
 
+	// Ensure operands for mod (params on separate lines should be counted)
+	operandsAsString = fmt.Sprintf("%v", func3.Operands)
+	operandsExpectedAsString = "[name:\"a\" name:\"b\" name:\"a\" name:\"b\"]"
+	assert.Equal(t, operandsExpectedAsString, operandsAsString)
+	
 	// Ensure operators
 	// [+]
 	// Convert to string (for easier comparison)

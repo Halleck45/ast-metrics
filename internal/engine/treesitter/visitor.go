@@ -269,13 +269,15 @@ func (v *Visitor) Visit(node *sitter.Node) {
 			})
 		}
 		body := v.ad.NodeBody(node)
-		start := int(node.StartPoint().Row) + 1
-		end := int(node.EndPoint().Row) + 1
+		nodeStart := int(node.StartPoint().Row) + 1
+		nodeEnd := int(node.EndPoint().Row) + 1
+		locStart := nodeStart
+		locEnd := nodeEnd
 		if body != nil {
-			start = int(body.StartPoint().Row) + 1
-			end = int(body.EndPoint().Row) + 1
+			locStart = int(body.StartPoint().Row) + 1
+			locEnd = int(body.EndPoint().Row) + 1
 		}
-		fn.LinesOfCode = engine.GetLocPositionFromSource(v.lines, start, end)
+		fn.LinesOfCode = engine.GetLocPositionFromSource(v.lines, locStart, locEnd)
 
 		// allow adapter to provide a better comment count
 		if cc, ok := v.ad.(interface{ CountComments([]string, int, int) int }); ok {
@@ -292,7 +294,7 @@ func (v *Visitor) Visit(node *sitter.Node) {
 		if va, ok := v.ad.(interface {
 			ExtractOperatorsOperands(src []byte, startLine, endLine int) (ops []string, operands []string)
 		}); ok {
-			ops, opr := va.ExtractOperatorsOperands([]byte(strings.Join(v.lines, "\n")), start, end)
+			ops, opr := va.ExtractOperatorsOperands([]byte(strings.Join(v.lines, "\n")), nodeStart, nodeEnd)
 			for _, o := range ops {
 				fn.Operators = append(fn.Operators, &pb.StmtOperator{Name: o})
 			}
@@ -304,7 +306,7 @@ func (v *Visitor) Visit(node *sitter.Node) {
 		if mc, ok := v.ad.(interface {
 			ExtractMethodCalls(src []byte, startLine, endLine int) []string
 		}); ok {
-			calls := mc.ExtractMethodCalls([]byte(strings.Join(v.lines, "\n")), start, end)
+			calls := mc.ExtractMethodCalls([]byte(strings.Join(v.lines, "\n")), nodeStart, nodeEnd)
 			for _, m := range calls {
 				fn.MethodCalls = append(fn.MethodCalls, &pb.StmtMethodCall{Name: m})
 			}
