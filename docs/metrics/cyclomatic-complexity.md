@@ -1,5 +1,7 @@
 # Cyclomatic Complexity
 
+![what is Lack of Cohesion of Methods](../images/ill-ccn.webp)
+
 ## What is it?
 Cyclomatic Complexity (often denoted as $V(G)$) measures the **number of independent paths** through your code.
 Think of your code as a maze. Every control structure adds a turn or a branch in the maze.

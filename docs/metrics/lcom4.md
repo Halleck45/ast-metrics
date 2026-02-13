@@ -1,6 +1,10 @@
 # LCOM4 (Lack of Cohesion of Methods)
 
+![what is Lack of Cohesion of Methods](../images/ill-lcom4.webp)
+
+
 ## What is it?
+
 LCOM4 measures how well the methods in a class belong together. It checks if methods use the same fields.
 
 It answers the question: **"Is this class doing one thing, or multiple unrelated things?"**
