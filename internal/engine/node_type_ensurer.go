@@ -42,36 +42,35 @@ func EnsureNodeTypeIsComplete(file *pb.File) {
 	}
 
 	if file.Stmts.Analyze.Complexity == nil {
-		zero := int32(0)
-		file.Stmts.Analyze.Complexity = &pb.Complexity{
-			Cyclomatic: &zero,
-		}
+		file.Stmts.Analyze.Complexity = &pb.Complexity{}
 	}
 
-	// Transfert complexity from classes and functions to file itself
+	// Set file-level cyclomatic complexity from contained symbols:
+	// - If the file contains classes, use the sum of class complexities.
+	// - If no class complexity is available, use the sum of top-level function complexities.
 	classes := GetClassesInFile(file)
-	if len(classes) == 0 {
+	var fileCyclomatic int32 = 0
+	classComplexityCount := 0
+	if len(classes) > 0 {
+		for _, class := range classes {
+			if class == nil || class.Stmts == nil || class.Stmts.Analyze == nil || class.Stmts.Analyze.Complexity == nil || class.Stmts.Analyze.Complexity.Cyclomatic == nil {
+				continue
+			}
+			fileCyclomatic += *class.Stmts.Analyze.Complexity.Cyclomatic
+			classComplexityCount++
+		}
+	}
+	if len(classes) == 0 || classComplexityCount == 0 {
+		fileCyclomatic = 0
 		functions := GetFunctionsInFile(file)
 		for _, function := range functions {
-			if function.Stmts.Analyze == nil || function.Stmts.Analyze.Complexity == nil || function.Stmts.Analyze.Complexity.Cyclomatic == nil {
+			if function == nil || function.Stmts == nil || function.Stmts.Analyze == nil || function.Stmts.Analyze.Complexity == nil || function.Stmts.Analyze.Complexity.Cyclomatic == nil {
 				continue
 			}
-
-			// increment complexity of file itself
-			ccn := *function.Stmts.Analyze.Complexity.Cyclomatic + *file.Stmts.Analyze.Complexity.Cyclomatic
-			file.Stmts.Analyze.Complexity.Cyclomatic = &ccn
-		}
-	} else {
-		for _, class := range classes {
-			if class.Stmts.Analyze == nil || class.Stmts.Analyze.Complexity == nil || class.Stmts.Analyze.Complexity.Cyclomatic == nil {
-				continue
-			}
-
-			// increment complexity of file itself
-			ccn := *class.Stmts.Analyze.Complexity.Cyclomatic + *file.Stmts.Analyze.Complexity.Cyclomatic
-			file.Stmts.Analyze.Complexity.Cyclomatic = &ccn
+			fileCyclomatic += *function.Stmts.Analyze.Complexity.Cyclomatic
 		}
 	}
+	file.Stmts.Analyze.Complexity.Cyclomatic = &fileCyclomatic
 
 	if file.Stmts.Analyze.Coupling == nil {
 		file.Stmts.Analyze.Coupling = &pb.Coupling{

@@ -94,12 +94,169 @@ func TestGetClassesInFile_WithClasses(t *testing.T) {
 	}
 }
 
+func TestGetClassesInFile_DeduplicatesNamespaceAndFileEntries(t *testing.T) {
+	class := &pb.StmtClass{Name: &pb.Name{Short: "Foo"}}
+	file := &pb.File{
+		Stmts: &pb.Stmts{
+			StmtNamespace: []*pb.StmtNamespace{
+				{
+					Stmts: &pb.Stmts{
+						StmtClass: []*pb.StmtClass{class},
+					},
+				},
+			},
+			StmtClass: []*pb.StmtClass{class},
+		},
+	}
+
+	classes := GetClassesInFile(file)
+	if len(classes) != 1 {
+		t.Errorf("expected 1 deduplicated class, got %d", len(classes))
+	}
+}
+
+func TestGetClassesInFile_DeduplicatesEquivalentClassesByQualifiedName(t *testing.T) {
+	classInNamespace := &pb.StmtClass{Name: &pb.Name{Short: "Foo", Qualified: "Acme\\Foo"}}
+	classInFile := &pb.StmtClass{Name: &pb.Name{Short: "Foo", Qualified: "Acme\\Foo"}}
+	file := &pb.File{
+		Stmts: &pb.Stmts{
+			StmtNamespace: []*pb.StmtNamespace{
+				{
+					Stmts: &pb.Stmts{
+						StmtClass: []*pb.StmtClass{classInNamespace},
+					},
+				},
+			},
+			StmtClass: []*pb.StmtClass{classInFile},
+		},
+	}
+
+	classes := GetClassesInFile(file)
+	if len(classes) != 1 {
+		t.Errorf("expected 1 deduplicated class by qualified name, got %d", len(classes))
+	}
+}
+
 func TestGetFunctionsInFile_EmptyFile(t *testing.T) {
 	file := &pb.File{}
 	functions := GetFunctionsInFile(file)
 
 	if len(functions) != 0 {
 		t.Errorf("expected 0 functions, got %d", len(functions))
+	}
+}
+
+func TestGetFunctionsInFile_DeduplicatesNamespaceClassAndFileEntries(t *testing.T) {
+	method := &pb.StmtFunction{Name: &pb.Name{Short: "method"}}
+	topLevel := &pb.StmtFunction{Name: &pb.Name{Short: "top"}}
+	class := &pb.StmtClass{
+		Stmts: &pb.Stmts{
+			StmtFunction: []*pb.StmtFunction{method},
+		},
+	}
+	file := &pb.File{
+		Stmts: &pb.Stmts{
+			StmtNamespace: []*pb.StmtNamespace{
+				{
+					Stmts: &pb.Stmts{
+						StmtFunction: []*pb.StmtFunction{method, topLevel},
+						StmtClass:    []*pb.StmtClass{class},
+					},
+				},
+			},
+			StmtFunction: []*pb.StmtFunction{topLevel},
+		},
+	}
+
+	functions := GetFunctionsInFile(file)
+	if len(functions) != 2 {
+		t.Errorf("expected 2 deduplicated functions, got %d", len(functions))
+	}
+}
+
+func TestGetFunctionsInFile_DeduplicatesEquivalentFunctionsByQualifiedName(t *testing.T) {
+	fnInNamespace := &pb.StmtFunction{Name: &pb.Name{Short: "f", Qualified: "Acme\\f"}}
+	fnInFile := &pb.StmtFunction{Name: &pb.Name{Short: "f", Qualified: "Acme\\f"}}
+	file := &pb.File{
+		Stmts: &pb.Stmts{
+			StmtNamespace: []*pb.StmtNamespace{
+				{
+					Stmts: &pb.Stmts{
+						StmtFunction: []*pb.StmtFunction{fnInNamespace},
+					},
+				},
+			},
+			StmtFunction: []*pb.StmtFunction{fnInFile},
+		},
+	}
+
+	functions := GetFunctionsInFile(file)
+	if len(functions) != 1 {
+		t.Errorf("expected 1 deduplicated function by qualified name, got %d", len(functions))
+	}
+}
+
+func TestGetFunctionsOutsideClassesInFile_ExcludesFunctionsAttachedToClasses(t *testing.T) {
+	method := &pb.StmtFunction{Name: &pb.Name{Short: "M", Qualified: "Acme\\C::M"}}
+	outside := &pb.StmtFunction{Name: &pb.Name{Short: "F", Qualified: "Acme\\F"}}
+
+	file := &pb.File{
+		Stmts: &pb.Stmts{
+			StmtNamespace: []*pb.StmtNamespace{
+				{
+					Stmts: &pb.Stmts{
+						StmtClass: []*pb.StmtClass{
+							{
+								Name: &pb.Name{Short: "C", Qualified: "Acme\\C"},
+								Stmts: &pb.Stmts{
+									StmtFunction: []*pb.StmtFunction{
+										method,
+									},
+								},
+							},
+						},
+						StmtFunction: []*pb.StmtFunction{
+							method,
+							outside,
+						},
+					},
+				},
+			},
+			StmtFunction: []*pb.StmtFunction{
+				outside,
+			},
+		},
+	}
+
+	functions := GetFunctionsOutsideClassesInFile(file)
+	if len(functions) != 1 {
+		t.Fatalf("expected 1 outside function, got %d", len(functions))
+	}
+	if functions[0].Name == nil || functions[0].Name.Qualified != "Acme\\F" {
+		t.Fatalf("expected outside function Acme\\\\F, got %+v", functions[0].Name)
+	}
+}
+
+func TestGetFunctionsOutsideClassesInFile_ReturnsFunctionsWhenNoClasses(t *testing.T) {
+	fnInNamespace := &pb.StmtFunction{Name: &pb.Name{Short: "f", Qualified: "Acme\\f"}}
+	fnInFile := &pb.StmtFunction{Name: &pb.Name{Short: "f", Qualified: "Acme\\f"}}
+	fn2 := &pb.StmtFunction{Name: &pb.Name{Short: "g", Qualified: "Acme\\g"}}
+	file := &pb.File{
+		Stmts: &pb.Stmts{
+			StmtNamespace: []*pb.StmtNamespace{
+				{
+					Stmts: &pb.Stmts{
+						StmtFunction: []*pb.StmtFunction{fnInNamespace, fn2},
+					},
+				},
+			},
+			StmtFunction: []*pb.StmtFunction{fnInFile},
+		},
+	}
+
+	functions := GetFunctionsOutsideClassesInFile(file)
+	if len(functions) != 2 {
+		t.Fatalf("expected 2 deduplicated outside functions, got %d", len(functions))
 	}
 }
 

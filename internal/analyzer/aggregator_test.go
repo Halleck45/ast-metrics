@@ -3,6 +3,8 @@ package analyzer
 import (
 	"testing"
 
+	"github.com/halleck45/ast-metrics/internal/engine"
+	"github.com/halleck45/ast-metrics/internal/engine/php"
 	pb "github.com/halleck45/ast-metrics/pb"
 	"github.com/stretchr/testify/assert"
 	"google.golang.org/protobuf/proto"
@@ -445,4 +447,37 @@ func TestFIlesWithErrorAreDetected(t *testing.T) {
 		assert.Equal(t, 2, aggregated.ByFile.NbFiles)
 		assert.Equal(t, 1, len(aggregated.ErroredFiles))
 	})
+}
+
+func TestMapSumsDoesNotDuplicateNamespacedPhpSymbols(t *testing.T) {
+	phpSource := `
+<?php
+
+namespace Acme\Demo;
+
+class Foo
+{
+    public function a(): int
+    {
+        return 1;
+    }
+
+    public function b(): int
+    {
+        return 2;
+    }
+}
+`
+
+	file, err := engine.CreateTestFileWithCode(&php.PhpRunner{}, phpSource)
+	assert.Nil(t, err)
+
+	AnalyzeFile(file)
+
+	aggregator := Aggregator{}
+	aggregated := aggregator.mapSums(file, Aggregated{})
+
+	// One declared class with two declared methods should be counted once.
+	assert.Equal(t, 1, aggregated.NbClasses)
+	assert.Equal(t, 2, aggregated.NbMethods)
 }

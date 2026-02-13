@@ -44,7 +44,7 @@ func Test_Php_Risk_Computed_Under_Realistic_Conditions(t *testing.T) {
 	if f == nil || f.Stmts == nil || f.Stmts.Analyze == nil || f.Stmts.Analyze.Risk == nil {
 		t.Fatalf("expected risk to be computed on file")
 	}
-	if f.Stmts.Analyze.Risk.Score != 3 {
+	if f.Stmts.Analyze.Risk.Score != 2 {
 		t.Fatalf("unexpected risk score: %v", f.Stmts.Analyze.Risk.Score)
 	}
 }

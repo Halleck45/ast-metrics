@@ -186,3 +186,73 @@ func TestItCalculateCyclomaticComplexityForAllDecisionPoints(t *testing.T) {
 	ccn := visitor.Calculate(pbFile.Stmts)
 	assert.Equal(t, int32(13), ccn)
 }
+
+func TestItCalculatesMethodBaselineComplexityInsideClass(t *testing.T) {
+
+	fileContent := `
+    <?php
+
+    class Foo {
+        public function a() {
+            return 1;
+        }
+
+        public function b() {
+            $x = 2;
+            return $x;
+        }
+    }
+    `
+
+	parser := &php.PhpRunner{}
+	pbFile, err := engine.CreateTestFileWithCode(parser, fileContent)
+	assert.Nil(t, err)
+
+	assert.Len(t, pbFile.Stmts.StmtClass, 1)
+	classNode := pbFile.Stmts.StmtClass[0]
+	assert.Len(t, classNode.Stmts.StmtFunction, 2)
+
+	visitor := CyclomaticComplexityVisitor{}
+
+	// A class with two branchless methods should have CCN=2 (1 per method).
+	assert.Equal(t, int32(2), visitor.Calculate(classNode.Stmts))
+	// Each branchless method should have baseline cyclomatic complexity of 1 once visited in function context.
+	for _, fn := range classNode.Stmts.StmtFunction {
+		visitor.Visit(fn.Stmts, classNode.Stmts)
+		assert.NotNil(t, fn.Stmts.Analyze)
+		assert.NotNil(t, fn.Stmts.Analyze.Complexity)
+		assert.Equal(t, int32(1), fn.Stmts.Analyze.Complexity.GetCyclomatic())
+	}
+}
+
+func TestItCalculatesSingleMethodClassComplexityAsOne(t *testing.T) {
+
+	fileContent := `
+    <?php
+
+    class Foo {
+        public function only() {
+            return 1;
+        }
+    }
+    `
+
+	parser := &php.PhpRunner{}
+	pbFile, err := engine.CreateTestFileWithCode(parser, fileContent)
+	assert.Nil(t, err)
+
+	assert.Len(t, pbFile.Stmts.StmtClass, 1)
+	classNode := pbFile.Stmts.StmtClass[0]
+	assert.Len(t, classNode.Stmts.StmtFunction, 1)
+
+	visitor := CyclomaticComplexityVisitor{}
+
+	// Class complexity is the sum of its methods' cyclomatic complexity.
+	assert.Equal(t, int32(1), visitor.Calculate(classNode.Stmts))
+
+	fn := classNode.Stmts.StmtFunction[0]
+	visitor.Visit(fn.Stmts, classNode.Stmts)
+	assert.NotNil(t, fn.Stmts.Analyze)
+	assert.NotNil(t, fn.Stmts.Analyze.Complexity)
+	assert.Equal(t, int32(1), fn.Stmts.Analyze.Complexity.GetCyclomatic())
+}

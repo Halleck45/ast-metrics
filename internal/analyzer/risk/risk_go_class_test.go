@@ -6,6 +6,14 @@ import (
 	pb "github.com/halleck45/ast-metrics/pb"
 )
 
+func makeClasses(n int) []*pb.StmtClass {
+	classes := make([]*pb.StmtClass, n)
+	for i := 0; i < n; i++ {
+		classes[i] = &pb.StmtClass{}
+	}
+	return classes
+}
+
 func TestTooManyGoClassesDetector_Name(t *testing.T) {
 	detector := &TooManyGoClassesDetector{}
 	if detector.Name() != "risk_go_class" {
@@ -19,7 +27,7 @@ func TestTooManyGoClassesDetector_Detect_NonGoFile(t *testing.T) {
 	file := &pb.File{
 		ProgrammingLanguage: "Python",
 		Stmts: &pb.Stmts{
-			StmtClass: make([]*pb.StmtClass, 5),
+			StmtClass: makeClasses(5),
 		},
 	}
 
@@ -35,7 +43,7 @@ func TestTooManyGoClassesDetector_Detect_FewClasses(t *testing.T) {
 	file := &pb.File{
 		ProgrammingLanguage: "Golang",
 		Stmts: &pb.Stmts{
-			StmtClass: make([]*pb.StmtClass, 2),
+			StmtClass: makeClasses(2),
 		},
 	}
 
@@ -51,7 +59,7 @@ func TestTooManyGoClassesDetector_Detect_ManyClasses(t *testing.T) {
 	file := &pb.File{
 		ProgrammingLanguage: "Golang",
 		Stmts: &pb.Stmts{
-			StmtClass: make([]*pb.StmtClass, 5),
+			StmtClass: makeClasses(5),
 		},
 	}
 
