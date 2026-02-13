@@ -338,10 +338,11 @@ AST Metrics - Explorer
                 <div class="metric-card bg-gradient-to-br from-white to-gray-50 p-5 rounded-xl border border-gray-100">
                   <div class="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">Cyclomatic</div>
                   <div class="text-3xl font-bold text-gray-900 mb-2" style="letter-spacing: -0.03em;"
-                    x-text="avgCyclomatic.toFixed(1)"></div>
-                  <p class="text-xs font-medium" :class="complexityTextClass(avgCyclomatic)">
-                    <span x-text="complexityBand(avgCyclomatic)"></span>
+                    x-text="fmtNumber(fileCyclomatic)"></div>
+                  <p class="text-xs font-medium" :class="complexityTextClass(fileCyclomatic)">
+                    <span x-text="complexityBand(fileCyclomatic)"></span>
                   </p>
+                  <p class="mt-1 text-xs text-gray-500">File-level</p>
                 </div>
                 <div class="metric-card bg-gradient-to-br from-white to-gray-50 p-5 rounded-xl border border-gray-100">
                   <div class="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">LCOM4</div>
@@ -377,6 +378,9 @@ AST Metrics - Explorer
                               MI</th>
                             <th
                               class="px-4 py-3 text-right text-xs font-semibold text-gray-600 uppercase tracking-wide">
+                              Cyclomatic</th>
+                            <th
+                              class="px-4 py-3 text-right text-xs font-semibold text-gray-600 uppercase tracking-wide">
                               Instability</th>
                             <th
                               class="px-4 py-3 text-right text-xs font-semibold text-gray-600 uppercase tracking-wide">
@@ -392,7 +396,7 @@ AST Metrics - Explorer
                         <tbody class="divide-y divide-gray-100">
                           <template x-if="classes.length === 0">
                             <tr>
-                              <td colspan="6" class="px-4 py-8 text-center text-gray-400">No classes in this file</td>
+                              <td colspan="7" class="px-4 py-8 text-center text-gray-400">No classes in this file</td>
                             </tr>
                           </template>
                           <template x-for="c in classes" :key="c.name?.qualified || c.name?.short || Math.random()">
@@ -401,6 +405,11 @@ AST Metrics - Explorer
                               </td>
                               <td class="px-4 py-3 text-right"><span :class="miBadgeClass(miRaw(c))"
                                   class="badge-modern px-2 py-1 rounded-md text-xs" x-text="mi(c)"></span></td>
+                              <td class="px-4 py-3 text-right">
+                                <span class="px-2 py-1 rounded-md text-xs font-medium badge-modern"
+                                  :class="complexityBadgeClass(c?.stmts?.analyze?.complexity?.cyclomatic)"
+                                  x-text="c?.stmts?.analyze?.complexity?.cyclomatic ?? '-' "></span>
+                              </td>
                               <td class="px-4 py-3 text-right text-gray-700 font-mono text-xs"
                                 x-text="fmtNumber(c.stmts?.analyze?.coupling?.instability)"></td>
                               <td class="px-4 py-3 text-right text-gray-700 font-mono text-xs"
@@ -660,7 +669,8 @@ AST Metrics - Explorer
 
       // derived KPIs
       worstMI: 0,
-      avgCyclomatic: 0,
+      fileCyclomatic: 0,
+      avgMethodCyclomatic: 0,
       avgLCOM4Display: '-',
       fileLLocDisplay: '-',
 
@@ -683,6 +693,20 @@ AST Metrics - Explorer
       fmtFixed(v, n) { return (typeof v === 'number') ? v.toFixed(n) : '-'; },
       fmtNumber(v) { return (typeof v === 'number') ? (Number.isInteger(v) ? v : v.toFixed(2)) : '-'; },
       fileRiskScore(f) { return f?.stmts?.analyze?.risk?.score || 0; },
+      collectTopLevelFunctions(f) {
+        const out = [];
+        const push = (fn) => { if (fn) out.push(fn); };
+        const st = f?.stmts;
+        (st?.stmtFunction || []).forEach(push);
+        (st?.stmtNamespace || []).forEach(ns => (ns?.stmts?.stmtFunction || []).forEach(push));
+        const seen = new Set();
+        return out.filter(fn => {
+          const key = fn?.name?.qualified || fn?.name?.short || JSON.stringify(fn?.name || {});
+          if (seen.has(key)) return false;
+          seen.add(key);
+          return true;
+        });
+      },
       riskColorByCount(count) { return count >= 5 ? 'text-red-700' : count >= 3 ? 'text-orange-700' : count >= 1 ? 'text-amber-700' : 'text-green-700'; },
       fileMImax(f) {
         let minMI = 128;
@@ -742,12 +766,28 @@ AST Metrics - Explorer
         this.risks = (this.risksByPath[f.path] || []).slice();
         const classes = f?.stmts?.stmtClass || [];
         this.classes = classes;
-        this.methods = classes.flatMap(c => (c?.stmts?.stmtFunction) || []);
+        const methodsFromClasses = classes.flatMap(c => (c?.stmts?.stmtFunction) || []);
+        const topLevelFunctions = this.collectTopLevelFunctions(f);
+        this.methods = methodsFromClasses.length ? methodsFromClasses : topLevelFunctions;
 
         // KPIs
         this.worstMI = this.fileMImax(f) || 0;
-        const cyclo = this.methods.map(m => m?.stmts?.analyze?.complexity?.cyclomatic).filter(x => typeof x === 'number');
-        this.avgCyclomatic = cyclo.length ? (cyclo.reduce((a, b) => a + b, 0) / cyclo.length) : 0;
+        const classCyclo = classes
+          .map(c => c?.stmts?.analyze?.complexity?.cyclomatic)
+          .filter(x => typeof x === 'number');
+        const classCycloSum = classCyclo.length ? classCyclo.reduce((a, b) => a + b, 0) : 0;
+        const functionCyclo = topLevelFunctions
+          .map(fn => fn?.stmts?.analyze?.complexity?.cyclomatic)
+          .filter(x => typeof x === 'number');
+        const functionCycloSum = functionCyclo.length ? functionCyclo.reduce((a, b) => a + b, 0) : 0;
+        const computedFileCyclo = classes.length ? classCycloSum : functionCycloSum;
+        const rawFileCyclo = f?.stmts?.analyze?.complexity?.cyclomatic;
+        this.fileCyclomatic = computedFileCyclo > 0 ? computedFileCyclo : (typeof rawFileCyclo === 'number' ? rawFileCyclo : 0);
+
+        const methodCyclo = this.methods
+          .map(m => m?.stmts?.analyze?.complexity?.cyclomatic)
+          .filter(x => typeof x === 'number');
+        this.avgMethodCyclomatic = methodCyclo.length ? (methodCyclo.reduce((a, b) => a + b, 0) / methodCyclo.length) : 0;
         const lcom = classes.map(c => c?.stmts?.analyze?.classCohesion?.lcom4).filter(x => typeof x === 'number');
         this.avgLCOM4Display = lcom.length ? (lcom.reduce((a, b) => a + b, 0) / lcom.length).toFixed(2) : '-';
         const vol = f?.stmts?.analyze?.volume;

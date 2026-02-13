@@ -5,8 +5,8 @@ import (
 	"testing"
 
 	"github.com/halleck45/ast-metrics/internal/engine"
-	pb "github.com/halleck45/ast-metrics/pb"
 	"github.com/halleck45/ast-metrics/internal/storage"
+	pb "github.com/halleck45/ast-metrics/pb"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -85,5 +85,7 @@ func TestAnalyzerStart(t *testing.T) {
 	// Now first parsed file should be the same as the one we dumped, + analysis
 	assert.Equal(t, "Go", parsedFiles[0].ProgrammingLanguage)
 	ccn := parsedFiles[0].Stmts.Analyze.Complexity.Cyclomatic
-	assert.Greater(t, int(*ccn), 0)
+	assert.NotNil(t, ccn)
+	// File contains only empty classes, so file-level complexity is the sum of classes => 0.
+	assert.Equal(t, 0, int(*ccn))
 }

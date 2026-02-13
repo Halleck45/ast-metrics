@@ -14,6 +14,10 @@ func (v *CyclomaticComplexityVisitor) Visit(stmts *pb.Stmts, parents *pb.Stmts) 
 	}
 
 	var ccn int32 = v.Calculate(stmts)
+	// When visiting a function body in the tree walk, add the baseline 1 for that function.
+	if isFunctionBody(stmts, parents) {
+		ccn++
+	}
 	if stmts.Analyze == nil {
 		stmts.Analyze = &pb.Analyze{}
 	}
@@ -54,8 +58,7 @@ func (v *CyclomaticComplexityVisitor) Calculate(stmts *pb.Stmts) int32 {
 		len(stmts.StmtDecisionIf) +
 		len(stmts.StmtDecisionElseIf) +
 		len(stmts.StmtDecisionCase) +
-		len(stmts.StmtDecisionSwitch) +
-		len(stmts.StmtFunction)) // +1 for the function itself
+		len(stmts.StmtDecisionSwitch))
 	// else is not a decision point for ccn
 	// However, in some languages (e.g., Go via tree-sitter), an "else if" can be represented
 	// as an else branch that contains an if-statement inside its body. In that case, count
@@ -69,7 +72,11 @@ func (v *CyclomaticComplexityVisitor) Calculate(stmts *pb.Stmts) int32 {
 
 	// iterate over children
 	for _, stmt := range stmts.StmtFunction {
-		ccn += v.Calculate(stmt.Stmts)
+		if stmt == nil {
+			continue
+		}
+		// Each function/method contributes a baseline cyclomatic complexity of 1.
+		ccn += 1 + v.Calculate(stmt.Stmts)
 	}
 
 	for _, stmt := range stmts.StmtLoop {
@@ -101,4 +108,18 @@ func (v *CyclomaticComplexityVisitor) Calculate(stmts *pb.Stmts) int32 {
 	}
 
 	return ccn
+}
+
+func isFunctionBody(stmts *pb.Stmts, parents *pb.Stmts) bool {
+	if stmts == nil || parents == nil {
+		return false
+	}
+
+	for _, fn := range parents.StmtFunction {
+		if fn != nil && fn.Stmts == stmts {
+			return true
+		}
+	}
+
+	return false
 }

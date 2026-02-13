@@ -165,12 +165,33 @@ func GetClassesInFile(file *pb.File) []*pb.StmtClass {
 	if file.Stmts == nil {
 		return classes
 	}
+
+	seen := make(map[string]struct{})
+	addClass := func(class *pb.StmtClass) {
+		if class == nil {
+			return
+		}
+		key := classDedupKey(class)
+		if _, ok := seen[key]; ok {
+			return
+		}
+		seen[key] = struct{}{}
+		classes = append(classes, class)
+	}
+
 	if file.Stmts.StmtNamespace != nil {
 		for _, namespace := range file.Stmts.StmtNamespace {
-			classes = append(classes, namespace.Stmts.StmtClass...)
+			if namespace == nil || namespace.Stmts == nil {
+				continue
+			}
+			for _, class := range namespace.Stmts.StmtClass {
+				addClass(class)
+			}
 		}
 	}
-	classes = append(classes, file.Stmts.StmtClass...)
+	for _, class := range file.Stmts.StmtClass {
+		addClass(class)
+	}
 	return classes
 }
 
@@ -180,9 +201,27 @@ func GetFunctionsInFile(file *pb.File) []*pb.StmtFunction {
 		return functions
 	}
 
+	seen := make(map[string]struct{})
+	addFunction := func(function *pb.StmtFunction) {
+		if function == nil {
+			return
+		}
+		key := functionDedupKey(function)
+		if _, ok := seen[key]; ok {
+			return
+		}
+		seen[key] = struct{}{}
+		functions = append(functions, function)
+	}
+
 	if file.Stmts.StmtNamespace != nil {
 		for _, namespace := range file.Stmts.StmtNamespace {
-			functions = append(functions, namespace.Stmts.StmtFunction...)
+			if namespace == nil || namespace.Stmts == nil {
+				continue
+			}
+			for _, function := range namespace.Stmts.StmtFunction {
+				addFunction(function)
+			}
 		}
 	}
 	classes := GetClassesInFile(file)
@@ -191,10 +230,44 @@ func GetFunctionsInFile(file *pb.File) []*pb.StmtFunction {
 			continue
 		}
 
-		functions = append(functions, class.Stmts.StmtFunction...)
+		for _, function := range class.Stmts.StmtFunction {
+			addFunction(function)
+		}
 	}
-	functions = append(functions, file.Stmts.StmtFunction...)
+	for _, function := range file.Stmts.StmtFunction {
+		addFunction(function)
+	}
 	return functions
+}
+
+func classDedupKey(class *pb.StmtClass) string {
+	if class == nil {
+		return ""
+	}
+	if class.Name != nil {
+		if q := strings.TrimSpace(class.Name.Qualified); q != "" {
+			return "q:" + q
+		}
+		if s := strings.TrimSpace(class.Name.Short); s != "" {
+			return "s:" + s
+		}
+	}
+	return fmt.Sprintf("ptr:%p", class)
+}
+
+func functionDedupKey(function *pb.StmtFunction) string {
+	if function == nil {
+		return ""
+	}
+	if function.Name != nil {
+		if q := strings.TrimSpace(function.Name.Qualified); q != "" {
+			return "q:" + q
+		}
+		if s := strings.TrimSpace(function.Name.Short); s != "" {
+			return "s:" + s
+		}
+	}
+	return fmt.Sprintf("ptr:%p", function)
 }
 
 // render as HTML
