@@ -360,11 +360,11 @@ AST Metrics - Explorer
 
               <!-- Panels -->
               <div class="space-y-6">
-                <!-- Classes & Methods -->
+                <!-- Classes/Structs & Functions/Methods -->
                 <div>
                   <div class="dashboard-card p-6">
                     <div class="flex items-center justify-between mb-6">
-                      <h3 class="text-lg font-bold text-gray-900">Classes</h3>
+                      <h3 class="text-lg font-bold text-gray-900">Classes/Structs</h3>
                       <span class="text-sm text-gray-500 font-medium" x-text="classes.length + ' total'"></span>
                     </div>
                     <div class="overflow-x-auto -mx-6 px-6">
@@ -396,7 +396,7 @@ AST Metrics - Explorer
                         <tbody class="divide-y divide-gray-100">
                           <template x-if="classes.length === 0">
                             <tr>
-                              <td colspan="7" class="px-4 py-8 text-center text-gray-400">No classes in this file</td>
+                              <td colspan="7" class="px-4 py-8 text-center text-gray-400">No classes/structs in this file</td>
                             </tr>
                           </template>
                           <template x-for="c in classes" :key="c.name?.qualified || c.name?.short || Math.random()">
@@ -424,7 +424,7 @@ AST Metrics - Explorer
                       </table>
                     </div>
 
-                    <h4 class="font-semibold text-gray-900 mt-8 mb-4">Methods</h4>
+                    <h4 class="font-semibold text-gray-900 mt-8 mb-4">Functions/Methods</h4>
                     <div class="overflow-x-auto -mx-6 px-6">
                       <table class="w-full text-sm">
                         <thead>
@@ -439,7 +439,7 @@ AST Metrics - Explorer
                         <tbody class="divide-y divide-gray-100">
                           <template x-if="methods.length === 0">
                             <tr>
-                              <td colspan="2" class="px-4 py-6 text-center text-gray-400">No methods detected</td>
+                              <td colspan="2" class="px-4 py-6 text-center text-gray-400">No functions/methods detected</td>
                             </tr>
                           </template>
                           <template x-for="m in methods" :key="m.name?.qualified || m.name?.short || Math.random()">
@@ -460,7 +460,7 @@ AST Metrics - Explorer
                     <div class="mt-6 p-4 bg-blue-50 rounded-lg border border-blue-100">
                       <p class="text-xs text-blue-800">
                         <span class="font-semibold">💡 Tip:</span> Higher MI is better. Lower cyclomatic complexity
-                        keeps code simpler. LCOM4 close to 1 means cohesive classes.
+                        keeps code simpler. LCOM4 close to 1 means cohesive classes/structs.
                       </p>
                     </div>
                   </div>
@@ -768,7 +768,14 @@ AST Metrics - Explorer
         this.classes = classes;
         const methodsFromClasses = classes.flatMap(c => (c?.stmts?.stmtFunction) || []);
         const topLevelFunctions = this.collectTopLevelFunctions(f);
-        this.methods = methodsFromClasses.length ? methodsFromClasses : topLevelFunctions;
+        const allFunctionsAndMethods = [...methodsFromClasses, ...topLevelFunctions];
+        const seenFunctionsAndMethods = new Set();
+        this.methods = allFunctionsAndMethods.filter(m => {
+          const key = m?.name?.qualified || m?.name?.short || JSON.stringify(m?.name || {});
+          if (seenFunctionsAndMethods.has(key)) return false;
+          seenFunctionsAndMethods.add(key);
+          return true;
+        });
 
         // KPIs
         this.worstMI = this.fileMImax(f) || 0;

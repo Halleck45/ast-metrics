@@ -196,6 +196,70 @@ func TestGetFunctionsInFile_DeduplicatesEquivalentFunctionsByQualifiedName(t *te
 	}
 }
 
+func TestGetFunctionsOutsideClassesInFile_ExcludesFunctionsAttachedToClasses(t *testing.T) {
+	method := &pb.StmtFunction{Name: &pb.Name{Short: "M", Qualified: "Acme\\C::M"}}
+	outside := &pb.StmtFunction{Name: &pb.Name{Short: "F", Qualified: "Acme\\F"}}
+
+	file := &pb.File{
+		Stmts: &pb.Stmts{
+			StmtNamespace: []*pb.StmtNamespace{
+				{
+					Stmts: &pb.Stmts{
+						StmtClass: []*pb.StmtClass{
+							{
+								Name: &pb.Name{Short: "C", Qualified: "Acme\\C"},
+								Stmts: &pb.Stmts{
+									StmtFunction: []*pb.StmtFunction{
+										method,
+									},
+								},
+							},
+						},
+						StmtFunction: []*pb.StmtFunction{
+							method,
+							outside,
+						},
+					},
+				},
+			},
+			StmtFunction: []*pb.StmtFunction{
+				outside,
+			},
+		},
+	}
+
+	functions := GetFunctionsOutsideClassesInFile(file)
+	if len(functions) != 1 {
+		t.Fatalf("expected 1 outside function, got %d", len(functions))
+	}
+	if functions[0].Name == nil || functions[0].Name.Qualified != "Acme\\F" {
+		t.Fatalf("expected outside function Acme\\\\F, got %+v", functions[0].Name)
+	}
+}
+
+func TestGetFunctionsOutsideClassesInFile_ReturnsFunctionsWhenNoClasses(t *testing.T) {
+	fnInNamespace := &pb.StmtFunction{Name: &pb.Name{Short: "f", Qualified: "Acme\\f"}}
+	fnInFile := &pb.StmtFunction{Name: &pb.Name{Short: "f", Qualified: "Acme\\f"}}
+	fn2 := &pb.StmtFunction{Name: &pb.Name{Short: "g", Qualified: "Acme\\g"}}
+	file := &pb.File{
+		Stmts: &pb.Stmts{
+			StmtNamespace: []*pb.StmtNamespace{
+				{
+					Stmts: &pb.Stmts{
+						StmtFunction: []*pb.StmtFunction{fnInNamespace, fn2},
+					},
+				},
+			},
+			StmtFunction: []*pb.StmtFunction{fnInFile},
+		},
+	}
+
+	functions := GetFunctionsOutsideClassesInFile(file)
+	if len(functions) != 2 {
+		t.Fatalf("expected 2 deduplicated outside functions, got %d", len(functions))
+	}
+}
+
 func TestReduceDepthOfNamespace(t *testing.T) {
 	tests := []struct {
 		namespace string

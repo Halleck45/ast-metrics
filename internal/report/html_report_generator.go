@@ -238,7 +238,18 @@ func pruneFile(f *pb.File) {
 	}
 	s := f.Stmts
 
-	s.StmtFunction = nil
+	classes := engine.GetClassesInFile(f)
+	for _, c := range classes {
+		pruneClass(c)
+	}
+	s.StmtClass = classes
+
+	outsideFunctions := engine.GetFunctionsOutsideClassesInFile(f)
+	for _, fn := range outsideFunctions {
+		pruneFunction(fn)
+	}
+	s.StmtFunction = outsideFunctions
+
 	s.StmtInterface = nil
 	s.StmtTrait = nil
 	s.StmtUse = nil
@@ -250,9 +261,6 @@ func pruneFile(f *pb.File) {
 	s.StmtLoop = nil
 	s.StmtDecisionSwitch = nil
 	s.StmtExternalDependencies = nil
-	for _, c := range s.StmtClass {
-		pruneClass(c)
-	}
 }
 
 func pruneClass(c *pb.StmtClass) {

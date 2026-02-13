@@ -240,6 +240,62 @@ func GetFunctionsInFile(file *pb.File) []*pb.StmtFunction {
 	return functions
 }
 
+// GetFunctionsOutsideClassesInFile returns functions found at file/namespace level
+// excluding functions already attached to classes.
+func GetFunctionsOutsideClassesInFile(file *pb.File) []*pb.StmtFunction {
+	var functions []*pb.StmtFunction
+	if file == nil || file.Stmts == nil {
+		return functions
+	}
+
+	classFunctions := make(map[string]struct{})
+	classes := GetClassesInFile(file)
+	for _, class := range classes {
+		if class == nil || class.Stmts == nil {
+			continue
+		}
+		for _, function := range class.Stmts.StmtFunction {
+			if function == nil {
+				continue
+			}
+			classFunctions[functionDedupKey(function)] = struct{}{}
+		}
+	}
+
+	seen := make(map[string]struct{})
+	addFunction := func(function *pb.StmtFunction) {
+		if function == nil {
+			return
+		}
+		key := functionDedupKey(function)
+		if _, inClass := classFunctions[key]; inClass {
+			return
+		}
+		if _, ok := seen[key]; ok {
+			return
+		}
+		seen[key] = struct{}{}
+		functions = append(functions, function)
+	}
+
+	if file.Stmts.StmtNamespace != nil {
+		for _, namespace := range file.Stmts.StmtNamespace {
+			if namespace == nil || namespace.Stmts == nil {
+				continue
+			}
+			for _, function := range namespace.Stmts.StmtFunction {
+				addFunction(function)
+			}
+		}
+	}
+
+	for _, function := range file.Stmts.StmtFunction {
+		addFunction(function)
+	}
+
+	return functions
+}
+
 func classDedupKey(class *pb.StmtClass) string {
 	if class == nil {
 		return ""

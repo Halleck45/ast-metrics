@@ -11,8 +11,8 @@ import (
 	Component "github.com/halleck45/ast-metrics/internal/analyzer/component"
 	Volume "github.com/halleck45/ast-metrics/internal/analyzer/volume"
 	engine "github.com/halleck45/ast-metrics/internal/engine"
-	pb "github.com/halleck45/ast-metrics/pb"
 	storage "github.com/halleck45/ast-metrics/internal/storage"
+	pb "github.com/halleck45/ast-metrics/pb"
 	"github.com/pterm/pterm"
 	"github.com/yargevad/filepathx"
 	"google.golang.org/protobuf/proto"
@@ -146,12 +146,47 @@ func AnalyzeFile(file *pb.File) {
 	// After visitors, ensure file-level Volume metrics exist and are coherent
 	consolidateLoc(file)
 
+	// Ensure structure is complete
+	engine.EnsureNodeTypeIsComplete(file)
+
+	// Recompute file cyclomatic complexity using classes plus functions
+	// that are not attached to classes.
+	recomputeFileCyclomatic(file)
+
 	// Recompute Maintainability Index at file level after adjustments
 	mi2 := &Component.MaintainabilityIndexVisitor{}
 	mi2.Calculate(file.Stmts)
+}
 
-	// Ensure structure is complete
-	engine.EnsureNodeTypeIsComplete(file)
+func recomputeFileCyclomatic(file *pb.File) {
+	if file == nil || file.Stmts == nil {
+		return
+	}
+
+	if file.Stmts.Analyze == nil {
+		file.Stmts.Analyze = &pb.Analyze{}
+	}
+	if file.Stmts.Analyze.Complexity == nil {
+		file.Stmts.Analyze.Complexity = &pb.Complexity{}
+	}
+
+	var fileCyclomatic int32
+
+	for _, class := range engine.GetClassesInFile(file) {
+		if class == nil || class.Stmts == nil || class.Stmts.Analyze == nil || class.Stmts.Analyze.Complexity == nil || class.Stmts.Analyze.Complexity.Cyclomatic == nil {
+			continue
+		}
+		fileCyclomatic += *class.Stmts.Analyze.Complexity.Cyclomatic
+	}
+
+	for _, function := range engine.GetFunctionsOutsideClassesInFile(file) {
+		if function == nil || function.Stmts == nil || function.Stmts.Analyze == nil || function.Stmts.Analyze.Complexity == nil || function.Stmts.Analyze.Complexity.Cyclomatic == nil {
+			continue
+		}
+		fileCyclomatic += *function.Stmts.Analyze.Complexity.Cyclomatic
+	}
+
+	file.Stmts.Analyze.Complexity.Cyclomatic = &fileCyclomatic
 }
 
 func consolidateLoc(file *pb.File) {
