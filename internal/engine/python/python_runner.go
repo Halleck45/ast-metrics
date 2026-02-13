@@ -2,6 +2,8 @@ package python
 
 import (
 	"os"
+	"path/filepath"
+	"strings"
 
 	"github.com/halleck45/ast-metrics/internal/configuration"
 	"github.com/halleck45/ast-metrics/internal/engine"
@@ -78,6 +80,9 @@ func (r PythonRunner) Parse(path string) (*pb.File, error) {
 	file := v.Result()
 	file.ProgrammingLanguage = "Python"
 
+	// Detect if file is a test file
+	file.IsTest = r.isTestFile(path, file)
+
 	return file, nil
 }
 
@@ -89,4 +94,42 @@ func (r *PythonRunner) getFileList() file.FileList {
 	finder := file.Finder{Configuration: *r.Configuration}
 	r.foundFiles = finder.Search(".py")
 	return r.foundFiles
+}
+
+// isTestFile determines if a Python file is a test file based on:
+// 1. Filename pattern (starts with test_ or ends with _test.py)
+// 2. Class inheritance (extends unittest.TestCase or similar test base classes)
+func (r PythonRunner) isTestFile(path string, file *pb.File) bool {
+	baseName := strings.ToLower(path)
+	fileName := strings.ToLower(filepath.Base(path))
+
+	// Check filename pattern
+	if strings.HasPrefix(fileName, "test_") || strings.HasSuffix(baseName, "_test.py") {
+		return true
+	}
+
+	// Check if any class extends a test base class
+	classes := engine.GetClassesInFile(file)
+	for _, class := range classes {
+		if class == nil {
+			continue
+		}
+		// Check extends (Python uses extends for inheritance)
+		for _, ext := range class.Extends {
+			if ext == nil {
+				continue
+			}
+			qualified := strings.ToLower(ext.Qualified)
+			short := strings.ToLower(ext.Short)
+			// Common Python test base classes
+			if strings.Contains(qualified, "testcase") ||
+				strings.Contains(short, "testcase") ||
+				strings.Contains(qualified, "unittest") ||
+				strings.Contains(qualified, "pytest") {
+				return true
+			}
+		}
+	}
+
+	return false
 }

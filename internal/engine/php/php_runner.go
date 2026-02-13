@@ -108,6 +108,10 @@ func (r PhpRunner) Parse(path string) (*pb.File, error) {
 			}
 		}
 	}
+
+	// Detect if file is a test file
+	file.IsTest = r.isTestFile(path, file)
+
 	return file, nil
 }
 
@@ -122,4 +126,40 @@ func (r *PhpRunner) getFileList() file.FileList {
 	r.foundFiles = finder.Search(".php")
 
 	return r.foundFiles
+}
+
+// isTestFile determines if a PHP file is a test file based on:
+// 1. Filename pattern (ends with Test.php)
+// 2. Class inheritance (extends PHPUnit\Framework\TestCase or similar test base classes)
+func (r PhpRunner) isTestFile(path string, file *pb.File) bool {
+	// Check filename pattern
+	baseName := strings.ToLower(path)
+	if strings.HasSuffix(baseName, "test.php") {
+		return true
+	}
+
+	// Check if any class extends a test base class
+	classes := engine.GetClassesInFile(file)
+	for _, class := range classes {
+		if class == nil {
+			continue
+		}
+		// Check extends
+		for _, ext := range class.Extends {
+			if ext == nil {
+				continue
+			}
+			qualified := strings.ToLower(ext.Qualified)
+			short := strings.ToLower(ext.Short)
+			// Common PHP test base classes
+			if strings.Contains(qualified, "testcase") ||
+				strings.Contains(short, "testcase") ||
+				strings.Contains(qualified, "phpunit") ||
+				strings.Contains(qualified, "test") {
+				return true
+			}
+		}
+	}
+
+	return false
 }
