@@ -1,26 +1,34 @@
 # Cyclomatic Complexity
 
-![what is Lack of Cohesion of Methods](../images/ill-ccn.webp)
+
+<video controls src="../../animations/Cyclomatic-complexity.webm" title="Title"></video>
 
 ## What is it?
+
 Cyclomatic Complexity (often denoted as $V(G)$) measures the **number of independent paths** through your code.
 Think of your code as a maze. Every control structure adds a turn or a branch in the maze.
 
 It counts:
+
 - `if`, `else`, `elseif`
 - `while`, `for`, `foreach`
 - `case`, `default`
 - `catch`
 - Boolean operators (`&&`, `||`)
 
-- **Complexity = 1**: A straight road. No decisions.
-- **Complexity = 5**: A small neighborhood with a few turns.
-- **Complexity = 50**: A chaotic bowl of spaghetti.
 
 ## Why it matters?
 High complexity means:
 1.  **Harder to understand**: You can't hold the logic in your head.
 2.  **Harder to test**: You need at least one test case per path to cover everything. A complexity of 10 means you need at least 10 unit tests to achieve 100% branch coverage.
+
+![what is Cyclomatic complexity](../images/ill-ccn.webp)
+
+
+
+- **Complexity = 1**: A straight road. No decisions.
+- **Complexity = 5**: A small neighborhood with a few turns.
+- **Complexity = 50**: A chaotic bowl of spaghetti.
 
 ## Thresholds
 
