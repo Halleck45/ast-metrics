@@ -687,12 +687,43 @@ AST Metrics - Explorer
         this.risksByPath = parse('risks-data') || {};
         this.$watch('filters', () => this.rebuild(), { deep: true });
         this.rebuild();
+        const requestedFile = this.getFileQueryParam();
+        if (requestedFile) {
+          const fileToSelect = this.findFileByQueryParam(requestedFile);
+          if (fileToSelect) this.select(fileToSelect);
+        }
       },
 
       // helpers
       fmtFixed(v, n) { return (typeof v === 'number') ? v.toFixed(n) : '-'; },
       fmtNumber(v) { return (typeof v === 'number') ? (Number.isInteger(v) ? v : v.toFixed(2)) : '-'; },
       fileRiskScore(f) { return f?.stmts?.analyze?.risk?.score || 0; },
+      getFileQueryParam() {
+        try {
+          return new URLSearchParams(window.location.search).get('file');
+        } catch (e) {
+          return null;
+        }
+      },
+      findFileByQueryParam(fileParam) {
+        if (!fileParam) return null;
+        return this.files.find(f => (f.pathHash || '') === fileParam)
+          || this.files.find(f => (f.shortPath || '') === fileParam)
+          || this.files.find(f => (f.path || '') === fileParam)
+          || null;
+      },
+      updateUrlWithSelectedFile(f) {
+        if (!f) return;
+        const value = f.pathHash || f.shortPath || f.path;
+        if (!value) return;
+        try {
+          const url = new URL(window.location.href);
+          url.searchParams.set('file', value);
+          window.history.replaceState({}, '', url.toString());
+        } catch (e) {
+          // no-op: URL sharing is best effort
+        }
+      },
       collectTopLevelFunctions(f) {
         const out = [];
         const push = (fn) => { if (fn) out.push(fn); };
@@ -763,6 +794,7 @@ AST Metrics - Explorer
       },
       select(f) {
         this.selected = f;
+        this.updateUrlWithSelectedFile(f);
         this.risks = (this.risksByPath[f.path] || []).slice();
         const classes = f?.stmts?.stmtClass || [];
         this.classes = classes;

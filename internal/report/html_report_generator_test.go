@@ -101,4 +101,52 @@ func TestBuildFilesJSONPruned_ContainsOutsideFunctions(t *testing.T) {
 	if len(functionsVal) != 1 {
 		t.Fatalf("expected 1 outside function in json, got %d", len(functionsVal))
 	}
+
+	pathHash, ok := decoded[0]["pathHash"].(string)
+	if !ok || pathHash == "" {
+		t.Fatalf("expected non-empty pathHash in json, got %#v", decoded[0]["pathHash"])
+	}
+}
+
+func TestBuildFilesJSONPruned_PathHashStableAndDistinct(t *testing.T) {
+	makeFile := func(path string) *pb.File {
+		return &pb.File{
+			Path:                path,
+			ShortPath:           "internal/analyzer/community_aggregator.go",
+			ProgrammingLanguage: "Golang",
+			Stmts:               &pb.Stmts{},
+		}
+	}
+
+	first := makeFile("/tmp/repo-a/internal/analyzer/community_aggregator.go")
+	second := makeFile("/tmp/repo-b/internal/analyzer/community_aggregator.go")
+
+	raw := buildFilesJSONPruned([]*pb.File{first, second}, "All")
+	var decoded []map[string]interface{}
+	if err := json.Unmarshal([]byte(raw), &decoded); err != nil {
+		t.Fatalf("expected valid json, got error: %v", err)
+	}
+	if len(decoded) != 2 {
+		t.Fatalf("expected 2 files in json, got %d", len(decoded))
+	}
+
+	hashA, okA := decoded[0]["pathHash"].(string)
+	hashB, okB := decoded[1]["pathHash"].(string)
+	if !okA || !okB || hashA == "" || hashB == "" {
+		t.Fatalf("expected non-empty pathHash values, got %#v and %#v", decoded[0]["pathHash"], decoded[1]["pathHash"])
+	}
+	if hashA == hashB {
+		t.Fatalf("expected different pathHash for different absolute paths, got same value %q", hashA)
+	}
+
+	raw2 := buildFilesJSONPruned([]*pb.File{first, second}, "All")
+	var decoded2 []map[string]interface{}
+	if err := json.Unmarshal([]byte(raw2), &decoded2); err != nil {
+		t.Fatalf("expected valid json on second call, got error: %v", err)
+	}
+	hashA2, _ := decoded2[0]["pathHash"].(string)
+	hashB2, _ := decoded2[1]["pathHash"].(string)
+	if hashA != hashA2 || hashB != hashB2 {
+		t.Fatalf("expected stable pathHash across calls, got (%q,%q) then (%q,%q)", hashA, hashB, hashA2, hashB2)
+	}
 }

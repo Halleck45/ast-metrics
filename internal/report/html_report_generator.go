@@ -2,6 +2,7 @@ package report
 
 import (
 	"embed"
+	"encoding/json"
 	"fmt"
 	"hash/fnv"
 	"os"
@@ -206,30 +207,46 @@ type riskItemForTpl struct {
 
 // New Pruned JSON using protojson
 func buildFilesJSONPruned(files []*pb.File, language string) string {
-	pruned := make([]*pb.File, 0, len(files))
+	mo := protojson.MarshalOptions{EmitUnpopulated: false, UseEnumNumbers: false, Indent: ""}
+	var b strings.Builder
+	b.WriteString("[")
+	first := true
 	for _, f := range files {
 		if language != "All" && f.GetProgrammingLanguage() != language {
 			continue
 		}
 		cf := proto.Clone(f).(*pb.File)
 		pruneFile(cf)
-		pruned = append(pruned, cf)
-	}
-	mo := protojson.MarshalOptions{EmitUnpopulated: false, UseEnumNumbers: false, Indent: ""}
-	var b strings.Builder
-	b.WriteString("[")
-	for i, f := range pruned {
-		if i > 0 {
+
+		var payload map[string]interface{}
+		data, err := mo.Marshal(cf)
+		if err == nil {
+			err = json.Unmarshal(data, &payload)
+		}
+		if err != nil {
+			payload = map[string]interface{}{}
+		}
+		payload["pathHash"] = hashPathForExplorer(cf.GetPath())
+
+		encoded, err := json.Marshal(payload)
+		if err != nil {
+			encoded = []byte("{}")
+		}
+
+		if !first {
 			b.WriteString(",")
 		}
-		if data, err := mo.Marshal(f); err == nil {
-			b.Write(data)
-		} else {
-			b.WriteString("{}")
-		}
+		b.Write(encoded)
+		first = false
 	}
 	b.WriteString("]")
 	return b.String()
+}
+
+func hashPathForExplorer(path string) string {
+	h := fnv.New64a()
+	_, _ = h.Write([]byte(path))
+	return fmt.Sprintf("%016x", h.Sum64())
 }
 
 func pruneFile(f *pb.File) {
