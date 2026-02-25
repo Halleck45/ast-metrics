@@ -11,9 +11,9 @@
         {% set name = "" -%}
         {%- endif -%}
         {%- for class in elements -%}
-        {%- if not first -%},{%- endif -%}
+        {%- if not (forloop.Parentloop.First and forloop.First) -%},{%- endif -%}
         {
-            "name": "{{ name|default:class.Name.Qualified|addslashes }}",
+            "name": "{{ name|default:class.Name.Qualified|escapejs }}",
             "efferent": {{ class.Stmts.Analyze.Coupling.Efferent|floatformat:0  }}
         }
         {%- set first = false -%}
