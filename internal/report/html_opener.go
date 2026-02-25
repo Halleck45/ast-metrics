@@ -7,8 +7,6 @@ import (
 	"path/filepath"
 	"runtime"
 	"strings"
-
-	"github.com/pterm/pterm"
 )
 
 // OpenHtmlReport opens the HTML report in the default browser
@@ -56,8 +54,6 @@ func OpenHtmlReport(reportPath string) error {
 		return fmt.Errorf("failed to open browser: %v. Please open manually: %s", err, absPath)
 	}
 
-	// Show success message
-	pterm.Success.Printf("🌐 HTML report opened in browser: %s\n", absPath)
 	return nil
 }
 

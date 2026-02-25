@@ -3,6 +3,7 @@ package command
 import (
 	"bufio"
 	"errors"
+	"fmt"
 
 	"github.com/fsnotify/fsnotify"
 	"github.com/halleck45/ast-metrics/internal/analyzer"
@@ -24,8 +25,7 @@ type AnalyzeCommand struct {
 	outWriter       *bufio.Writer
 	runners         []engine.Engine
 	isInteractive   bool
-	spinner         *pterm.ProgressbarPrinter
-	multi           *pterm.MultiPrinter
+	moonSpinner     *pterm.SpinnerPrinter
 	alreadyExecuted bool
 	currentPage     *cli.ScreenHome
 	FileWatcher     *fsnotify.Watcher
@@ -49,26 +49,18 @@ func (v *AnalyzeCommand) Execute() error {
 	v.Configuration.Storage.Ensure()
 
 	if v.alreadyExecuted {
-		// On refresh
-		//v.spinner.Stop()
-		v.spinner = nil
-		// clean
+		v.moonSpinner = nil
 		v.outWriter.Flush()
 	}
 
 	if v.isInteractive && !v.alreadyExecuted {
-		// Prepare progress bars
-		v.multi = pterm.DefaultMultiPrinter.WithWriter(v.outWriter)
-		v.spinner, _ = pterm.DefaultProgressbar.WithTotal(7).WithWriter(v.multi.NewWriter()).WithTitle("Analyzing").Start()
-		v.spinner.RemoveWhenDone = true
-		defer v.spinner.Stop()
-
-		// Start progress bars
-		v.multi.Start()
+		fmt.Print(cli.ScreenHeader("Analyzing"))
+		fmt.Println()
+		v.moonSpinner, _ = cli.NewMoonSpinner("Preparing analysis...")
 	}
 
 	if v.alreadyExecuted {
-		v.spinner = nil
+		v.moonSpinner = nil
 	}
 
 	// Convert source code to ASTs (each source code is converted to a binary protobuf file)
@@ -77,39 +69,25 @@ func (v *AnalyzeCommand) Execute() error {
 		return err
 	}
 
-	if v.spinner != nil {
+	if v.moonSpinner != nil {
 		v.outWriter.Flush()
 	}
 
 	// Now we start the analysis of each AST file
-	var progressBarAnalysis *pterm.SpinnerPrinter = nil
-	if v.spinner != nil {
-		progressBarAnalysis, _ = pterm.DefaultSpinner.WithWriter(v.multi.NewWriter()).Start("Main analysis")
-		progressBarAnalysis.RemoveWhenDone = true
-		v.spinner.UpdateTitle("Analyzing...")
-		v.spinner.Increment()
+	if v.moonSpinner != nil {
+		v.moonSpinner.UpdateText("Analyzing source code...")
 	}
 
 	// Run global analysis
-	allResults := analyzer.Start(v.Configuration.Storage, progressBarAnalysis)
-
-	if progressBarAnalysis != nil {
-		progressBarAnalysis.Stop()
-	}
+	allResults := analyzer.Start(v.Configuration.Storage, nil)
 
 	// Git analysis
-	if v.spinner != nil {
-		v.spinner.UpdateTitle("Git analysis...")
-		v.spinner.Increment()
+	if v.moonSpinner != nil {
+		v.moonSpinner.UpdateText("Analyzing git history...")
 	}
 	if v.gitSummaries == nil {
 		gitAnalyzer := analyzer.NewGitAnalyzer()
 		v.gitSummaries = gitAnalyzer.Start(allResults)
-	}
-	if progressBarAnalysis != nil {
-		progressBarAnalysis.WithRemoveWhenDone(true)
-		progressBarAnalysis.Stop()
-		v.outWriter.Flush()
 	}
 
 	// Now compare with another branch (if needed)
@@ -118,9 +96,8 @@ func (v *AnalyzeCommand) Execute() error {
 
 	if v.Configuration.CompareWith != "" {
 
-		if v.spinner != nil {
-			v.spinner.UpdateTitle("Comparing with " + v.Configuration.CompareWith)
-			v.spinner.Increment()
+		if v.moonSpinner != nil {
+			v.moonSpinner.UpdateText("Comparing with " + v.Configuration.CompareWith + "...")
 		}
 
 		// switch branches
@@ -144,7 +121,7 @@ func (v *AnalyzeCommand) Execute() error {
 		}
 
 		// Run global analysis on the other branch
-		allResultsCloned = analyzer.Start(clonedConfiguration.Storage, progressBarAnalysis)
+		allResultsCloned = analyzer.Start(clonedConfiguration.Storage, nil)
 
 		// switch back to the original branch
 		for _, gitSummary := range v.gitSummaries {
@@ -162,8 +139,8 @@ func (v *AnalyzeCommand) Execute() error {
 		aggregator.WithComparaison(allResultsCloned, v.Configuration.CompareWith)
 	}
 
-	if v.spinner != nil {
-		v.spinner.UpdateTitle("Aggregating...")
+	if v.moonSpinner != nil {
+		v.moonSpinner.UpdateText("Aggregating results...")
 	}
 	projectAggregated := aggregator.Aggregates()
 
@@ -175,9 +152,8 @@ func (v *AnalyzeCommand) Execute() error {
 	}
 
 	// Generate reports
-	if v.spinner != nil {
-		v.spinner.UpdateTitle("Generating reports...")
-		v.spinner.Increment()
+	if v.moonSpinner != nil {
+		v.moonSpinner.UpdateText("Generating reports...")
 	}
 
 	// Factory reporters
@@ -192,17 +168,44 @@ func (v *AnalyzeCommand) Execute() error {
 		for _, reporter := range reporters {
 			reports, err := reporter.Generate(allResults, projectAggregated)
 			if err != nil {
-				pterm.Error.Println("Cannot generate report: " + err.Error())
+				cli.PrintError("Cannot generate report: " + err.Error())
 				return err
 			}
 			generatedReports = append(generatedReports, reports...)
 		}
 	}
 
-	if v.spinner != nil {
-		v.spinner.UpdateTitle("")
-		v.spinner.Stop()
-		v.multi.Stop()
+	if v.moonSpinner != nil {
+		v.moonSpinner.Stop()
+	}
+
+	// Details errors
+	if len(projectAggregated.ErroredFiles) > 0 {
+		cli.PrintWarning(fmt.Sprintf("%d files could not be analyzed. Use the --verbose option to get details", len(projectAggregated.ErroredFiles)))
+		if log.GetLevel() == log.DebugLevel {
+			for _, file := range projectAggregated.ErroredFiles {
+				cli.PrintError("File " + file.Path)
+				for _, err := range file.Errors {
+					cli.PrintError("    " + err)
+				}
+			}
+		}
+	}
+
+	// Interactive: ask user what to do next
+	if v.isInteractive && !v.alreadyExecuted {
+		choice := cli.AskPostAnalysis(allResults, projectAggregated)
+		switch choice {
+		case cli.PostAnalysisOpenHTML:
+			cli.GenerateAndOpenHTMLReport(allResults, projectAggregated)
+			v.alreadyExecuted = true
+			return nil
+		case cli.PostAnalysisExplore:
+			// Fall through to show ScreenHome
+		case cli.PostAnalysisQuit:
+			v.alreadyExecuted = true
+			return nil
+		}
 	}
 
 	// Display results
@@ -218,20 +221,7 @@ func (v *AnalyzeCommand) Execute() error {
 		v.currentPage.Reset(allResults, projectAggregated)
 	}
 
-	// Details errors
-	if len(projectAggregated.ErroredFiles) > 0 {
-		pterm.Info.Printf("%d files could not be analyzed. Use the --verbose option to get details\n", len(projectAggregated.ErroredFiles))
-		if log.GetLevel() == log.DebugLevel {
-			for _, file := range projectAggregated.ErroredFiles {
-				pterm.Error.Println("File " + file.Path)
-				for _, err := range file.Errors {
-					pterm.Error.Println("    " + err)
-				}
-			}
-		}
-	}
-
-	// Link to file wartcher (in order to close it when app is closed)
+	// Link to file watcher (in order to close it when app is closed)
 	if v.FileWatcher != nil {
 		v.currentPage.FileWatcher = v.FileWatcher
 	}
@@ -239,9 +229,11 @@ func (v *AnalyzeCommand) Execute() error {
 	// Store state of the command
 	v.alreadyExecuted = true
 
-	// End screen
-	screen := cli.NewScreenEnd(v.isInteractive, allResults, projectAggregated, *v.Configuration, generatedReports)
-	screen.Render()
+	// End screen (non-interactive reports summary)
+	if !v.isInteractive {
+		endScreen := cli.NewScreenEnd(v.isInteractive, allResults, projectAggregated, *v.Configuration, generatedReports)
+		endScreen.Render()
+	}
 
 	return nil
 }
@@ -255,27 +247,21 @@ func (v *AnalyzeCommand) ExecuteRunnerAnalysis(config *configuration.Configurati
 			continue
 		}
 
-		var progressBarSpecificForengine *pterm.ProgressbarPrinter = nil
-		if v.spinner != nil {
-			progressBarSpecificForengine, _ := pterm.DefaultSpinner.WithWriter(v.multi.NewWriter()).Start("...")
-			progressBarSpecificForengine.RemoveWhenDone = true
-			runner.SetProgressbar(progressBarSpecificForengine)
-		}
+		runner.SetProgressbar(nil)
 
-		if v.spinner != nil {
-			v.spinner.Increment()
+		if v.moonSpinner != nil {
+			v.moonSpinner.UpdateText("Parsing source files...")
 		}
 
 		err := runner.Ensure()
 		if err != nil {
-			pterm.Error.Println(err.Error())
+			cli.PrintError(err.Error())
 			return err
 		}
 
 		// Dump ASTs (in parallel)
-		if v.spinner != nil {
-			v.spinner.UpdateTitle("Dumping AST code...")
-			v.spinner.Increment()
+		if v.moonSpinner != nil {
+			v.moonSpinner.UpdateText("Building AST...")
 		}
 
 		done := make(chan struct{})
@@ -287,11 +273,8 @@ func (v *AnalyzeCommand) ExecuteRunnerAnalysis(config *configuration.Configurati
 
 		// Cleaning up
 		err = runner.Finish()
-		if v.isInteractive && progressBarSpecificForengine != nil {
-			progressBarSpecificForengine.Stop()
-		}
 		if err != nil {
-			pterm.Error.Println(err.Error())
+			cli.PrintError(err.Error())
 			// pass
 		}
 	}

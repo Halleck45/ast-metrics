@@ -7,7 +7,6 @@ import (
 	"runtime"
 	"runtime/pprof"
 
-	"github.com/charmbracelet/lipgloss"
 	"github.com/halleck45/ast-metrics/internal/cli"
 	"github.com/halleck45/ast-metrics/internal/command"
 	"github.com/halleck45/ast-metrics/internal/configuration"
@@ -20,6 +19,7 @@ import (
 	"github.com/pterm/pterm"
 	"github.com/sirupsen/logrus"
 	cliV2 "github.com/urfave/cli/v2"
+	osterm "golang.org/x/term"
 )
 
 var (
@@ -51,6 +51,66 @@ func main() {
 	app := &cliV2.App{
 		Name:  "ast-metrics",
 		Usage: "Static code analysis tool",
+		Flags: []cliV2.Flag{
+			&cliV2.BoolFlag{
+				Name:  "non-interactive",
+				Usage: "Disable interactive mode",
+			},
+		},
+		Action: func(cCtx *cliV2.Context) error {
+			// Determine if we're in an interactive terminal
+			isInteractive := osterm.IsTerminal(int(os.Stdin.Fd())) && !cCtx.Bool("non-interactive")
+
+			if !isInteractive {
+				// Non-interactive: print banner + help
+				fmt.Println(cli.RenderBanner(version))
+				return cliV2.ShowAppHelp(cCtx)
+			}
+
+			// Interactive: show welcome screen in a loop
+			var lastError string
+			for {
+				result := cli.ShowWelcomeScreen(version, lastError)
+				lastError = "" // reset after displaying
+
+				if result.Command == "quit" {
+					return nil
+				}
+
+				// Clear the main screen buffer so previous command output
+				// doesn't accumulate (the welcome alt-screen restores the
+				// main buffer on exit, which still holds old output).
+				fmt.Print("\033[H\033[2J")
+
+				if result.Command == "help" {
+					_ = cliV2.ShowAppHelp(cCtx)
+					fmt.Println()
+					cli.PressAnyKeyToContinue()
+					continue
+				}
+
+				// Build args: app-name + command + any user-provided args
+				args := []string{cCtx.App.Name, result.Command}
+				args = append(args, result.Args...)
+				cmdErr := cCtx.App.Run(args)
+
+				// Commands that have their own interactive TUI: no pause needed
+				switch result.Command {
+				case "analyze", "ci":
+					if cmdErr != nil {
+						lastError = cmdErr.Error()
+					}
+				default:
+					// For commands that print output, show the error inline
+					// and pause so the user can read before returning.
+					if cmdErr != nil {
+						cli.PrintError(cmdErr.Error())
+					}
+					fmt.Println()
+					cli.PressAnyKeyToContinue()
+				}
+			}
+		},
 		Commands: []*cliV2.Command{
 			{
 				Name:    "analyze",
@@ -183,9 +243,6 @@ func main() {
 
 					// Stdout
 					outWriter := bufio.NewWriter(os.Stdout)
-					var style = lipgloss.NewStyle().Foreground(lipgloss.Color("#FFFFFF")).Bold(true)
-					fmt.Println(style.Render("\n🦫 AST Metrics is a language-agnostic static code analyzer."))
-					fmt.Println("")
 
 					// Prepare configuration object
 					config := configuration.NewConfiguration()
@@ -198,7 +255,7 @@ func main() {
 
 					config, err = loader.Loads(config)
 					if err != nil {
-						pterm.Error.Println("Cannot load configuration file: " + err.Error())
+						cli.PrintError("Cannot load configuration file: " + err.Error())
 					}
 
 					// If no configuration file is found, we ask the user to select a file or take it from arguments
@@ -218,12 +275,12 @@ func main() {
 						}
 					} else {
 						if len(pathsSlice) == 0 && (config.SourcesToAnalyzePath == nil || len(config.SourcesToAnalyzePath) == 0) {
-							pterm.Error.Println("Please provide a path to analyze")
+							cli.PrintError("Please provide a path to analyze")
 							return nil
 						}
 						err := config.SetSourcesToAnalyzePath(pathsSlice)
 						if err != nil {
-							pterm.Error.Println(err.Error())
+							cli.PrintError(err.Error())
 							return err
 						}
 					}
@@ -258,7 +315,7 @@ func main() {
 
 					// CI mode
 					if cCtx.Bool("ci") {
-						pterm.Warning.Println("[DEPRECATION] L'option --ci pour 'analyze' est dépréciée. Utilisez plutôt la commande: ast-metrics ci")
+						cli.PrintWarning("[DEPRECATION] L'option --ci pour 'analyze' est dépréciée. Utilisez plutôt la commande: ast-metrics ci")
 						if config.Reports.Html == "" {
 							config.Reports.Html = "ast-metrics-html-report"
 						}
@@ -292,13 +349,13 @@ func main() {
 					config.Watching = cCtx.Bool("watch")
 					err = watcher.NewCommandWatcher(config).Start(command)
 					if err != nil {
-						pterm.Error.Println("Cannot watch files: " + err.Error())
+						cli.PrintError("Cannot watch files: " + err.Error())
 					}
 
 					// Execute command
 					err = command.Execute()
 					if err != nil {
-						pterm.Error.Println(err.Error())
+						cli.PrintError(err.Error())
 						return err
 					}
 
@@ -315,7 +372,7 @@ func main() {
 					command := command.NewCleanCommand(config.Storage)
 					err := command.Execute()
 					if err != nil {
-						pterm.Error.Println(err.Error())
+						cli.PrintError(err.Error())
 						return err
 					}
 					return nil
@@ -330,7 +387,7 @@ func main() {
 					command := command.NewSelfUpdateCommand(version)
 					err := command.Execute()
 					if err != nil {
-						pterm.Error.Println(err.Error())
+						cli.PrintError(err.Error())
 						return err
 					}
 					return nil
@@ -383,7 +440,7 @@ func main() {
 					command := command.NewVersionCommand(version)
 					err := command.Execute()
 					if err != nil {
-						pterm.Error.Println(err.Error())
+						cli.PrintError(err.Error())
 						return err
 					}
 					return nil
@@ -411,7 +468,7 @@ func main() {
 					}
 					cfg, err := loader.Loads(config)
 					if err != nil {
-						pterm.Error.Println("Cannot load configuration file: " + err.Error())
+						cli.PrintError("Cannot load configuration file: " + err.Error())
 					}
 					// report sarif flag
 					if cCtx.String("report-sarif") != "" {
@@ -426,7 +483,7 @@ func main() {
 							pathsSlice[i] = paths.Get(i)
 						}
 						if err := cfg.SetSourcesToAnalyzePath(pathsSlice); err != nil {
-							pterm.Error.Println(err.Error())
+							cli.PrintError(err.Error())
 							return err
 						}
 					}
@@ -446,7 +503,7 @@ func main() {
 						return err
 					}
 
-					pterm.Success.Println("No lint violations found.")
+					cli.PrintSuccess("No lint violations found.")
 
 					return nil
 				},
@@ -481,7 +538,7 @@ func main() {
 					}
 					cfg, err := loader.Loads(config)
 					if err != nil {
-						pterm.Error.Println("Cannot load configuration file: " + err.Error())
+						cli.PrintError("Cannot load configuration file: " + err.Error())
 					}
 					// Paths from args
 					paths := cCtx.Args()
@@ -491,7 +548,7 @@ func main() {
 							pathsSlice[i] = paths.Get(i)
 						}
 						if err := cfg.SetSourcesToAnalyzePath(pathsSlice); err != nil {
-							pterm.Error.Println(err.Error())
+							cli.PrintError(err.Error())
 							return err
 						}
 					}
@@ -587,7 +644,7 @@ func main() {
 					cmd := command.NewDeployGithubOrganizationCommand(org, token, branch, workflowPath, includeForks)
 					err := cmd.Execute()
 					if err != nil {
-						pterm.Error.Println(err.Error())
+						cli.PrintError(err.Error())
 						return err
 					}
 					return nil
@@ -602,7 +659,7 @@ func main() {
 					command := command.NewInitConfigurationCommand()
 					err := command.Execute()
 					if err != nil {
-						pterm.Error.Println(err.Error())
+						cli.PrintError(err.Error())
 						return err
 					}
 					return nil

@@ -1,8 +1,10 @@
 package cli
 
 import (
+	"bufio"
 	"fmt"
 	"math"
+	"os"
 	"strconv"
 
 	"github.com/charmbracelet/lipgloss"
@@ -40,6 +42,33 @@ func windowWidth() int {
 
 func StyleTitle(text string) lipgloss.Style {
 	return titleStyle.Width(windowWidth()).SetString(text)
+}
+
+// ScreenHeader renders a compact header for sub-screens:
+// a breadcrumb-style line with the page title, plus a separator and esc hint.
+func ScreenHeader(pageTitle string) string {
+	logoStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("#73F59F")).Bold(true)
+	sepStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("#555555"))
+	titleTextStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("#FFFFFF")).Bold(true)
+	hintStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("#555555"))
+	lineStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("#333333"))
+
+	header := logoStyle.Render("◉ AST Metrics") +
+		sepStyle.Render(" > ") +
+		titleTextStyle.Render(pageTitle)
+
+	w := windowWidth()
+	line := lineStyle.Render(fmt.Sprintf("%*s", 0, "") + fmt.Sprintf("%s", repeatRune('─', w)))
+
+	return header + "  " + hintStyle.Render("(esc to go back)") + "\n" + line + "\n"
+}
+
+func repeatRune(r rune, count int) string {
+	b := make([]byte, 0, count*3)
+	for i := 0; i < count; i++ {
+		b = append(b, string(r)...)
+	}
+	return string(b)
 }
 
 func StyleHowToQuit(text string) lipgloss.Style {
@@ -132,4 +161,49 @@ func Round(num float64) int {
 func ToFixed(num float64, precision int) float64 {
 	output := math.Pow(10, float64(precision))
 	return float64(Round(num*float64(output))) / float64(output)
+}
+
+// PressAnyKeyToContinue waits for the user to press any key before continuing.
+// Supports Enter, Esc, q, and any other key in raw terminal mode.
+func PressAnyKeyToContinue() {
+	hint := lipgloss.NewStyle().Foreground(lipgloss.Color("#555555")).Italic(true)
+	fmt.Print(hint.Render("  Press any key to continue..."))
+
+	fd := int(os.Stdin.Fd())
+	oldState, err := osterm.MakeRaw(fd)
+	if err != nil {
+		// Fallback to line-buffered read if raw mode fails
+		bufio.NewReader(os.Stdin).ReadBytes('\n')
+		return
+	}
+	defer osterm.Restore(fd, oldState)
+
+	// Read a single byte (any key)
+	buf := make([]byte, 1)
+	os.Stdin.Read(buf)
+	fmt.Println()
+}
+
+// PrintSuccess prints a success message styled to match the TUI look.
+func PrintSuccess(msg string) {
+	style := lipgloss.NewStyle().Foreground(lipgloss.Color("#73F59F")).Bold(true)
+	fmt.Println(style.Render("  ✓ " + msg))
+}
+
+// PrintError prints an error message styled to match the TUI look.
+func PrintError(msg string) {
+	style := lipgloss.NewStyle().Foreground(lipgloss.Color("#FF5555")).Bold(true)
+	fmt.Println(style.Render("  ✗ " + msg))
+}
+
+// PrintWarning prints a warning message styled to match the TUI look.
+func PrintWarning(msg string) {
+	style := lipgloss.NewStyle().Foreground(lipgloss.Color("#FFB86C")).Bold(true)
+	fmt.Println(style.Render("  ⚠ " + msg))
+}
+
+// PrintInfo prints an info message styled to match the TUI look.
+func PrintInfo(msg string) {
+	style := lipgloss.NewStyle().Foreground(lipgloss.Color("#888888"))
+	fmt.Println(style.Render("  " + msg))
 }

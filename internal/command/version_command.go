@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"runtime"
 
-	"github.com/pterm/pterm"
+	"github.com/halleck45/ast-metrics/internal/cli"
 )
 
 type VersionCommand struct {
@@ -18,20 +18,11 @@ func NewVersionCommand(currentVersion string) *VersionCommand {
 }
 
 func (v *VersionCommand) Execute() error {
-
-	arch := runtime.GOARCH
-	os := runtime.GOOS
-
-	// keep always current version on first line, so it's easier to compare
-	fmt.Println(v.CurrentVersion)
+	fmt.Print(cli.ScreenHeader("Version"))
 	fmt.Println()
 
-	d := pterm.TableData{
-		{"Current version", v.CurrentVersion},
-		{"OS", os},
-		{"Architecture", arch},
-	}
-	printer := pterm.DefaultTable.WithData(d)
-	printer.Render()
+	fmt.Printf("  %-20s %s\n", "Current version", v.CurrentVersion)
+	fmt.Printf("  %-20s %s\n", "OS", runtime.GOOS)
+	fmt.Printf("  %-20s %s\n", "Architecture", runtime.GOARCH)
 	return nil
 }

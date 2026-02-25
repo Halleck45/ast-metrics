@@ -112,8 +112,7 @@ func (m modelScreenSummary) View() string {
 	// tempporary disabled
 	// out = ""
 
-	return StyleScreen(StyleTitle("Results overview").Render() +
+	return StyleScreen(ScreenHeader("Overview") +
 		"\n" + row1 +
-		StyleHowToQuit("").Render() +
 		"\n" + out).Render()
 }
