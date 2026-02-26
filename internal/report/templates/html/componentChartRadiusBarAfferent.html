@@ -3,11 +3,12 @@
         {%- set first = true -%}
         {%- set files = currentView.ConcernedFiles -%}
         {%- for file in files -%}
-        {%- if len(file.Stmts.StmtClass) == 0 -%}
+        {%- set classesInFile = file|getClassesInFile -%}
+        {%- if len(classesInFile) == 0 -%}
         {% set elements = file|convertOneFileToCollection -%}
         {% set name = file.Path %}
         {%- else %}
-        {% set elements = file.Stmts.StmtClass -%}
+        {% set elements = classesInFile -%}
         {% set name = "" -%}
         {%- endif -%}
         {%- for class in elements -%}

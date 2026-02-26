@@ -858,6 +858,15 @@ func (v *HtmlReportGenerator) RegisterFilters() {
 		return pongo2.AsValue([]*pb.File{file}), nil
 	})
 
+	// filter getClassesInFile: returns classes via GetClassesInFile (namespace-aware).
+	// After protobuf serialization/deserialization, file.Stmts.StmtClass and
+	// namespace.Stmts.StmtClass are different objects. Coupling is computed on
+	// GetClassesInFile results, so templates must use this filter.
+	pongo2.RegisterFilter("getClassesInFile", func(in *pongo2.Value, param *pongo2.Value) (out *pongo2.Value, err *pongo2.Error) {
+		file := in.Interface().(*pb.File)
+		return pongo2.AsValue(engine.GetClassesInFile(file)), nil
+	})
+
 	// filter : has class or uis procedural script
 	pongo2.RegisterFilter("fileHasClasses", func(in *pongo2.Value, param *pongo2.Value) (out *pongo2.Value, err *pongo2.Error) {
 		file := in.Interface().(*pb.File)
