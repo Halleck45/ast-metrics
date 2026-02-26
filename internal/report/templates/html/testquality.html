@@ -92,11 +92,11 @@ AST Metrics - Test Quality
 <!-- Page intro -->
 <div class="mt-8 mb-6">
     <h1 class="text-2xl font-bold text-gray-900 mb-2">Test Quality</h1>
-    <p class="text-sm text-gray-600 leading-relaxed max-w-3xl">
-        How well do your tests target production code? This page measures <strong>isolation</strong> (does each test
-        focus on a small number of production structures?) and <strong>traceability</strong> (are all production
-        structures covered by at least one test?). Well-isolated tests are easier to maintain, faster to diagnose
-        when they fail, and less likely to break for unrelated reasons.
+    <p class="text-sm text-gray-600 leading-relaxed">
+        How effectively do your tests exercise your application code?
+        <br/>This page evaluates two dimensions: <strong>Isolation</strong> (does each test focus on a limited set of application structures?) and <strong>Traceability</strong>
+         (is every application structure covered by at least one test?).
+        Well-isolated tests are easier to maintain, faster to diagnose when they fail, and less likely to break due to unrelated changes.
     </p>
 </div>
 
@@ -112,7 +112,7 @@ AST Metrics - Test Quality
             {{ tq.IsolationLabel }}
         </span>
         <p class="text-xs text-gray-800 border-t border-gray-100 pt-3 mt-3">
-            How focused your tests are on a single production structure. A high score means most tests target few structures.
+            Measures how concentrated your tests are on specific application components. A high score means most tests focus on a small number of components.
         </p>
     </div>
 
@@ -123,7 +123,7 @@ AST Metrics - Test Quality
         </h5>
         <p class="text-sm font-medium text-gray-500 mb-3">Test Files</p>
         <p class="text-xs text-gray-800 border-t border-gray-100 pt-3">
-            out of {{ tq.NbProdFiles }} production files
+            out of {{ tq.NbProdFiles }} application files
         </p>
     </div>
 
@@ -145,7 +145,7 @@ AST Metrics - Test Quality
         </h5>
         <p class="text-sm font-medium text-gray-500 mb-3">Critical Orphans</p>
         <p class="text-xs text-gray-800 border-t border-gray-100 pt-3">
-            Production structures with no tests, ranked by importance
+            Application structures with no tests, ranked by importance
         </p>
     </div>
 </div>
@@ -155,14 +155,14 @@ AST Metrics - Test Quality
     <!-- Isolation Distribution Histogram -->
     <div class="dashboard-card p-6 animate-fade-in-up stagger-2">
         <h3 class="text-lg font-bold text-gray-900 mb-2">Isolation Distribution</h3>
-        <p class="text-xs text-gray-500 mb-4">How many test files fall into each isolation tier. You want most tests on the right (high isolation = few production structures touched per test).</p>
+        <p class="text-xs text-gray-500 mb-4">How many test files fall into each isolation tier. You want most tests on the right (high isolation = few application structures touched per test).</p>
         <div id="isolation-histogram" style="height: 220px;"></div>
     </div>
 
     <!-- Test Blast Radius Bubble Chart -->
     <div class="dashboard-card p-6 animate-fade-in-up stagger-3">
         <h3 class="text-lg font-bold text-gray-900 mb-2">Test Blast Radius</h3>
-        <p class="text-xs text-gray-500 mb-4">Aim for the top-left corner: tests that touch fewer production structures (low fan-out) and score high on isolation are more precise, stable, and easier to diagnose when they fail.</p>
+        <p class="text-xs text-gray-500 mb-4">Aim for the top-left corner: tests that touch fewer application structures (low fan-out) and score high on isolation are more precise, stable, and easier to diagnose when they fail.</p>
         <div id="blast-radius-chart" style="height: 220px;"></div>
     </div>
 </div>
@@ -171,7 +171,7 @@ AST Metrics - Test Quality
 {% if tq.GodTests %}
 <div class="dashboard-card p-6 mt-6 animate-fade-in-up stagger-4">
     <h3 class="text-xl font-bold text-gray-900 mb-2">God Tests</h3>
-    <p class="text-xs text-gray-500 mb-4">A "God Test" touches 5 or more production structures. When it fails, you can't tell which structure is broken. Consider splitting these into smaller, focused test files.</p>
+    <p class="text-xs text-gray-500 mb-4">A "God Test" touches 5 or more application structures. When it fails, you can't tell which structure is broken. Consider splitting these into smaller, focused test files.</p>
     <div class="overflow-x-auto">
         <table class="w-full text-left border-collapse sortable">
             <thead>
@@ -209,7 +209,7 @@ AST Metrics - Test Quality
 {% if tq.OrphanClasses %}
 <div class="dashboard-card p-6 mt-6 animate-fade-in-up stagger-5">
     <h3 class="text-xl font-bold text-gray-900 mb-2">Orphan Critical Structures</h3>
-    <p class="text-xs text-gray-500 mb-4">These production structures have no test touching them. They are ranked by weight: the more complex and coupled a structure is, the riskier it is to leave it untested. Prioritize writing tests for the top entries.</p>
+    <p class="text-xs text-gray-500 mb-4">These application structures have no test touching them. They are ranked by weight: the more complex and coupled a structure is, the riskier it is to leave it untested. Prioritize writing tests for the top entries.</p>
     <div class="overflow-x-auto">
         <table class="w-full text-left border-collapse sortable">
             <thead>
