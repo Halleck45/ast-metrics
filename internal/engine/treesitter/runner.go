@@ -29,6 +29,11 @@ func (r Runner) ParseFile(path string) (*pb.File, error) {
 	tree := parser.Parse(nil, src)
 	root := tree.RootNode()
 
+	// Share the parsed tree with the adapter to avoid re-parsing
+	if ta, ok := r.Adapter.(interface{ SetRootNode(*sitter.Node) }); ok {
+		ta.SetRootNode(root)
+	}
+
 	v := NewVisitor(r.Adapter, path, src)
 	v.Visit(root)
 	return v.Result(), nil

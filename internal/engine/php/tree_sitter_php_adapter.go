@@ -23,6 +23,7 @@ var (
 
 type TreeSitterAdapter struct {
 	src      []byte
+	root     *sitter.Node // shared root from runner to avoid re-parsing
 	ns       string
 	aliases  map[string]string
 	computed bool
@@ -30,7 +31,8 @@ type TreeSitterAdapter struct {
 }
 
 func NewTreeSitterAdapter(src []byte) *TreeSitterAdapter { return &TreeSitterAdapter{src: src} }
-func (a *TreeSitterAdapter) SetSource(src []byte)        { a.src = src }
+func (a *TreeSitterAdapter) SetSource(src []byte)        { a.src = src; a.root = nil; a.computed = false; a.ns = "" }
+func (a *TreeSitterAdapter) SetRootNode(root *sitter.Node) { a.root = root }
 
 func (a *TreeSitterAdapter) Language() *sitter.Language { return tsPhp.GetLanguage() }
 
@@ -263,76 +265,84 @@ func (a *TreeSitterAdapter) computeExternalDependencies() {
 	if a.src == nil {
 		return
 	}
-	parser := sitter.NewParser()
-	parser.SetLanguage(tsPhp.GetLanguage())
-	tree := parser.Parse(nil, a.src)
-	root := tree.RootNode()
+	root := a.root
+	if root == nil {
+		parser := sitter.NewParser()
+		parser.SetLanguage(tsPhp.GetLanguage())
+		tree := parser.Parse(nil, a.src)
+		root = tree.RootNode()
+	}
 
-	// collect namespace and use aliases
+	// collect namespace and use aliases — only scan top-level children
+	// (namespace/use declarations are always at the top of a PHP file)
 	a.aliases = map[string]string{}
-	// find namespace and parse aliases from AST
-	var walk func(*sitter.Node)
-	walk = func(n *sitter.Node) {
-		if n == nil {
-			return
-		}
-		t := n.Type()
-		if t == "namespace_definition" {
-			if nm := firstChildOfType(n, "namespace_name"); nm != nil {
-				a.ns = a.text(nm)
+	collectUse := func(n *sitter.Node) {
+		// Traverse to collect any use_as_clause (aliases)
+		var collect func(*sitter.Node)
+		collect = func(x *sitter.Node) {
+			if x == nil {
+				return
 			}
-		}
-		if t == "use_declaration" {
-			// Traverse to collect any use_as_clause (aliases)
-			var collect func(*sitter.Node)
-			collect = func(x *sitter.Node) {
-				if x == nil {
-					return
+			if x.Type() == "use_as_clause" {
+				var base, alias string
+				if q := firstChildOfType(x, "qualified_name"); q != nil {
+					base = a.text(q)
 				}
-				if x.Type() == "use_as_clause" {
-					var base, alias string
-					if q := firstChildOfType(x, "qualified_name"); q != nil {
-						base = a.text(q)
-					}
-					if base == "" {
-						if nm := firstChildOfType(x, "name"); nm != nil {
-							base = a.text(nm)
-						}
-					}
-					if aliasNode := x.Child(int(x.ChildCount() - 1)); aliasNode != nil {
-						alias = a.text(aliasNode)
-					}
-					if base != "" && alias != "" {
-						a.aliases[alias] = base
+				if base == "" {
+					if nm := firstChildOfType(x, "name"); nm != nil {
+						base = a.text(nm)
 					}
 				}
-				for i := 0; i < int(x.ChildCount()); i++ {
-					collect(x.Child(i))
+				if aliasNode := x.Child(int(x.ChildCount() - 1)); aliasNode != nil {
+					alias = a.text(aliasNode)
+				}
+				if base != "" && alias != "" {
+					a.aliases[alias] = base
 				}
 			}
-			collect(n)
-			// simple import without alias: use A\B; alias is short name or single name
-			if q := firstChildOfType(n, "qualified_name"); q != nil {
-				base := a.text(q)
-				if base != "" {
-					short := base
-					if idx := strings.LastIndex(base, "\\"); idx >= 0 {
-						short = base[idx+1:]
-					}
-					a.aliases[short] = base
-				}
-			} else if nm := firstChildOfType(n, "name"); nm != nil {
-				base := a.text(nm)
-				if base != "" {
-					a.aliases[base] = base
-				}
+			for i := 0; i < int(x.ChildCount()); i++ {
+				collect(x.Child(i))
 			}
 		}
-		for i := 0; i < int(n.ChildCount()); i++ {
-			walk(n.Child(i))
+		collect(n)
+		// simple import without alias: use A\B; alias is short name or single name
+		if q := firstChildOfType(n, "qualified_name"); q != nil {
+			base := a.text(q)
+			if base != "" {
+				short := base
+				if idx := strings.LastIndex(base, "\\"); idx >= 0 {
+					short = base[idx+1:]
+				}
+				a.aliases[short] = base
+			}
+		} else if nm := firstChildOfType(n, "name"); nm != nil {
+			base := a.text(nm)
+			if base != "" {
+				a.aliases[base] = base
+			}
 		}
 	}
-	walk(root)
+	// Scan only top-level children (and one level into namespace body)
+	for i := 0; i < int(root.ChildCount()); i++ {
+		ch := root.Child(i)
+		t := ch.Type()
+		if t == "namespace_definition" {
+			if nm := firstChildOfType(ch, "namespace_name"); nm != nil {
+				a.ns = a.text(nm)
+			}
+			// Also scan use declarations inside namespace body
+			if body := firstChildOfType(ch, "compound_statement"); body != nil {
+				for j := 0; j < int(body.ChildCount()); j++ {
+					inner := body.Child(j)
+					if inner.Type() == "use_declaration" {
+						collectUse(inner)
+					}
+				}
+			}
+		} else if t == "use_declaration" {
+			collectUse(ch)
+		}
+	}
 
 	// helper to resolve a class name considering alias, FQN and local namespace
 	resolve := func(name string) string {
@@ -865,14 +875,20 @@ func (a *TreeSitterAdapter) CountElseIfAsIf() bool {
 }
 
 func (a *TreeSitterAdapter) findNamespace() string {
+	// If computeExternalDependencies already ran, reuse its result
+	if a.computed {
+		return a.ns
+	}
 	if a.src == nil {
 		return ""
 	}
-	// very light scan: look for first namespace_definition and extract its name text
-	parser := sitter.NewParser()
-	parser.SetLanguage(tsPhp.GetLanguage())
-	tree := parser.Parse(nil, a.src)
-	root := tree.RootNode()
+	root := a.root
+	if root == nil {
+		parser := sitter.NewParser()
+		parser.SetLanguage(tsPhp.GetLanguage())
+		tree := parser.Parse(nil, a.src)
+		root = tree.RootNode()
+	}
 	var ns string
 	var walk func(*sitter.Node)
 	walk = func(n *sitter.Node) {
@@ -890,5 +906,6 @@ func (a *TreeSitterAdapter) findNamespace() string {
 		}
 	}
 	walk(root)
+	a.ns = ns
 	return ns
 }
