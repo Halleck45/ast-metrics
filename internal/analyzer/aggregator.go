@@ -85,6 +85,7 @@ type Aggregated struct {
 	PackageRelations                        map[string]map[string]int // counter of dependencies. Ex: A -> B -> 2
 	Graph                                   *pb.Graph
 	Community                               *CommunityMetrics
+	TestQuality                             *TestQualityMetrics
 	Suggestions                             []Suggestion
 }
 
@@ -129,6 +130,8 @@ func NewAggregator(files []*pb.File, gitSummaries []ResultOfGitAnalysis) *Aggreg
 	a.WithAggregateAnalyzer(NewGraphAggregator())
 	// Run community detection after graph is built
 	a.WithAggregateAnalyzer(NewCommunityAggregator())
+	// Run test quality analysis
+	a.WithAggregateAnalyzer(NewTestQualityAggregator())
 	return a
 }
 
@@ -176,6 +179,7 @@ func newAggregated() Aggregated {
 		PackageRelations:                        make(map[string]map[string]int),
 		Graph:                                   &pb.Graph{Nodes: make(map[string]*pb.Node)},
 		Community:                               nil,
+		TestQuality:                             nil,
 		Suggestions:                             make([]Suggestion, 0),
 	}
 }
