@@ -3,17 +3,18 @@
         {%- set first = true -%}
         {%- set files = currentView.ConcernedFiles -%}
         {%- for file in files -%}
-        {%- if len(file.Stmts.StmtClass) == 0 -%}
+        {%- set classesInFile = file|getClassesInFile -%}
+        {%- if len(classesInFile) == 0 -%}
         {% set elements = file|convertOneFileToCollection -%}
         {% set name = file.Path %}
         {%- else %}
-        {% set elements = file.Stmts.StmtClass -%}
+        {% set elements = classesInFile -%}
         {% set name = "" -%}
         {%- endif -%}
         {%- for class in elements -%}
-        {%- if not first -%},{%- endif -%}
+        {%- if not (forloop.Parentloop.First and forloop.First) -%},{%- endif -%}
         {
-            "name": "{{ name|default:class.Name.Qualified|addslashes }}",
+            "name": "{{ name|default:class.Name.Qualified|escapejs }}",
             "efferent": {{ class.Stmts.Analyze.Coupling.Efferent|floatformat:0  }}
         }
         {%- set first = false -%}

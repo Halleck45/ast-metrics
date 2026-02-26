@@ -80,6 +80,7 @@ func (v *HtmlReportGenerator) Generate(files []*pb.File, projectAggregated analy
 		"componentChartRadiusBarEfferent.html",
 		"componentChartRadiusBarAfferent.html",
 		"componentDependencyDiagram.html",
+		"componentBubbleChart.html",
 		"componentComparaisonBadge.html",
 		"componentComparaisonOperator.html",
 		"communities.html",
@@ -342,6 +343,31 @@ func pruneFunction(m *pb.StmtFunction) {
 	}
 }
 
+func buildNodeToCommunityJSON(n2c map[string]string) string {
+	if len(n2c) == 0 {
+		return "{}"
+	}
+	var b strings.Builder
+	b.WriteString("{")
+	first := true
+	for k, v := range n2c {
+		if !first {
+			b.WriteString(",")
+		} else {
+			first = false
+		}
+		kk := strings.ReplaceAll(strings.ReplaceAll(k, "\\", "\\\\"), "\"", "\\\"")
+		vv := strings.ReplaceAll(strings.ReplaceAll(v, "\\", "\\\\"), "\"", "\\\"")
+		b.WriteString("\"")
+		b.WriteString(kk)
+		b.WriteString("\":\"")
+		b.WriteString(vv)
+		b.WriteString("\"")
+	}
+	b.WriteString("}")
+	return b.String()
+}
+
 func buildRisksJSON(risksByPath map[string][]riskItemForTpl) string {
 	b := strings.Builder{}
 	b.WriteString("{")
@@ -407,7 +433,11 @@ func (v *HtmlReportGenerator) GenerateLanguagePage(template string, language str
 
 	filesJSON := buildFilesJSONPruned(files, language)
 	risksJSON := buildRisksJSON(risksByPath)
-	out, err := tpl.Execute(pongo2.Context{"datetime": datetime, "page": template, "currentLanguage": language, "currentView": currentView, "projectAggregated": projectAggregated, "files": files, "risksByPath": risksByPath, "filesJSON": filesJSON, "risksJSON": risksJSON})
+	nodeToCommunityJSON := "{}"
+	if currentView.Community != nil && len(currentView.Community.NodeToCommunity) > 0 {
+		nodeToCommunityJSON = buildNodeToCommunityJSON(currentView.Community.NodeToCommunity)
+	}
+	out, err := tpl.Execute(pongo2.Context{"datetime": datetime, "page": template, "currentLanguage": language, "currentView": currentView, "projectAggregated": projectAggregated, "files": files, "risksByPath": risksByPath, "filesJSON": filesJSON, "risksJSON": risksJSON, "nodeToCommunityJSON": nodeToCommunityJSON})
 	if err != nil {
 		log.Error(err)
 		return err
@@ -826,6 +856,15 @@ func (v *HtmlReportGenerator) RegisterFilters() {
 	pongo2.RegisterFilter("convertOneFileToCollection", func(in *pongo2.Value, param *pongo2.Value) (out *pongo2.Value, err *pongo2.Error) {
 		file := in.Interface().(*pb.File)
 		return pongo2.AsValue([]*pb.File{file}), nil
+	})
+
+	// filter getClassesInFile: returns classes via GetClassesInFile (namespace-aware).
+	// After protobuf serialization/deserialization, file.Stmts.StmtClass and
+	// namespace.Stmts.StmtClass are different objects. Coupling is computed on
+	// GetClassesInFile results, so templates must use this filter.
+	pongo2.RegisterFilter("getClassesInFile", func(in *pongo2.Value, param *pongo2.Value) (out *pongo2.Value, err *pongo2.Error) {
+		file := in.Interface().(*pb.File)
+		return pongo2.AsValue(engine.GetClassesInFile(file)), nil
 	})
 
 	// filter : has class or uis procedural script
