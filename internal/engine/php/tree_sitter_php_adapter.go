@@ -10,6 +10,17 @@ import (
 	tsPhp "github.com/smacker/go-tree-sitter/php"
 )
 
+// Pre-compiled regex patterns for PHP external dependency scanning.
+var (
+	rePhpUse        = regexp.MustCompile(`(?m)^\s*use\s+([^;]+);`)
+	rePhpNewClass   = regexp.MustCompile(`new\s+(\\)?([A-Za-z_][A-Za-z0-9_\\]*)`)
+	rePhpStatic     = regexp.MustCompile(`(\\)?([A-Za-z_][A-Za-z0-9_\\]*)::`)
+	rePhpFuncParams = regexp.MustCompile(`function\s+[A-Za-z_][A-Za-z0-9_]*\s*\(([^)]*)\)`)
+	rePhpParamType  = regexp.MustCompile(`\??[A-Za-z_\\][A-Za-z0-9_\\]*\s*\$`)
+	rePhpReturnType = regexp.MustCompile(`\)\s*:\s*\??([A-Za-z_\\][A-Za-z0-9_\\]*)`)
+	rePhpProperty   = regexp.MustCompile(`(?m)^(?:\s*)(?:public|private|protected|var)\s+\??([A-Za-z_\\][A-Za-z0-9_\\]*)?\s*\$`)
+)
+
 type TreeSitterAdapter struct {
 	src      []byte
 	ns       string
@@ -365,8 +376,7 @@ func (a *TreeSitterAdapter) computeExternalDependencies() {
 	// Also, regex-pass to find use statements for aliases in case AST patterns differ
 	src := string(a.src)
 	{
-		reUse := regexp.MustCompile(`(?m)^\s*use\s+([^;]+);`)
-		for _, m := range reUse.FindAllStringSubmatch(src, -1) {
+		for _, m := range rePhpUse.FindAllStringSubmatch(src, -1) {
 			clause := m[1]
 			// split multiple by comma
 			parts := strings.Split(clause, ",")
@@ -406,8 +416,7 @@ func (a *TreeSitterAdapter) computeExternalDependencies() {
 	}
 	// new Class
 	{
-		re := regexp.MustCompile(`new\s+(\\)?([A-Za-z_][A-Za-z0-9_\\]*)`)
-		for _, m := range re.FindAllStringSubmatch(src, -1) {
+		for _, m := range rePhpNewClass.FindAllStringSubmatch(src, -1) {
 			name := m[2]
 			if m[1] != "" {
 				name = "\\" + name
@@ -417,8 +426,7 @@ func (a *TreeSitterAdapter) computeExternalDependencies() {
 	}
 	// Static: Class::
 	{
-		re := regexp.MustCompile(`(\\)?([A-Za-z_][A-Za-z0-9_\\]*)::`)
-		for _, m := range re.FindAllStringSubmatch(src, -1) {
+		for _, m := range rePhpStatic.FindAllStringSubmatch(src, -1) {
 			name := m[2]
 			if m[1] != "" {
 				name = "\\" + name
@@ -428,12 +436,10 @@ func (a *TreeSitterAdapter) computeExternalDependencies() {
 	}
 	// Function parameter types
 	{
-		re := regexp.MustCompile(`function\s+[A-Za-z_][A-Za-z0-9_]*\s*\(([^)]*)\)`) // capture params section
-		matches := re.FindAllStringSubmatch(src, -1)
+		matches := rePhpFuncParams.FindAllStringSubmatch(src, -1)
 		for _, mm := range matches {
 			params := mm[1]
-			pre := regexp.MustCompile(`\??[A-Za-z_\\][A-Za-z0-9_\\]*\s*\$`)
-			for _, p := range pre.FindAllString(params, -1) {
+			for _, p := range rePhpParamType.FindAllString(params, -1) {
 				name := strings.TrimSpace(strings.TrimSuffix(p, "$"))
 				if !isPrimitive(name) {
 					add(resolve(name))
@@ -443,8 +449,7 @@ func (a *TreeSitterAdapter) computeExternalDependencies() {
 	}
 	// Return types
 	{
-		re := regexp.MustCompile(`\)\s*:\s*\??([A-Za-z_\\][A-Za-z0-9_\\]*)`)
-		for _, m := range re.FindAllStringSubmatch(src, -1) {
+		for _, m := range rePhpReturnType.FindAllStringSubmatch(src, -1) {
 			if !isPrimitive(m[1]) {
 				add(resolve(m[1]))
 			}
@@ -452,8 +457,7 @@ func (a *TreeSitterAdapter) computeExternalDependencies() {
 	}
 	// Property declarations with types
 	{
-		re := regexp.MustCompile(`(?m)^(?:\s*)(?:public|private|protected|var)\s+\??([A-Za-z_\\][A-Za-z0-9_\\]*)?\s*\$`)
-		for _, m := range re.FindAllStringSubmatch(src, -1) {
+		for _, m := range rePhpProperty.FindAllStringSubmatch(src, -1) {
 			if m[1] != "" && !isPrimitive(m[1]) {
 				add(resolve(m[1]))
 			}
