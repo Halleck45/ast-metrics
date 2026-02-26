@@ -85,6 +85,7 @@ func (v *HtmlReportGenerator) Generate(files []*pb.File, projectAggregated analy
 		"componentComparaisonOperator.html",
 		"communities.html",
 		"busfactor.html",
+		"testquality.html",
 		"partials/suggestions.html",
 	} {
 		// read the file
@@ -155,6 +156,12 @@ func (v *HtmlReportGenerator) Generate(files []*pb.File, projectAggregated analy
 	v.GenerateLanguagePage("busfactor.html", "All", projectAggregated.Combined, files, projectAggregated)
 	for language, currentView := range projectAggregated.ByProgrammingLanguage {
 		v.GenerateLanguagePage("busfactor.html", language, currentView, files, projectAggregated)
+	}
+
+	// Test Quality page
+	v.GenerateLanguagePage("testquality.html", "All", projectAggregated.Combined, files, projectAggregated)
+	for language, currentView := range projectAggregated.ByProgrammingLanguage {
+		v.GenerateLanguagePage("testquality.html", language, currentView, files, projectAggregated)
 	}
 
 	// copy images
@@ -437,7 +444,11 @@ func (v *HtmlReportGenerator) GenerateLanguagePage(template string, language str
 	if currentView.Community != nil && len(currentView.Community.NodeToCommunity) > 0 {
 		nodeToCommunityJSON = buildNodeToCommunityJSON(currentView.Community.NodeToCommunity)
 	}
-	out, err := tpl.Execute(pongo2.Context{"datetime": datetime, "page": template, "currentLanguage": language, "currentView": currentView, "projectAggregated": projectAggregated, "files": files, "risksByPath": risksByPath, "filesJSON": filesJSON, "risksJSON": risksJSON, "nodeToCommunityJSON": nodeToCommunityJSON})
+	testQualityJSON := "{}"
+	if currentView.TestQuality != nil {
+		testQualityJSON = analyzer.BuildTestQualityJSON(currentView.TestQuality)
+	}
+	out, err := tpl.Execute(pongo2.Context{"datetime": datetime, "page": template, "currentLanguage": language, "currentView": currentView, "projectAggregated": projectAggregated, "files": files, "risksByPath": risksByPath, "filesJSON": filesJSON, "risksJSON": risksJSON, "nodeToCommunityJSON": nodeToCommunityJSON, "testQualityJSON": testQualityJSON})
 	if err != nil {
 		log.Error(err)
 		return err

@@ -1,0 +1,427 @@
+{% extends "layout.html" %}
+
+{% block title %}
+Test Quality
+{% endblock %}
+
+{% block pageTitle %}
+AST Metrics - Test Quality
+{% endblock %}
+
+{% block content %}
+
+<style>
+    .dashboard-card {
+        background: white;
+        border: 1px solid #e2e8f0;
+        border-radius: 16px;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        position: relative;
+        overflow: hidden;
+    }
+
+    .dashboard-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        border-color: #cbd5e1;
+    }
+
+    .dashboard-card::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 4px;
+        background: linear-gradient(90deg, #3b82f6, #8b5cf6);
+        opacity: 0;
+        transition: opacity 0.3s ease;
+    }
+
+    .dashboard-card:hover::before {
+        opacity: 1;
+    }
+
+    .metric-value {
+        font-family: var(--font-mono);
+        letter-spacing: -0.05em;
+    }
+
+    .score-isolated { color: #059669; }
+    .score-semi { color: #d97706; }
+    .score-coupled { color: #dc2626; }
+
+    .badge-isolated { background: #d1fae5; color: #065f46; }
+    .badge-semi { background: #fef3c7; color: #92400e; }
+    .badge-coupled { background: #fee2e2; color: #991b1b; }
+</style>
+
+<!-- Language tabs -->
+<div class="flex overflow-x-auto overflow-y-hidden border-b border-gray-200 whitespace-nowrap">
+    <a tabindex="-1" href="testquality.html"
+        class="inline-flex items-center h-10 px-2 py-2 -mb-px text-center {% if currentLanguage == 'All'%}text-blue-600 border-blue-500{% endif %} bg-transparent border-b-2 sm:px-4 -px-1 focus:outline-none">
+        <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 mx-1 sm:w-6 sm:h-6" fill="none" viewBox="0 0 24 24"
+            stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+        </svg>
+        <span class="mx-1 text-sm sm:text-base">
+            All languages <span class="text-xs sm:text-sm">({{ projectAggregated.Combined.ConcernedFiles|length }}
+                files)</span>
+        </span>
+    </a>
+
+    {% for languageName, lang in projectAggregated.ByProgrammingLanguage %}
+    <a tabindex="0" href="testquality_{{ languageName }}.html"
+        class="inline-flex items-center h-10 px-2 py-2 -mb-px text-center bg-transparent border-b-2 {% if currentLanguage == languageName %}text-blue-600 border-blue-500{% else %}text-gray-700 border-transparent{% endif %} sm:px-4 -px-1 hover:border-gray-400">
+        <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 mx-1 sm:w-6 sm:h-6" fill="none" viewBox="0 0 24 24"
+            stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+        </svg>
+        <span class="mx-1 text-sm sm:text-base">
+            {{ languageName }} <span class="text-xs sm:text-sm">({{ lang.ConcernedFiles|length }} files)</span>
+        </span>
+    </a>
+    {% endfor %}
+</div>
+
+{% if currentView.TestQuality %}
+{% set tq = currentView.TestQuality %}
+
+<!-- Page intro -->
+<div class="mt-8 mb-6">
+    <h1 class="text-2xl font-bold text-gray-900 mb-2">Test Quality</h1>
+    <p class="text-sm text-gray-600 leading-relaxed max-w-3xl">
+        How well do your tests target production code? This page measures <strong>isolation</strong> (does each test
+        focus on a small number of production structures?) and <strong>traceability</strong> (are all production
+        structures covered by at least one test?). Well-isolated tests are easier to maintain, faster to diagnose
+        when they fail, and less likely to break for unrelated reasons.
+    </p>
+</div>
+
+<!-- Global Metrics Section -->
+<div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+    <!-- Global Isolation Score Card -->
+    <div class="dashboard-card p-6 animate-fade-in-up stagger-1">
+        <h5 class="text-5xl font-bold metric-value tracking-tight mb-2 {% if tq.GlobalIsolationScore >= 80 %}score-isolated{% elif tq.GlobalIsolationScore >= 50 %}score-semi{% else %}score-coupled{% endif %}">
+            {{ tq.GlobalIsolationScore|floatformat:1 }}
+        </h5>
+        <p class="text-sm font-medium text-gray-500 mb-1">Global Isolation Score</p>
+        <span class="text-xs px-2 py-0.5 rounded-full font-medium {% if tq.GlobalIsolationScore >= 80 %}badge-isolated{% elif tq.GlobalIsolationScore >= 50 %}badge-semi{% else %}badge-coupled{% endif %}">
+            {{ tq.IsolationLabel }}
+        </span>
+        <p class="text-xs text-gray-800 border-t border-gray-100 pt-3 mt-3">
+            How focused your tests are on a single production structure. A high score means most tests target few structures.
+        </p>
+    </div>
+
+    <!-- Test Files Count -->
+    <div class="dashboard-card p-6 animate-fade-in-up stagger-2">
+        <h5 class="text-4xl font-bold text-gray-900 metric-value tracking-tight mb-2">
+            {{ tq.NbTestFiles }}
+        </h5>
+        <p class="text-sm font-medium text-gray-500 mb-3">Test Files</p>
+        <p class="text-xs text-gray-800 border-t border-gray-100 pt-3">
+            out of {{ tq.NbProdFiles }} production files
+        </p>
+    </div>
+
+    <!-- Traceability -->
+    <div class="dashboard-card p-6 animate-fade-in-up stagger-3">
+        <h5 class="text-4xl font-bold metric-value tracking-tight mb-2 {% if tq.TraceabilityPct >= 70 %}score-isolated{% elif tq.TraceabilityPct >= 40 %}score-semi{% else %}score-coupled{% endif %}">
+            {{ tq.TraceabilityPct|floatformat:1 }}%
+        </h5>
+        <p class="text-sm font-medium text-gray-500 mb-3">Traceability</p>
+        <p class="text-xs text-gray-800 border-t border-gray-100 pt-3">
+            {{ tq.NbTestedClasses }} of {{ tq.NbProdClasses }} structures tested
+        </p>
+    </div>
+
+    <!-- Orphans Count -->
+    <div class="dashboard-card p-6 animate-fade-in-up stagger-4">
+        <h5 class="text-4xl font-bold text-gray-900 metric-value tracking-tight mb-2">
+            {{ tq.OrphanClasses|length }}
+        </h5>
+        <p class="text-sm font-medium text-gray-500 mb-3">Critical Orphans</p>
+        <p class="text-xs text-gray-800 border-t border-gray-100 pt-3">
+            Production structures with no tests, ranked by importance
+        </p>
+    </div>
+</div>
+
+<!-- Charts Row -->
+<div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
+    <!-- Isolation Distribution Histogram -->
+    <div class="dashboard-card p-6 animate-fade-in-up stagger-2">
+        <h3 class="text-lg font-bold text-gray-900 mb-2">Isolation Distribution</h3>
+        <p class="text-xs text-gray-500 mb-4">How many test files fall into each isolation tier. You want most tests on the right (high isolation = few production structures touched per test).</p>
+        <div id="isolation-histogram" style="height: 220px;"></div>
+    </div>
+
+    <!-- Test Blast Radius Bubble Chart -->
+    <div class="dashboard-card p-6 animate-fade-in-up stagger-3">
+        <h3 class="text-lg font-bold text-gray-900 mb-2">Test Blast Radius</h3>
+        <p class="text-xs text-gray-500 mb-4">Aim for the top-left corner: tests that touch fewer production structures (low fan-out) and score high on isolation are more precise, stable, and easier to diagnose when they fail.</p>
+        <div id="blast-radius-chart" style="height: 220px;"></div>
+    </div>
+</div>
+
+<!-- God Tests Leaderboard -->
+{% if tq.GodTests %}
+<div class="dashboard-card p-6 mt-6 animate-fade-in-up stagger-4">
+    <h3 class="text-xl font-bold text-gray-900 mb-2">God Tests</h3>
+    <p class="text-xs text-gray-500 mb-4">A "God Test" touches 5 or more production structures. When it fails, you can't tell which structure is broken. Consider splitting these into smaller, focused test files.</p>
+    <div class="overflow-x-auto">
+        <table class="w-full text-left border-collapse sortable">
+            <thead>
+                <tr class="text-xs text-gray-800 border-b border-gray-100">
+                    <th class="py-2 font-medium">Rank</th>
+                    <th class="py-2 font-medium">Test File</th>
+                    <th class="py-2 font-medium text-right" data-sort-method="number">Fan-Out</th>
+                    <th class="py-2 font-medium text-right" data-sort-method="number">Isolation</th>
+                    <th class="py-2 font-medium text-right">Label</th>
+                </tr>
+            </thead>
+            <tbody class="text-sm text-gray-600">
+                {% for test in tq.GodTests %}
+                <tr class="border-b border-gray-50 last:border-0 hover:bg-gray-50 transition-colors">
+                    <td class="py-2 font-medium text-gray-900">{{ forloop.Counter }}</td>
+                    <td class="py-2 font-medium text-gray-900 truncate max-w-[300px]" title="{{ test.FilePath }}">
+                        {{ test.ShortPath }}
+                    </td>
+                    <td class="py-2 text-right font-mono">{{ test.SUTFanOut }}</td>
+                    <td class="py-2 text-right font-mono">{{ test.IsolationScore|floatformat:0 }}</td>
+                    <td class="py-2 text-right">
+                        <span class="text-xs px-2 py-0.5 rounded-full font-medium {% if test.IsolationScore >= 80 %}badge-isolated{% elif test.IsolationScore >= 50 %}badge-semi{% else %}badge-coupled{% endif %}">
+                            {{ test.IsolationLabel }}
+                        </span>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endif %}
+
+<!-- Orphan Critical Structures -->
+{% if tq.OrphanClasses %}
+<div class="dashboard-card p-6 mt-6 animate-fade-in-up stagger-5">
+    <h3 class="text-xl font-bold text-gray-900 mb-2">Orphan Critical Structures</h3>
+    <p class="text-xs text-gray-500 mb-4">These production structures have no test touching them. They are ranked by weight: the more complex and coupled a structure is, the riskier it is to leave it untested. Prioritize writing tests for the top entries.</p>
+    <div class="overflow-x-auto">
+        <table class="w-full text-left border-collapse sortable">
+            <thead>
+                <tr class="text-xs text-gray-800 border-b border-gray-100">
+                    <th class="py-2 font-medium">Rank</th>
+                    <th class="py-2 font-medium">Structure</th>
+                    <th class="py-2 font-medium">File</th>
+                    <th class="py-2 font-medium text-right" data-sort-method="number">Complexity</th>
+                    <th class="py-2 font-medium text-right" data-sort-method="number">Efferent</th>
+                    <th class="py-2 font-medium text-right" data-sort-method="number">Afferent</th>
+                    <th class="py-2 font-medium text-right" data-sort-method="number">Weight</th>
+                </tr>
+            </thead>
+            <tbody class="text-sm text-gray-600">
+                {% for orphan in tq.OrphanClasses %}
+                <tr class="border-b border-gray-50 last:border-0 hover:bg-gray-50 transition-colors">
+                    <td class="py-2 font-medium text-gray-900">{{ forloop.Counter }}</td>
+                    <td class="py-2 font-medium text-gray-900 truncate max-w-[200px]" title="{{ orphan.ClassName }}">
+                        {{ orphan.ClassName }}
+                    </td>
+                    <td class="py-2 text-gray-500 truncate max-w-[200px]" title="{{ orphan.FilePath }}">
+                        {{ orphan.FilePath }}
+                    </td>
+                    <td class="py-2 text-right font-mono">{{ orphan.Complexity }}</td>
+                    <td class="py-2 text-right font-mono">{{ orphan.Efferent }}</td>
+                    <td class="py-2 text-right font-mono">{{ orphan.Afferent }}</td>
+                    <td class="py-2 text-right font-mono font-bold">{{ orphan.Weight|floatformat:0 }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endif %}
+
+{% else %}
+<div class="dashboard-card p-6 mt-8">
+    <p class="text-gray-600">No test quality data available. Ensure your project contains test files to see metrics.</p>
+</div>
+{% endif %}
+
+{% endblock %}
+
+{% block javascripts %}
+<script type="application/json" id="testquality-data">{{ testQualityJSON|safe }}</script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    var rawData = document.getElementById('testquality-data');
+    if (!rawData) return;
+    var data;
+    try { data = JSON.parse(rawData.textContent); } catch(e) { return; }
+
+    // Isolation Distribution Histogram
+    if (data.isolationHistogram && typeof d3 !== 'undefined') {
+        var histEl = document.getElementById('isolation-histogram');
+        if (histEl) {
+            var bins = data.isolationHistogram;
+            var labels = ['0-19', '20-39', '40-59', '60-79', '80-100'];
+            var colors = ['#dc2626', '#f97316', '#eab308', '#84cc16', '#059669'];
+
+            var margin = {top: 10, right: 20, bottom: 30, left: 40};
+            var width = histEl.clientWidth - margin.left - margin.right;
+            var height = 200 - margin.top - margin.bottom;
+
+            var svg = d3.select('#isolation-histogram')
+                .append('svg')
+                .attr('width', width + margin.left + margin.right)
+                .attr('height', height + margin.top + margin.bottom)
+                .append('g')
+                .attr('transform', 'translate(' + margin.left + ',' + margin.top + ')');
+
+            var x = d3.scaleBand()
+                .domain(labels)
+                .range([0, width])
+                .padding(0.2);
+
+            var y = d3.scaleLinear()
+                .domain([0, d3.max(bins) || 1])
+                .nice()
+                .range([height, 0]);
+
+            svg.append('g')
+                .attr('transform', 'translate(0,' + height + ')')
+                .call(d3.axisBottom(x))
+                .selectAll('text')
+                .style('font-size', '11px');
+
+            svg.append('g')
+                .call(d3.axisLeft(y).ticks(5))
+                .selectAll('text')
+                .style('font-size', '11px');
+
+            svg.selectAll('.bar')
+                .data(bins)
+                .join('rect')
+                .attr('x', function(d, i) { return x(labels[i]); })
+                .attr('y', function(d) { return y(d); })
+                .attr('width', x.bandwidth())
+                .attr('height', function(d) { return height - y(d); })
+                .attr('fill', function(d, i) { return colors[i]; })
+                .attr('rx', 4);
+
+            svg.selectAll('.label')
+                .data(bins)
+                .join('text')
+                .attr('x', function(d, i) { return x(labels[i]) + x.bandwidth() / 2; })
+                .attr('y', function(d) { return y(d) - 4; })
+                .attr('text-anchor', 'middle')
+                .style('font-size', '11px')
+                .style('font-weight', '600')
+                .style('fill', '#374151')
+                .text(function(d) { return d > 0 ? d : ''; });
+        }
+    }
+
+    // Blast Radius Bubble Chart
+    if (data.testFiles && data.testFiles.length > 0 && typeof d3 !== 'undefined') {
+        var bubbleEl = document.getElementById('blast-radius-chart');
+        if (bubbleEl) {
+            var margin = {top: 10, right: 20, bottom: 30, left: 40};
+            var width = bubbleEl.clientWidth - margin.left - margin.right;
+            var height = 200 - margin.top - margin.bottom;
+
+            var svg = d3.select('#blast-radius-chart')
+                .append('svg')
+                .attr('width', width + margin.left + margin.right)
+                .attr('height', height + margin.top + margin.bottom)
+                .append('g')
+                .attr('transform', 'translate(' + margin.left + ',' + margin.top + ')');
+
+            var tests = data.testFiles.filter(function(t) { return t.fanOut > 0; });
+
+            var x = d3.scaleLinear()
+                .domain([0, d3.max(tests, function(t) { return t.fanOut; }) || 1])
+                .nice()
+                .range([0, width]);
+
+            var y = d3.scaleLinear()
+                .domain([0, 100])
+                .range([height, 0]);
+
+            var r = d3.scaleSqrt()
+                .domain([0, d3.max(tests, function(t) { return t.fanOut; }) || 1])
+                .range([3, 20]);
+
+            var color = function(score) {
+                if (score >= 80) return '#059669';
+                if (score >= 50) return '#eab308';
+                return '#dc2626';
+            };
+
+            svg.append('g')
+                .attr('transform', 'translate(0,' + height + ')')
+                .call(d3.axisBottom(x).ticks(5))
+                .selectAll('text')
+                .style('font-size', '11px');
+
+            svg.append('text')
+                .attr('x', width / 2)
+                .attr('y', height + 28)
+                .attr('text-anchor', 'middle')
+                .style('font-size', '10px')
+                .style('fill', '#6b7280')
+                .text('Fan-Out (prod structures touched)');
+
+            svg.append('g')
+                .call(d3.axisLeft(y).ticks(5))
+                .selectAll('text')
+                .style('font-size', '11px');
+
+            svg.append('text')
+                .attr('transform', 'rotate(-90)')
+                .attr('y', -35)
+                .attr('x', -height / 2)
+                .attr('text-anchor', 'middle')
+                .style('font-size', '10px')
+                .style('fill', '#6b7280')
+                .text('Isolation Score');
+
+            // Tooltip
+            var tooltip = d3.select('#blast-radius-chart')
+                .append('div')
+                .attr('class', 'graph-tooltip')
+                .style('opacity', 0);
+
+            svg.selectAll('circle')
+                .data(tests)
+                .join('circle')
+                .attr('cx', function(t) { return x(t.fanOut); })
+                .attr('cy', function(t) { return y(t.isolationScore); })
+                .attr('r', function(t) { return r(t.fanOut); })
+                .attr('fill', function(t) { return color(t.isolationScore); })
+                .attr('opacity', 0.7)
+                .attr('stroke', '#fff')
+                .attr('stroke-width', 1)
+                .on('mouseover', function(event, t) {
+                    tooltip.transition().duration(200).style('opacity', 1);
+                    tooltip.html(
+                        '<strong>' + t.shortPath + '</strong><br/>' +
+                        'Fan-out: ' + t.fanOut + '<br/>' +
+                        'Isolation: ' + Math.round(t.isolationScore) + ' (' + t.isolationLabel + ')'
+                    )
+                    .style('left', (event.offsetX) + 'px')
+                    .style('top', (event.offsetY - 10) + 'px')
+                    .attr('class', 'graph-tooltip visible');
+                })
+                .on('mouseout', function() {
+                    tooltip.transition().duration(300).style('opacity', 0)
+                    .attr('class', 'graph-tooltip');
+                });
+        }
+    }
+});
+</script>
+{% endblock %}
