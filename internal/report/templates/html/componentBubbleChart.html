@@ -310,15 +310,17 @@ document.addEventListener('DOMContentLoaded', function() {
             .on('tick', ticked);
 
         var fitScheduled = false;
+        var tickCount = 0;
         function ticked() {
+            tickCount++;
             nodeGroups.attr('transform', function(d) { return 'translate(' + d.x + ',' + d.y + ')'; });
 
             if (currentGroup === 'folder' || currentGroup === 'community') {
                 updateLabelPositions();
             }
 
-            // Auto-fit after simulation settles
-            if (!fitScheduled && simulation.alpha() < 0.05) {
+            // Auto-fit periodically during regrouping, not just at the end
+            if (!fitScheduled && (simulation.alpha() < 0.05 || (tickCount % 30 === 0 && tickCount > 0))) {
                 fitScheduled = true;
                 setTimeout(function() { fitToView(); fitScheduled = false; }, 50);
             }
@@ -419,6 +421,8 @@ document.addEventListener('DOMContentLoaded', function() {
         function updateGrouping(mode) {
             currentGroup = mode;
             fitScheduled = false;
+            tickCount = 0;
+
             if (mode === 'all') {
                 drawLabels('all', {});
                 simulation
@@ -429,23 +433,30 @@ document.addEventListener('DOMContentLoaded', function() {
                 simulation
                     .force('x', d3.forceX(function(d) {
                         return (folderCenters[d.folderGroup] || {x: W/2}).x;
-                    }).strength(0.25))
+                    }).strength(0.4))
                     .force('y', d3.forceY(function(d) {
                         return (folderCenters[d.folderGroup] || {y: H/2}).y;
-                    }).strength(0.25));
+                    }).strength(0.4));
             } else if (mode === 'community') {
                 drawLabels('community', communityCenters);
                 simulation
                     .force('x', d3.forceX(function(d) {
                         var c = d.community || '';
                         return (communityCenters[c] || {x: W/2}).x;
-                    }).strength(0.25))
+                    }).strength(0.4))
                     .force('y', d3.forceY(function(d) {
                         var c = d.community || '';
                         return (communityCenters[c] || {y: H/2}).y;
-                    }).strength(0.25));
+                    }).strength(0.4));
             }
-            simulation.alpha(0.7).restart();
+
+            // Run simulation silently to completion, then render once
+            simulation.alpha(0.7).stop();
+            nodes.forEach(function(d) { d.vx = 0; d.vy = 0; });
+            while (simulation.alpha() > simulation.alphaMin()) simulation.tick();
+            nodeGroups.attr('transform', function(d) { return 'translate(' + d.x + ',' + d.y + ')'; });
+            updateLabelPositions();
+            fitToView(0);
         }
 
         // Search input: show/hide based on mode, filter nodes
