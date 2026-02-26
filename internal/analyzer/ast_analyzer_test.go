@@ -1,17 +1,14 @@
 package analyzer
 
 import (
-	"os"
 	"testing"
 
-	"github.com/halleck45/ast-metrics/internal/engine"
-	"github.com/halleck45/ast-metrics/internal/storage"
 	pb "github.com/halleck45/ast-metrics/pb"
 	"github.com/stretchr/testify/assert"
 )
 
-func TestAnalyzerStart(t *testing.T) {
-	protoFile := pb.File{
+func TestAnalyzeFiles(t *testing.T) {
+	protoFile := &pb.File{
 		ProgrammingLanguage: "Go",
 		Stmts: &pb.Stmts{
 			StmtFunction: []*pb.StmtFunction{
@@ -20,44 +17,20 @@ func TestAnalyzerStart(t *testing.T) {
 				},
 			},
 			StmtClass: []*pb.StmtClass{
-				// class
-				{
-					Stmts: &pb.Stmts{},
-				},
-				// class
-				{
-					Stmts: &pb.Stmts{},
-				},
-				// class
-				{
-					Stmts: &pb.Stmts{
-						Analyze: &pb.Analyze{},
-					},
-				},
-				// class
-				{
-					Stmts: &pb.Stmts{
-						Analyze: &pb.Analyze{},
-					},
-				},
+				{Stmts: &pb.Stmts{}},
+				{Stmts: &pb.Stmts{}},
+				{Stmts: &pb.Stmts{Analyze: &pb.Analyze{}}},
+				{Stmts: &pb.Stmts{Analyze: &pb.Analyze{}}},
 			},
 			StmtNamespace: []*pb.StmtNamespace{
 				{
 					Stmts: &pb.Stmts{
 						StmtFunction: []*pb.StmtFunction{
-							{
-								Stmts: &pb.Stmts{},
-							},
+							{Stmts: &pb.Stmts{}},
 						},
 						StmtClass: []*pb.StmtClass{
-							// class
-							{
-								Stmts: &pb.Stmts{},
-							},
-							// class
-							{
-								Stmts: &pb.Stmts{},
-							},
+							{Stmts: &pb.Stmts{}},
+							{Stmts: &pb.Stmts{}},
 						},
 					},
 				},
@@ -65,26 +38,12 @@ func TestAnalyzerStart(t *testing.T) {
 		},
 	}
 
-	// Dump protobuf object to destination
-	storage := storage.NewWithName("test")
-	storage.Ensure()
-	binPath := storage.AstDirectory() + string(os.PathSeparator) + "tmp.bin"
-	err := engine.DumpProtobuf(&protoFile, binPath)
-	if err != nil {
-		t.Error("Error dumping protobuf object", err)
-	}
+	// Analyze in-memory
+	results := AnalyzeFiles([]*pb.File{protoFile}, nil)
 
-	// Ensure file exists
-	if _, err := os.Stat(binPath); err != nil {
-		t.Error("File not found", binPath)
-	}
-
-	// Start analysis
-	parsedFiles := Start(storage, nil)
-
-	// Now first parsed file should be the same as the one we dumped, + analysis
-	assert.Equal(t, "Go", parsedFiles[0].ProgrammingLanguage)
-	ccn := parsedFiles[0].Stmts.Analyze.Complexity.Cyclomatic
+	assert.Equal(t, 1, len(results))
+	assert.Equal(t, "Go", results[0].ProgrammingLanguage)
+	ccn := results[0].Stmts.Analyze.Complexity.Cyclomatic
 	assert.NotNil(t, ccn)
 	// File contains empty classes plus two empty functions outside classes.
 	// With file CCN = classes + functions outside classes, expected value is 2.

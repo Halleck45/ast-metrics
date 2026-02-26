@@ -75,8 +75,8 @@ func (c *CommandWatcher) Start(command *command.AnalyzeCommand) error {
 					continue
 				}
 
-				// get file concerned by the event, and remove it from cache
-				c.Configuration.Storage.DeleteCache(event.Name)
+				// Reset file discovery cache so files are re-scanned
+				c.Configuration.FileDiscovery = nil
 
 				// Re-execute analyze command
 				command.Execute()

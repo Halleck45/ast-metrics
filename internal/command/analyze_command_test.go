@@ -5,18 +5,14 @@ import (
 	"os"
 	"testing"
 
-	"github.com/halleck45/ast-metrics/internal/analyzer"
 	"github.com/halleck45/ast-metrics/internal/configuration"
 	"github.com/halleck45/ast-metrics/internal/storage"
-	"github.com/pterm/pterm"
 )
 
 func TestAnalyzeCommand_Execute(t *testing.T) {
 	t.Run("TestAnalyzeCommand_Execute", func(t *testing.T) {
 		// Setup
 		storage := storage.Default()
-		storage.Purge()
-		storage.Ensure()
 
 		// HTML report
 		tmpReportHtmlDir := t.TempDir()
@@ -52,14 +48,6 @@ func TestAnalyzeCommand_Execute(t *testing.T) {
 		// Check if there was an error
 		if err != nil {
 			t.Errorf("AnalyzeCommand.Execute() = %s; want it to be nil", err.Error())
-		}
-
-		// fake pterm *pterm.SpinnerPrinter
-		spinner := pterm.DefaultSpinner
-		// Check if the analysis was done
-		allResults := analyzer.Start(storage, &spinner)
-		if allResults == nil {
-			t.Errorf("analyzer.Start() = nil; want it to not be nil")
 		}
 
 		// Check HTML report has been created

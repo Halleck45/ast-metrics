@@ -30,10 +30,11 @@ func (r PythonRunner) IsRequired() bool {
 // Prepare the engine
 func (r *PythonRunner) Ensure() error { return nil }
 
-// First step of analysis. Parse all files, and generate protobuf-compatible AST files
-func (r PythonRunner) DumpAST() {
-	engine.DumpFiles(
-		r.getFileList().Files, r.Configuration, r.progressbar,
+// DumpAST parses Python files and returns in-memory AST objects
+func (r PythonRunner) DumpAST() []*pb.File {
+	return engine.DumpFiles(
+		r.getFileList().Files,
+		r.progressbar,
 		func(path string) (*pb.File, error) { return r.Parse(path) },
 		engine.DumpOptions{Label: r.Name()},
 	)

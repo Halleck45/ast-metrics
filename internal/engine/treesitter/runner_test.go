@@ -24,13 +24,13 @@ func (m *mockAdapter) EachParamIdent(params *sitter.Node, yield func(string))  {
 func (m *mockAdapter) Decision(n *sitter.Node) (DecisionKind, *sitter.Node)    { return DecNone, nil }
 func (m *mockAdapter) Imports(n *sitter.Node) []ImportItem                     { return nil }
 
-func TestRunner_ParseAndStore_NonExistentFile(t *testing.T) {
+func TestRunner_ParseFile_NonExistentFile(t *testing.T) {
 	runner := Runner{
 		Adapter:       &mockAdapter{},
 		Configuration: &configuration.Configuration{},
 	}
 
-	err := runner.ParseAndStore("/nonexistent/file.go")
+	_, err := runner.ParseFile("/nonexistent/file.go")
 	if err == nil {
 		t.Error("expected error for non-existent file")
 	}
@@ -47,10 +47,13 @@ func TestRunner_WalkAndProcess_EmptyList(t *testing.T) {
 		messages = append(messages, msg)
 	}
 
-	runner.WalkAndProcess([]string{})
+	results := runner.WalkAndProcess([]string{})
 
 	if len(messages) != 0 {
 		t.Errorf("expected 0 messages for empty list, got %d", len(messages))
+	}
+	if len(results) != 0 {
+		t.Errorf("expected 0 results for empty list, got %d", len(results))
 	}
 }
 

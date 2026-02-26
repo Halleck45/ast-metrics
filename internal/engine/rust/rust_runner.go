@@ -26,10 +26,9 @@ func (r *RustRunner) Ensure() error                                   { return n
 func (r *RustRunner) SetProgressbar(p *pterm.SpinnerPrinter)          { r.progressbar = p }
 func (r *RustRunner) SetConfiguration(c *configuration.Configuration) { r.Configuration = c }
 
-func (r RustRunner) DumpAST() {
-	engine.DumpFiles(
+func (r RustRunner) DumpAST() []*pb.File {
+	return engine.DumpFiles(
 		r.getFileList().Files,
-		r.Configuration,
 		r.progressbar,
 		func(path string) (*pb.File, error) { return r.Parse(path) },
 		engine.DumpOptions{Label: r.Name()},

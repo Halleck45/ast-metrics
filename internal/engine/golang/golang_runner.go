@@ -53,10 +53,11 @@ func (r GolangRunner) Finish() error {
 	return nil
 }
 
-// DumpAST dumps the AST of Go files using tree-sitter (aligned with PHP/Python)
-func (r GolangRunner) DumpAST() {
-	engine.DumpFiles(
-		r.getFileList().Files, r.Configuration, r.progressbar,
+// DumpAST parses Go files and returns in-memory AST objects
+func (r GolangRunner) DumpAST() []*pb.File {
+	return engine.DumpFiles(
+		r.getFileList().Files,
+		r.progressbar,
 		func(path string) (*pb.File, error) { return r.Parse(path) },
 		engine.DumpOptions{Label: r.Name()},
 	)
