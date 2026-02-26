@@ -48,7 +48,7 @@ func (m modelRisks) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func (m modelRisks) View() string {
-	return StyleScreen(StyleTitle("Top candidates for refactoring").Render() + "\n" +
+	return StyleScreen(ScreenHeader("Top candidates for refactoring") +
 		"\n" + m.table.Render()).Render()
 }
 

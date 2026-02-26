@@ -6,6 +6,7 @@ import (
 	"os"
 
 	"github.com/halleck45/ast-metrics/internal/analyzer/ruleset"
+	"github.com/halleck45/ast-metrics/internal/cli"
 	"github.com/halleck45/ast-metrics/internal/configuration"
 	"gopkg.in/yaml.v3"
 )
@@ -18,6 +19,9 @@ func (c *RulesetAddCommand) Execute() error {
 	if c.Name == "" {
 		return errors.New("ruleset name is required")
 	}
+
+	fmt.Print(cli.ScreenHeader("Add ruleset: " + c.Name))
+	fmt.Println()
 
 	// Load config file (prefer .ast-metrics.yaml then .ast-metrics.dist.yaml)
 	loader := configuration.NewConfigurationLoader()
@@ -161,6 +165,6 @@ func (c *RulesetAddCommand) Execute() error {
 	if err := enc.Encode(cfg); err != nil {
 		return err
 	}
-	fmt.Printf("Ruleset '%s' added in %s\n", c.Name, filename)
+	cli.PrintSuccess(fmt.Sprintf("Ruleset '%s' added in %s", c.Name, filename))
 	return nil
 }

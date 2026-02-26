@@ -48,7 +48,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func (m model) View() string {
-	return StyleScreen(StyleTitle("Classes").Render() + "\n" +
+	return StyleScreen(ScreenHeader("Classes") +
 		"\n" + m.table.Render()).Render()
 }
 

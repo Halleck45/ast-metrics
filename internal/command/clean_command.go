@@ -1,8 +1,10 @@
 package command
 
 import (
+	"fmt"
+
+	"github.com/halleck45/ast-metrics/internal/cli"
 	"github.com/halleck45/ast-metrics/internal/storage"
-	"github.com/pterm/pterm"
 )
 
 type CleanCommand struct {
@@ -16,7 +18,9 @@ func NewCleanCommand(storage *storage.Workdir) *CleanCommand {
 }
 
 func (v *CleanCommand) Execute() error {
+	fmt.Print(cli.ScreenHeader("Clean"))
+	fmt.Println()
 	v.Storage.Purge()
-	pterm.Success.Println("Workdir cleaned")
+	cli.PrintSuccess("Workdir cleaned")
 	return nil
 }

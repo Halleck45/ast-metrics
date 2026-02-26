@@ -5,8 +5,8 @@ import (
 	"fmt"
 
 	"github.com/charmbracelet/lipgloss"
-
 	"github.com/halleck45/ast-metrics/internal/analyzer/ruleset"
+	"github.com/halleck45/ast-metrics/internal/cli"
 	"github.com/halleck45/ast-metrics/internal/configuration"
 	"github.com/pterm/pterm"
 )
@@ -28,13 +28,15 @@ func (c *RulesetShowCommand) Execute() error {
 			continue
 		}
 
-		title := lipgloss.NewStyle().Bold(true).Render(fmt.Sprintf("Ruleset: %s", ruleset.Category()))
-		italic := lipgloss.NewStyle().Foreground(lipgloss.Color("#666666")).Italic(true)
-		pterm.Printfln("%s\n", title)
-		pterm.Printfln("%s\n", italic.Render(ruleset.Description()))
+		fmt.Print(cli.ScreenHeader("Ruleset: " + ruleset.Category()))
+		fmt.Println()
 
-		len := len(ruleset.All())
-		pterm.Printfln("Found %d rules in this ruleset\n", len)
+		italic := lipgloss.NewStyle().Foreground(lipgloss.Color("#666666")).Italic(true)
+		fmt.Println("  " + italic.Render(ruleset.Description()))
+		fmt.Println()
+
+		nbRules := len(ruleset.All())
+		fmt.Printf("  Found %d rules in this ruleset\n\n", nbRules)
 
 		data := pterm.TableData{}
 		data = append(data, []string{"Rule Name", "Description"})

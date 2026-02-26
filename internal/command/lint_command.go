@@ -3,16 +3,19 @@ package command
 import (
 	"bufio"
 	"fmt"
+	"os"
 	"sort"
 
 	"github.com/charmbracelet/lipgloss"
 	"github.com/halleck45/ast-metrics/internal/analyzer"
 	requirement "github.com/halleck45/ast-metrics/internal/analyzer/requirement"
+	"github.com/halleck45/ast-metrics/internal/cli"
 	"github.com/halleck45/ast-metrics/internal/configuration"
 	"github.com/halleck45/ast-metrics/internal/engine"
 	"github.com/halleck45/ast-metrics/internal/report"
 	pb "github.com/halleck45/ast-metrics/pb"
 	"github.com/pterm/pterm"
+	"golang.org/x/term"
 )
 
 // LintCommand runs the analysis and prints only requirement violations (lint), grouped by file.
@@ -39,6 +42,9 @@ func NewLintCommand(configuration *configuration.Configuration, outWriter *bufio
 }
 
 func (c *LintCommand) Execute() error {
+	fmt.Print(cli.ScreenHeader("Lint"))
+	fmt.Println()
+
 	// Prepare workdir
 	c.Configuration.Storage.Purge()
 	c.Configuration.Storage.Ensure()
@@ -50,6 +56,15 @@ func (c *LintCommand) Execute() error {
 		}
 	}
 
+	// Only use spinners when connected to a real terminal to avoid
+	// data races in pterm's SpinnerPrinter goroutine during tests.
+	isTTY := term.IsTerminal(int(os.Stdout.Fd()))
+
+	var spinner *pterm.SpinnerPrinter
+	if isTTY {
+		spinner, _ = cli.NewMoonSpinner("Analyzing source code...")
+	}
+
 	// Run engines to dump ASTs
 	for _, runner := range c.runners {
 		runner.SetConfiguration(c.Configuration)
@@ -57,6 +72,9 @@ func (c *LintCommand) Execute() error {
 			continue
 		}
 		if err := runner.Ensure(); err != nil {
+			if spinner != nil {
+				spinner.Stop()
+			}
 			return err
 		}
 		done := make(chan struct{})
@@ -66,16 +84,28 @@ func (c *LintCommand) Execute() error {
 		}()
 		<-done
 		if err := runner.Finish(); err != nil {
+			if spinner != nil {
+				spinner.Stop()
+			}
 			return err
 		}
+	}
+
+	if spinner != nil {
+		spinner.Stop()
+		spinner, _ = cli.NewMoonSpinner("Evaluating lint rules...")
 	}
 
 	// Global analysis (no UI/report)
 	allResults := analyzer.Start(c.Configuration.Storage, nil)
 
+	if spinner != nil {
+		spinner.Stop()
+	}
+
 	// Evaluate requirements
 	if c.Configuration.Requirements == nil {
-		pterm.Info.Println("No requirements configured. Nothing to lint.")
+		cli.PrintInfo("No requirements configured. Nothing to lint.")
 		return nil
 	}
 	reqEval := requirement.NewRequirementsEvaluator(*c.Configuration.Requirements)
@@ -87,7 +117,7 @@ func (c *LintCommand) Execute() error {
 		if err != nil {
 			return err
 		}
-		pterm.Success.Printf("SARIF report generated: %s\n", c.Configuration.Reports.Sarif)
+		cli.PrintSuccess(fmt.Sprintf("SARIF report generated: %s", c.Configuration.Reports.Sarif))
 	}
 
 	// Build a map[filePath][]outcomes directly from structured results
@@ -140,14 +170,14 @@ func (c *LintCommand) Execute() error {
 
 	for _, f := range files {
 		underline := lipgloss.NewStyle().Underline(true).Bold(true)
-		pterm.Println(underline.Render("File: " + f))
+		fmt.Println(underline.Render("File: " + f))
 
 		// successes first if verbose
 		if c.verbose {
 			oks := groupedOK[f]
 			sort.Slice(oks, func(i, j int) bool { return oks[i].Message < oks[j].Message })
 			for _, s := range oks {
-				pterm.Success.Println("  ✓ " + f + " — " + stripPathPrefix(s.Message, f))
+				cli.PrintSuccess(f + " — " + stripPathPrefix(s.Message, f))
 			}
 		}
 		// sort messages for deterministic output
@@ -173,34 +203,34 @@ func (c *LintCommand) Execute() error {
 			greyStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("#888888"))
 
 			ruleStyled := greyStyle.Render(" #" + m.Rule + "")
-			content := " • " + badge + stripPathPrefix(m.Message, f) + ruleStyled
-			pterm.Println(content)
+			content := "  • " + badge + stripPathPrefix(m.Message, f) + ruleStyled
+			fmt.Println(content)
 
 			total++
 		}
-		pterm.Println()
+		fmt.Println()
 	}
 
 	if len(ungrouped) > 0 {
-		pterm.Println("Other")
+		fmt.Println("Other")
 		sort.Slice(ungrouped, func(i, j int) bool { return ungrouped[i].Message < ungrouped[j].Message })
 		for _, m := range ungrouped {
 			badge := ""
 			switch m.Severity {
 			case requirement.SeverityHigh:
 				badge = "[HIGH] "
-				pterm.Error.Println("  • " + badge + m.Message)
+				cli.PrintError("• " + badge + m.Message)
 			case requirement.SeverityMedium:
 				badge = "[MED] "
-				pterm.Warning.Println("  • " + badge + m.Message)
+				cli.PrintWarning("• " + badge + m.Message)
 			case requirement.SeverityLow:
 				badge = "[LOW] "
-				pterm.Warning.Println("  • " + badge + m.Message)
+				cli.PrintWarning("• " + badge + m.Message)
 			}
 
 			total++
 		}
-		pterm.Println()
+		fmt.Println()
 	}
 
 	// Summary and exit code

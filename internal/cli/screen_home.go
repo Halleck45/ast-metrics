@@ -129,19 +129,15 @@ func fillInScreens(modelChoices *modelChoices) {
 	// Create the table screen
 	viewTableClass := NewScreenTableClass(true, modelChoices.files, modelChoices.projectAggregated)
 
-	// Create the table screen
+	// Create the summary screen
 	summaryScreen := NewScreenSummary(true, modelChoices.files, modelChoices.projectAggregated)
 
 	// Create the Risk screen
 	viewRisks := NewScreenRisks(true, modelChoices.files, modelChoices.projectAggregated)
 
-	// Create the html report screen
-	viewHtmlReport := NewScreenHtmlReport(true, modelChoices.files, modelChoices.projectAggregated)
-
 	// Create the screen list
 	modelChoices.screens = []Screen{
 		&summaryScreen,
-		&viewHtmlReport,
 		&viewTableClass,
 		&viewRisks,
 	}
@@ -167,24 +163,23 @@ func (m modelChoices) Init() tea.Cmd {
 func (m modelChoices) View() string {
 	c := m.Choice
 
-	tpl := StyleTitle("AST Metrics").Render() +
-		"\n" + StyleSubTitle("AST Metrics is a language-agnostic static code analyzer. \n"+StyleUrl("https://github.com/Halleck45/ast-metrics").Render()).Render() +
-		fmt.Sprintf("\n\nAll %d files have been analyzed. What do you want to do next?\n\n", len(m.files))
+	tpl := ScreenHeader("Explore results") +
+		fmt.Sprintf("\n  All %d files have been analyzed. What do you want to do next?\n\n", len(m.files))
 
-	choices := StyleHelp("Use arrows to navigate and esc to quit.").Render() + "\n\n"
+	choices := ""
 	for i, s := range m.screens {
 		label := s.GetScreenName()
 		if i == c {
-			choices += colorFg("[x] "+label, "212")
+			choices += colorFg("  [x] "+label, "212")
 		} else {
-			choices += fmt.Sprintf("[ ] %s", label)
+			choices += fmt.Sprintf("  [ ] %s", label)
 		}
 
 		choices += "\n"
 	}
-	tpl += StyleChoices(choices).Render()
+	tpl += choices
 
-	tpl += "\n\nAST Metrics is an Open Source project. Contributions are welcome!\nDo not hesitate to open issue at " + StyleUrl("https://github.com/Halleck45/ast-metrics/issues").Render() + ". ❤️  Thanks!\n"
+	tpl += "\n" + StyleHelp("  Use arrows to navigate, enter to select, esc to quit.").Render() + "\n"
 	return StyleScreen(tpl).Render()
 }
 

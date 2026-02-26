@@ -52,7 +52,7 @@ func (m modelByProgrammingLanguage) View() string {
 	header := NewComponentStatisticsOverview(m.files, m.projectAggregated.ByProgrammingLanguage[m.programmingLangageName])
 
 	// 2. Table
-	return StyleScreen(StyleTitle(m.programmingLangageName+" overview").Render() +
+	return StyleScreen(ScreenHeader(m.programmingLangageName+" overview") +
 		header.Render() +
 		"\n\n" + m.componentTableClass.Render()).Render()
 }
