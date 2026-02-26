@@ -54,3 +54,46 @@ func TestFinder_Search(t *testing.T) {
 		}
 	})
 }
+
+func TestFinder_SearchMultiple(t *testing.T) {
+	t.Run("should find files of multiple extensions in a single walk", func(t *testing.T) {
+		base := t.TempDir()
+		_ = os.WriteFile(filepath.Join(base, "main.go"), []byte("package main\n"), 0o644)
+		_ = os.WriteFile(filepath.Join(base, "index.php"), []byte("<?php\n"), 0o644)
+		_ = os.WriteFile(filepath.Join(base, "app.py"), []byte("pass\n"), 0o644)
+		_ = os.WriteFile(filepath.Join(base, "lib.rs"), []byte("fn main() {}\n"), 0o644)
+		_ = os.WriteFile(filepath.Join(base, "readme.txt"), []byte("hello\n"), 0o644)
+
+		finder := Finder{Configuration: configuration.Configuration{SourcesToAnalyzePath: []string{base}}}
+		results := finder.SearchMultiple([]string{".go", ".php", ".py", ".rs"})
+
+		if len(results[".go"].Files) != 1 {
+			t.Errorf("Expected 1 .go file, got %d", len(results[".go"].Files))
+		}
+		if len(results[".php"].Files) != 1 {
+			t.Errorf("Expected 1 .php file, got %d", len(results[".php"].Files))
+		}
+		if len(results[".py"].Files) != 1 {
+			t.Errorf("Expected 1 .py file, got %d", len(results[".py"].Files))
+		}
+		if len(results[".rs"].Files) != 1 {
+			t.Errorf("Expected 1 .rs file, got %d", len(results[".rs"].Files))
+		}
+	})
+
+	t.Run("should use SearchMultiple cache in Search", func(t *testing.T) {
+		base := t.TempDir()
+		_ = os.WriteFile(filepath.Join(base, "main.go"), []byte("package main\n"), 0o644)
+		_ = os.WriteFile(filepath.Join(base, "other.go"), []byte("package main\n"), 0o644)
+
+		finder := Finder{Configuration: configuration.Configuration{SourcesToAnalyzePath: []string{base}}}
+		discovery := &FileDiscovery{}
+		discovery.Precompute(finder, []string{".go"})
+		finder.Discovery = discovery
+
+		result := finder.Search(".go")
+		if len(result.Files) != 2 {
+			t.Errorf("Expected 2 .go files from cache, got %d", len(result.Files))
+		}
+	})
+}

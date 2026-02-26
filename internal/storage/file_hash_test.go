@@ -23,9 +23,6 @@ func TestGetFileHash_ValidFile(t *testing.T) {
 	if hash == "" {
 		t.Error("expected non-empty hash")
 	}
-	if len(hash) != 32 { // MD5 hash length
-		t.Errorf("expected hash length 32, got %d", len(hash))
-	}
 }
 
 func TestGetFileHash_NonExistentFile(t *testing.T) {

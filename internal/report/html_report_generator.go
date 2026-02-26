@@ -2,7 +2,6 @@ package report
 
 import (
 	"embed"
-	"encoding/json"
 	"fmt"
 	"hash/fnv"
 	"os"
@@ -226,25 +225,22 @@ func buildFilesJSONPruned(files []*pb.File, language string) string {
 		cf := proto.Clone(f).(*pb.File)
 		pruneFile(cf)
 
-		var payload map[string]interface{}
 		data, err := mo.Marshal(cf)
-		if err == nil {
-			err = json.Unmarshal(data, &payload)
-		}
 		if err != nil {
-			payload = map[string]interface{}{}
+			data = []byte("{}")
 		}
-		payload["pathHash"] = hashPathForExplorer(cf.GetPath())
 
-		encoded, err := json.Marshal(payload)
-		if err != nil {
-			encoded = []byte("{}")
+		// Inject pathHash by string manipulation to avoid Unmarshal/re-Marshal cycle
+		pathHash := hashPathForExplorer(cf.GetPath())
+		jsonStr := string(data)
+		if len(jsonStr) > 1 && jsonStr[len(jsonStr)-1] == '}' {
+			jsonStr = jsonStr[:len(jsonStr)-1] + ",\"pathHash\":\"" + pathHash + "\"}"
 		}
 
 		if !first {
 			b.WriteString(",")
 		}
-		b.Write(encoded)
+		b.WriteString(jsonStr)
 		first = false
 	}
 	b.WriteString("]")

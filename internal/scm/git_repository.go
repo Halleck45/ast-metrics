@@ -1,6 +1,7 @@
 package scm
 
 import (
+	"bufio"
 	"fmt"
 	"log"
 	"os"
@@ -80,30 +81,40 @@ func getAbsolutePath(repoRoot string) (string, error) {
 }
 
 func (git *GitRepository) ListAllCommitsSince(since string) ([]Commit, error) {
-	// Get all commits since one year (only sha1)
 	cmd := exec.Command("git", "--no-pager", "log", "--pretty=format:# %h|%an|%ct", "--name-only", "--since="+since)
 	cmd.Dir = git.Path
-	out, err := cmd.Output()
+
+	stdout, err := cmd.StdoutPipe()
 	if err != nil {
 		return nil, err
 	}
+	if err := cmd.Start(); err != nil {
+		return nil, err
+	}
 
-	// Iterate over the output to get the commits, line by line
 	var currentCommit Commit
-	commits := make([]Commit, 0)
+	commits := make([]Commit, 0, 256)
+	scanner := bufio.NewScanner(stdout)
 
-	lines := strings.Split(string(out), "\n")
-	for _, line := range lines {
+	for scanner.Scan() {
+		line := scanner.Text()
 
 		if strings.HasPrefix(line, "#") {
-			// split the line to get the sha1, author and date
 			commitInfos := strings.Split(line[2:], "|")
+			if len(commitInfos) < 3 {
+				log.Println("Invalid commit line in git log")
+				continue
+			}
 
-			// convert the date to an integer
 			timestamp, err := strconv.Atoi(commitInfos[2])
 			if err != nil {
 				log.Println("Invalid timestamp in git log")
 				continue
+			}
+
+			// Save previous commit if it has data
+			if currentCommit.Hash != "" {
+				commits = append(commits, currentCommit)
 			}
 
 			currentCommit = Commit{
@@ -111,24 +122,29 @@ func (git *GitRepository) ListAllCommitsSince(since string) ([]Commit, error) {
 				Author:    commitInfos[1],
 				Timestamp: timestamp,
 			}
-
 			continue
 		}
 
-		// if the line is not a commit, it's a file
 		if currentCommit.Hash == "" {
-			log.Println("Incomplete output from git log")
 			continue
 		}
 
-		// add the file to the commit
-		currentCommit.Files = append(currentCommit.Files, line)
-
-		// if the line is empty, it's the end of the commit
 		if line == "" {
 			commits = append(commits, currentCommit)
 			currentCommit = Commit{}
+			continue
 		}
+
+		currentCommit.Files = append(currentCommit.Files, line)
+	}
+
+	// Don't forget the last commit if output doesn't end with empty line
+	if currentCommit.Hash != "" {
+		commits = append(commits, currentCommit)
+	}
+
+	if err := cmd.Wait(); err != nil {
+		return nil, err
 	}
 
 	return commits, nil

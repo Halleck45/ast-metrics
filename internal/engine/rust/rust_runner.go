@@ -73,6 +73,11 @@ func (r *RustRunner) getFileList() file.FileList {
 		return r.foundFiles
 	}
 	finder := file.Finder{Configuration: *r.Configuration}
+	if r.Configuration.FileDiscovery != nil {
+		if fd, ok := r.Configuration.FileDiscovery.(*file.FileDiscovery); ok {
+			finder.Discovery = fd
+		}
+	}
 	r.foundFiles = finder.Search(".rs")
 	return r.foundFiles
 }

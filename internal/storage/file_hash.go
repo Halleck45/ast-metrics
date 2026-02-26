@@ -1,30 +1,22 @@
 package storage
 
 import (
-	"crypto/md5"
-	"encoding/hex"
 	"errors"
-	"io"
+	"fmt"
 	"os"
 
 	pb "github.com/halleck45/ast-metrics/pb"
 	"google.golang.org/protobuf/proto"
 )
 
-// Provides the hash of a file, in order to avoid to parse it twice
+// GetFileHash returns a fast cache key based on file mtime and size,
+// avoiding the cost of reading the entire file to compute MD5.
 func GetFileHash(filePath string) (string, error) {
-	file, err := os.Open(filePath)
+	stat, err := os.Stat(filePath)
 	if err != nil {
 		return "", err
 	}
-	defer file.Close()
-
-	hasher := md5.New()
-	if _, err := io.Copy(hasher, file); err != nil {
-		return "", err
-	}
-
-	return hex.EncodeToString(hasher.Sum(nil)), nil
+	return fmt.Sprintf("%d_%d", stat.ModTime().UnixNano(), stat.Size()), nil
 }
 
 func UnmarshalProtobuf(file string) (*pb.File, error) {

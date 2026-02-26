@@ -140,6 +140,11 @@ func (r *GolangRunner) getFileList() File.FileList {
 	}
 
 	finder := File.Finder{Configuration: *r.Configuration}
+	if r.Configuration.FileDiscovery != nil {
+		if fd, ok := r.Configuration.FileDiscovery.(*File.FileDiscovery); ok {
+			finder.Discovery = fd
+		}
+	}
 	r.foundFiles = finder.Search(".go")
 
 	return r.foundFiles

@@ -123,6 +123,11 @@ func (r *PhpRunner) getFileList() file.FileList {
 	}
 
 	finder := file.Finder{Configuration: *r.Configuration}
+	if r.Configuration.FileDiscovery != nil {
+		if fd, ok := r.Configuration.FileDiscovery.(*file.FileDiscovery); ok {
+			finder.Discovery = fd
+		}
+	}
 	r.foundFiles = finder.Search(".php")
 
 	return r.foundFiles

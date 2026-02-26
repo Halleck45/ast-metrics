@@ -43,18 +43,16 @@ func Start(workdir *storage.Workdir, progressbar *pterm.SpinnerPrinter) []*pb.Fi
 	for i := 0; i < numWorkers; i++ {
 		go func() {
 			for file := range filesChan {
-				go func(file string) {
-					defer wg.Done()
-					nbParsingFiles.Add(1)
+				nbParsingFiles.Add(1)
 
-					executeFileAnalysis(file, channelResult)
+				executeFileAnalysis(file, channelResult)
 
-					details := strconv.Itoa(int(nbParsingFiles.Load())) + "/" + strconv.Itoa(len(astFiles))
+				details := strconv.Itoa(int(nbParsingFiles.Load())) + "/" + strconv.Itoa(len(astFiles))
 
-					if progressbar != nil {
-						progressbar.UpdateText("Analyzing (" + details + ")")
-					}
-				}(file)
+				if progressbar != nil {
+					progressbar.UpdateText("Analyzing (" + details + ")")
+				}
+				wg.Done()
 			}
 		}()
 	}
@@ -64,8 +62,8 @@ func Start(workdir *storage.Workdir, progressbar *pterm.SpinnerPrinter) []*pb.Fi
 		filesChan <- file
 	}
 
-	wg.Wait()
 	close(filesChan)
+	wg.Wait()
 
 	if progressbar != nil {
 		progressbar.Info("AST Analysis finished")

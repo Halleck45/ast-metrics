@@ -12,6 +12,7 @@ import (
 	"github.com/halleck45/ast-metrics/internal/cli"
 	"github.com/halleck45/ast-metrics/internal/configuration"
 	"github.com/halleck45/ast-metrics/internal/engine"
+	filefinder "github.com/halleck45/ast-metrics/internal/file"
 	pb "github.com/halleck45/ast-metrics/pb"
 	"github.com/halleck45/ast-metrics/internal/report"
 	"github.com/halleck45/ast-metrics/internal/storage"
@@ -239,6 +240,14 @@ func (v *AnalyzeCommand) Execute() error {
 }
 
 func (v *AnalyzeCommand) ExecuteRunnerAnalysis(config *configuration.Configuration) error {
+	// Precompute file discovery for all languages in a single directory walk
+	if config.FileDiscovery == nil {
+		discovery := &filefinder.FileDiscovery{}
+		finder := filefinder.Finder{Configuration: *config}
+		discovery.Precompute(finder, []string{".go", ".php", ".py", ".rs"})
+		config.FileDiscovery = discovery
+	}
+
 	for _, runner := range v.runners {
 
 		runner.SetConfiguration(config)
