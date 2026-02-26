@@ -286,9 +286,9 @@ func main() {
 					}
 
 					// Exclude patterns
-					if config.ExcludePatterns == nil {
+					if len(config.ExcludePatterns) == 0 {
 						excludePatterns := cCtx.StringSlice("exclude")
-						if excludePatterns != nil && len(excludePatterns) > 0 {
+						if len(excludePatterns) > 0 {
 							config.SetExcludePatterns(excludePatterns)
 						}
 					}
@@ -488,7 +488,7 @@ func main() {
 						}
 					}
 					// exclude
-					if cfg.ExcludePatterns == nil {
+					if len(cfg.ExcludePatterns) == 0 {
 						ex := cCtx.StringSlice("exclude")
 						if len(ex) > 0 {
 							cfg.SetExcludePatterns(ex)
@@ -553,7 +553,7 @@ func main() {
 						}
 					}
 					// Exclude patterns
-					if cfg.ExcludePatterns == nil {
+					if len(cfg.ExcludePatterns) == 0 {
 						excludePatterns := cCtx.StringSlice("exclude")
 						if len(excludePatterns) > 0 {
 							cfg.SetExcludePatterns(excludePatterns)

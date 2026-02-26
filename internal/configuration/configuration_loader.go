@@ -23,6 +23,9 @@ func NewConfigurationLoader() *ConfigurationLoader {
 }
 
 func (c *ConfigurationLoader) Loads(cfg *Configuration) (*Configuration, error) {
+	// Save default exclude patterns before loading config file
+	defaultExcludePatterns := cfg.ExcludePatterns
+
 	// Load configuration file
 	for _, filename := range c.FilenameToChecks {
 
@@ -39,6 +42,13 @@ func (c *ConfigurationLoader) Loads(cfg *Configuration) (*Configuration, error) 
 			err = decoder.Decode(&cfg)
 			if err != nil {
 				return cfg, err
+			}
+
+			// If YAML decode emptied the exclude patterns (e.g. `exclude: []` or
+			// missing `exclude` key), restore the defaults so that vendor/,
+			// node_modules/, etc. are still excluded.
+			if len(cfg.ExcludePatterns) == 0 {
+				cfg.ExcludePatterns = defaultExcludePatterns
 			}
 
 			cfg.IsComingFromConfigFile = true
