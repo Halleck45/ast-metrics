@@ -3,6 +3,7 @@ package command
 import (
 	"bufio"
 	"fmt"
+	"os"
 	"sort"
 
 	"github.com/charmbracelet/lipgloss"
@@ -13,6 +14,8 @@ import (
 	"github.com/halleck45/ast-metrics/internal/engine"
 	"github.com/halleck45/ast-metrics/internal/report"
 	pb "github.com/halleck45/ast-metrics/pb"
+	"github.com/pterm/pterm"
+	"golang.org/x/term"
 )
 
 // LintCommand runs the analysis and prints only requirement violations (lint), grouped by file.
@@ -53,7 +56,14 @@ func (c *LintCommand) Execute() error {
 		}
 	}
 
-	spinner, _ := cli.NewMoonSpinner("Analyzing source code...")
+	// Only use spinners when connected to a real terminal to avoid
+	// data races in pterm's SpinnerPrinter goroutine during tests.
+	isTTY := term.IsTerminal(int(os.Stdout.Fd()))
+
+	var spinner *pterm.SpinnerPrinter
+	if isTTY {
+		spinner, _ = cli.NewMoonSpinner("Analyzing source code...")
+	}
 
 	// Run engines to dump ASTs
 	for _, runner := range c.runners {
@@ -82,7 +92,8 @@ func (c *LintCommand) Execute() error {
 	}
 
 	if spinner != nil {
-		spinner.UpdateText("Evaluating lint rules...")
+		spinner.Stop()
+		spinner, _ = cli.NewMoonSpinner("Evaluating lint rules...")
 	}
 
 	// Global analysis (no UI/report)
