@@ -12,8 +12,8 @@ func TestRegistry_AllRulesets(t *testing.T) {
 
 	rulesets := registry.AllRulesets()
 
-	if len(rulesets) != 4 {
-		t.Fatalf("expected 4 rulesets, got %d", len(rulesets))
+	if len(rulesets) != 5 {
+		t.Fatalf("expected 5 rulesets, got %d", len(rulesets))
 	}
 
 	categories := make(map[string]bool)
@@ -21,7 +21,7 @@ func TestRegistry_AllRulesets(t *testing.T) {
 		categories[ruleset.Category()] = true
 	}
 
-	expected := []string{"architecture", "volume", "complexity", "golang"}
+	expected := []string{"architecture", "volume", "complexity", "golang", "testing"}
 	for _, category := range expected {
 		if !categories[category] {
 			t.Errorf("missing ruleset category: %s", category)

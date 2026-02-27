@@ -74,7 +74,9 @@ func (er *EvaluationResult) CountErrorsBySeverityString(sev string) int {
 // minimal view of ProjectAggregated to avoid import cycle; use original type via alias in caller
 // We reuse the original analyzer.ProjectAggregated at call site; here we just keep it opaque
 // Define a tiny interface type to hold reference without methods
-type ProjectAggregated struct{}
+type ProjectAggregated struct {
+	ProjectCtx ruleset.ProjectContext
+}
 
 func NewRequirementsEvaluator(requirements configuration.ConfigurationRequirements) *RequirementsEvaluator {
 	return &RequirementsEvaluator{Requirements: requirements}
@@ -122,7 +124,9 @@ func (r *RequirementsEvaluator) Evaluate(files []*pb.File, projectAggregated Pro
 	}
 
 	// Delegate to registry-based rulesets
-	for _, rlset := range ruleset.Registry(&r.Requirements).EnabledRulesets() {
+	reg := ruleset.Registry(&r.Requirements)
+	for _, rlset := range reg.EnabledRulesets() {
+		// File-level rules
 		for _, rule := range rlset.Enabled() {
 			for _, file := range files {
 
@@ -146,6 +150,23 @@ func (r *RequirementsEvaluator) Evaluate(files []*pb.File, projectAggregated Pro
 					func(ok string) {
 						sev, msg := parseSeverityFromMessage(ok)
 						evaluation.Successes = append(evaluation.Successes, RuleOutcome{Severity: sev, Rule: rule.Name(), Message: msg, File: file.Path})
+					},
+				)
+			}
+		}
+
+		// Project-level rules
+		if provider, ok := rlset.(ruleset.ProjectRuleProvider); ok {
+			for _, rule := range provider.EnabledProjectRules() {
+				rule := rule // capture
+				rule.CheckProject(
+					projectAggregated.ProjectCtx,
+					func(err RequirementError) {
+						evaluation.Errors = append(evaluation.Errors, RuleOutcome{Severity: err.Severity, Rule: rule.Name(), Message: err.Message})
+					},
+					func(ok string) {
+						sev, msg := parseSeverityFromMessage(ok)
+						evaluation.Successes = append(evaluation.Successes, RuleOutcome{Severity: sev, Rule: rule.Name(), Message: msg})
 					},
 				)
 			}

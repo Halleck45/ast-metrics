@@ -102,9 +102,17 @@ type ConfigurationRequirementsRules struct {
 	Complexity                *ConfigurationComplexityRules   `yaml:"complexity,omitempty"`
 	ObjectOrientedProgramming *ConfigurationOOPRules          `yaml:"object-oriented-programming,omitempty"`
 	Golang                    *ConfigurationGolangRuleset     `yaml:"golang,omitempty"`
+	Testing                   *ConfigurationTestingRules      `yaml:"testing,omitempty"`
 
 	// Legacy flat rules support for backward compatibility
 	CyclomaticLegacy *ConfigurationDefaultRule `yaml:"cyclomatic_complexity,omitempty"`
+}
+
+type ConfigurationTestingRules struct {
+	MinTraceability   *int     `yaml:"min_traceability,omitempty"`
+	MinIsolationScore *int     `yaml:"min_isolation_score,omitempty"`
+	MaxGodTestFanOut  *int     `yaml:"max_god_test_fan_out,omitempty"`
+	MaxOrphanWeight   *float64 `yaml:"max_orphan_weight,omitempty"`
 }
 
 // ConfigurationGolangRuleset toggles for Golang-specific best-practice rules (per-rule)
@@ -128,7 +136,7 @@ type ConfigurationDefaultRule struct {
 func NewConfiguration() *Configuration {
 	return &Configuration{
 		SourcesToAnalyzePath:   []string{},
-		ExcludePatterns:        []string{"/vendor/", "/node_modules/", "/.git/", "/.idea/", "/_ide_helper/"},
+		ExcludePatterns:        []string{"/vendor/", "/node_modules/", "/.git/", "/.idea/", "/_ide_helper/", "/var/"},
 		Watching:               false,
 		CompareWith:            "",
 		Storage:                storage.Default(),
