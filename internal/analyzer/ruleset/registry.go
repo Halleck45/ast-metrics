@@ -18,6 +18,7 @@ func (r *RegistryImpl) AllRulesets() []Ruleset {
 		&volumeRuleset{cfg: r.cfg},
 		&complexityRuleset{cfg: r.cfg},
 		&golangRuleset{cfg: r.cfg},
+		&testingRuleset{cfg: r.cfg},
 	}
 }
 

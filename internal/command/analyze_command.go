@@ -9,6 +9,7 @@ import (
 	"github.com/halleck45/ast-metrics/internal/analyzer"
 	Activity "github.com/halleck45/ast-metrics/internal/analyzer/activity"
 	requirement "github.com/halleck45/ast-metrics/internal/analyzer/requirement"
+	"github.com/halleck45/ast-metrics/internal/analyzer/ruleset"
 	"github.com/halleck45/ast-metrics/internal/cli"
 	"github.com/halleck45/ast-metrics/internal/configuration"
 	"github.com/halleck45/ast-metrics/internal/engine"
@@ -139,7 +140,8 @@ func (v *AnalyzeCommand) Execute() error {
 	// Evaluate requirements generating reports so templates can use results
 	if v.Configuration.Requirements != nil {
 		requirementsEvaluator := requirement.NewRequirementsEvaluator(*v.Configuration.Requirements)
-		evaluation := requirementsEvaluator.Evaluate(allResults, requirement.ProjectAggregated{})
+		projectCtx := buildProjectContext(projectAggregated)
+		evaluation := requirementsEvaluator.Evaluate(allResults, requirement.ProjectAggregated{ProjectCtx: projectCtx})
 		projectAggregated.Evaluation = &evaluation
 	}
 
@@ -228,6 +230,30 @@ func (v *AnalyzeCommand) Execute() error {
 	}
 
 	return nil
+}
+
+func buildProjectContext(pa analyzer.ProjectAggregated) ruleset.ProjectContext {
+	ctx := ruleset.ProjectContext{}
+	tq := pa.Combined.TestQuality
+	if tq == nil {
+		return ctx
+	}
+	ctx.TraceabilityPct = tq.TraceabilityPct
+	ctx.GlobalIsolationScore = tq.GlobalIsolationScore
+	for _, gt := range tq.GodTests {
+		ctx.GodTests = append(ctx.GodTests, ruleset.GodTestInfo{
+			FilePath: gt.FilePath,
+			FanOut:   gt.SUTFanOut,
+		})
+	}
+	for _, oc := range tq.OrphanClasses {
+		ctx.OrphanClasses = append(ctx.OrphanClasses, ruleset.OrphanClassInfo{
+			ClassName: oc.ClassName,
+			FilePath:  oc.FilePath,
+			Weight:    oc.Weight,
+		})
+	}
+	return ctx
 }
 
 func (v *AnalyzeCommand) ExecuteRunnerAnalysis(config *configuration.Configuration) ([]*pb.File, error) {

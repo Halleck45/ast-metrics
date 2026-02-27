@@ -80,6 +80,11 @@ func (c *RulesetAddCommand) Execute() error {
 				cfg.Requirements.Rules.ObjectOrientedProgramming = &configuration.ConfigurationOOPRules{}
 			}
 		},
+		"testing": func() {
+			if cfg.Requirements.Rules.Testing == nil {
+				cfg.Requirements.Rules.Testing = &configuration.ConfigurationTestingRules{}
+			}
+		},
 	}
 	if f, ok := ensureCategory[c.Name]; ok {
 		f()
@@ -143,6 +148,23 @@ func (c *RulesetAddCommand) Execute() error {
 		cfg.Requirements.Rules.Golang.SlicePrealloc = trueVal()
 		cfg.Requirements.Rules.Golang.ContextMissing = trueVal()
 		cfg.Requirements.Rules.Golang.ContextIgnored = trueVal()
+	case "testing":
+		if cfg.Requirements.Rules.Testing == nil {
+			cfg.Requirements.Rules.Testing = &configuration.ConfigurationTestingRules{}
+		}
+		if cfg.Requirements.Rules.Testing.MinTraceability == nil {
+			cfg.Requirements.Rules.Testing.MinTraceability = intVal(60)
+		}
+		if cfg.Requirements.Rules.Testing.MinIsolationScore == nil {
+			cfg.Requirements.Rules.Testing.MinIsolationScore = intVal(50)
+		}
+		if cfg.Requirements.Rules.Testing.MaxGodTestFanOut == nil {
+			cfg.Requirements.Rules.Testing.MaxGodTestFanOut = intVal(5)
+		}
+		if cfg.Requirements.Rules.Testing.MaxOrphanWeight == nil {
+			f := 20.0
+			cfg.Requirements.Rules.Testing.MaxOrphanWeight = &f
+		}
 	}
 
 	// Save back to file

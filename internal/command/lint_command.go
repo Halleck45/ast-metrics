@@ -92,6 +92,10 @@ func (c *LintCommand) Execute() error {
 	// Global analysis on in-memory files
 	allResults := analyzer.AnalyzeFiles(allParsed, nil)
 
+	// Aggregate to get project-level metrics (TestQuality etc.)
+	aggregator := analyzer.NewAggregator(allResults, nil)
+	projectAggregated := aggregator.Aggregates()
+
 	if spinner != nil {
 		spinner.Stop()
 	}
@@ -102,7 +106,8 @@ func (c *LintCommand) Execute() error {
 		return nil
 	}
 	reqEval := requirement.NewRequirementsEvaluator(*c.Configuration.Requirements)
-	evaluation := reqEval.Evaluate(allResults, requirement.ProjectAggregated{})
+	projectCtx := buildProjectContext(projectAggregated)
+	evaluation := reqEval.Evaluate(allResults, requirement.ProjectAggregated{ProjectCtx: projectCtx})
 
 	// If SARIF path provided, write SARIF report from violations
 	if c.Configuration.Reports.Sarif != "" {
@@ -205,21 +210,30 @@ func (c *LintCommand) Execute() error {
 	}
 
 	if len(ungrouped) > 0 {
-		fmt.Println("Other")
+		underline := lipgloss.NewStyle().Underline(true).Bold(true)
+		fmt.Println(underline.Render("Project-level"))
 		sort.Slice(ungrouped, func(i, j int) bool { return ungrouped[i].Message < ungrouped[j].Message })
 		for _, m := range ungrouped {
 			badge := ""
 			switch m.Severity {
 			case requirement.SeverityHigh:
-				badge = "[HIGH] "
-				cli.PrintError("• " + badge + m.Message)
+				style := lipgloss.NewStyle().Foreground(lipgloss.Color("#FF0000")).Bold(true)
+				badge = style.Render("HIGH    ")
+				totalHigh++
 			case requirement.SeverityMedium:
-				badge = "[MED] "
-				cli.PrintWarning("• " + badge + m.Message)
+				style := lipgloss.NewStyle().Foreground(lipgloss.Color("#FFA500")).Bold(true)
+				badge = style.Render("MEDIUM  ")
+				totalMedium++
 			case requirement.SeverityLow:
-				badge = "[LOW] "
-				cli.PrintWarning("• " + badge + m.Message)
+				style := lipgloss.NewStyle().Foreground(lipgloss.Color("#008000")).Bold(true)
+				badge = style.Render("LOW     ")
+				totalLow++
 			}
+
+			greyStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("#888888"))
+			ruleStyled := greyStyle.Render(" #" + m.Rule)
+			content := "  • " + badge + m.Message + ruleStyled
+			fmt.Println(content)
 
 			total++
 		}

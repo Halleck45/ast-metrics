@@ -5,7 +5,7 @@ import (
 	"fmt"
 
 	"github.com/charmbracelet/lipgloss"
-	"github.com/halleck45/ast-metrics/internal/analyzer/ruleset"
+	rulesetPkg "github.com/halleck45/ast-metrics/internal/analyzer/ruleset"
 	"github.com/halleck45/ast-metrics/internal/cli"
 	"github.com/halleck45/ast-metrics/internal/configuration"
 	"github.com/pterm/pterm"
@@ -22,7 +22,7 @@ func (c *RulesetShowCommand) Execute() error {
 
 	cfg := configuration.NewConfigurationRequirements()
 
-	sets := ruleset.Registry(cfg).AllRulesets()
+	sets := rulesetPkg.Registry(cfg).AllRulesets()
 	for _, ruleset := range sets {
 		if ruleset.Category() != c.Name {
 			continue
@@ -36,11 +36,22 @@ func (c *RulesetShowCommand) Execute() error {
 		fmt.Println()
 
 		nbRules := len(ruleset.All())
+
+		// Also count project-level rules if the ruleset provides them
+		var projectRules []rulesetPkg.ProjectRule
+		if provider, ok := ruleset.(rulesetPkg.ProjectRuleProvider); ok {
+			projectRules = provider.AllProjectRules()
+			nbRules += len(projectRules)
+		}
+
 		fmt.Printf("  Found %d rules in this ruleset\n\n", nbRules)
 
 		data := pterm.TableData{}
 		data = append(data, []string{"Rule Name", "Description"})
 		for _, r := range ruleset.All() {
+			data = append(data, []string{r.Name(), r.Description()})
+		}
+		for _, r := range projectRules {
 			data = append(data, []string{r.Name(), r.Description()})
 		}
 
