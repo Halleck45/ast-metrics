@@ -1,0 +1,389 @@
+{% extends "layout.html" %}
+{% block pageTitle %}Dependencies - {{ currentLanguage }}{% endblock %}
+{% block content %}
+
+<style>
+    .dashboard-card {
+        background: white;
+        border: 1px solid #e2e8f0;
+        border-radius: 16px;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        position: relative;
+        overflow: hidden;
+    }
+
+    .dashboard-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        border-color: #cbd5e1;
+    }
+
+    .dashboard-card::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 4px;
+        background: linear-gradient(90deg, #3b82f6, #8b5cf6);
+        opacity: 0;
+        transition: opacity 0.3s ease;
+    }
+
+    .dashboard-card:hover::before {
+        opacity: 1;
+    }
+
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(10px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
+    .animate-fade-in-up {
+        animation: fadeIn 0.5s ease-out backwards;
+    }
+
+    #dep-graph-svg {
+        width: 100%;
+        min-height: 600px;
+        cursor: grab;
+    }
+    #dep-graph-svg:active {
+        cursor: grabbing;
+    }
+    .dep-link {
+        stroke: #94a3b8;
+        stroke-opacity: 0.5;
+        fill: none;
+    }
+    .dep-node-label {
+        font-size: 10px;
+        fill: #334155;
+        pointer-events: none;
+        text-anchor: middle;
+    }
+    .dep-tooltip {
+        position: fixed;
+        pointer-events: none;
+        z-index: 50;
+        background: rgba(255,255,255,0.95);
+        backdrop-filter: blur(4px);
+        color: #1e293b;
+        font-size: 12px;
+        line-height: 1.5;
+        padding: 8px 12px;
+        border-radius: 8px;
+        box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);
+        border: 1px solid #e2e8f0;
+        opacity: 0;
+        transition: opacity 150ms ease;
+        max-width: 360px;
+        word-break: break-all;
+    }
+    .dep-tooltip.visible { opacity: 1; }
+</style>
+
+<!-- language tabs -->
+<div class="flex overflow-x-auto overflow-y-hidden border-b border-gray-200 whitespace-nowrap">
+    <a href="dependencies.html"
+       class="inline-flex items-center h-10 px-2 py-2 -mb-px text-center {% if currentLanguage == 'All' %}text-blue-600 border-blue-500{% endif %} bg-transparent border-b-2 sm:px-4 -px-1 focus:outline-none">
+        <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 mx-1 sm:w-6 sm:h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z" />
+        </svg>
+        <span class="mx-1 text-sm sm:text-base">
+            All languages <span class="text-xs sm:text-sm">({{ projectAggregated.Combined.ConcernedFiles|length }} files)</span>
+        </span>
+    </a>
+
+    {% for languageName, lang in projectAggregated.ByProgrammingLanguage %}
+    <a href="dependencies_{{ languageName }}.html"
+       class="inline-flex items-center h-10 px-2 py-2 -mb-px text-center bg-transparent border-b-2 {% if currentLanguage == languageName %}text-blue-600 border-blue-500{% else %}text-gray-700 border-transparent{% endif %} sm:px-4 -px-1 hover:border-gray-400">
+        <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 mx-1 sm:w-6 sm:h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z" />
+        </svg>
+        <span class="mx-1 text-sm sm:text-base">
+            {{ languageName }} <span class="text-xs sm:text-sm">({{ lang.ConcernedFiles|length }} files)</span>
+        </span>
+    </a>
+    {% endfor %}
+</div>
+<!-- end language tabs -->
+
+<script id="dep-data" type="application/json">{{ fileDepsJSON|safe }}</script>
+
+<div id="dep-empty" class="hidden text-center py-16 text-gray-500">
+    <svg xmlns="http://www.w3.org/2000/svg" class="mx-auto h-16 w-16 mb-4 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+              d="M7.217 10.907a2.25 2.25 0 1 0 0 2.186m0-2.186c.18.324.283.696.283 1.093s-.103.77-.283 1.093m0-2.186 9.566-5.314m-9.566 7.5 9.566 5.314m0 0a2.25 2.25 0 1 0 3.935 2.186 2.25 2.25 0 0 0-3.935-2.186Zm0-12.814a2.25 2.25 0 1 0 3.933-2.185 2.25 2.25 0 0 0-3.933 2.185Z" />
+    </svg>
+    <p class="text-lg font-medium">No dependency data available</p>
+    <p class="text-sm mt-1">Dependencies are resolved from class imports and external references.</p>
+</div>
+
+<div id="dep-content" class="hidden">
+
+    <!-- KPI row -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mt-8 mb-8">
+        <div class="dashboard-card p-6 animate-fade-in-up">
+            <p class="text-sm font-medium text-gray-500 uppercase tracking-wider">Files with dependencies</p>
+            <p id="kpi-files" class="text-3xl font-bold text-gray-900 mt-2">0</p>
+        </div>
+        <div class="dashboard-card p-6 animate-fade-in-up" style="animation-delay:.1s">
+            <p class="text-sm font-medium text-gray-500 uppercase tracking-wider">Dependency edges</p>
+            <p id="kpi-edges" class="text-3xl font-bold text-gray-900 mt-2">0</p>
+        </div>
+        <div class="dashboard-card p-6 animate-fade-in-up" style="animation-delay:.2s">
+            <p class="text-sm font-medium text-gray-500 uppercase tracking-wider">Avg coupling / file</p>
+            <p id="kpi-avg" class="text-3xl font-bold text-gray-900 mt-2">0</p>
+        </div>
+    </div>
+
+    <!-- Legend -->
+    <div class="dashboard-card p-4 mb-6 animate-fade-in-up" style="animation-delay:.3s">
+        <div class="flex flex-wrap gap-6 items-center text-sm text-gray-600">
+            <span class="font-medium text-gray-700">Legend:</span>
+            <span class="flex items-center gap-2"><span class="inline-block w-3 h-3 rounded-full" style="background:#0d9488"></span> Mostly efferent (depends on others)</span>
+            <span class="flex items-center gap-2"><span class="inline-block w-3 h-3 rounded-full" style="background:#7c3aed"></span> Mostly afferent (depended on by others)</span>
+            <span class="flex items-center gap-2"><span class="inline-block w-3 h-3 rounded-full" style="background:#3b82f6"></span> Balanced</span>
+            <span class="flex items-center gap-2"><svg width="20" height="10"><line x1="0" y1="5" x2="14" y2="5" stroke="#94a3b8" stroke-width="1.5"/><polygon points="14,2 20,5 14,8" fill="#94a3b8"/></svg> Dependency direction</span>
+        </div>
+    </div>
+
+    <!-- Graph container -->
+    <div class="dashboard-card p-2 animate-fade-in-up" style="animation-delay:.4s">
+        <svg id="dep-graph-svg"></svg>
+    </div>
+</div>
+
+<div id="dep-tooltip" class="dep-tooltip"></div>
+
+{% endblock %}
+
+{% block javascripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const raw = document.getElementById('dep-data').textContent;
+    let deps;
+    try { deps = JSON.parse(raw); } catch(e) { deps = {}; }
+
+    const fileKeys = Object.keys(deps);
+    if (fileKeys.length === 0) {
+        document.getElementById('dep-empty').classList.remove('hidden');
+        return;
+    }
+    document.getElementById('dep-content').classList.remove('hidden');
+
+    // Build nodes & links
+    const nodeMap = {};
+    const links = [];
+    let totalEdges = 0;
+
+    fileKeys.forEach(fp => {
+        if (!nodeMap[fp]) nodeMap[fp] = { id: fp, eff: 0, aff: 0 };
+        const entry = deps[fp];
+        if (entry.efferent) {
+            entry.efferent.forEach(d => {
+                if (!nodeMap[d.path]) nodeMap[d.path] = { id: d.path, eff: 0, aff: 0 };
+                nodeMap[fp].eff++;
+                nodeMap[d.path].aff++;
+                links.push({ source: fp, target: d.path });
+                totalEdges++;
+            });
+        }
+    });
+
+    // Build directed adjacency lists for chain highlighting
+    const outgoing = {}; // source -> Set of targets (efferent: files I depend on)
+    const incoming = {}; // target -> Set of sources (afferent: files that depend on me)
+    links.forEach(l => {
+        if (!outgoing[l.source]) outgoing[l.source] = new Set();
+        outgoing[l.source].add(l.target);
+        if (!incoming[l.target]) incoming[l.target] = new Set();
+        incoming[l.target].add(l.source);
+    });
+
+    // BFS following directed edges: downstream (what I depend on) + upstream (what depends on me)
+    function getChain(startId) {
+        const visited = new Set([startId]);
+        // Follow outgoing edges (efferent chain)
+        let queue = [startId];
+        while (queue.length > 0) {
+            const cur = queue.shift();
+            if (outgoing[cur]) {
+                for (const nb of outgoing[cur]) {
+                    if (!visited.has(nb)) { visited.add(nb); queue.push(nb); }
+                }
+            }
+        }
+        // Follow incoming edges (afferent chain)
+        queue = [startId];
+        while (queue.length > 0) {
+            const cur = queue.shift();
+            if (incoming[cur]) {
+                for (const nb of incoming[cur]) {
+                    if (!visited.has(nb)) { visited.add(nb); queue.push(nb); }
+                }
+            }
+        }
+        return visited;
+    }
+
+    const nodes = Object.values(nodeMap);
+    const totalFiles = nodes.length;
+    const avgCoupling = totalFiles > 0 ? ((nodes.reduce((s,n) => s + n.eff + n.aff, 0)) / totalFiles).toFixed(1) : 0;
+
+    document.getElementById('kpi-files').textContent = totalFiles;
+    document.getElementById('kpi-edges').textContent = totalEdges;
+    document.getElementById('kpi-avg').textContent = avgCoupling;
+
+    // Short label
+    function shortLabel(path, max) {
+        max = max || 20;
+        const parts = path.split('/');
+        let name = parts[parts.length - 1];
+        if (name.length > max) name = name.substring(0, max - 1) + '\u2026';
+        return name;
+    }
+
+    // Color: teal=efferent, purple=afferent, blue=balanced
+    function nodeColor(n) {
+        const total = n.eff + n.aff;
+        if (total === 0) return '#3b82f6';
+        const ratio = n.eff / total;
+        if (ratio > 0.65) return '#0d9488';
+        if (ratio < 0.35) return '#7c3aed';
+        return '#3b82f6';
+    }
+
+    // Radius proportional to coupling, capped
+    function nodeRadius(n) {
+        return Math.min(4 + Math.sqrt(n.eff + n.aff) * 3, 24);
+    }
+
+    // D3 force graph
+    const svgEl = document.getElementById('dep-graph-svg');
+    const width = svgEl.parentElement.clientWidth - 16;
+    const height = Math.max(600, Math.min(nodes.length * 8, 1200));
+    svgEl.style.height = height + 'px';
+
+    const svg = d3.select(svgEl)
+        .attr('viewBox', [0, 0, width, height])
+        .attr('width', width)
+        .attr('height', height);
+
+    // Arrow marker
+    svg.append('defs').append('marker')
+        .attr('id', 'dep-arrow')
+        .attr('viewBox', '0 -5 10 10')
+        .attr('refX', 20)
+        .attr('refY', 0)
+        .attr('markerWidth', 6)
+        .attr('markerHeight', 6)
+        .attr('orient', 'auto')
+        .append('path')
+        .attr('d', 'M0,-4L10,0L0,4')
+        .attr('fill', '#94a3b8');
+
+    const g = svg.append('g');
+
+    // Zoom & pan
+    const zoom = d3.zoom()
+        .scaleExtent([0.2, 5])
+        .on('zoom', e => g.attr('transform', e.transform));
+    svg.call(zoom);
+
+    const link = g.append('g')
+        .selectAll('line')
+        .data(links)
+        .join('line')
+        .attr('class', 'dep-link')
+        .attr('stroke-width', 1.2)
+        .attr('marker-end', 'url(#dep-arrow)');
+
+    const node = g.append('g')
+        .selectAll('circle')
+        .data(nodes)
+        .join('circle')
+        .attr('r', d => nodeRadius(d))
+        .attr('fill', d => nodeColor(d))
+        .attr('stroke', '#fff')
+        .attr('stroke-width', 1.5)
+        .style('cursor', 'pointer');
+
+    const label = g.append('g')
+        .selectAll('text')
+        .data(nodes)
+        .join('text')
+        .attr('class', 'dep-node-label')
+        .attr('dy', d => nodeRadius(d) + 12)
+        .text(d => shortLabel(d.id));
+
+    // Tooltip + chain highlight on hover + click
+    const tooltip = document.getElementById('dep-tooltip');
+    node
+        .on('mouseover', function(event, d) {
+            tooltip.innerHTML = '<strong>' + d.id + '</strong><br>Efferent: ' + d.eff + ' &middot; Afferent: ' + d.aff;
+            tooltip.classList.add('visible');
+
+            // Highlight the full dependency chain, dim everything else
+            const chain = getChain(d.id);
+            node.transition().duration(150)
+                .attr('opacity', n => chain.has(n.id) ? 1 : 0.08);
+            label.transition().duration(150)
+                .attr('opacity', n => chain.has(n.id) ? 1 : 0.08);
+            link.transition().duration(150)
+                .attr('stroke-opacity', l => (chain.has(l.source.id || l.source) && chain.has(l.target.id || l.target)) ? 0.85 : 0.02)
+                .attr('stroke-width', l => (chain.has(l.source.id || l.source) && chain.has(l.target.id || l.target)) ? 2 : 0.5);
+        })
+        .on('mousemove', function(event) {
+            tooltip.style.left = event.clientX + 'px';
+            tooltip.style.top = (event.clientY - 12) + 'px';
+        })
+        .on('mouseout', function() {
+            tooltip.classList.remove('visible');
+
+            // Restore full opacity
+            node.transition().duration(200).attr('opacity', 1);
+            label.transition().duration(200).attr('opacity', 1);
+            link.transition().duration(200).attr('stroke-opacity', 0.5).attr('stroke-width', 1.2);
+        })
+        .on('click', function(event, d) {
+            window.location.href = 'explorer.html?file=' + encodeURIComponent(d.id);
+        });
+
+    // Drag
+    node.call(d3.drag()
+        .on('start', function(event, d) {
+            if (!event.active) simulation.alphaTarget(0.3).restart();
+            d.fx = d.x; d.fy = d.y;
+        })
+        .on('drag', function(event, d) {
+            d.fx = event.x; d.fy = event.y;
+        })
+        .on('end', function(event, d) {
+            if (!event.active) simulation.alphaTarget(0);
+            d.fx = null; d.fy = null;
+        })
+    );
+
+    const simulation = d3.forceSimulation(nodes)
+        .force('link', d3.forceLink(links).id(d => d.id).distance(80))
+        .force('charge', d3.forceManyBody().strength(-200))
+        .force('center', d3.forceCenter(width / 2, height / 2))
+        .force('collision', d3.forceCollide().radius(d => nodeRadius(d) + 8))
+        .on('tick', () => {
+            link
+                .attr('x1', d => d.source.x)
+                .attr('y1', d => d.source.y)
+                .attr('x2', d => d.target.x)
+                .attr('y2', d => d.target.y);
+            node
+                .attr('cx', d => d.x)
+                .attr('cy', d => d.y);
+            label
+                .attr('x', d => d.x)
+                .attr('y', d => d.y);
+        });
+});
+</script>
+{% endblock %}

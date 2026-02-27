@@ -33,6 +33,7 @@ type cachedLangData struct {
 	risksByPath         map[string][]riskItemForTpl
 	nodeToCommunityJSON string
 	testQualityJSON     string
+	fileDepsJSON        string
 }
 
 type HtmlReportGenerator struct {
@@ -94,6 +95,7 @@ func (v *HtmlReportGenerator) Generate(files []*pb.File, projectAggregated analy
 		"componentComparaisonBadge.html",
 		"componentComparaisonOperator.html",
 		"communities.html",
+		"dependencies.html",
 		"busfactor.html",
 		"testquality.html",
 		"partials/suggestions.html",
@@ -170,6 +172,8 @@ func (v *HtmlReportGenerator) Generate(files []*pb.File, projectAggregated analy
 			cd.testQualityJSON = analyzer.BuildTestQualityJSON(currentView.TestQuality)
 		}
 
+		cd.fileDepsJSON = buildFileDepsJSON(files, lang)
+
 		v.langCache[lang] = cd
 	}
 
@@ -202,6 +206,12 @@ func (v *HtmlReportGenerator) Generate(files []*pb.File, projectAggregated analy
 	v.GenerateLanguagePage("communities.html", "All", projectAggregated.Combined, files, projectAggregated)
 	for language, currentView := range projectAggregated.ByProgrammingLanguage {
 		v.GenerateLanguagePage("communities.html", language, currentView, files, projectAggregated)
+	}
+
+	// Dependencies page
+	v.GenerateLanguagePage("dependencies.html", "All", projectAggregated.Combined, files, projectAggregated)
+	for language, currentView := range projectAggregated.ByProgrammingLanguage {
+		v.GenerateLanguagePage("dependencies.html", language, currentView, files, projectAggregated)
 	}
 
 	// Linters page
@@ -466,6 +476,171 @@ func buildRisksJSON(risksByPath map[string][]riskItemForTpl) string {
 	return b.String()
 }
 
+// buildFileDepsJSON builds a JSON map of file dependency relationships.
+// Output: { "filePath": { "efferent": [{"path":"...","short":"..."}], "afferent": [{"path":"...","short":"..."}] } }
+func buildFileDepsJSON(files []*pb.File, language string) string {
+	// Step 1: Build class qualified name -> file path lookup
+	classToFile := map[string]string{}
+	for _, f := range files {
+		if language != "All" && f.GetProgrammingLanguage() != language {
+			continue
+		}
+		if f.Stmts == nil {
+			continue
+		}
+		classes := engine.GetClassesInFile(f)
+		for _, c := range classes {
+			if c.Name == nil {
+				continue
+			}
+			if q := c.Name.GetQualified(); q != "" {
+				classToFile[q] = f.Path
+			}
+			if s := c.Name.GetShort(); s != "" {
+				// Only set short name if not already mapped (qualified takes priority)
+				if _, exists := classToFile[s]; !exists {
+					classToFile[s] = f.Path
+				}
+			}
+		}
+	}
+
+	// Step 2: Build efferent map from StmtExternalDependencies
+	// efferent[filePath] = set of target file paths
+	type depInfo struct {
+		path  string
+		short string
+	}
+	efferent := map[string]map[string]depInfo{}
+
+	for _, f := range files {
+		if language != "All" && f.GetProgrammingLanguage() != language {
+			continue
+		}
+		if f.Stmts == nil {
+			continue
+		}
+
+		deps := f.Stmts.GetStmtExternalDependencies()
+		// Also collect from namespaces
+		for _, ns := range f.Stmts.GetStmtNamespace() {
+			if ns != nil && ns.Stmts != nil {
+				deps = append(deps, ns.Stmts.GetStmtExternalDependencies()...)
+			}
+		}
+
+		for _, dep := range deps {
+			if dep == nil {
+				continue
+			}
+			// Try to resolve to a file path using namespace or className
+			targetFile := ""
+			if ns := dep.GetNamespace(); ns != "" {
+				if fp, ok := classToFile[ns]; ok {
+					targetFile = fp
+				}
+			}
+			if targetFile == "" {
+				if cn := dep.GetClassName(); cn != "" {
+					if fp, ok := classToFile[cn]; ok {
+						targetFile = fp
+					}
+				}
+			}
+			// Skip self-dependencies and unresolved
+			if targetFile == "" || targetFile == f.Path {
+				continue
+			}
+			if efferent[f.Path] == nil {
+				efferent[f.Path] = map[string]depInfo{}
+			}
+			short := targetFile
+			if idx := strings.LastIndex(targetFile, "/"); idx >= 0 {
+				short = targetFile[idx+1:]
+			}
+			efferent[f.Path][targetFile] = depInfo{path: targetFile, short: short}
+		}
+	}
+
+	// Step 3: Invert to get afferent
+	afferent := map[string]map[string]depInfo{}
+	for srcFile, targets := range efferent {
+		srcShort := srcFile
+		if idx := strings.LastIndex(srcFile, "/"); idx >= 0 {
+			srcShort = srcFile[idx+1:]
+		}
+		for tgtPath := range targets {
+			if afferent[tgtPath] == nil {
+				afferent[tgtPath] = map[string]depInfo{}
+			}
+			afferent[tgtPath][srcFile] = depInfo{path: srcFile, short: srcShort}
+		}
+	}
+
+	// Step 4: Build JSON
+	// Collect all files that have any dependency
+	allFiles := map[string]struct{}{}
+	for k := range efferent {
+		allFiles[k] = struct{}{}
+	}
+	for k := range afferent {
+		allFiles[k] = struct{}{}
+	}
+
+	if len(allFiles) == 0 {
+		return "{}"
+	}
+
+	esc := func(s string) string {
+		return strings.ReplaceAll(strings.ReplaceAll(s, "\\", "\\\\"), "\"", "\\\"")
+	}
+
+	var b strings.Builder
+	b.WriteString("{")
+	first := true
+	for fp := range allFiles {
+		if !first {
+			b.WriteString(",")
+		}
+		first = false
+		b.WriteString("\"")
+		b.WriteString(esc(fp))
+		b.WriteString("\":{\"efferent\":[")
+		ei := 0
+		if eff, ok := efferent[fp]; ok {
+			for _, d := range eff {
+				if ei > 0 {
+					b.WriteString(",")
+				}
+				b.WriteString("{\"path\":\"")
+				b.WriteString(esc(d.path))
+				b.WriteString("\",\"short\":\"")
+				b.WriteString(esc(d.short))
+				b.WriteString("\"}")
+				ei++
+			}
+		}
+		b.WriteString("],\"afferent\":[")
+		ai := 0
+		if aff, ok := afferent[fp]; ok {
+			for _, d := range aff {
+				if ai > 0 {
+					b.WriteString(",")
+				}
+				b.WriteString("{\"path\":\"")
+				b.WriteString(esc(d.path))
+				b.WriteString("\",\"short\":\"")
+				b.WriteString(esc(d.short))
+				b.WriteString("\"}")
+				ai++
+			}
+		}
+		b.WriteString("]}")
+	}
+	b.WriteString("}")
+	return b.String()
+}
+
 func (v *HtmlReportGenerator) GenerateLanguagePage(template string, language string, currentView analyzer.Aggregated, files []*pb.File, projectAggregated analyzer.ProjectAggregated) error {
 
 	// Compile the index.html template
@@ -479,7 +654,7 @@ func (v *HtmlReportGenerator) GenerateLanguagePage(template string, language str
 
 	// Use pre-computed cached data for this language
 	cd := v.langCache[language]
-	out, err := tpl.Execute(pongo2.Context{"datetime": datetime, "page": template, "currentLanguage": language, "currentView": currentView, "projectAggregated": projectAggregated, "files": files, "risksByPath": cd.risksByPath, "filesJSON": cd.filesJSON, "risksJSON": cd.risksJSON, "nodeToCommunityJSON": cd.nodeToCommunityJSON, "testQualityJSON": cd.testQualityJSON})
+	out, err := tpl.Execute(pongo2.Context{"datetime": datetime, "page": template, "currentLanguage": language, "currentView": currentView, "projectAggregated": projectAggregated, "files": files, "risksByPath": cd.risksByPath, "filesJSON": cd.filesJSON, "risksJSON": cd.risksJSON, "nodeToCommunityJSON": cd.nodeToCommunityJSON, "testQualityJSON": cd.testQualityJSON, "fileDepsJSON": cd.fileDepsJSON})
 	if err != nil {
 		log.Error(err)
 		return err

@@ -358,6 +358,21 @@ AST Metrics - Explorer
                 </div>
               </div>
 
+              <!-- File Dependency Diagram -->
+              <div x-show="selected && fileDeps[selected.path] && ((fileDeps[selected.path].efferent||[]).length || (fileDeps[selected.path].afferent||[]).length)" class="mb-6">
+                <div class="dashboard-card p-6">
+                  <div class="flex items-center justify-between mb-4">
+                    <h3 class="text-lg font-bold text-gray-900">File Dependencies</h3>
+                    <div class="flex items-center gap-4 text-xs">
+                      <span class="flex items-center gap-1.5"><span class="inline-block w-3 h-3 rounded-full" style="background:#3b82f6;"></span> Current file</span>
+                      <span class="flex items-center gap-1.5"><span class="inline-block w-3 h-3 rounded-full" style="background:#0d9488;"></span> Depends on (efferent)</span>
+                      <span class="flex items-center gap-1.5"><span class="inline-block w-3 h-3 rounded-full" style="background:#7c3aed;"></span> Depended by (afferent)</span>
+                    </div>
+                  </div>
+                  <div id="file-deps-diagram" class="w-full" style="min-height:360px;"></div>
+                </div>
+              </div>
+
               <!-- Panels -->
               <div class="space-y-6">
                 <!-- Classes/Structs & Functions/Methods -->
@@ -650,6 +665,7 @@ AST Metrics - Explorer
 <!-- Data nodes provided as JSON for maintainability -->
 <script id="files-data" type="application/json">{{filesJSON|safe}}</script>
 <script id="risks-data" type="application/json">{{ risksJSON|safe }}</script>
+<script id="file-deps-data" type="application/json">{{ fileDepsJSON|safe }}</script>
 
 {% endblock %}
 
@@ -678,6 +694,9 @@ AST Metrics - Explorer
       groupedRisks: {},
       groupedRisksKeys: [],
 
+      // dependencies
+      fileDeps: {},
+
       // ui
       openGlossary: false,
 
@@ -685,6 +704,7 @@ AST Metrics - Explorer
         const parse = (id) => { try { return JSON.parse(document.getElementById(id)?.textContent || 'null'); } catch (e) { return null; } };
         this.files = parse('files-data') || [];
         this.risksByPath = parse('risks-data') || {};
+        this.fileDeps = parse('file-deps-data') || {};
         this.$watch('filters', () => this.rebuild(), { deep: true });
         this.rebuild();
         const requestedFile = this.getFileQueryParam();
@@ -838,6 +858,9 @@ AST Metrics - Explorer
 
         // Risks grouping
         this.computeGroupedRisks();
+
+        // Dependency diagram (deferred so Alpine x-show makes the container visible first)
+        this.$nextTick(() => this.renderDependencyDiagram(f));
       },
 
       // MI formatting
@@ -884,6 +907,104 @@ AST Metrics - Explorer
       severityBarClass(s) { const v = Number(s) || 0; if (v >= 0.75) return 'bg-rose-500'; if (v >= 0.5) return 'bg-orange-500'; if (v > 0) return 'bg-amber-500'; return 'bg-slate-400'; },
       severityPct(s) { const v = Math.max(0, Math.min(1, Number(s) || 0)); return (v * 100).toFixed(0); },
       riskCardClass(r) { return (r.severity || 0) >= 0.75 ? 'border-rose-200' : (r.severity || 0) >= 0.5 ? 'border-orange-200' : 'border-amber-200'; },
+
+      renderDependencyDiagram(f) {
+        const container = document.getElementById('file-deps-diagram');
+        if (!container) return;
+        container.innerHTML = '';
+        const deps = this.fileDeps[f.path];
+        if (!deps || (!deps.efferent?.length && !deps.afferent?.length)) return;
+
+        const width = container.clientWidth || 600;
+        const height = 360;
+        const centerX = width / 2;
+        const centerY = height / 2;
+
+        // Cap nodes for readability
+        const maxNodes = 20;
+        const eff = (deps.efferent || []).slice(0, maxNodes);
+        const aff = (deps.afferent || []).slice(0, maxNodes);
+
+        // Current file short name
+        const selfShort = f.path.split('/').pop() || f.path;
+
+        // Build nodes and links
+        const nodes = [{ id: f.path, short: selfShort, type: 'self' }];
+        const links = [];
+        const seen = new Set([f.path]);
+
+        for (const d of eff) {
+          if (!seen.has(d.path)) { nodes.push({ id: d.path, short: d.short, type: 'efferent' }); seen.add(d.path); }
+          links.push({ source: f.path, target: d.path, type: 'efferent' });
+        }
+        for (const d of aff) {
+          if (!seen.has(d.path)) { nodes.push({ id: d.path, short: d.short, type: 'afferent' }); seen.add(d.path); }
+          links.push({ source: d.path, target: f.path, type: 'afferent' });
+        }
+
+        const svg = d3.select(container).append('svg')
+          .attr('width', width).attr('height', height)
+          .attr('viewBox', `0 0 ${width} ${height}`);
+
+        // Arrow markers
+        const defs = svg.append('defs');
+        ['efferent', 'afferent'].forEach(t => {
+          defs.append('marker')
+            .attr('id', `arrow-${t}`)
+            .attr('viewBox', '0 -5 10 10')
+            .attr('refX', 20).attr('refY', 0)
+            .attr('markerWidth', 6).attr('markerHeight', 6)
+            .attr('orient', 'auto')
+            .append('path')
+            .attr('d', 'M0,-5L10,0L0,5')
+            .attr('fill', t === 'efferent' ? '#0d9488' : '#7c3aed');
+        });
+
+        const simulation = d3.forceSimulation(nodes)
+          .force('link', d3.forceLink(links).id(d => d.id).distance(120))
+          .force('charge', d3.forceManyBody().strength(-300))
+          .force('center', d3.forceCenter(centerX, centerY))
+          .force('collision', d3.forceCollide().radius(40));
+
+        const link = svg.append('g').selectAll('line')
+          .data(links).join('line')
+          .attr('stroke', d => d.type === 'efferent' ? '#0d9488' : '#7c3aed')
+          .attr('stroke-width', 1.5)
+          .attr('stroke-opacity', 0.6)
+          .attr('marker-end', d => `url(#arrow-${d.type})`);
+
+        const nodeG = svg.append('g').selectAll('g')
+          .data(nodes).join('g')
+          .call(d3.drag()
+            .on('start', (e, d) => { if (!e.active) simulation.alphaTarget(0.3).restart(); d.fx = d.x; d.fy = d.y; })
+            .on('drag', (e, d) => { d.fx = e.x; d.fy = e.y; })
+            .on('end', (e, d) => { if (!e.active) simulation.alphaTarget(0); d.fx = null; d.fy = null; }));
+
+        const colorMap = { self: '#3b82f6', efferent: '#0d9488', afferent: '#7c3aed' };
+        nodeG.append('circle')
+          .attr('r', d => d.type === 'self' ? 14 : 10)
+          .attr('fill', d => colorMap[d.type])
+          .attr('stroke', '#fff').attr('stroke-width', 2)
+          .attr('opacity', 0.9);
+
+        nodeG.append('text')
+          .text(d => d.short.length > 18 ? d.short.slice(0, 16) + '..' : d.short)
+          .attr('dy', d => d.type === 'self' ? -20 : -16)
+          .attr('text-anchor', 'middle')
+          .attr('font-size', '11px')
+          .attr('fill', '#374151')
+          .attr('font-weight', d => d.type === 'self' ? '600' : '400');
+
+        // Tooltip on hover
+        nodeG.append('title').text(d => d.id);
+
+        simulation.on('tick', () => {
+          link
+            .attr('x1', d => d.source.x).attr('y1', d => d.source.y)
+            .attr('x2', d => d.target.x).attr('y2', d => d.target.y);
+          nodeG.attr('transform', d => `translate(${d.x},${d.y})`);
+        });
+      },
     }
   }
 </script>
