@@ -26,10 +26,9 @@ func (r *RustRunner) Ensure() error                                   { return n
 func (r *RustRunner) SetProgressbar(p *pterm.SpinnerPrinter)          { r.progressbar = p }
 func (r *RustRunner) SetConfiguration(c *configuration.Configuration) { r.Configuration = c }
 
-func (r RustRunner) DumpAST() {
-	engine.DumpFiles(
+func (r RustRunner) DumpAST() []*pb.File {
+	return engine.DumpFiles(
 		r.getFileList().Files,
-		r.Configuration,
 		r.progressbar,
 		func(path string) (*pb.File, error) { return r.Parse(path) },
 		engine.DumpOptions{Label: r.Name()},
@@ -73,6 +72,11 @@ func (r *RustRunner) getFileList() file.FileList {
 		return r.foundFiles
 	}
 	finder := file.Finder{Configuration: *r.Configuration}
+	if r.Configuration.FileDiscovery != nil {
+		if fd, ok := r.Configuration.FileDiscovery.(*file.FileDiscovery); ok {
+			finder.Discovery = fd
+		}
+	}
 	r.foundFiles = finder.Search(".rs")
 	return r.foundFiles
 }

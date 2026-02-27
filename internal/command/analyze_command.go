@@ -12,9 +12,9 @@ import (
 	"github.com/halleck45/ast-metrics/internal/cli"
 	"github.com/halleck45/ast-metrics/internal/configuration"
 	"github.com/halleck45/ast-metrics/internal/engine"
+	filefinder "github.com/halleck45/ast-metrics/internal/file"
 	pb "github.com/halleck45/ast-metrics/pb"
 	"github.com/halleck45/ast-metrics/internal/report"
-	"github.com/halleck45/ast-metrics/internal/storage"
 	"github.com/inancgumus/screen"
 	"github.com/pterm/pterm"
 	log "github.com/sirupsen/logrus"
@@ -44,10 +44,6 @@ func NewAnalyzeCommand(configuration *configuration.Configuration, outWriter *bu
 
 func (v *AnalyzeCommand) Execute() error {
 
-	// Prepare workdir
-	v.Configuration.Storage.Purge()
-	v.Configuration.Storage.Ensure()
-
 	if v.alreadyExecuted {
 		v.moonSpinner = nil
 		v.outWriter.Flush()
@@ -63,8 +59,8 @@ func (v *AnalyzeCommand) Execute() error {
 		v.moonSpinner = nil
 	}
 
-	// Convert source code to ASTs (each source code is converted to a binary protobuf file)
-	err := v.ExecuteRunnerAnalysis(v.Configuration)
+	// Parse source code into in-memory ASTs
+	parsedFiles, err := v.ExecuteRunnerAnalysis(v.Configuration)
 	if err != nil {
 		return err
 	}
@@ -73,13 +69,13 @@ func (v *AnalyzeCommand) Execute() error {
 		v.outWriter.Flush()
 	}
 
-	// Now we start the analysis of each AST file
+	// Now we start the analysis of each parsed file
 	if v.moonSpinner != nil {
 		v.moonSpinner.UpdateText("Analyzing source code...")
 	}
 
-	// Run global analysis
-	allResults := analyzer.Start(v.Configuration.Storage, nil)
+	// Run global analysis on in-memory files
+	allResults := analyzer.AnalyzeFiles(parsedFiles, nil)
 
 	// Git analysis
 	if v.moonSpinner != nil {
@@ -91,7 +87,6 @@ func (v *AnalyzeCommand) Execute() error {
 	}
 
 	// Now compare with another branch (if needed)
-	clonedConfiguration := v.Configuration
 	allResultsCloned := []*pb.File{}
 
 	if v.Configuration.CompareWith != "" {
@@ -109,19 +104,16 @@ func (v *AnalyzeCommand) Execute() error {
 			}
 		}
 
-		// create another workdir
-		clonedConfiguration.Storage = storage.NewWithName("compare")
-		clonedConfiguration.Storage.Purge()
-		clonedConfiguration.Storage.Ensure()
-
-		// execute analysis on the other branch
-		err := v.ExecuteRunnerAnalysis(clonedConfiguration)
+		// execute analysis on the other branch (reset file discovery cache)
+		clonedConfig := *v.Configuration
+		clonedConfig.FileDiscovery = nil
+		parsedCloned, err := v.ExecuteRunnerAnalysis(&clonedConfig)
 		if err != nil {
 			return err
 		}
 
 		// Run global analysis on the other branch
-		allResultsCloned = analyzer.Start(clonedConfiguration.Storage, nil)
+		allResultsCloned = analyzer.AnalyzeFiles(parsedCloned, nil)
 
 		// switch back to the original branch
 		for _, gitSummary := range v.gitSummaries {
@@ -238,7 +230,17 @@ func (v *AnalyzeCommand) Execute() error {
 	return nil
 }
 
-func (v *AnalyzeCommand) ExecuteRunnerAnalysis(config *configuration.Configuration) error {
+func (v *AnalyzeCommand) ExecuteRunnerAnalysis(config *configuration.Configuration) ([]*pb.File, error) {
+	// Precompute file discovery for all languages in a single directory walk
+	if config.FileDiscovery == nil {
+		discovery := &filefinder.FileDiscovery{}
+		finder := filefinder.Finder{Configuration: *config}
+		discovery.Precompute(finder, []string{".go", ".php", ".py", ".rs"})
+		config.FileDiscovery = discovery
+	}
+
+	var allParsed []*pb.File
+
 	for _, runner := range v.runners {
 
 		runner.SetConfiguration(config)
@@ -256,20 +258,16 @@ func (v *AnalyzeCommand) ExecuteRunnerAnalysis(config *configuration.Configurati
 		err := runner.Ensure()
 		if err != nil {
 			cli.PrintError(err.Error())
-			return err
+			return nil, err
 		}
 
-		// Dump ASTs (in parallel)
+		// Parse files (in parallel within DumpAST)
 		if v.moonSpinner != nil {
 			v.moonSpinner.UpdateText("Building AST...")
 		}
 
-		done := make(chan struct{})
-		go func() {
-			runner.DumpAST()
-			close(done)
-		}()
-		<-done
+		parsed := runner.DumpAST()
+		allParsed = append(allParsed, parsed...)
 
 		// Cleaning up
 		err = runner.Finish()
@@ -279,5 +277,5 @@ func (v *AnalyzeCommand) ExecuteRunnerAnalysis(config *configuration.Configurati
 		}
 	}
 
-	return nil
+	return allParsed, nil
 }

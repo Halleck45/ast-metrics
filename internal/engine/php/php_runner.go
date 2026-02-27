@@ -50,10 +50,11 @@ func (r PhpRunner) Finish() error {
 	return nil
 }
 
-// DumpAST dumps the AST of PHP files using engine.DumpFiles,
-func (r PhpRunner) DumpAST() {
-	engine.DumpFiles(
-		r.getFileList().Files, r.Configuration, r.progressbar,
+// DumpAST parses PHP files and returns in-memory AST objects
+func (r PhpRunner) DumpAST() []*pb.File {
+	return engine.DumpFiles(
+		r.getFileList().Files,
+		r.progressbar,
 		func(path string) (*pb.File, error) { return r.Parse(path) },
 		engine.DumpOptions{Label: r.Name()},
 	)
@@ -75,6 +76,7 @@ func (r PhpRunner) Parse(path string) (*pb.File, error) {
 
 	tree := parser.Parse(nil, src)
 	root := tree.RootNode()
+	adapter.SetRootNode(root)
 
 	v := Treesitter.NewVisitor(adapter, path, src)
 	v.Visit(root)
@@ -123,6 +125,11 @@ func (r *PhpRunner) getFileList() file.FileList {
 	}
 
 	finder := file.Finder{Configuration: *r.Configuration}
+	if r.Configuration.FileDiscovery != nil {
+		if fd, ok := r.Configuration.FileDiscovery.(*file.FileDiscovery); ok {
+			finder.Discovery = fd
+		}
+	}
 	r.foundFiles = finder.Search(".php")
 
 	return r.foundFiles

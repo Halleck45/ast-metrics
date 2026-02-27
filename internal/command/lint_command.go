@@ -45,10 +45,6 @@ func (c *LintCommand) Execute() error {
 	fmt.Print(cli.ScreenHeader("Lint"))
 	fmt.Println()
 
-	// Prepare workdir
-	c.Configuration.Storage.Purge()
-	c.Configuration.Storage.Ensure()
-
 	// test hook (used by unit tests to force a lint error)
 	if lintTestHook != nil {
 		if err := lintTestHook(); err != nil {
@@ -65,7 +61,8 @@ func (c *LintCommand) Execute() error {
 		spinner, _ = cli.NewMoonSpinner("Analyzing source code...")
 	}
 
-	// Run engines to dump ASTs
+	// Run engines to parse source files into in-memory ASTs
+	var allParsed []*pb.File
 	for _, runner := range c.runners {
 		runner.SetConfiguration(c.Configuration)
 		if !runner.IsRequired() {
@@ -77,12 +74,8 @@ func (c *LintCommand) Execute() error {
 			}
 			return err
 		}
-		done := make(chan struct{})
-		go func() {
-			runner.DumpAST()
-			close(done)
-		}()
-		<-done
+		parsed := runner.DumpAST()
+		allParsed = append(allParsed, parsed...)
 		if err := runner.Finish(); err != nil {
 			if spinner != nil {
 				spinner.Stop()
@@ -96,8 +89,8 @@ func (c *LintCommand) Execute() error {
 		spinner, _ = cli.NewMoonSpinner("Evaluating lint rules...")
 	}
 
-	// Global analysis (no UI/report)
-	allResults := analyzer.Start(c.Configuration.Storage, nil)
+	// Global analysis on in-memory files
+	allResults := analyzer.AnalyzeFiles(allParsed, nil)
 
 	if spinner != nil {
 		spinner.Stop()

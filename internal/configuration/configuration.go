@@ -7,6 +7,10 @@ import (
 	storage "github.com/halleck45/ast-metrics/internal/storage"
 )
 
+// FileDiscoveryCache is an opaque type to avoid import cycles.
+// It holds a pointer to file.FileDiscovery at runtime.
+type FileDiscoveryCache interface{}
+
 type Configuration struct {
 	// The path to the sources to analyze
 	SourcesToAnalyzePath []string `yaml:"sources"`
@@ -29,6 +33,10 @@ type Configuration struct {
 	Storage *storage.Workdir `yaml:"-"`
 
 	IsComingFromConfigFile bool `yaml:"-"`
+
+	// FileDiscovery holds a pre-computed file discovery cache (type *file.FileDiscovery).
+	// Stored as interface{} to avoid import cycles.
+	FileDiscovery FileDiscoveryCache `yaml:"-"`
 }
 
 type ConfigurationReport struct {

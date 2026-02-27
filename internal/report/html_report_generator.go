@@ -2,7 +2,6 @@ package report
 
 import (
 	"embed"
-	"encoding/json"
 	"fmt"
 	"hash/fnv"
 	"os"
@@ -27,9 +26,20 @@ var (
 	htmlContent embed.FS
 )
 
+// cachedLangData holds pre-computed JSON strings for a given language view.
+type cachedLangData struct {
+	filesJSON           string
+	risksJSON           string
+	risksByPath         map[string][]riskItemForTpl
+	nodeToCommunityJSON string
+	testQualityJSON     string
+}
+
 type HtmlReportGenerator struct {
 	// The path where the report will be generated
 	ReportPath string
+	// langCache holds pre-computed JSON per language key (built once in Generate)
+	langCache map[string]*cachedLangData
 }
 
 func NewHtmlReportGenerator(reportPath string) Reporter {
@@ -114,6 +124,54 @@ func (v *HtmlReportGenerator) Generate(files []*pb.File, projectAggregated analy
 
 	// Custom filters
 	v.RegisterFilters()
+
+	// Pre-compute JSON data once per language to avoid redundant work across pages
+	v.langCache = make(map[string]*cachedLangData)
+	langKeys := []string{"All"}
+	for lang := range projectAggregated.ByProgrammingLanguage {
+		langKeys = append(langKeys, lang)
+	}
+	for _, lang := range langKeys {
+		cd := &cachedLangData{}
+		cd.filesJSON = buildFilesJSONPruned(files, lang)
+
+		// Build risks
+		cd.risksByPath = map[string][]riskItemForTpl{}
+		ra := analyzer.NewRiskAnalyzer()
+		for _, f := range files {
+			if lang != "All" && f.ProgrammingLanguage != lang {
+				continue
+			}
+			items := ra.DetectFileRisks(f)
+			if len(items) > 0 {
+				converted := make([]riskItemForTpl, 0, len(items))
+				for _, it := range items {
+					converted = append(converted, riskItemForTpl{ID: it.ID, Title: it.Title, Severity: it.Severity, Details: it.Details})
+				}
+				cd.risksByPath[f.Path] = converted
+			}
+		}
+		cd.risksJSON = buildRisksJSON(cd.risksByPath)
+
+		// Community
+		var currentView analyzer.Aggregated
+		if lang == "All" {
+			currentView = projectAggregated.Combined
+		} else {
+			currentView = projectAggregated.ByProgrammingLanguage[lang]
+		}
+		cd.nodeToCommunityJSON = "{}"
+		if currentView.Community != nil && len(currentView.Community.NodeToCommunity) > 0 {
+			cd.nodeToCommunityJSON = buildNodeToCommunityJSON(currentView.Community.NodeToCommunity)
+		}
+
+		cd.testQualityJSON = "{}"
+		if currentView.TestQuality != nil {
+			cd.testQualityJSON = analyzer.BuildTestQualityJSON(currentView.TestQuality)
+		}
+
+		v.langCache[lang] = cd
+	}
 
 	// Overview
 	v.GenerateLanguagePage("index.html", "All", projectAggregated.Combined, files, projectAggregated)
@@ -226,25 +284,22 @@ func buildFilesJSONPruned(files []*pb.File, language string) string {
 		cf := proto.Clone(f).(*pb.File)
 		pruneFile(cf)
 
-		var payload map[string]interface{}
 		data, err := mo.Marshal(cf)
-		if err == nil {
-			err = json.Unmarshal(data, &payload)
-		}
 		if err != nil {
-			payload = map[string]interface{}{}
+			data = []byte("{}")
 		}
-		payload["pathHash"] = hashPathForExplorer(cf.GetPath())
 
-		encoded, err := json.Marshal(payload)
-		if err != nil {
-			encoded = []byte("{}")
+		// Inject pathHash by string manipulation to avoid Unmarshal/re-Marshal cycle
+		pathHash := hashPathForExplorer(cf.GetPath())
+		jsonStr := string(data)
+		if len(jsonStr) > 1 && jsonStr[len(jsonStr)-1] == '}' {
+			jsonStr = jsonStr[:len(jsonStr)-1] + ",\"pathHash\":\"" + pathHash + "\"}"
 		}
 
 		if !first {
 			b.WriteString(",")
 		}
-		b.Write(encoded)
+		b.WriteString(jsonStr)
 		first = false
 	}
 	b.WriteString("]")
@@ -421,34 +476,10 @@ func (v *HtmlReportGenerator) GenerateLanguagePage(template string, language str
 	}
 	// Render it, passing projectAggregated and files as context
 	datetime := time.Now().Format("2006-01-02 15:04")
-	// build risks map for explorer and other pages that may use it
-	risksByPath := map[string][]riskItemForTpl{}
-	ra := analyzer.NewRiskAnalyzer()
-	for _, f := range files {
-		if language != "All" && f.ProgrammingLanguage != language {
-			continue
-		}
-		items := ra.DetectFileRisks(f)
-		if len(items) > 0 {
-			converted := make([]riskItemForTpl, 0, len(items))
-			for _, it := range items {
-				converted = append(converted, riskItemForTpl{ID: it.ID, Title: it.Title, Severity: it.Severity, Details: it.Details})
-			}
-			risksByPath[f.Path] = converted
-		}
-	}
 
-	filesJSON := buildFilesJSONPruned(files, language)
-	risksJSON := buildRisksJSON(risksByPath)
-	nodeToCommunityJSON := "{}"
-	if currentView.Community != nil && len(currentView.Community.NodeToCommunity) > 0 {
-		nodeToCommunityJSON = buildNodeToCommunityJSON(currentView.Community.NodeToCommunity)
-	}
-	testQualityJSON := "{}"
-	if currentView.TestQuality != nil {
-		testQualityJSON = analyzer.BuildTestQualityJSON(currentView.TestQuality)
-	}
-	out, err := tpl.Execute(pongo2.Context{"datetime": datetime, "page": template, "currentLanguage": language, "currentView": currentView, "projectAggregated": projectAggregated, "files": files, "risksByPath": risksByPath, "filesJSON": filesJSON, "risksJSON": risksJSON, "nodeToCommunityJSON": nodeToCommunityJSON, "testQualityJSON": testQualityJSON})
+	// Use pre-computed cached data for this language
+	cd := v.langCache[language]
+	out, err := tpl.Execute(pongo2.Context{"datetime": datetime, "page": template, "currentLanguage": language, "currentView": currentView, "projectAggregated": projectAggregated, "files": files, "risksByPath": cd.risksByPath, "filesJSON": cd.filesJSON, "risksJSON": cd.risksJSON, "nodeToCommunityJSON": cd.nodeToCommunityJSON, "testQualityJSON": cd.testQualityJSON})
 	if err != nil {
 		log.Error(err)
 		return err

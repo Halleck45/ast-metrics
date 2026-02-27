@@ -2,13 +2,10 @@ package engine
 
 import (
 	"fmt"
-	"os"
 	"runtime"
 	"sync"
 
-	"github.com/halleck45/ast-metrics/internal/configuration"
 	pb "github.com/halleck45/ast-metrics/pb"
-	storage "github.com/halleck45/ast-metrics/internal/storage"
 	"github.com/pterm/pterm"
 )
 
@@ -22,13 +19,12 @@ type DumpOptions struct {
 
 func DumpFiles(
 	files []string,
-	cfg *configuration.Configuration,
 	progress *pterm.SpinnerPrinter,
 	parse func(path string) (*pb.File, error),
 	opts DumpOptions,
-) {
+) []*pb.File {
 	if len(files) == 0 {
-		return
+		return nil
 	}
 	if opts.Concurrency <= 0 {
 		opts.Concurrency = runtime.NumCPU()
@@ -40,47 +36,39 @@ func DumpFiles(
 	done := 0
 	var mu sync.Mutex
 
+	results := make([]*pb.File, 0, total)
+
 	if opts.ProgressText == nil {
 		opts.ProgressText = func(done, total int, _ string) string {
 			if opts.Label == "" {
-				return fmt.Sprintf("Dumping AST (%d/%d)", done, total)
+				return fmt.Sprintf("Parsing AST (%d/%d)", done, total)
 			}
-			return fmt.Sprintf("Dumping %s files (%d/%d)", opts.Label, done, total)
+			return fmt.Sprintf("Parsing %s files (%d/%d)", opts.Label, done, total)
 		}
 	}
 
 	worker := func() {
 		for path := range jobs {
-			func(path string) {
-				defer wg.Done()
+			if opts.ProgressText != nil && progress != nil {
+				mu.Lock()
+				done++
+				progress.UpdateText(opts.ProgressText(done, total, path))
+				mu.Unlock()
+			}
 
-				if opts.ProgressText != nil && progress != nil {
-					mu.Lock()
-					done++
-					progress.UpdateText(opts.ProgressText(done, total, path))
-					mu.Unlock()
-				}
+			if opts.BeforeParse != nil {
+				opts.BeforeParse(path)
+			}
 
-				if opts.BeforeParse != nil {
-					opts.BeforeParse(path)
+			if file, err := parse(path); err == nil && file != nil {
+				if opts.AfterParse != nil {
+					opts.AfterParse(file)
 				}
-
-				hash, err := storage.GetFileHash(path)
-				if err != nil {
-					return
-				}
-				bin := cfg.Storage.AstDirectory() + string(os.PathSeparator) + hash + ".bin"
-				if _, err := os.Stat(bin); err == nil {
-					return // ok: Done() déjà garanti par defer
-				}
-				if file, err := parse(path); err == nil && file != nil {
-					file.Checksum = hash
-					_ = DumpProtobuf(file, bin)
-					if opts.AfterParse != nil {
-						opts.AfterParse(file)
-					}
-				}
-			}(path)
+				mu.Lock()
+				results = append(results, file)
+				mu.Unlock()
+			}
+			wg.Done()
 		}
 	}
 
@@ -94,6 +82,7 @@ func DumpFiles(
 	close(jobs)
 	wg.Wait()
 	if progress != nil {
-		progress.Info("AST dumped")
+		progress.Info("AST parsed")
 	}
+	return results
 }

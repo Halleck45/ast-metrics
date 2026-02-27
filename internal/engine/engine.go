@@ -13,8 +13,8 @@ type Engine interface {
 	// Prepare the engine for the analysis. For example, in order to prepare caches
 	Ensure() error
 
-	// First step of analysis. Parse all files, and generate protobuff compatible AST files
-	DumpAST()
+	// First step of analysis. Parse all files and return in-memory AST objects
+	DumpAST() []*pb.File
 
 	// Cleanups the engine. For example, to remove caches
 	Finish() error

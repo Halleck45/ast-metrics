@@ -6,8 +6,7 @@ import (
 	"path/filepath"
 
 	"github.com/halleck45/ast-metrics/internal/configuration"
-	storage "github.com/halleck45/ast-metrics/internal/storage"
-	"google.golang.org/protobuf/proto"
+	pb "github.com/halleck45/ast-metrics/pb"
 
 	sitter "github.com/smacker/go-tree-sitter"
 )
@@ -18,10 +17,10 @@ type Runner struct {
 	UpdateText    func(msg string) // optionnel
 }
 
-func (r Runner) ParseAndStore(path string) error {
+func (r Runner) ParseFile(path string) (*pb.File, error) {
 	src, err := os.ReadFile(path)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	parser := sitter.NewParser()
@@ -30,28 +29,26 @@ func (r Runner) ParseAndStore(path string) error {
 	tree := parser.Parse(nil, src)
 	root := tree.RootNode()
 
+	// Share the parsed tree with the adapter to avoid re-parsing
+	if ta, ok := r.Adapter.(interface{ SetRootNode(*sitter.Node) }); ok {
+		ta.SetRootNode(root)
+	}
+
 	v := NewVisitor(r.Adapter, path, src)
 	v.Visit(root)
-	file := v.Result()
-
-	hash, err := storage.GetFileHash(path)
-	if err != nil {
-		return err
-	}
-	bin := r.Configuration.Storage.AstDirectory() + string(os.PathSeparator) + hash + ".bin"
-	data, err := proto.Marshal(file)
-	if err != nil {
-		return err
-	}
-	return os.WriteFile(bin, data, 0o644)
+	return v.Result(), nil
 }
 
-func (r Runner) WalkAndProcess(files []string) {
+func (r Runner) WalkAndProcess(files []string) []*pb.File {
 	total := len(files)
+	results := make([]*pb.File, 0, total)
 	for i, f := range files {
 		if r.UpdateText != nil {
 			r.UpdateText(fmt.Sprintf("Tree-sitter: %s [%d/%d]", filepath.Base(f), i+1, total))
 		}
-		_ = r.ParseAndStore(f) // log à l’appelant si besoin
+		if file, err := r.ParseFile(f); err == nil && file != nil {
+			results = append(results, file)
+		}
 	}
+	return results
 }
