@@ -14,10 +14,8 @@ func TestNewInitConfigurationCommand(t *testing.T) {
 
 func TestInitConfigurationCommand_Execute(t *testing.T) {
 	// Change to temp directory to avoid creating config file in project
-	originalDir, _ := os.Getwd()
 	tmpDir := t.TempDir()
-	os.Chdir(tmpDir)
-	defer os.Chdir(originalDir)
+	t.Chdir(tmpDir)
 
 	cmd := NewInitConfigurationCommand()
 	err := cmd.Execute()

@@ -10,11 +10,7 @@ import (
 
 func TestRulesetAddCommand_Execute_AddsVolumeToConfig(t *testing.T) {
 	tmp := t.TempDir()
-	cwd, _ := os.Getwd()
-	defer os.Chdir(cwd)
-	if err := os.Chdir(tmp); err != nil {
-		t.Fatalf("chdir: %v", err)
-	}
+	t.Chdir(tmp)
 
 	// Ensure no config file exists; command should create default then modify it
 	cmd := NewRulesetAddCommand("volume")
