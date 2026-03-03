@@ -30,6 +30,55 @@ func TestConfigurationAcceptsSourcesToAnalyzePath(t *testing.T) {
 	}
 }
 
+func TestGetExtensionsForLanguage(t *testing.T) {
+	t.Run("returns default extension when no extras configured", func(t *testing.T) {
+		config := NewConfiguration()
+		exts := config.GetExtensionsForLanguage("php")
+		if len(exts) != 1 || exts[0] != ".php" {
+			t.Errorf("Expected [.php], got %v", exts)
+		}
+	})
+
+	t.Run("merges extra extensions with default", func(t *testing.T) {
+		config := NewConfiguration()
+		config.Extensions = map[string][]string{
+			"php": {".inc", ".module"},
+		}
+		exts := config.GetExtensionsForLanguage("php")
+		if len(exts) != 3 {
+			t.Errorf("Expected 3 extensions, got %d: %v", len(exts), exts)
+		}
+	})
+
+	t.Run("adds dot prefix if missing", func(t *testing.T) {
+		config := NewConfiguration()
+		config.Extensions = map[string][]string{
+			"php": {"inc"},
+		}
+		exts := config.GetExtensionsForLanguage("php")
+		found := false
+		for _, e := range exts {
+			if e == ".inc" {
+				found = true
+			}
+		}
+		if !found {
+			t.Errorf("Expected .inc in extensions, got %v", exts)
+		}
+	})
+
+	t.Run("deduplicates extensions", func(t *testing.T) {
+		config := NewConfiguration()
+		config.Extensions = map[string][]string{
+			"php": {".php", ".inc"},
+		}
+		exts := config.GetExtensionsForLanguage("php")
+		if len(exts) != 2 {
+			t.Errorf("Expected 2 unique extensions, got %d: %v", len(exts), exts)
+		}
+	})
+}
+
 func TestConfigurationAcceptsExcludePatterns(t *testing.T) {
 
 	configuration := NewConfiguration()

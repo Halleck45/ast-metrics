@@ -130,7 +130,12 @@ func (r *PhpRunner) getFileList() file.FileList {
 			finder.Discovery = fd
 		}
 	}
-	r.foundFiles = finder.Search(".php")
+	extensions := r.Configuration.GetExtensionsForLanguage("php")
+	var lists []file.FileList
+	for _, ext := range extensions {
+		lists = append(lists, finder.Search(ext))
+	}
+	r.foundFiles = file.MergeFileLists(lists...)
 
 	return r.foundFiles
 }

@@ -186,6 +186,17 @@ func (r Finder) SearchMultiple(extensions []string) map[string]FileList {
 	return results
 }
 
+func MergeFileLists(lists ...FileList) FileList {
+	result := FileList{Files: []string{}, FilesByDirectory: map[string][]string{}}
+	for _, fl := range lists {
+		result.Files = append(result.Files, fl.Files...)
+		for dir, files := range fl.FilesByDirectory {
+			result.FilesByDirectory[dir] = append(result.FilesByDirectory[dir], files...)
+		}
+	}
+	return result
+}
+
 func isExcluded(path string, compiledExcludes []*regexp.Regexp) bool {
 	for _, re := range compiledExcludes {
 		if re.MatchString(path) {

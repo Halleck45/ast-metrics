@@ -96,6 +96,10 @@ exclude:
   - /vendor/
   - /node_modules/
 
+# Extra file extensions per language (added to built-in defaults)
+# extensions:
+#   php: [".inc", ".module", ".install", ".theme"]
+
 # Reports to generate
 reports:
   html: ./build/report

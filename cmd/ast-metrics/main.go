@@ -6,6 +6,7 @@ import (
 	"os"
 	"runtime"
 	"runtime/pprof"
+	"strings"
 
 	"github.com/halleck45/ast-metrics/internal/cli"
 	"github.com/halleck45/ast-metrics/internal/command"
@@ -200,6 +201,27 @@ func main() {
 						Usage:    "Generate a profiling reports into files ast-metrics.cpu and ast-metrics.mem",
 						Category: "Global options",
 					},
+					// Extra file extensions per language
+					&cliV2.StringFlag{
+						Name:     "php-extensions",
+						Usage:    "Extra file extensions for PHP (comma-separated, e.g. .inc,.module)",
+						Category: "File selection",
+					},
+					&cliV2.StringFlag{
+						Name:     "go-extensions",
+						Usage:    "Extra file extensions for Go (comma-separated)",
+						Category: "File selection",
+					},
+					&cliV2.StringFlag{
+						Name:     "python-extensions",
+						Usage:    "Extra file extensions for Python (comma-separated)",
+						Category: "File selection",
+					},
+					&cliV2.StringFlag{
+						Name:     "rust-extensions",
+						Usage:    "Extra file extensions for Rust (comma-separated)",
+						Category: "File selection",
+					},
 				},
 				Action: func(cCtx *cliV2.Context) error {
 
@@ -292,6 +314,9 @@ func main() {
 							config.SetExcludePatterns(excludePatterns)
 						}
 					}
+
+					// Merge extra file extensions from CLI flags into config
+					mergeExtensionFlags(cCtx, config)
 
 					// Reports
 					if cCtx.String("report-html") != "" {
@@ -455,6 +480,10 @@ func main() {
 					&cliV2.StringSliceFlag{Name: "exclude", Usage: "Regular expression to exclude files from analysis", Category: "File selection"},
 					&cliV2.StringFlag{Name: "config", Usage: "Load configuration from file", Category: "Configuration"},
 					&cliV2.StringFlag{Name: "report-sarif", Usage: "Write lint violations as SARIF 2.1.0 to the given file", Category: "Report"},
+					&cliV2.StringFlag{Name: "php-extensions", Usage: "Extra file extensions for PHP (comma-separated, e.g. .inc,.module)", Category: "File selection"},
+					&cliV2.StringFlag{Name: "go-extensions", Usage: "Extra file extensions for Go (comma-separated)", Category: "File selection"},
+					&cliV2.StringFlag{Name: "python-extensions", Usage: "Extra file extensions for Python (comma-separated)", Category: "File selection"},
+					&cliV2.StringFlag{Name: "rust-extensions", Usage: "Extra file extensions for Rust (comma-separated)", Category: "File selection"},
 				},
 				Action: func(cCtx *cliV2.Context) error {
 					if cCtx.Bool("verbose") {
@@ -494,6 +523,8 @@ func main() {
 							cfg.SetExcludePatterns(ex)
 						}
 					}
+					// Merge extra file extensions from CLI flags into config
+					mergeExtensionFlags(cCtx, cfg)
 					// No report generation here; just lint
 					cmd := command.NewLintCommand(cfg, outWriter, runners)
 					// pass verbose to command
@@ -522,6 +553,10 @@ func main() {
 					&cliV2.StringFlag{Name: "report-sarif", Usage: "Generate a report in SARIF format (2.1.0)", Category: "Report"},
 					&cliV2.StringFlag{Name: "config", Usage: "Load configuration from file", Category: "Configuration"},
 					&cliV2.StringFlag{Name: "compare-with", Usage: "Compare with another Git branch or commit", Category: "Global options"},
+					&cliV2.StringFlag{Name: "php-extensions", Usage: "Extra file extensions for PHP (comma-separated, e.g. .inc,.module)", Category: "File selection"},
+					&cliV2.StringFlag{Name: "go-extensions", Usage: "Extra file extensions for Go (comma-separated)", Category: "File selection"},
+					&cliV2.StringFlag{Name: "python-extensions", Usage: "Extra file extensions for Python (comma-separated)", Category: "File selection"},
+					&cliV2.StringFlag{Name: "rust-extensions", Usage: "Extra file extensions for Rust (comma-separated)", Category: "File selection"},
 				},
 				Action: func(cCtx *cliV2.Context) error {
 					if cCtx.Bool("verbose") {
@@ -559,6 +594,8 @@ func main() {
 							cfg.SetExcludePatterns(excludePatterns)
 						}
 					}
+					// Merge extra file extensions from CLI flags into config
+					mergeExtensionFlags(cCtx, cfg)
 					// Reports from flags
 					if cCtx.String("report-html") != "" {
 						cfg.Reports.Html = cCtx.String("report-html")
@@ -672,5 +709,24 @@ func main() {
 	if err := app.Run(os.Args); err != nil {
 		logrus.Error(err)
                 os.Exit(1)
+	}
+}
+
+func mergeExtensionFlags(cCtx *cliV2.Context, config *configuration.Configuration) {
+	for _, pair := range []struct{ flag, lang string }{
+		{"php-extensions", "php"}, {"go-extensions", "go"},
+		{"python-extensions", "python"}, {"rust-extensions", "rust"},
+	} {
+		if v := cCtx.String(pair.flag); v != "" {
+			if config.Extensions == nil {
+				config.Extensions = map[string][]string{}
+			}
+			for _, ext := range strings.Split(v, ",") {
+				ext = strings.TrimSpace(ext)
+				if ext != "" {
+					config.Extensions[pair.lang] = append(config.Extensions[pair.lang], ext)
+				}
+			}
+		}
 	}
 }

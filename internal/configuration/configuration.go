@@ -3,6 +3,7 @@ package configuration
 import (
 	"os"
 	"path/filepath"
+	"strings"
 
 	storage "github.com/halleck45/ast-metrics/internal/storage"
 )
@@ -28,6 +29,9 @@ type Configuration struct {
 
 	// if not empty, compare the current analysis with the one in this branch / commit
 	CompareWith string `yaml:"comparewith,omitempty"`
+
+	// Extra file extensions per language (e.g. {"php": [".inc", ".module"]})
+	Extensions map[string][]string `yaml:"extensions,omitempty"`
 
 	// Location of cache files
 	Storage *storage.Workdir `yaml:"-"`
@@ -194,4 +198,33 @@ func (c *Configuration) SetExcludePatterns(patterns []string) {
 	// Ensure patterns are valid regular expressions
 	// @todo
 	(*c).ExcludePatterns = patterns
+}
+
+var defaultExtensions = map[string]string{
+	"php": ".php", "go": ".go", "python": ".py", "rust": ".rs",
+}
+
+func (c *Configuration) GetExtensionsForLanguage(lang string) []string {
+	base := []string{defaultExtensions[lang]}
+	if c.Extensions != nil {
+		for _, ext := range c.Extensions[lang] {
+			if !strings.HasPrefix(ext, ".") {
+				ext = "." + ext
+			}
+			base = append(base, ext)
+		}
+	}
+	return uniqueStrings(base)
+}
+
+func uniqueStrings(s []string) []string {
+	seen := make(map[string]bool, len(s))
+	result := make([]string, 0, len(s))
+	for _, v := range s {
+		if !seen[v] {
+			seen[v] = true
+			result = append(result, v)
+		}
+	}
+	return result
 }

@@ -55,6 +55,33 @@ func TestFinder_Search(t *testing.T) {
 	})
 }
 
+func TestMergeFileLists(t *testing.T) {
+	t.Run("merges multiple file lists", func(t *testing.T) {
+		list1 := FileList{
+			Files:            []string{"a.php", "b.php"},
+			FilesByDirectory: map[string][]string{"/src": {"a.php", "b.php"}},
+		}
+		list2 := FileList{
+			Files:            []string{"c.inc"},
+			FilesByDirectory: map[string][]string{"/src": {"c.inc"}},
+		}
+		merged := MergeFileLists(list1, list2)
+		if len(merged.Files) != 3 {
+			t.Errorf("Expected 3 files, got %d", len(merged.Files))
+		}
+		if len(merged.FilesByDirectory["/src"]) != 3 {
+			t.Errorf("Expected 3 files in /src, got %d", len(merged.FilesByDirectory["/src"]))
+		}
+	})
+
+	t.Run("handles empty lists", func(t *testing.T) {
+		merged := MergeFileLists()
+		if len(merged.Files) != 0 {
+			t.Errorf("Expected 0 files, got %d", len(merged.Files))
+		}
+	})
+}
+
 func TestFinder_SearchMultiple(t *testing.T) {
 	t.Run("should find files of multiple extensions in a single walk", func(t *testing.T) {
 		base := t.TempDir()
