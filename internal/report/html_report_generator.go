@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"hash/fnv"
 	"os"
+	"path"
 	"sort"
 	"strings"
 	"time"
@@ -34,6 +35,8 @@ type cachedLangData struct {
 	nodeToCommunityJSON string
 	testQualityJSON     string
 	fileDepsJSON        string
+	folderDepsJSON      string
+	depFileCount        int
 }
 
 type HtmlReportGenerator struct {
@@ -173,6 +176,19 @@ func (v *HtmlReportGenerator) Generate(files []*pb.File, projectAggregated analy
 		}
 
 		cd.fileDepsJSON = buildFileDepsJSON(files, lang)
+
+		// Count files for this language
+		fileCount := 0
+		for _, f := range files {
+			if lang != "All" && f.GetProgrammingLanguage() != lang {
+				continue
+			}
+			fileCount++
+		}
+		cd.depFileCount = fileCount
+
+		// Build folder-level deps for dependency graph folder view
+		cd.folderDepsJSON = buildFolderDepsJSON(files, lang)
 
 		v.langCache[lang] = cd
 	}
@@ -641,6 +657,217 @@ func buildFileDepsJSON(files []*pb.File, language string) string {
 	return b.String()
 }
 
+// buildFolderDepsJSON aggregates file-level dependencies to folder-level.
+// Output: {"folders":{"dir":{"efferent":[{"path":"...","count":N}],"afferent":[...],"fileCount":N}},"filesByFolder":{"dir":["file1","file2"]}}
+func buildFolderDepsJSON(files []*pb.File, language string) string {
+	// Reuse the same class-to-file resolution logic from buildFileDepsJSON
+	classToFile := map[string]string{}
+	for _, f := range files {
+		if language != "All" && f.GetProgrammingLanguage() != language {
+			continue
+		}
+		if f.Stmts == nil {
+			continue
+		}
+		classes := engine.GetClassesInFile(f)
+		for _, c := range classes {
+			if c.Name == nil {
+				continue
+			}
+			if q := c.Name.GetQualified(); q != "" {
+				classToFile[q] = f.Path
+			}
+			if s := c.Name.GetShort(); s != "" {
+				if _, exists := classToFile[s]; !exists {
+					classToFile[s] = f.Path
+				}
+			}
+		}
+	}
+
+	// Build file-level efferent edges
+	type edge struct {
+		src string
+		dst string
+	}
+	var edges []edge
+	filesByFolder := map[string]map[string]struct{}{}
+
+	for _, f := range files {
+		if language != "All" && f.GetProgrammingLanguage() != language {
+			continue
+		}
+		if f.Stmts == nil {
+			continue
+		}
+
+		srcDir := path.Dir(f.Path)
+		if filesByFolder[srcDir] == nil {
+			filesByFolder[srcDir] = map[string]struct{}{}
+		}
+		filesByFolder[srcDir][f.Path] = struct{}{}
+
+		deps := f.Stmts.GetStmtExternalDependencies()
+		for _, ns := range f.Stmts.GetStmtNamespace() {
+			if ns != nil && ns.Stmts != nil {
+				deps = append(deps, ns.Stmts.GetStmtExternalDependencies()...)
+			}
+		}
+
+		for _, dep := range deps {
+			if dep == nil {
+				continue
+			}
+			targetFile := ""
+			if ns := dep.GetNamespace(); ns != "" {
+				if fp, ok := classToFile[ns]; ok {
+					targetFile = fp
+				}
+			}
+			if targetFile == "" {
+				if cn := dep.GetClassName(); cn != "" {
+					if fp, ok := classToFile[cn]; ok {
+						targetFile = fp
+					}
+				}
+			}
+			if targetFile == "" || targetFile == f.Path {
+				continue
+			}
+			edges = append(edges, edge{src: f.Path, dst: targetFile})
+		}
+	}
+
+	// Aggregate to folder level
+	type folderEdge struct {
+		count int
+	}
+	folderEfferent := map[string]map[string]*folderEdge{} // srcDir -> dstDir -> count
+	folderAfferent := map[string]map[string]*folderEdge{} // dstDir -> srcDir -> count
+	folderFileCount := map[string]int{}
+
+	for dir, fset := range filesByFolder {
+		folderFileCount[dir] = len(fset)
+	}
+
+	for _, e := range edges {
+		srcDir := path.Dir(e.src)
+		dstDir := path.Dir(e.dst)
+		if srcDir == dstDir {
+			continue // skip intra-folder deps
+		}
+		if folderEfferent[srcDir] == nil {
+			folderEfferent[srcDir] = map[string]*folderEdge{}
+		}
+		if folderEfferent[srcDir][dstDir] == nil {
+			folderEfferent[srcDir][dstDir] = &folderEdge{}
+		}
+		folderEfferent[srcDir][dstDir].count++
+
+		if folderAfferent[dstDir] == nil {
+			folderAfferent[dstDir] = map[string]*folderEdge{}
+		}
+		if folderAfferent[dstDir][srcDir] == nil {
+			folderAfferent[dstDir][srcDir] = &folderEdge{}
+		}
+		folderAfferent[dstDir][srcDir].count++
+	}
+
+	// Collect all folders with deps
+	allFolders := map[string]struct{}{}
+	for k := range folderEfferent {
+		allFolders[k] = struct{}{}
+	}
+	for k := range folderAfferent {
+		allFolders[k] = struct{}{}
+	}
+
+	if len(allFolders) == 0 {
+		return ""
+	}
+
+	esc := func(s string) string {
+		return strings.ReplaceAll(strings.ReplaceAll(s, "\\", "\\\\"), "\"", "\\\"")
+	}
+
+	var b strings.Builder
+	b.WriteString("{\"folders\":{")
+	first := true
+	for dir := range allFolders {
+		if !first {
+			b.WriteString(",")
+		}
+		first = false
+		b.WriteString("\"")
+		b.WriteString(esc(dir))
+		b.WriteString("\":{\"efferent\":[")
+		ei := 0
+		if eff, ok := folderEfferent[dir]; ok {
+			for target, fe := range eff {
+				if ei > 0 {
+					b.WriteString(",")
+				}
+				b.WriteString("{\"path\":\"")
+				b.WriteString(esc(target))
+				b.WriteString("\",\"count\":")
+				b.WriteString(fmt.Sprintf("%d", fe.count))
+				b.WriteString("}")
+				ei++
+			}
+		}
+		b.WriteString("],\"afferent\":[")
+		ai := 0
+		if aff, ok := folderAfferent[dir]; ok {
+			for source, fe := range aff {
+				if ai > 0 {
+					b.WriteString(",")
+				}
+				b.WriteString("{\"path\":\"")
+				b.WriteString(esc(source))
+				b.WriteString("\",\"count\":")
+				b.WriteString(fmt.Sprintf("%d", fe.count))
+				b.WriteString("}")
+				ai++
+			}
+		}
+		b.WriteString("],\"fileCount\":")
+		fc := folderFileCount[dir]
+		if fc == 0 {
+			fc = 1
+		}
+		b.WriteString(fmt.Sprintf("%d", fc))
+		b.WriteString("}")
+	}
+	b.WriteString("},\"filesByFolder\":{")
+	first = true
+	for dir := range allFolders {
+		fset := filesByFolder[dir]
+		if len(fset) == 0 {
+			continue
+		}
+		if !first {
+			b.WriteString(",")
+		}
+		first = false
+		b.WriteString("\"")
+		b.WriteString(esc(dir))
+		b.WriteString("\":[")
+		fi := 0
+		for fp := range fset {
+			if fi > 0 {
+				b.WriteString(",")
+			}
+			b.WriteString("\"")
+			b.WriteString(esc(fp))
+			b.WriteString("\"")
+			fi++
+		}
+		b.WriteString("]")
+	}
+	b.WriteString("}}")
+	return b.String()
+}
+
 func (v *HtmlReportGenerator) GenerateLanguagePage(template string, language string, currentView analyzer.Aggregated, files []*pb.File, projectAggregated analyzer.ProjectAggregated) error {
 
 	// Compile the index.html template
@@ -654,7 +881,7 @@ func (v *HtmlReportGenerator) GenerateLanguagePage(template string, language str
 
 	// Use pre-computed cached data for this language
 	cd := v.langCache[language]
-	out, err := tpl.Execute(pongo2.Context{"datetime": datetime, "page": template, "currentLanguage": language, "currentView": currentView, "projectAggregated": projectAggregated, "files": files, "risksByPath": cd.risksByPath, "filesJSON": cd.filesJSON, "risksJSON": cd.risksJSON, "nodeToCommunityJSON": cd.nodeToCommunityJSON, "testQualityJSON": cd.testQualityJSON, "fileDepsJSON": cd.fileDepsJSON})
+	out, err := tpl.Execute(pongo2.Context{"datetime": datetime, "page": template, "currentLanguage": language, "currentView": currentView, "projectAggregated": projectAggregated, "files": files, "risksByPath": cd.risksByPath, "filesJSON": cd.filesJSON, "risksJSON": cd.risksJSON, "nodeToCommunityJSON": cd.nodeToCommunityJSON, "testQualityJSON": cd.testQualityJSON, "fileDepsJSON": cd.fileDepsJSON, "folderDepsJSON": cd.folderDepsJSON, "depFileCount": cd.depFileCount})
 	if err != nil {
 		log.Error(err)
 		return err

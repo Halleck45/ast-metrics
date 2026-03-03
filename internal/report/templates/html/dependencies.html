@@ -43,24 +43,17 @@
         animation: fadeIn 0.5s ease-out backwards;
     }
 
-    #dep-graph-svg {
+    #dep-graph-wrapper {
+        background: white;
+    }
+    #dep-graph-canvas {
         width: 100%;
         min-height: 600px;
         cursor: grab;
+        background: white;
     }
-    #dep-graph-svg:active {
+    #dep-graph-canvas:active {
         cursor: grabbing;
-    }
-    .dep-link {
-        stroke: #94a3b8;
-        stroke-opacity: 0.5;
-        fill: none;
-    }
-    .dep-node-label {
-        font-size: 10px;
-        fill: #334155;
-        pointer-events: none;
-        text-anchor: middle;
     }
     .dep-tooltip {
         position: fixed;
@@ -110,6 +103,8 @@
 <!-- end language tabs -->
 
 <script id="dep-data" type="application/json">{{ fileDepsJSON|safe }}</script>
+<script id="dep-folder-data" type="application/json">{{ folderDepsJSON|safe }}</script>
+<script id="dep-file-count" type="application/json">{{ depFileCount }}</script>
 
 <div id="dep-empty" class="hidden text-center py-16 text-gray-500">
     <svg xmlns="http://www.w3.org/2000/svg" class="mx-auto h-16 w-16 mb-4 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -149,9 +144,44 @@
         </div>
     </div>
 
+    <!-- View mode toggle -->
+    <div id="dep-view-toggle" class="flex flex-wrap items-center gap-3 mb-4 text-xs font-medium text-gray-600">
+        <span class="text-gray-400">View:</span>
+        <label class="flex items-center gap-1.5 cursor-pointer bg-gray-50 px-3 py-1.5 rounded-lg hover:bg-gray-100 transition-colors">
+            <input type="radio" name="dep-view" value="files" class="w-3.5 h-3.5 text-blue-600">
+            <span>By file</span>
+        </label>
+        <label id="dep-view-folder-label" class="flex items-center gap-1.5 cursor-pointer bg-gray-50 px-3 py-1.5 rounded-lg hover:bg-gray-100 transition-colors">
+            <input type="radio" name="dep-view" value="folders" class="w-3.5 h-3.5 text-blue-600">
+            <span>By folder</span>
+        </label>
+    </div>
+
+    <!-- Breadcrumb for drill-down -->
+    <div id="dep-breadcrumb" class="hidden mb-4 flex items-center gap-2 text-sm text-gray-600">
+        <a href="#" id="dep-breadcrumb-root" class="text-blue-600 hover:underline font-medium">All Folders</a>
+        <span class="text-gray-400">&rsaquo;</span>
+        <span id="dep-breadcrumb-current" class="font-medium text-gray-800"></span>
+    </div>
+
     <!-- Graph container -->
-    <div class="dashboard-card p-2 animate-fade-in-up" style="animation-delay:.4s">
-        <svg id="dep-graph-svg"></svg>
+    <div id="dep-graph-wrapper" class="dashboard-card p-2 animate-fade-in-up" style="animation-delay:.4s;position:relative;background:white;">
+        <div id="dep-graph-canvas" style="width:100%;min-height:600px;"></div>
+        <!-- Loading skeleton -->
+        <div id="dep-graph-loading" class="absolute inset-0 flex flex-col items-center justify-center bg-white" style="z-index:10;border-radius:16px;">
+            <div class="relative" style="width:160px;height:160px;">
+                <div style="position:absolute;inset:0;border-radius:50%;border:3px solid #e2e8f0;"></div>
+                <div style="position:absolute;inset:0;border-radius:50%;border:3px solid transparent;border-top-color:#3b82f6;animation:dep-spin 0.8s linear infinite;"></div>
+                <svg viewBox="0 0 100 100" style="position:absolute;inset:15%;width:70%;height:70%;opacity:0.15;">
+                    <circle cx="30" cy="30" r="8" fill="#94a3b8"/><circle cx="70" cy="25" r="6" fill="#94a3b8"/><circle cx="50" cy="65" r="10" fill="#94a3b8"/><circle cx="20" cy="70" r="5" fill="#94a3b8"/><circle cx="80" cy="60" r="7" fill="#94a3b8"/>
+                    <line x1="30" y1="30" x2="70" y2="25" stroke="#cbd5e1" stroke-width="1.5"/><line x1="30" y1="30" x2="50" y2="65" stroke="#cbd5e1" stroke-width="1.5"/><line x1="70" y1="25" x2="50" y2="65" stroke="#cbd5e1" stroke-width="1.5"/><line x1="50" y1="65" x2="80" y2="60" stroke="#cbd5e1" stroke-width="1.5"/><line x1="20" y1="70" x2="50" y2="65" stroke="#cbd5e1" stroke-width="1.5"/>
+                </svg>
+            </div>
+            <p class="mt-4 text-sm text-gray-400 font-medium">Building dependency graph...</p>
+        </div>
+        <style>
+            @keyframes dep-spin { to { transform: rotate(360deg); } }
+        </style>
     </div>
 </div>
 
@@ -162,228 +192,625 @@
 {% block javascripts %}
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    const raw = document.getElementById('dep-data').textContent;
-    let deps;
-    try { deps = JSON.parse(raw); } catch(e) { deps = {}; }
-
-    const fileKeys = Object.keys(deps);
-    if (fileKeys.length === 0) {
-        document.getElementById('dep-empty').classList.remove('hidden');
-        return;
+    function waitForLibs(cb) {
+        if (window.d3 && typeof d3.forceSimulation === 'function' && window.PIXI) { cb(); return; }
+        var iv = setInterval(function() {
+            if (window.d3 && typeof d3.forceSimulation === 'function' && window.PIXI) { clearInterval(iv); cb(); }
+        }, 100);
+        setTimeout(function() { clearInterval(iv); }, 10000);
     }
-    document.getElementById('dep-content').classList.remove('hidden');
 
-    // Build nodes & links
-    const nodeMap = {};
-    const links = [];
-    let totalEdges = 0;
+    waitForLibs(function() {
+        var raw = document.getElementById('dep-data').textContent;
+        var deps;
+        try { deps = JSON.parse(raw); } catch(e) { deps = {}; }
 
-    fileKeys.forEach(fp => {
-        if (!nodeMap[fp]) nodeMap[fp] = { id: fp, eff: 0, aff: 0 };
-        const entry = deps[fp];
-        if (entry.efferent) {
-            entry.efferent.forEach(d => {
-                if (!nodeMap[d.path]) nodeMap[d.path] = { id: d.path, eff: 0, aff: 0 };
-                nodeMap[fp].eff++;
-                nodeMap[d.path].aff++;
-                links.push({ source: fp, target: d.path });
-                totalEdges++;
+        var folderDeps = null;
+        try {
+            var fd = document.getElementById('dep-folder-data').textContent.trim();
+            if (fd && fd !== '') folderDeps = JSON.parse(fd);
+        } catch(e) { folderDeps = null; }
+
+        var depFileCount = 0;
+        try { depFileCount = parseInt(document.getElementById('dep-file-count').textContent, 10) || 0; } catch(e) {}
+
+        var fileKeys = Object.keys(deps);
+        if (fileKeys.length === 0 && !folderDeps) {
+            document.getElementById('dep-empty').classList.remove('hidden');
+            return;
+        }
+        document.getElementById('dep-content').classList.remove('hidden');
+
+        // Compute KPIs from file-level deps
+        var totalEdgesFile = 0;
+        var nodeMapFile = {};
+        fileKeys.forEach(function(fp) {
+            if (!nodeMapFile[fp]) nodeMapFile[fp] = { id: fp, eff: 0, aff: 0 };
+            var entry = deps[fp];
+            if (entry.efferent) {
+                entry.efferent.forEach(function(d) {
+                    if (!nodeMapFile[d.path]) nodeMapFile[d.path] = { id: d.path, eff: 0, aff: 0 };
+                    nodeMapFile[fp].eff++;
+                    nodeMapFile[d.path].aff++;
+                    totalEdgesFile++;
+                });
+            }
+        });
+        var nodesFile = Object.values(nodeMapFile);
+        var totalFilesKPI = nodesFile.length;
+        var avgCoupling = totalFilesKPI > 0 ? ((nodesFile.reduce(function(s,n) { return s + n.eff + n.aff; }, 0)) / totalFilesKPI).toFixed(1) : 0;
+
+        document.getElementById('kpi-files').textContent = totalFilesKPI;
+        document.getElementById('kpi-edges').textContent = totalEdgesFile;
+        document.getElementById('kpi-avg').textContent = avgCoupling;
+
+        // State machine
+        var state = { mode: 'files', expandedFolder: null };
+        var useFolderView = (depFileCount > 1500 && folderDeps && folderDeps.folders && Object.keys(folderDeps.folders).length > 0);
+        if (useFolderView) state.mode = 'folders';
+
+        var canvasEl = document.getElementById('dep-graph-canvas');
+        var wrapperEl = document.getElementById('dep-graph-wrapper');
+        var tooltip = document.getElementById('dep-tooltip');
+        var breadcrumb = document.getElementById('dep-breadcrumb');
+        var breadcrumbRoot = document.getElementById('dep-breadcrumb-root');
+        var breadcrumbCurrent = document.getElementById('dep-breadcrumb-current');
+
+        var app = null;
+        var worldContainer = null;
+        var edgesGfx = null;
+        var activeSimulation = null;
+        var scale = 1, panX = 0, panY = 0;
+        var isPanning = false, panStartX = 0, panStartY = 0, panStartPX = 0, panStartPY = 0;
+
+        function hexToPixi(hex) {
+            if (typeof hex === 'string' && hex.charAt(0) === '#') {
+                return parseInt(hex.substring(1), 16);
+            }
+            // Fallback for rgb(...) or other formats via d3
+            if (window.d3) {
+                var c = d3.color(hex);
+                if (c) return ((Math.round(c.r) & 0xff) << 16) | ((Math.round(c.g) & 0xff) << 8) | (Math.round(c.b) & 0xff);
+            }
+            return 0x888888;
+        }
+
+        // Color: teal=efferent, purple=afferent, blue=balanced
+        function nodeColor(eff, aff) {
+            var total = eff + aff;
+            if (total === 0) return '#3b82f6';
+            var ratio = eff / total;
+            if (ratio > 0.65) return '#0d9488';
+            if (ratio < 0.35) return '#7c3aed';
+            return '#3b82f6';
+        }
+
+        function shortLabel(p, max) {
+            max = max || 20;
+            var parts = p.split('/');
+            var name = parts[parts.length - 1];
+            if (!name) name = parts[parts.length - 2] || p;
+            if (name.length > max) name = name.substring(0, max - 1) + '\u2026';
+            return name;
+        }
+
+        function shortFolderLabel(p, max) {
+            max = max || 25;
+            var parts = p.split('/').filter(Boolean);
+            var name = parts.length > 2 ? '\u2026/' + parts.slice(-2).join('/') : p;
+            if (name.length > max) name = name.substring(0, max - 1) + '\u2026';
+            return name;
+        }
+
+        function initPixiApp() {
+            if (activeSimulation) {
+                activeSimulation.stop();
+                activeSimulation = null;
+            }
+            if (app) {
+                app.destroy(true, { children: true, texture: true, baseTexture: true });
+            }
+            var w = canvasEl.clientWidth || 800;
+            var h = Math.max(600, Math.min(Object.keys(deps).length * 8, 1200));
+            canvasEl.style.height = h + 'px';
+
+            app = new PIXI.Application({
+                width: w,
+                height: h,
+                backgroundColor: 0xffffff,
+                antialias: true,
+                resolution: window.devicePixelRatio || 1,
+                autoDensity: true,
+            });
+            canvasEl.innerHTML = '';
+            canvasEl.appendChild(app.view);
+            app.view.style.width = '100%';
+            app.view.style.height = '100%';
+
+            // Hide loading skeleton
+            var loadingEl = document.getElementById('dep-graph-loading');
+            if (loadingEl) loadingEl.style.display = 'none';
+
+            worldContainer = new PIXI.Container();
+            app.stage.addChild(worldContainer);
+
+            edgesGfx = new PIXI.Graphics();
+            worldContainer.addChild(edgesGfx);
+
+            scale = 1; panX = 0; panY = 0;
+
+            // Zoom
+            canvasEl.addEventListener('wheel', function(e) {
+                e.preventDefault();
+                var rect = canvasEl.getBoundingClientRect();
+                var mouseX = e.clientX - rect.left;
+                var mouseY = e.clientY - rect.top;
+                var zoomFactor = e.deltaY < 0 ? 1.1 : 1 / 1.1;
+                var newScale = Math.min(8, Math.max(0.1, scale * zoomFactor));
+                panX = mouseX - (mouseX - panX) * (newScale / scale);
+                panY = mouseY - (mouseY - panY) * (newScale / scale);
+                scale = newScale;
+                worldContainer.scale.set(scale);
+                worldContainer.position.set(panX, panY);
+            }, { passive: false });
+
+            canvasEl.addEventListener('pointerdown', function(e) {
+                if (e.target === app.view || e.target === canvasEl) {
+                    isPanning = true;
+                    panStartX = e.clientX;
+                    panStartY = e.clientY;
+                    panStartPX = panX;
+                    panStartPY = panY;
+                    canvasEl.style.cursor = 'grabbing';
+                }
+            });
+            window.addEventListener('pointermove', function(e) {
+                if (!isPanning) return;
+                panX = panStartPX + (e.clientX - panStartX);
+                panY = panStartPY + (e.clientY - panStartY);
+                worldContainer.position.set(panX, panY);
+            });
+            window.addEventListener('pointerup', function() {
+                isPanning = false;
+                canvasEl.style.cursor = 'grab';
+            });
+
+            return { w: w, h: h };
+        }
+
+        function fitToView(nodes, W, H) {
+            if (!nodes.length) return;
+            var pad = 40;
+            var x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
+            nodes.forEach(function(d) {
+                var rr = (d._radius || 8) + 15;
+                if (d.x - rr < x0) x0 = d.x - rr;
+                if (d.y - rr < y0) y0 = d.y - rr;
+                if (d.x + rr > x1) x1 = d.x + rr;
+                if (d.y + rr > y1) y1 = d.y + rr;
+            });
+            x0 -= pad; y0 -= pad; x1 += pad; y1 += pad;
+            var bw = x1 - x0, bh = y1 - y0;
+            if (bw <= 0 || bh <= 0) return;
+            var newScale = Math.min(W / bw, H / bh, 1.5);
+            var tx = W / 2 - newScale * (x0 + bw / 2);
+            var ty = H / 2 - newScale * (y0 + bh / 2);
+            scale = newScale;
+            panX = tx;
+            panY = ty;
+            worldContainer.scale.set(scale);
+            worldContainer.position.set(panX, panY);
+        }
+
+        function drawEdges(links) {
+            edgesGfx.clear();
+            links.forEach(function(l) {
+                var sx = l.source.x || 0, sy = l.source.y || 0;
+                var tx = l.target.x || 0, ty = l.target.y || 0;
+                edgesGfx.lineStyle(1.2, 0x94a3b8, 0.5);
+                edgesGfx.moveTo(sx, sy);
+                edgesGfx.lineTo(tx, ty);
+
+                // Arrow
+                var dx = tx - sx, dy = ty - sy;
+                var len = Math.sqrt(dx*dx + dy*dy);
+                if (len < 1) return;
+                var targetR = (l.target._radius || 8) + 2;
+                var ux = dx / len, uy = dy / len;
+                var ax = tx - ux * targetR, ay = ty - uy * targetR;
+                var arrowSize = 5;
+                var px = -uy * arrowSize, py = ux * arrowSize;
+                edgesGfx.beginFill(0x94a3b8, 0.6);
+                edgesGfx.moveTo(ax, ay);
+                edgesGfx.lineTo(ax - ux * arrowSize + px, ay - uy * arrowSize + py);
+                edgesGfx.lineTo(ax - ux * arrowSize - px, ay - uy * arrowSize - py);
+                edgesGfx.closePath();
+                edgesGfx.endFill();
             });
         }
-    });
 
-    // Build directed adjacency lists for chain highlighting
-    const outgoing = {}; // source -> Set of targets (efferent: files I depend on)
-    const incoming = {}; // target -> Set of sources (afferent: files that depend on me)
-    links.forEach(l => {
-        if (!outgoing[l.source]) outgoing[l.source] = new Set();
-        outgoing[l.source].add(l.target);
-        if (!incoming[l.target]) incoming[l.target] = new Set();
-        incoming[l.target].add(l.source);
-    });
+        // Build adjacency for chain highlight
+        function buildAdjacency(links) {
+            var outgoing = {}, incoming = {};
+            links.forEach(function(l) {
+                var sid = l.source.id || l.source;
+                var tid = l.target.id || l.target;
+                if (!outgoing[sid]) outgoing[sid] = new Set();
+                outgoing[sid].add(tid);
+                if (!incoming[tid]) incoming[tid] = new Set();
+                incoming[tid].add(sid);
+            });
+            return { outgoing: outgoing, incoming: incoming };
+        }
 
-    // BFS following directed edges: downstream (what I depend on) + upstream (what depends on me)
-    function getChain(startId) {
-        const visited = new Set([startId]);
-        // Follow outgoing edges (efferent chain)
-        let queue = [startId];
-        while (queue.length > 0) {
-            const cur = queue.shift();
-            if (outgoing[cur]) {
-                for (const nb of outgoing[cur]) {
-                    if (!visited.has(nb)) { visited.add(nb); queue.push(nb); }
+        function getChain(startId, adj) {
+            var visited = new Set([startId]);
+            var queue = [startId];
+            while (queue.length > 0) {
+                var cur = queue.shift();
+                if (adj.outgoing[cur]) {
+                    for (var nb of adj.outgoing[cur]) {
+                        if (!visited.has(nb)) { visited.add(nb); queue.push(nb); }
+                    }
                 }
             }
-        }
-        // Follow incoming edges (afferent chain)
-        queue = [startId];
-        while (queue.length > 0) {
-            const cur = queue.shift();
-            if (incoming[cur]) {
-                for (const nb of incoming[cur]) {
-                    if (!visited.has(nb)) { visited.add(nb); queue.push(nb); }
+            queue = [startId];
+            while (queue.length > 0) {
+                var cur = queue.shift();
+                if (adj.incoming[cur]) {
+                    for (var nb of adj.incoming[cur]) {
+                        if (!visited.has(nb)) { visited.add(nb); queue.push(nb); }
+                    }
                 }
             }
+            return visited;
         }
-        return visited;
-    }
 
-    const nodes = Object.values(nodeMap);
-    const totalFiles = nodes.length;
-    const avgCoupling = totalFiles > 0 ? ((nodes.reduce((s,n) => s + n.eff + n.aff, 0)) / totalFiles).toFixed(1) : 0;
+        // ---- Render file view ----
+        function renderFileView(filterFolder) {
+            var dim = initPixiApp();
+            var W = dim.w, H = dim.h;
 
-    document.getElementById('kpi-files').textContent = totalFiles;
-    document.getElementById('kpi-edges').textContent = totalEdges;
-    document.getElementById('kpi-avg').textContent = avgCoupling;
+            var nodes = [];
+            var links = [];
+            var nodeMap = {};
 
-    // Short label
-    function shortLabel(path, max) {
-        max = max || 20;
-        const parts = path.split('/');
-        let name = parts[parts.length - 1];
-        if (name.length > max) name = name.substring(0, max - 1) + '\u2026';
-        return name;
-    }
+            if (filterFolder && folderDeps && folderDeps.filesByFolder) {
+                // Drill-down: show files in this folder + connected files
+                var folderFiles = new Set(folderDeps.filesByFolder[filterFolder] || []);
+                var connectedFiles = new Set();
+                folderFiles.forEach(function(fp) {
+                    var entry = deps[fp];
+                    if (!entry) return;
+                    if (entry.efferent) entry.efferent.forEach(function(d) { connectedFiles.add(d.path); });
+                    if (entry.afferent) entry.afferent.forEach(function(d) { connectedFiles.add(d.path); });
+                });
 
-    // Color: teal=efferent, purple=afferent, blue=balanced
-    function nodeColor(n) {
-        const total = n.eff + n.aff;
-        if (total === 0) return '#3b82f6';
-        const ratio = n.eff / total;
-        if (ratio > 0.65) return '#0d9488';
-        if (ratio < 0.35) return '#7c3aed';
-        return '#3b82f6';
-    }
+                var relevantFiles = new Set([...folderFiles, ...connectedFiles]);
+                relevantFiles.forEach(function(fp) {
+                    nodeMap[fp] = { id: fp, eff: 0, aff: 0, inFolder: folderFiles.has(fp) };
+                });
 
-    // Radius proportional to coupling, capped
-    function nodeRadius(n) {
-        return Math.min(4 + Math.sqrt(n.eff + n.aff) * 3, 24);
-    }
+                fileKeys.forEach(function(fp) {
+                    if (!relevantFiles.has(fp)) return;
+                    var entry = deps[fp];
+                    if (entry.efferent) {
+                        entry.efferent.forEach(function(d) {
+                            if (relevantFiles.has(d.path)) {
+                                nodeMap[fp].eff++;
+                                if (nodeMap[d.path]) nodeMap[d.path].aff++;
+                                links.push({ source: fp, target: d.path });
+                            }
+                        });
+                    }
+                });
+                nodes = Object.values(nodeMap);
+            } else {
+                // Full file view
+                fileKeys.forEach(function(fp) {
+                    if (!nodeMap[fp]) nodeMap[fp] = { id: fp, eff: 0, aff: 0, inFolder: true };
+                    var entry = deps[fp];
+                    if (entry.efferent) {
+                        entry.efferent.forEach(function(d) {
+                            if (!nodeMap[d.path]) nodeMap[d.path] = { id: d.path, eff: 0, aff: 0, inFolder: true };
+                            nodeMap[fp].eff++;
+                            nodeMap[d.path].aff++;
+                            links.push({ source: fp, target: d.path });
+                        });
+                    }
+                });
+                nodes = Object.values(nodeMap);
+            }
 
-    // D3 force graph
-    const svgEl = document.getElementById('dep-graph-svg');
-    const width = svgEl.parentElement.clientWidth - 16;
-    const height = Math.max(600, Math.min(nodes.length * 8, 1200));
-    svgEl.style.height = height + 'px';
+            if (!nodes.length) return;
 
-    const svg = d3.select(svgEl)
-        .attr('viewBox', [0, 0, width, height])
-        .attr('width', width)
-        .attr('height', height);
+            var adj = buildAdjacency(links);
 
-    // Arrow marker
-    svg.append('defs').append('marker')
-        .attr('id', 'dep-arrow')
-        .attr('viewBox', '0 -5 10 10')
-        .attr('refX', 20)
-        .attr('refY', 0)
-        .attr('markerWidth', 6)
-        .attr('markerHeight', 6)
-        .attr('orient', 'auto')
-        .append('path')
-        .attr('d', 'M0,-4L10,0L0,4')
-        .attr('fill', '#94a3b8');
+            // Node radius
+            nodes.forEach(function(n) {
+                n._radius = Math.min(4 + Math.sqrt(n.eff + n.aff) * 3, 24);
+            });
 
-    const g = svg.append('g');
+            // Create sprites
+            var nodesContainer = new PIXI.Container();
+            worldContainer.addChild(nodesContainer);
 
-    // Zoom & pan
-    const zoom = d3.zoom()
-        .scaleExtent([0.2, 5])
-        .on('zoom', e => g.attr('transform', e.transform));
-    svg.call(zoom);
+            nodes.forEach(function(d) {
+                var nc = new PIXI.Container();
+                nc.eventMode = 'static';
+                nc.cursor = 'pointer';
 
-    const link = g.append('g')
-        .selectAll('line')
-        .data(links)
-        .join('line')
-        .attr('class', 'dep-link')
-        .attr('stroke-width', 1.2)
-        .attr('marker-end', 'url(#dep-arrow)');
+                var color = nodeColor(d.eff, d.aff);
+                var gfx = new PIXI.Graphics();
+                gfx.beginFill(hexToPixi(color), d.inFolder !== false ? 0.85 : 0.4);
+                gfx.drawCircle(0, 0, d._radius);
+                gfx.endFill();
+                gfx.lineStyle(1.5, 0xffffff, 1);
+                gfx.drawCircle(0, 0, d._radius);
+                nc.addChild(gfx);
 
-    const node = g.append('g')
-        .selectAll('circle')
-        .data(nodes)
-        .join('circle')
-        .attr('r', d => nodeRadius(d))
-        .attr('fill', d => nodeColor(d))
-        .attr('stroke', '#fff')
-        .attr('stroke-width', 1.5)
-        .style('cursor', 'pointer');
+                // Label
+                var lbl = new PIXI.Text(shortLabel(d.id), {
+                    fontSize: 10,
+                    fill: '#334155',
+                    fontFamily: 'system-ui, -apple-system, sans-serif',
+                });
+                lbl.anchor.set(0.5, 0);
+                lbl.y = d._radius + 3;
+                nc.addChild(lbl);
 
-    const label = g.append('g')
-        .selectAll('text')
-        .data(nodes)
-        .join('text')
-        .attr('class', 'dep-node-label')
-        .attr('dy', d => nodeRadius(d) + 12)
-        .text(d => shortLabel(d.id));
+                nc.hitArea = new PIXI.Circle(0, 0, d._radius + 4);
+                d._sprite = nc;
+                d._gfx = gfx;
+                d._label = lbl;
+                d._color = color;
 
-    // Tooltip + chain highlight on hover + click
-    const tooltip = document.getElementById('dep-tooltip');
-    node
-        .on('mouseover', function(event, d) {
-            tooltip.innerHTML = '<strong>' + d.id + '</strong><br>Efferent: ' + d.eff + ' &middot; Afferent: ' + d.aff;
-            tooltip.classList.add('visible');
+                nc.on('pointerover', function(ev) {
+                    tooltip.innerHTML = '<strong>' + d.id + '</strong><br>Efferent: ' + d.eff + ' &middot; Afferent: ' + d.aff;
+                    tooltip.classList.add('visible');
+                    var gp = ev.global || ev.data.global;
+                    tooltip.style.left = gp.x + 'px';
+                    tooltip.style.top = (gp.y - 12) + 'px';
 
-            // Highlight the full dependency chain, dim everything else
-            const chain = getChain(d.id);
-            node.transition().duration(150)
-                .attr('opacity', n => chain.has(n.id) ? 1 : 0.08);
-            label.transition().duration(150)
-                .attr('opacity', n => chain.has(n.id) ? 1 : 0.08);
-            link.transition().duration(150)
-                .attr('stroke-opacity', l => (chain.has(l.source.id || l.source) && chain.has(l.target.id || l.target)) ? 0.85 : 0.02)
-                .attr('stroke-width', l => (chain.has(l.source.id || l.source) && chain.has(l.target.id || l.target)) ? 2 : 0.5);
-        })
-        .on('mousemove', function(event) {
-            tooltip.style.left = event.clientX + 'px';
-            tooltip.style.top = (event.clientY - 12) + 'px';
-        })
-        .on('mouseout', function() {
-            tooltip.classList.remove('visible');
+                    // Chain highlight
+                    var chain = getChain(d.id, adj);
+                    nodes.forEach(function(n) {
+                        n._sprite.alpha = chain.has(n.id) ? 1 : 0.08;
+                    });
+                    // Redraw edges with highlight
+                    edgesGfx.clear();
+                    links.forEach(function(l) {
+                        var sid = l.source.id || l.source;
+                        var tid = l.target.id || l.target;
+                        var inChain = chain.has(sid) && chain.has(tid);
+                        var sx = l.source.x || 0, sy = l.source.y || 0;
+                        var tx = l.target.x || 0, ty = l.target.y || 0;
+                        edgesGfx.lineStyle(inChain ? 2 : 0.5, inChain ? 0x3b82f6 : 0x94a3b8, inChain ? 0.85 : 0.02);
+                        edgesGfx.moveTo(sx, sy);
+                        edgesGfx.lineTo(tx, ty);
+                    });
+                });
 
-            // Restore full opacity
-            node.transition().duration(200).attr('opacity', 1);
-            label.transition().duration(200).attr('opacity', 1);
-            link.transition().duration(200).attr('stroke-opacity', 0.5).attr('stroke-width', 1.2);
-        })
-        .on('click', function(event, d) {
-            window.location.href = 'explorer.html?file=' + encodeURIComponent(d.id);
+                nc.on('pointermove', function(ev) {
+                    var gp = ev.global || ev.data.global;
+                    tooltip.style.left = gp.x + 'px';
+                    tooltip.style.top = (gp.y - 12) + 'px';
+                });
+
+                nc.on('pointerout', function() {
+                    tooltip.classList.remove('visible');
+                    nodes.forEach(function(n) { n._sprite.alpha = 1; });
+                    drawEdges(links);
+                });
+
+                nc.on('pointertap', function() {
+                    window.location.href = 'explorer.html?file=' + encodeURIComponent(d.id);
+                });
+
+                nodesContainer.addChild(nc);
+            });
+
+            // Force simulation
+            activeSimulation = d3.forceSimulation(nodes)
+                .force('link', d3.forceLink(links).id(function(d) { return d.id; }).distance(80))
+                .force('charge', d3.forceManyBody().strength(-200))
+                .force('center', d3.forceCenter(W / 2, H / 2))
+                .force('collision', d3.forceCollide().radius(function(d) { return d._radius + 8; }))
+                .on('tick', function() {
+                    nodes.forEach(function(d) {
+                        d._sprite.x = d.x;
+                        d._sprite.y = d.y;
+                    });
+                    drawEdges(links);
+                })
+                .on('end', function() { fitToView(nodes, W, H); });
+        }
+
+        // ---- Render folder view ----
+        function renderFolderView() {
+            if (!folderDeps || !folderDeps.folders) return;
+
+            var dim = initPixiApp();
+            var W = dim.w, H = dim.h;
+
+            var folders = folderDeps.folders;
+            var folderKeys = Object.keys(folders);
+            var nodes = [];
+            var links = [];
+            var nodeMap = {};
+
+            folderKeys.forEach(function(dir) {
+                var f = folders[dir];
+                var effCount = 0, affCount = 0;
+                if (f.efferent) f.efferent.forEach(function(e) { effCount += e.count; });
+                if (f.afferent) f.afferent.forEach(function(e) { affCount += e.count; });
+                nodeMap[dir] = { id: dir, eff: effCount, aff: affCount, fileCount: f.fileCount || 1 };
+            });
+
+            // Build links
+            folderKeys.forEach(function(dir) {
+                var f = folders[dir];
+                if (f.efferent) {
+                    f.efferent.forEach(function(e) {
+                        if (nodeMap[e.path]) {
+                            links.push({ source: dir, target: e.path, count: e.count });
+                        }
+                    });
+                }
+            });
+
+            nodes = Object.values(nodeMap);
+            if (!nodes.length) { renderFileView(null); return; }
+
+            var adj = buildAdjacency(links);
+
+            // Radius proportional to fileCount
+            var maxFC = d3.max(nodes, function(d) { return d.fileCount; }) || 1;
+            nodes.forEach(function(d) {
+                d._radius = Math.max(6, Math.min(4 + Math.sqrt(d.fileCount / maxFC) * 30, 40));
+            });
+
+            var nodesContainer = new PIXI.Container();
+            worldContainer.addChild(nodesContainer);
+
+            nodes.forEach(function(d) {
+                var nc = new PIXI.Container();
+                nc.eventMode = 'static';
+                nc.cursor = 'pointer';
+
+                var color = nodeColor(d.eff, d.aff);
+                var gfx = new PIXI.Graphics();
+                gfx.beginFill(hexToPixi(color), 0.8);
+                gfx.drawCircle(0, 0, d._radius);
+                gfx.endFill();
+                gfx.lineStyle(1.5, 0xffffff, 1);
+                gfx.drawCircle(0, 0, d._radius);
+                nc.addChild(gfx);
+
+                var lbl = new PIXI.Text(shortFolderLabel(d.id), {
+                    fontSize: 10,
+                    fill: '#334155',
+                    fontFamily: 'system-ui, -apple-system, sans-serif',
+                });
+                lbl.anchor.set(0.5, 0);
+                lbl.y = d._radius + 3;
+                nc.addChild(lbl);
+
+                nc.hitArea = new PIXI.Circle(0, 0, d._radius + 4);
+                d._sprite = nc;
+                d._gfx = gfx;
+                d._label = lbl;
+                d._color = color;
+
+                nc.on('pointerover', function(ev) {
+                    tooltip.innerHTML = '<strong>' + d.id + '</strong><br>Files: ' + d.fileCount + '<br>Efferent: ' + d.eff + ' &middot; Afferent: ' + d.aff;
+                    tooltip.classList.add('visible');
+                    var gp = ev.global || ev.data.global;
+                    tooltip.style.left = gp.x + 'px';
+                    tooltip.style.top = (gp.y - 12) + 'px';
+
+                    var chain = getChain(d.id, adj);
+                    nodes.forEach(function(n) {
+                        n._sprite.alpha = chain.has(n.id) ? 1 : 0.08;
+                    });
+                    edgesGfx.clear();
+                    links.forEach(function(l) {
+                        var sid = l.source.id || l.source;
+                        var tid = l.target.id || l.target;
+                        var inChain = chain.has(sid) && chain.has(tid);
+                        var sx = l.source.x || 0, sy = l.source.y || 0;
+                        var tx = l.target.x || 0, ty = l.target.y || 0;
+                        edgesGfx.lineStyle(inChain ? 2 : 0.5, inChain ? 0x3b82f6 : 0x94a3b8, inChain ? 0.85 : 0.02);
+                        edgesGfx.moveTo(sx, sy);
+                        edgesGfx.lineTo(tx, ty);
+                    });
+                });
+
+                nc.on('pointermove', function(ev) {
+                    var gp = ev.global || ev.data.global;
+                    tooltip.style.left = gp.x + 'px';
+                    tooltip.style.top = (gp.y - 12) + 'px';
+                });
+
+                nc.on('pointerout', function() {
+                    tooltip.classList.remove('visible');
+                    nodes.forEach(function(n) { n._sprite.alpha = 1; });
+                    drawEdges(links);
+                });
+
+                nc.on('pointertap', function() {
+                    // Drill down into this folder
+                    state.mode = 'files';
+                    state.expandedFolder = d.id;
+                    breadcrumb.classList.remove('hidden');
+                    breadcrumbCurrent.textContent = d.id;
+                    // Sync radio to files
+                    document.querySelectorAll('input[name="dep-view"]').forEach(function(r) { if (r.value === 'files') r.checked = true; });
+                    renderFileView(d.id);
+                });
+
+                nodesContainer.addChild(nc);
+            });
+
+            // Force simulation
+            activeSimulation = d3.forceSimulation(nodes)
+                .force('link', d3.forceLink(links).id(function(d) { return d.id; }).distance(100))
+                .force('charge', d3.forceManyBody().strength(-300))
+                .force('center', d3.forceCenter(W / 2, H / 2))
+                .force('collision', d3.forceCollide().radius(function(d) { return d._radius + 12; }))
+                .on('tick', function() {
+                    nodes.forEach(function(d) {
+                        d._sprite.x = d.x;
+                        d._sprite.y = d.y;
+                    });
+                    drawEdges(links);
+                })
+                .on('end', function() { fitToView(nodes, W, H); });
+        }
+
+        // Radio buttons for view mode
+        var hasFolderData = (folderDeps && folderDeps.folders && Object.keys(folderDeps.folders).length > 0);
+
+        // Check the correct radio based on initial state
+        var radios = document.querySelectorAll('input[name="dep-view"]');
+        radios.forEach(function(r) {
+            if (r.value === state.mode) r.checked = true;
         });
 
-    // Drag
-    node.call(d3.drag()
-        .on('start', function(event, d) {
-            if (!event.active) simulation.alphaTarget(0.3).restart();
-            d.fx = d.x; d.fy = d.y;
-        })
-        .on('drag', function(event, d) {
-            d.fx = event.x; d.fy = event.y;
-        })
-        .on('end', function(event, d) {
-            if (!event.active) simulation.alphaTarget(0);
-            d.fx = null; d.fy = null;
-        })
-    );
-
-    const simulation = d3.forceSimulation(nodes)
-        .force('link', d3.forceLink(links).id(d => d.id).distance(80))
-        .force('charge', d3.forceManyBody().strength(-200))
-        .force('center', d3.forceCenter(width / 2, height / 2))
-        .force('collision', d3.forceCollide().radius(d => nodeRadius(d) + 8))
-        .on('tick', () => {
-            link
-                .attr('x1', d => d.source.x)
-                .attr('y1', d => d.source.y)
-                .attr('x2', d => d.target.x)
-                .attr('y2', d => d.target.y);
-            node
-                .attr('cx', d => d.x)
-                .attr('cy', d => d.y);
-            label
-                .attr('x', d => d.x)
-                .attr('y', d => d.y);
+        // Radio change handler
+        radios.forEach(function(radio) {
+            radio.addEventListener('change', function() {
+                var mode = this.value;
+                state.expandedFolder = null;
+                breadcrumb.classList.add('hidden');
+                if (mode === 'folders' && hasFolderData) {
+                    state.mode = 'folders';
+                    renderFolderView();
+                } else {
+                    state.mode = 'files';
+                    renderFileView(null);
+                }
+            });
         });
+
+        // Breadcrumb back navigation
+        breadcrumbRoot.addEventListener('click', function(e) {
+            e.preventDefault();
+            state.mode = 'folders';
+            state.expandedFolder = null;
+            breadcrumb.classList.add('hidden');
+            // Sync radio
+            radios.forEach(function(r) { if (r.value === 'folders') r.checked = true; });
+            renderFolderView();
+        });
+
+        // Initial render
+        if (state.mode === 'folders') {
+            renderFolderView();
+        } else {
+            renderFileView(null);
+        }
+    });
 });
 </script>
 {% endblock %}
