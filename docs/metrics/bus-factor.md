@@ -1,5 +1,7 @@
 # Bus Factor
 
+<video controls src="../../animations/bus-factor.webm" title="Title"></video>
+
 ## What is it?
 The Bus Factor is a risk metric that answers: **"How many team members have to be hit by a bus for the project to stall?"**
 
