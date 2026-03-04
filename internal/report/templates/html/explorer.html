@@ -359,7 +359,7 @@ AST Metrics - Explorer
               </div>
 
               <!-- File Dependency Diagram -->
-              <div x-show="selected && fileDeps[selected.path] && ((fileDeps[selected.path].efferent||[]).length || (fileDeps[selected.path].afferent||[]).length)" class="mb-6">
+              <div x-show="selected && fileDeps[selected.pathHash] && ((fileDeps[selected.pathHash].efferent||[]).length || (fileDeps[selected.pathHash].afferent||[]).length)" class="mb-6">
                 <div class="dashboard-card p-6">
                   <div class="flex items-center justify-between mb-4">
                     <h3 class="text-lg font-bold text-gray-900">File Dependencies</h3>
@@ -696,6 +696,7 @@ AST Metrics - Explorer
 
       // dependencies
       fileDeps: {},
+      dict: {},
 
       // ui
       openGlossary: false,
@@ -705,6 +706,7 @@ AST Metrics - Explorer
         this.files = parse('files-data') || [];
         this.risksByPath = parse('risks-data') || {};
         this.fileDeps = parse('file-deps-data') || {};
+        this.dict = parse('string-dict') || {};
         this.$watch('filters', () => this.rebuild(), { deep: true });
         this.rebuild();
         const requestedFile = this.getFileQueryParam();
@@ -770,7 +772,7 @@ AST Metrics - Explorer
         return minMI;
       },
       displayWorstMI(f) { const v = this.fileMImax(f); return Number.isFinite(v) ? `worst MI: ${v.toFixed(0)}` : ''; },
-      nbRisksFor(f) { return (this.risksByPath[f.path] || []).length; },
+      nbRisksFor(f) { return (this.risksByPath[f.pathHash] || []).length; },
       matchesFilters(f) {
         const q = (this.filters.q || '').toLowerCase();
         if (q && !f.path.toLowerCase().includes(q) && !(f.shortPath || '').toLowerCase().includes(q)) return false;
@@ -815,7 +817,7 @@ AST Metrics - Explorer
       select(f) {
         this.selected = f;
         this.updateUrlWithSelectedFile(f);
-        this.risks = (this.risksByPath[f.path] || []).slice();
+        this.risks = (this.risksByPath[f.pathHash] || []).slice();
         const classes = f?.stmts?.stmtClass || [];
         this.classes = classes;
         const methodsFromClasses = classes.flatMap(c => (c?.stmts?.stmtFunction) || []);
@@ -912,7 +914,7 @@ AST Metrics - Explorer
         const container = document.getElementById('file-deps-diagram');
         if (!container) return;
         container.innerHTML = '';
-        const deps = this.fileDeps[f.path];
+        const deps = this.fileDeps[f.pathHash];
         if (!deps || (!deps.efferent?.length && !deps.afferent?.length)) return;
 
         const width = container.clientWidth || 600;
@@ -995,8 +997,9 @@ AST Metrics - Explorer
           .attr('fill', '#374151')
           .attr('font-weight', d => d.type === 'self' ? '600' : '400');
 
-        // Tooltip on hover
-        nodeG.append('title').text(d => d.id);
+        // Tooltip on hover — resolve hash to readable path
+        const resolveHash = (h) => this.dict[h] || h;
+        nodeG.append('title').text(d => resolveHash(d.id));
 
         simulation.on('tick', () => {
           link

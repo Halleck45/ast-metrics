@@ -2,6 +2,7 @@ package report
 
 import (
 	"embed"
+	"encoding/json"
 	"fmt"
 	"hash/fnv"
 	"os"
@@ -37,6 +38,7 @@ type cachedLangData struct {
 	fileDepsJSON        string
 	folderDepsJSON      string
 	depFileCount        int
+	dictionaryJSON      string
 }
 
 type HtmlReportGenerator struct {
@@ -138,6 +140,8 @@ func (v *HtmlReportGenerator) Generate(files []*pb.File, projectAggregated analy
 	}
 	for _, lang := range langKeys {
 		cd := &cachedLangData{}
+		dict := NewStringDictionary()
+
 		cd.filesJSON = buildFilesJSONPruned(files, lang)
 
 		// Build risks
@@ -156,7 +160,7 @@ func (v *HtmlReportGenerator) Generate(files []*pb.File, projectAggregated analy
 				cd.risksByPath[f.Path] = converted
 			}
 		}
-		cd.risksJSON = buildRisksJSON(cd.risksByPath)
+		cd.risksJSON = buildRisksJSON(cd.risksByPath, dict)
 
 		// Community
 		var currentView analyzer.Aggregated
@@ -175,7 +179,7 @@ func (v *HtmlReportGenerator) Generate(files []*pb.File, projectAggregated analy
 			cd.testQualityJSON = analyzer.BuildTestQualityJSON(currentView.TestQuality)
 		}
 
-		cd.fileDepsJSON = buildFileDepsJSON(files, lang)
+		cd.fileDepsJSON = buildFileDepsJSON(files, lang, dict)
 
 		// Count files for this language
 		fileCount := 0
@@ -188,8 +192,9 @@ func (v *HtmlReportGenerator) Generate(files []*pb.File, projectAggregated analy
 		cd.depFileCount = fileCount
 
 		// Build folder-level deps for dependency graph folder view
-		cd.folderDepsJSON = buildFolderDepsJSON(files, lang)
+		cd.folderDepsJSON = buildFolderDepsJSON(files, lang, dict)
 
+		cd.dictionaryJSON = dict.ToJSON()
 		v.langCache[lang] = cd
 	}
 
@@ -291,13 +296,13 @@ func (v *HtmlReportGenerator) Generate(files []*pb.File, projectAggregated analy
 }
 
 type riskItemForTpl struct {
-	ID       string
-	Title    string
-	Severity float64
-	Details  string
+	ID       string  `json:"id"`
+	Title    string  `json:"title"`
+	Severity float64 `json:"severity"`
+	Details  string  `json:"details"`
 }
 
-// New Pruned JSON using protojson
+// buildFilesJSONPruned builds a pruned JSON array of files with pathHash injected.
 func buildFilesJSONPruned(files []*pb.File, language string) string {
 	mo := protojson.MarshalOptions{EmitUnpopulated: false, UseEnumNumbers: false, Indent: ""}
 	var b strings.Builder
@@ -315,17 +320,21 @@ func buildFilesJSONPruned(files []*pb.File, language string) string {
 			data = []byte("{}")
 		}
 
-		// Inject pathHash by string manipulation to avoid Unmarshal/re-Marshal cycle
-		pathHash := hashPathForExplorer(cf.GetPath())
-		jsonStr := string(data)
-		if len(jsonStr) > 1 && jsonStr[len(jsonStr)-1] == '}' {
-			jsonStr = jsonStr[:len(jsonStr)-1] + ",\"pathHash\":\"" + pathHash + "\"}"
+		// Round-trip: unmarshal into map, add pathHash, re-marshal
+		var m map[string]any
+		if err := json.Unmarshal(data, &m); err != nil {
+			m = map[string]any{}
+		}
+		m["pathHash"] = hashPathForExplorer(cf.GetPath())
+		reData, err := json.Marshal(m)
+		if err != nil {
+			reData = []byte("{}")
 		}
 
 		if !first {
 			b.WriteString(",")
 		}
-		b.WriteString(jsonStr)
+		b.Write(reData)
 		first = false
 	}
 	b.WriteString("]")
@@ -435,66 +444,27 @@ func buildNodeToCommunityJSON(n2c map[string]string) string {
 	if len(n2c) == 0 {
 		return "{}"
 	}
-	var b strings.Builder
-	b.WriteString("{")
-	first := true
-	for k, v := range n2c {
-		if !first {
-			b.WriteString(",")
-		} else {
-			first = false
-		}
-		kk := strings.ReplaceAll(strings.ReplaceAll(k, "\\", "\\\\"), "\"", "\\\"")
-		vv := strings.ReplaceAll(strings.ReplaceAll(v, "\\", "\\\\"), "\"", "\\\"")
-		b.WriteString("\"")
-		b.WriteString(kk)
-		b.WriteString("\":\"")
-		b.WriteString(vv)
-		b.WriteString("\"")
+	data, err := json.Marshal(n2c)
+	if err != nil {
+		return "{}"
 	}
-	b.WriteString("}")
-	return b.String()
+	return string(data)
 }
 
-func buildRisksJSON(risksByPath map[string][]riskItemForTpl) string {
-	b := strings.Builder{}
-	b.WriteString("{")
-	first := true
+func buildRisksJSON(risksByPath map[string][]riskItemForTpl, dict *StringDictionary) string {
+	hashed := make(map[string][]riskItemForTpl, len(risksByPath))
 	for p, items := range risksByPath {
-		if !first {
-			b.WriteString(",")
-		} else {
-			first = false
-		}
-		pp := strings.ReplaceAll(strings.ReplaceAll(p, "\\", "\\\\"), "\"", "\\\"")
-		b.WriteString("\"")
-		b.WriteString(pp)
-		b.WriteString("\":[")
-		for i, r := range items {
-			if i > 0 {
-				b.WriteString(",")
-			}
-			d := strings.ReplaceAll(strings.ReplaceAll(r.Details, "\\", "\\\\"), "\"", "\\\"")
-			t := strings.ReplaceAll(strings.ReplaceAll(r.Title, "\\", "\\\\"), "\"", "\\\"")
-			b.WriteString("{\"id\":\"")
-			b.WriteString(r.ID)
-			b.WriteString("\",\"title\":\"")
-			b.WriteString(t)
-			b.WriteString("\",\"severity\":")
-			b.WriteString(fmt.Sprintf("%g", r.Severity))
-			b.WriteString(",\"details\":\"")
-			b.WriteString(d)
-			b.WriteString("\"}")
-		}
-		b.WriteString("]")
+		hashed[dict.Add(p)] = items
 	}
-	b.WriteString("}")
-	return b.String()
+	data, err := json.Marshal(hashed)
+	if err != nil {
+		return "{}"
+	}
+	return string(data)
 }
 
-// buildFileDepsJSON builds a JSON map of file dependency relationships.
-// Output: { "filePath": { "efferent": [{"path":"...","short":"..."}], "afferent": [{"path":"...","short":"..."}] } }
-func buildFileDepsJSON(files []*pb.File, language string) string {
+// buildFileDepsJSON builds a JSON map of file dependency relationships keyed by path hash.
+func buildFileDepsJSON(files []*pb.File, language string, dict *StringDictionary) string {
 	// Step 1: Build class qualified name -> file path lookup
 	classToFile := map[string]string{}
 	for _, f := range files {
@@ -513,7 +483,6 @@ func buildFileDepsJSON(files []*pb.File, language string) string {
 				classToFile[q] = f.Path
 			}
 			if s := c.Name.GetShort(); s != "" {
-				// Only set short name if not already mapped (qualified takes priority)
 				if _, exists := classToFile[s]; !exists {
 					classToFile[s] = f.Path
 				}
@@ -522,7 +491,6 @@ func buildFileDepsJSON(files []*pb.File, language string) string {
 	}
 
 	// Step 2: Build efferent map from StmtExternalDependencies
-	// efferent[filePath] = set of target file paths
 	type depInfo struct {
 		path  string
 		short string
@@ -538,7 +506,6 @@ func buildFileDepsJSON(files []*pb.File, language string) string {
 		}
 
 		deps := f.Stmts.GetStmtExternalDependencies()
-		// Also collect from namespaces
 		for _, ns := range f.Stmts.GetStmtNamespace() {
 			if ns != nil && ns.Stmts != nil {
 				deps = append(deps, ns.Stmts.GetStmtExternalDependencies()...)
@@ -549,7 +516,6 @@ func buildFileDepsJSON(files []*pb.File, language string) string {
 			if dep == nil {
 				continue
 			}
-			// Try to resolve to a file path using namespace or className
 			targetFile := ""
 			if ns := dep.GetNamespace(); ns != "" {
 				if fp, ok := classToFile[ns]; ok {
@@ -563,7 +529,6 @@ func buildFileDepsJSON(files []*pb.File, language string) string {
 					}
 				}
 			}
-			// Skip self-dependencies and unresolved
 			if targetFile == "" || targetFile == f.Path {
 				continue
 			}
@@ -593,8 +558,7 @@ func buildFileDepsJSON(files []*pb.File, language string) string {
 		}
 	}
 
-	// Step 4: Build JSON
-	// Collect all files that have any dependency
+	// Step 4: Collect all files that have any dependency
 	allFiles := map[string]struct{}{}
 	for k := range efferent {
 		allFiles[k] = struct{}{}
@@ -607,60 +571,42 @@ func buildFileDepsJSON(files []*pb.File, language string) string {
 		return "{}"
 	}
 
-	esc := func(s string) string {
-		return strings.ReplaceAll(strings.ReplaceAll(s, "\\", "\\\\"), "\"", "\\\"")
-	}
-
-	var b strings.Builder
-	b.WriteString("{")
-	first := true
+	// Step 5: Build struct map keyed by hash
+	result := make(map[string]fileDepsEntry, len(allFiles))
 	for fp := range allFiles {
-		if !first {
-			b.WriteString(",")
+		entry := fileDepsEntry{
+			Efferent: make([]depRef, 0),
+			Afferent: make([]depRef, 0),
 		}
-		first = false
-		b.WriteString("\"")
-		b.WriteString(esc(fp))
-		b.WriteString("\":{\"efferent\":[")
-		ei := 0
 		if eff, ok := efferent[fp]; ok {
 			for _, d := range eff {
-				if ei > 0 {
-					b.WriteString(",")
-				}
-				b.WriteString("{\"path\":\"")
-				b.WriteString(esc(d.path))
-				b.WriteString("\",\"short\":\"")
-				b.WriteString(esc(d.short))
-				b.WriteString("\"}")
-				ei++
+				entry.Efferent = append(entry.Efferent, depRef{
+					Path:  dict.Add(d.path),
+					Short: d.short,
+				})
 			}
 		}
-		b.WriteString("],\"afferent\":[")
-		ai := 0
 		if aff, ok := afferent[fp]; ok {
 			for _, d := range aff {
-				if ai > 0 {
-					b.WriteString(",")
-				}
-				b.WriteString("{\"path\":\"")
-				b.WriteString(esc(d.path))
-				b.WriteString("\",\"short\":\"")
-				b.WriteString(esc(d.short))
-				b.WriteString("\"}")
-				ai++
+				entry.Afferent = append(entry.Afferent, depRef{
+					Path:  dict.Add(d.path),
+					Short: d.short,
+				})
 			}
 		}
-		b.WriteString("]}")
+		result[dict.Add(fp)] = entry
 	}
-	b.WriteString("}")
-	return b.String()
+
+	data, err := json.Marshal(result)
+	if err != nil {
+		return "{}"
+	}
+	return string(data)
 }
 
 // buildFolderDepsJSON aggregates file-level dependencies to folder-level.
-// Output: {"folders":{"dir":{"efferent":[{"path":"...","count":N}],"afferent":[...],"fileCount":N}},"filesByFolder":{"dir":["file1","file2"]}}
-func buildFolderDepsJSON(files []*pb.File, language string) string {
-	// Reuse the same class-to-file resolution logic from buildFileDepsJSON
+// Keys are hashed via the dictionary.
+func buildFolderDepsJSON(files []*pb.File, language string, dict *StringDictionary) string {
 	classToFile := map[string]string{}
 	for _, f := range files {
 		if language != "All" && f.GetProgrammingLanguage() != language {
@@ -685,7 +631,6 @@ func buildFolderDepsJSON(files []*pb.File, language string) string {
 		}
 	}
 
-	// Build file-level efferent edges
 	type edge struct {
 		src string
 		dst string
@@ -739,11 +684,11 @@ func buildFolderDepsJSON(files []*pb.File, language string) string {
 	}
 
 	// Aggregate to folder level
-	type folderEdge struct {
+	type folderEdgeCount struct {
 		count int
 	}
-	folderEfferent := map[string]map[string]*folderEdge{} // srcDir -> dstDir -> count
-	folderAfferent := map[string]map[string]*folderEdge{} // dstDir -> srcDir -> count
+	folderEfferent := map[string]map[string]*folderEdgeCount{}
+	folderAfferent := map[string]map[string]*folderEdgeCount{}
 	folderFileCount := map[string]int{}
 
 	for dir, fset := range filesByFolder {
@@ -754,26 +699,25 @@ func buildFolderDepsJSON(files []*pb.File, language string) string {
 		srcDir := path.Dir(e.src)
 		dstDir := path.Dir(e.dst)
 		if srcDir == dstDir {
-			continue // skip intra-folder deps
+			continue
 		}
 		if folderEfferent[srcDir] == nil {
-			folderEfferent[srcDir] = map[string]*folderEdge{}
+			folderEfferent[srcDir] = map[string]*folderEdgeCount{}
 		}
 		if folderEfferent[srcDir][dstDir] == nil {
-			folderEfferent[srcDir][dstDir] = &folderEdge{}
+			folderEfferent[srcDir][dstDir] = &folderEdgeCount{}
 		}
 		folderEfferent[srcDir][dstDir].count++
 
 		if folderAfferent[dstDir] == nil {
-			folderAfferent[dstDir] = map[string]*folderEdge{}
+			folderAfferent[dstDir] = map[string]*folderEdgeCount{}
 		}
 		if folderAfferent[dstDir][srcDir] == nil {
-			folderAfferent[dstDir][srcDir] = &folderEdge{}
+			folderAfferent[dstDir][srcDir] = &folderEdgeCount{}
 		}
 		folderAfferent[dstDir][srcDir].count++
 	}
 
-	// Collect all folders with deps
 	allFolders := map[string]struct{}{}
 	for k := range folderEfferent {
 		allFolders[k] = struct{}{}
@@ -786,86 +730,55 @@ func buildFolderDepsJSON(files []*pb.File, language string) string {
 		return ""
 	}
 
-	esc := func(s string) string {
-		return strings.ReplaceAll(strings.ReplaceAll(s, "\\", "\\\\"), "\"", "\\\"")
+	// Build payload using structs
+	payload := folderDepsPayload{
+		Folders:       make(map[string]folderDepsEntry, len(allFolders)),
+		FilesByFolder: make(map[string][]string),
 	}
 
-	var b strings.Builder
-	b.WriteString("{\"folders\":{")
-	first := true
 	for dir := range allFolders {
-		if !first {
-			b.WriteString(",")
+		entry := folderDepsEntry{
+			Efferent: make([]folderDepRef, 0),
+			Afferent: make([]folderDepRef, 0),
 		}
-		first = false
-		b.WriteString("\"")
-		b.WriteString(esc(dir))
-		b.WriteString("\":{\"efferent\":[")
-		ei := 0
 		if eff, ok := folderEfferent[dir]; ok {
 			for target, fe := range eff {
-				if ei > 0 {
-					b.WriteString(",")
-				}
-				b.WriteString("{\"path\":\"")
-				b.WriteString(esc(target))
-				b.WriteString("\",\"count\":")
-				b.WriteString(fmt.Sprintf("%d", fe.count))
-				b.WriteString("}")
-				ei++
+				entry.Efferent = append(entry.Efferent, folderDepRef{
+					Path:  dict.Add(target),
+					Count: fe.count,
+				})
 			}
 		}
-		b.WriteString("],\"afferent\":[")
-		ai := 0
 		if aff, ok := folderAfferent[dir]; ok {
 			for source, fe := range aff {
-				if ai > 0 {
-					b.WriteString(",")
-				}
-				b.WriteString("{\"path\":\"")
-				b.WriteString(esc(source))
-				b.WriteString("\",\"count\":")
-				b.WriteString(fmt.Sprintf("%d", fe.count))
-				b.WriteString("}")
-				ai++
+				entry.Afferent = append(entry.Afferent, folderDepRef{
+					Path:  dict.Add(source),
+					Count: fe.count,
+				})
 			}
 		}
-		b.WriteString("],\"fileCount\":")
 		fc := folderFileCount[dir]
 		if fc == 0 {
 			fc = 1
 		}
-		b.WriteString(fmt.Sprintf("%d", fc))
-		b.WriteString("}")
-	}
-	b.WriteString("},\"filesByFolder\":{")
-	first = true
-	for dir := range allFolders {
-		fset := filesByFolder[dir]
-		if len(fset) == 0 {
-			continue
-		}
-		if !first {
-			b.WriteString(",")
-		}
-		first = false
-		b.WriteString("\"")
-		b.WriteString(esc(dir))
-		b.WriteString("\":[")
-		fi := 0
-		for fp := range fset {
-			if fi > 0 {
-				b.WriteString(",")
+		entry.FileCount = fc
+		payload.Folders[dict.Add(dir)] = entry
+
+		// filesByFolder
+		if fset, ok := filesByFolder[dir]; ok && len(fset) > 0 {
+			flist := make([]string, 0, len(fset))
+			for fp := range fset {
+				flist = append(flist, dict.Add(fp))
 			}
-			b.WriteString("\"")
-			b.WriteString(esc(fp))
-			b.WriteString("\"")
-			fi++
+			payload.FilesByFolder[dict.Add(dir)] = flist
 		}
-		b.WriteString("]")
 	}
-	b.WriteString("}}")
-	return b.String()
+
+	data, err := json.Marshal(payload)
+	if err != nil {
+		return ""
+	}
+	return string(data)
 }
 
 func (v *HtmlReportGenerator) GenerateLanguagePage(template string, language string, currentView analyzer.Aggregated, files []*pb.File, projectAggregated analyzer.ProjectAggregated) error {
@@ -881,7 +794,7 @@ func (v *HtmlReportGenerator) GenerateLanguagePage(template string, language str
 
 	// Use pre-computed cached data for this language
 	cd := v.langCache[language]
-	out, err := tpl.Execute(pongo2.Context{"datetime": datetime, "page": template, "currentLanguage": language, "currentView": currentView, "projectAggregated": projectAggregated, "files": files, "risksByPath": cd.risksByPath, "filesJSON": cd.filesJSON, "risksJSON": cd.risksJSON, "nodeToCommunityJSON": cd.nodeToCommunityJSON, "testQualityJSON": cd.testQualityJSON, "fileDepsJSON": cd.fileDepsJSON, "folderDepsJSON": cd.folderDepsJSON, "depFileCount": cd.depFileCount})
+	out, err := tpl.Execute(pongo2.Context{"datetime": datetime, "page": template, "currentLanguage": language, "currentView": currentView, "projectAggregated": projectAggregated, "files": files, "risksByPath": cd.risksByPath, "filesJSON": cd.filesJSON, "risksJSON": cd.risksJSON, "nodeToCommunityJSON": cd.nodeToCommunityJSON, "testQualityJSON": cd.testQualityJSON, "fileDepsJSON": cd.fileDepsJSON, "folderDepsJSON": cd.folderDepsJSON, "depFileCount": cd.depFileCount, "dictionaryJSON": cd.dictionaryJSON})
 	if err != nil {
 		log.Error(err)
 		return err
@@ -917,80 +830,6 @@ func (v *HtmlReportGenerator) EnsureFolder(path string) error {
 }
 
 func (v *HtmlReportGenerator) RegisterFilters() {
-
-	// include_all_files_as_json: returns pre-rendered JSON for files of current page (by language)
-	pongo2.RegisterFilter("include_all_files_as_json", func(in *pongo2.Value, param *pongo2.Value) (out *pongo2.Value, err *pongo2.Error) {
-		// in is []*pb.File; we will emit minimal JSON for Explorer page needs.
-		files := in.Interface().([]*pb.File)
-		// Build JSON manually to avoid bringing an extra dependency and to keep control on fields.
-		// We purposefully escape quotes and backslashes for safety in HTML context when used inside <script type="application/json">.
-		b := strings.Builder{}
-		b.WriteString("[")
-		first := true
-		for _, f := range files {
-			if !first {
-				b.WriteString(",")
-			} else {
-				first = false
-			}
-			// basic fields with escaping
-			path := strings.ReplaceAll(strings.ReplaceAll(f.Path, "\\", "\\\\"), "\"", "\\\"")
-			shortPath := strings.ReplaceAll(strings.ReplaceAll(f.ShortPath, "\\", "\\\\"), "\"", "\\\"")
-			lang := strings.ReplaceAll(strings.ReplaceAll(f.ProgrammingLanguage, "\\", "\\\\"), "\"", "\\\"")
-			b.WriteString("{\"path\":\"")
-			b.WriteString(path)
-			b.WriteString("\",\"shortPath\":\"")
-			b.WriteString(shortPath)
-			b.WriteString("\",\"programmingLanguage\":\"")
-			b.WriteString(lang)
-			b.WriteString("\"")
-			// risk score
-			if f.Stmts != nil && f.Stmts.Analyze != nil && f.Stmts.Analyze.Risk != nil {
-				b.WriteString(",\"risk\":{")
-				b.WriteString("\"score\":")
-				b.WriteString(fmt.Sprintf("%g", f.Stmts.Analyze.Risk.Score))
-				b.WriteString("}")
-			}
-			// classes minimal metrics
-			classes := engine.GetClassesInFile(f)
-			b.WriteString(",\"classes\":[")
-			cFirst := true
-			for _, c := range classes {
-				if !cFirst {
-					b.WriteString(",")
-				} else {
-					cFirst = false
-				}
-				name := ""
-				if c.Name != nil {
-					name = c.Name.GetQualified()
-				}
-				name = strings.ReplaceAll(strings.ReplaceAll(name, "\\", "\\\\"), "\"", "\\\"")
-				b.WriteString("{\"name\":\"")
-				b.WriteString(name)
-				b.WriteString("\"")
-				// MI
-				if c.Stmts != nil && c.Stmts.Analyze != nil && c.Stmts.Analyze.Maintainability != nil && c.Stmts.Analyze.Maintainability.MaintainabilityIndex != nil {
-					b.WriteString(",\"mi\":")
-					b.WriteString(fmt.Sprintf("%g", *c.Stmts.Analyze.Maintainability.MaintainabilityIndex))
-				}
-				// efferent
-				if c.Stmts != nil && c.Stmts.Analyze != nil && c.Stmts.Analyze.Coupling != nil {
-					b.WriteString(",\"efferent\":")
-					b.WriteString(fmt.Sprintf("%d", c.Stmts.Analyze.Coupling.Efferent))
-				}
-				// lcom4
-				if c.Stmts != nil && c.Stmts.Analyze != nil && c.Stmts.Analyze.ClassCohesion != nil && c.Stmts.Analyze.ClassCohesion.Lcom4 != nil {
-					b.WriteString(",\"lcom4\":")
-					b.WriteString(fmt.Sprintf("%d", *c.Stmts.Analyze.ClassCohesion.Lcom4))
-				}
-				b.WriteString("}")
-			}
-			b.WriteString("]}")
-		}
-		b.WriteString("]")
-		return pongo2.AsSafeValue(b.String()), nil
-	})
 
 	pongo2.RegisterFilter("sortMaintainabilityIndex", func(in *pongo2.Value, param *pongo2.Value) (out *pongo2.Value, err *pongo2.Error) {
 		// get the list to sort

@@ -214,6 +214,10 @@ document.addEventListener('DOMContentLoaded', function() {
         var depFileCount = 0;
         try { depFileCount = parseInt(document.getElementById('dep-file-count').textContent, 10) || 0; } catch(e) {}
 
+        var dict = {};
+        try { dict = JSON.parse(document.getElementById('string-dict').textContent || '{}'); } catch(e) { dict = {}; }
+        function resolve(h) { return dict[h] || h; }
+
         var fileKeys = Object.keys(deps);
         if (fileKeys.length === 0 && !folderDeps) {
             document.getElementById('dep-empty').classList.remove('hidden');
@@ -550,7 +554,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 nc.addChild(gfx);
 
                 // Label
-                var lbl = new PIXI.Text(shortLabel(d.id), {
+                var lbl = new PIXI.Text(shortLabel(resolve(d.id)), {
                     fontSize: 10,
                     fill: '#334155',
                     fontFamily: 'system-ui, -apple-system, sans-serif',
@@ -566,7 +570,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 d._color = color;
 
                 nc.on('pointerover', function(ev) {
-                    tooltip.innerHTML = '<strong>' + d.id + '</strong><br>Efferent: ' + d.eff + ' &middot; Afferent: ' + d.aff;
+                    tooltip.innerHTML = '<strong>' + resolve(d.id) + '</strong><br>Efferent: ' + d.eff + ' &middot; Afferent: ' + d.aff;
                     tooltip.classList.add('visible');
                     var gp = ev.global || ev.data.global;
                     tooltip.style.left = gp.x + 'px';
@@ -687,7 +691,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 gfx.drawCircle(0, 0, d._radius);
                 nc.addChild(gfx);
 
-                var lbl = new PIXI.Text(shortFolderLabel(d.id), {
+                var lbl = new PIXI.Text(shortFolderLabel(resolve(d.id)), {
                     fontSize: 10,
                     fill: '#334155',
                     fontFamily: 'system-ui, -apple-system, sans-serif',
@@ -703,7 +707,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 d._color = color;
 
                 nc.on('pointerover', function(ev) {
-                    tooltip.innerHTML = '<strong>' + d.id + '</strong><br>Files: ' + d.fileCount + '<br>Efferent: ' + d.eff + ' &middot; Afferent: ' + d.aff;
+                    tooltip.innerHTML = '<strong>' + resolve(d.id) + '</strong><br>Files: ' + d.fileCount + '<br>Efferent: ' + d.eff + ' &middot; Afferent: ' + d.aff;
                     tooltip.classList.add('visible');
                     var gp = ev.global || ev.data.global;
                     tooltip.style.left = gp.x + 'px';
@@ -743,7 +747,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     state.mode = 'files';
                     state.expandedFolder = d.id;
                     breadcrumb.classList.remove('hidden');
-                    breadcrumbCurrent.textContent = d.id;
+                    breadcrumbCurrent.textContent = resolve(d.id);
                     // Sync radio to files
                     document.querySelectorAll('input[name="dep-view"]').forEach(function(r) { if (r.value === 'files') r.checked = true; });
                     renderFileView(d.id);
