@@ -6,6 +6,9 @@ site_description: >-
 edit_uri: edit/documentation/docs/
 site_url: https://halleck45.github.io/ast-metrics/
 
+extra_files:
+  - CNAME
+  
 theme:
   name: material
   features:
