@@ -41,9 +41,28 @@
   height: 2.5rem;
 }
 
+.hero-cta {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 2rem 1.5rem 0;
+}
+
 .hero-cta a,
 .hero-cta a:hover {
   color: #FFF;
+}
+
+.hero-cta a.cta-button-outline {
+  color: #111827;
+}
+
+.hero-cta a.cta-button-outline:hover {
+  color: white;
 }
 
 /* Fix Search Hover */
@@ -155,6 +174,18 @@ h6 {
   transform: translateY(-2px);
   box-shadow: 0 20px 35px -10px rgba(0, 0, 0, 0.2);
   background: #000;
+}
+
+.cta-button-outline {
+  background: transparent;
+  color: #111827;
+  border: 2px solid #111827;
+  box-shadow: none;
+}
+
+.cta-button-outline:hover {
+  background: #111827;
+  color: white;
 }
 
 .hero-visual {
@@ -415,6 +446,10 @@ h6 {
 
   .hero-visual {
     display: none;
+  }
+
+  .hero-cta {
+    justify-content: center;
   }
 
   .cta-button {
