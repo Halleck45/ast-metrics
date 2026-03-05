@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"errors"
 	"fmt"
+	"strings"
 
 	"github.com/fsnotify/fsnotify"
 	"github.com/halleck45/ast-metrics/internal/analyzer"
@@ -256,12 +257,33 @@ func buildProjectContext(pa analyzer.ProjectAggregated) ruleset.ProjectContext {
 	return ctx
 }
 
+func uniqueExts(s []string) []string {
+	seen := make(map[string]bool, len(s))
+	result := make([]string, 0, len(s))
+	for _, v := range s {
+		if !strings.HasPrefix(v, ".") {
+			v = "." + v
+		}
+		if !seen[v] {
+			seen[v] = true
+			result = append(result, v)
+		}
+	}
+	return result
+}
+
 func (v *AnalyzeCommand) ExecuteRunnerAnalysis(config *configuration.Configuration) ([]*pb.File, error) {
 	// Precompute file discovery for all languages in a single directory walk
 	if config.FileDiscovery == nil {
 		discovery := &filefinder.FileDiscovery{}
 		finder := filefinder.Finder{Configuration: *config}
-		discovery.Precompute(finder, []string{".go", ".php", ".py", ".rs"})
+		allExts := []string{".go", ".php", ".py", ".rs"}
+		if config.Extensions != nil {
+			for _, exts := range config.Extensions {
+				allExts = append(allExts, exts...)
+			}
+		}
+		discovery.Precompute(finder, uniqueExts(allExts))
 		config.FileDiscovery = discovery
 	}
 

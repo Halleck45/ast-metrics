@@ -86,6 +86,33 @@ func TestLoadsErrorDecodingYAML(t *testing.T) {
 	assert.Equal(t, &Configuration{}, cfg)
 }
 
+func TestLoadsExtensions(t *testing.T) {
+	tempFile, _ := ioutil.TempFile("", "test")
+	defer os.Remove(tempFile.Name())
+
+	yamlData := `
+sources:
+  - ./
+extensions:
+  php: [".inc", ".module"]
+  go: [".go2"]
+`
+	os.WriteFile(tempFile.Name(), []byte(yamlData), 0644)
+
+	loader := &ConfigurationLoader{FilenameToChecks: []string{tempFile.Name()}}
+	cfg, err := loader.Loads(&Configuration{})
+
+	assert.NoError(t, err)
+	assert.Equal(t, []string{".inc", ".module"}, cfg.Extensions["php"])
+	assert.Equal(t, []string{".go2"}, cfg.Extensions["go"])
+
+	// GetExtensionsForLanguage should merge with defaults
+	phpExts := cfg.GetExtensionsForLanguage("php")
+	assert.Contains(t, phpExts, ".php")
+	assert.Contains(t, phpExts, ".inc")
+	assert.Contains(t, phpExts, ".module")
+}
+
 func TestCreateDefaultFile(t *testing.T) {
 	loader := NewConfigurationLoader()
 

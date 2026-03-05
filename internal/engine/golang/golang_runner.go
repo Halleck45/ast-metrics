@@ -146,7 +146,12 @@ func (r *GolangRunner) getFileList() File.FileList {
 			finder.Discovery = fd
 		}
 	}
-	r.foundFiles = finder.Search(".go")
+	extensions := r.Configuration.GetExtensionsForLanguage("go")
+	var lists []File.FileList
+	for _, ext := range extensions {
+		lists = append(lists, finder.Search(ext))
+	}
+	r.foundFiles = File.MergeFileLists(lists...)
 
 	return r.foundFiles
 }

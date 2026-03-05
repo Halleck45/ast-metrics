@@ -77,7 +77,12 @@ func (r *RustRunner) getFileList() file.FileList {
 			finder.Discovery = fd
 		}
 	}
-	r.foundFiles = finder.Search(".rs")
+	extensions := r.Configuration.GetExtensionsForLanguage("rust")
+	var lists []file.FileList
+	for _, ext := range extensions {
+		lists = append(lists, finder.Search(ext))
+	}
+	r.foundFiles = file.MergeFileLists(lists...)
 	return r.foundFiles
 }
 
