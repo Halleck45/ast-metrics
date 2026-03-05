@@ -104,9 +104,9 @@ function fileSidebar() {
         isExplorerPage: isExplorerPage,
 
         init() {
-            const parse = (id) => { try { return JSON.parse(document.getElementById(id)?.textContent || 'null'); } catch (e) { return null; } };
-            this.files = parse('sidebar-files-data') || [];
-            this.risksByPath = parse('sidebar-risks-data') || {};
+            const d = window.__AST_DATA__ || {};
+            this.files = d.files || [];
+            this.risksByPath = d.risks || {};
             this.buildTree();
             this.$watch('query', () => this.buildTree());
             this.$watch('minRisks', () => this.buildTree());

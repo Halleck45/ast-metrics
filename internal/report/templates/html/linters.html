@@ -97,29 +97,6 @@
         <div class="mt-6 p-4 bg-yellow-50 border border-yellow-200 text-yellow-800 rounded-lg">No requirements were evaluated. Configure requirements to see linters results.</div>
     {% else %}
 
-    <!-- Data injection -->
-    <script type="text/plain" id="errors-data" x-ref="errors">
-        [
-        {% for e in projectAggregated.Evaluation.Errors %}
-            {"message":"{{ e.Message|escape }}","rule":"{{ e.Rule|escape }}","severity":"{{ e.Severity|escape }}","file":"{{ e.File|escape }}"}{% if not forloop.Last %},{% endif %}
-        {% endfor %}
-        ]
-    </script>
-    <script type="text/plain" id="success-data" x-ref="successes">
-        [
-        {% for s in projectAggregated.Evaluation.Successes %}
-            {"message":"{{ s.Message|escape }}","rule":"{{ s.Rule|escape }}","severity":"{{ s.Severity|escape }}","file":"{{ s.File|escape }}"}{% if not forloop.Last %},{% endif %}
-        {% endfor %}
-        ]
-    </script>
-    <script type="text/plain" id="allowed-files" x-ref="allowed">
-        [
-        {% for f in currentView.ConcernedFiles %}
-            "{{ f.Path|escape }}"{% if not forloop.Last %},{% endif %}
-        {% endfor %}
-        ]
-    </script>
-
     <div x-data="linters()" x-init="init()">
         <!-- start: line of cards -->
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mt-6">
@@ -255,14 +232,20 @@
                 loading: true,
                 query: '',
                 init() {
-                    const errsEl = document.getElementById('errors-data');
-                    const succEl = document.getElementById('success-data');
-                    const allowEl = document.getElementById('allowed-files');
-                    try { this.errors = JSON.parse((errsEl && errsEl.textContent) ? errsEl.textContent : '[]'); } catch(e){ this.errors = []; }
-                    try { this.successes = JSON.parse((succEl && succEl.textContent) ? succEl.textContent : '[]'); } catch(e){ this.successes = []; }
-                    let list = [];
-                    try { list = JSON.parse((allowEl && allowEl.textContent) ? allowEl.textContent : '[]'); } catch(e){ list = []; }
-                    this.allowed = new Set(Array.isArray(list) ? list : []);
+                    // Decode dictionary-encoded linter data from data/linters.js
+                    const L = window.__AST_LINTERS__ || {};
+                    const dict = L.d || {};
+                    const decode = (arr) => (arr || []).map(t => ({
+                        rule: dict[t[0]] || t[0],
+                        severity: dict[t[1]] || t[1],
+                        file: dict[t[2]] || t[2],
+                        message: t[3]
+                    }));
+                    this.errors = decode(L.e);
+                    this.successes = decode(L.s);
+                    // Derive allowed files from the per-language files list (Level 2)
+                    const d = window.__AST_DATA__ || {};
+                    this.allowed = new Set((d.files || []).map(f => f.path));
                     this.loading = false;
                 },
                 inScope(item) {
@@ -275,10 +258,8 @@
                     return this.errors.filter(e => this.inScope(e) && (e.severity || 'unknown').toLowerCase() === s).length;
                 },
                 get countSuccess() {
-                    // Prefer explicit successes when provided
                     const explicit = this.successes.filter(e => this.inScope(e)).length;
                     if (explicit > 0) return explicit;
-                    // Fallback: count files in scope that have no errors
                     const filesWithErrors = new Set(this.errors.filter(e => this.inScope(e)).map(e => e.file));
                     let total = 0;
                     for (const f of this.allowed) {

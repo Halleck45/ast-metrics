@@ -505,11 +505,6 @@ AST Metrics - Explorer
   </div>
 </div>
 
-<!-- Data nodes provided as JSON for maintainability -->
-<script id="files-data" type="application/json">{{filesJSON|safe}}</script>
-<script id="risks-data" type="application/json">{{ risksJSON|safe }}</script>
-<script id="file-deps-data" type="application/json">{{ fileDepsJSON|safe }}</script>
-
 {% endblock %}
 
 {% block javascripts %}
@@ -544,11 +539,11 @@ AST Metrics - Explorer
       openGlossary: false,
 
       init() {
-        const parse = (id) => { try { return JSON.parse(document.getElementById(id)?.textContent || 'null'); } catch (e) { return null; } };
-        this.files = parse('files-data') || [];
-        this.risksByPath = parse('risks-data') || {};
-        this.fileDeps = parse('file-deps-data') || {};
-        this.dict = parse('string-dict') || {};
+        const _d = window.__AST_DATA__ || {};
+        this.files = _d.files || [];
+        this.risksByPath = _d.risks || {};
+        this.fileDeps = _d.fileDeps || {};
+        this.dict = _d.dictionary || {};
         this.$watch('filters', () => this.rebuild(), { deep: true });
         this.rebuild();
         const requestedFile = this.getFileQueryParam();

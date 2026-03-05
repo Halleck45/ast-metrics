@@ -102,9 +102,6 @@
 </div>
 <!-- end language tabs -->
 
-<script id="dep-data" type="application/json">{{ fileDepsJSON|safe }}</script>
-<script id="dep-folder-data" type="application/json">{{ folderDepsJSON|safe }}</script>
-<script id="dep-file-count" type="application/json">{{ depFileCount }}</script>
 
 <div id="dep-empty" class="hidden text-center py-16 text-gray-500">
     <svg xmlns="http://www.w3.org/2000/svg" class="mx-auto h-16 w-16 mb-4 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -201,21 +198,11 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     waitForLibs(function() {
-        var raw = document.getElementById('dep-data').textContent;
-        var deps;
-        try { deps = JSON.parse(raw); } catch(e) { deps = {}; }
-
-        var folderDeps = null;
-        try {
-            var fd = document.getElementById('dep-folder-data').textContent.trim();
-            if (fd && fd !== '') folderDeps = JSON.parse(fd);
-        } catch(e) { folderDeps = null; }
-
-        var depFileCount = 0;
-        try { depFileCount = parseInt(document.getElementById('dep-file-count').textContent, 10) || 0; } catch(e) {}
-
-        var dict = {};
-        try { dict = JSON.parse(document.getElementById('string-dict').textContent || '{}'); } catch(e) { dict = {}; }
+        var _d = window.__AST_DATA__ || {};
+        var deps = _d.fileDeps || {};
+        var folderDeps = _d.folderDeps || null;
+        var depFileCount = _d.depFileCount || 0;
+        var dict = _d.dictionary || {};
         function resolve(h) { return dict[h] || h; }
 
         var fileKeys = Object.keys(deps);

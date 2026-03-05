@@ -312,8 +312,8 @@
         <main class="col-span-full lg:col-span-6">
             <div class="bg-gray-100 py-8 px-8">
 
-                <script id="sidebar-files-data" type="application/json">{{ filesJSON|safe }}</script>
-                <script id="sidebar-risks-data" type="application/json">{{ risksJSON|safe }}</script>
+                <script src="{{ dataScriptPath }}"></script>
+                {% if linterScriptPath and page == "linters.html" %}<script src="{{ linterScriptPath }}"></script>{% endif %}
 
                 {% block content %}{% endblock %}
             </div>
@@ -416,7 +416,6 @@
             });
         });
     </script>
-    <script id="string-dict" type="application/json">{{ dictionaryJSON|safe }}</script>
     {% block javascripts %}{% endblock %}
 </body>
 

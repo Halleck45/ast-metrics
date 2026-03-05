@@ -254,13 +254,10 @@ AST Metrics - Test Quality
 {% endblock %}
 
 {% block javascripts %}
-<script type="application/json" id="testquality-data">{{ testQualityJSON|safe }}</script>
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    var rawData = document.getElementById('testquality-data');
-    if (!rawData) return;
-    var data;
-    try { data = JSON.parse(rawData.textContent); } catch(e) { return; }
+    var data = (window.__AST_DATA__ || {}).testQuality;
+    if (!data) return;
 
     // Isolation Distribution Histogram
     if (data.isolationHistogram && typeof d3 !== 'undefined') {
