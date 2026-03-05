@@ -535,6 +535,20 @@ document.addEventListener('DOMContentLoaded', function() {
             requestRender();
         }
 
+        // Respond to container size changes (sidebar toggle, window resize)
+        var resizeObserver = new ResizeObserver(function(entries) {
+            var entry = entries[0];
+            var newW = entry.contentRect.width;
+            var newH = entry.contentRect.height;
+            if (newW > 0 && newH > 0 && (newW !== W || newH !== H)) {
+                W = newW;
+                H = newH;
+                app.renderer.resize(W, H);
+                fitToView();
+            }
+        });
+        resizeObserver.observe(wrapper);
+
         function updateLabelPositions() {
             var groupMap = {};
             nodes.forEach(function(d) {
