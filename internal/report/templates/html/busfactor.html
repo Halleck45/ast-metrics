@@ -234,17 +234,68 @@ AST Metrics - Bus Factor
     </div>
 </div>
 
-<!-- Per-Community Section -->
 {% set cm = currentView.Community %}
-{% if cm and cm.TopCommittersPerCommunity %}
-<div class="mt-8">
+{% set hasCommunityData = cm and cm.TopCommittersPerCommunity %}
+
+<!-- View toggle -->
+<div id="bf-view-toggle" class="flex flex-wrap items-center gap-3 mt-8 mb-4 text-xs font-medium text-gray-600">
+    <span class="text-gray-500">Aggregate by:</span>
+    <label class="flex items-center gap-1.5 cursor-pointer bg-gray-50 px-3 py-1.5 rounded-lg hover:bg-gray-100 transition-colors">
+        <input type="radio" name="bf-view" value="folder" checked class="w-3.5 h-3.5 text-blue-600">
+        <span>By folder</span>
+    </label>
+    <label class="flex items-center gap-1.5 bg-gray-50 px-3 py-1.5 rounded-lg transition-colors {% if hasCommunityData %}cursor-pointer hover:bg-gray-100{% else %}opacity-50 cursor-not-allowed{% endif %}">
+        <input type="radio" name="bf-view" value="community" class="w-3.5 h-3.5 text-blue-600" {% if not hasCommunityData %}disabled{% endif %}>
+        <span>By community</span>
+    </label>
+</div>
+
+<!-- Per-Folder Section -->
+<div id="bf-folder-section" class="mt-2">
+    <h2 class="text-2xl font-bold text-gray-900 mb-2">Bus Factor by Folder</h2>
+    <div class="text-gray-800">
+        Folder metrics are computed from git commits on files inside each directory.
+    </div>
+    <div class="mt-4 mb-2">
+        <div class="flex items-center justify-between gap-4 text-xs text-gray-600">
+            <span class="font-medium text-gray-500">Granularity</span>
+            <span id="bf-granularity-label" class="text-gray-500">Normal</span>
+        </div>
+        <input id="bf-granularity" type="range" min="0" max="100" step="1" value="50" class="w-full accent-blue-600 mt-2">
+        <div class="flex items-center justify-between text-[11px] text-gray-400 mt-1">
+            <span>Compact</span>
+            <span>Normal</span>
+            <span>Detailed</span>
+        </div>
+    </div>
+    <p id="bf-folder-pruning-meta" class="text-xs text-gray-500 mt-2 mb-6"></p>
+    <div class="relative min-h-[96px]">
+        <div id="bf-folder-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"></div>
+        <div id="bf-folder-loading" class="absolute inset-0 z-10 flex items-center justify-center bg-white/80 rounded-xl">
+            <div class="flex items-center gap-2 text-sm text-gray-500 font-medium">
+                <svg class="w-4 h-4 animate-spin text-blue-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 0 1 8-8v4a4 4 0 0 0-4 4H4z"></path>
+                </svg>
+                <span>Computing folder groups...</span>
+            </div>
+        </div>
+    </div>
+    <div id="bf-folder-empty" class="dashboard-card p-6 hidden">
+        <p class="text-gray-600">No folder commit data available for this language.</p>
+    </div>
+</div>
+
+<!-- Per-Community Section -->
+<div id="bf-community-section" class="mt-8 hidden" data-has-community="{% if hasCommunityData %}1{% else %}0{% endif %}">
+    {% if hasCommunityData %}
     <h2 class="text-2xl font-bold text-gray-900 mb-2">Bus Factor by Community</h2>
 
-    <div class="text-gray-800  mb-6">
+    <div class="text-gray-800 mb-6">
         Community ≠ folder. They behave more like centers of gravity that your code naturally orbits around.
     </div>
 
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+    <div id="bf-community-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {% for communityID, committers in cm.TopCommittersPerCommunity %}
         <div class="dashboard-card p-5 animate-fade-in-up">
             <div class="flex items-start justify-between mb-3">
@@ -258,7 +309,7 @@ AST Metrics - Bus Factor
                     <div class="text-2xl font-bold text-blue-600 metric-value">
                         {% for k, bf in cm.BusFactorPerCommunity %}
                         {% if k == communityID %}{{ bf }}{% endif %}
-                        {%endfor%}
+                        {% endfor %}
                     </div>
                     <p class="text-xs text-gray-500">Bus Factor</p>
                     <div class="mt-2 text-sm text-gray-600">
@@ -268,12 +319,11 @@ AST Metrics - Bus Factor
                 </div>
             </div>
 
-            <!-- Sparkline Timeline -->
             <div class="mb-3">
                 <div class="flex items-end justify-between h-8 gap-0.5">
                     {% for author, count in committers %}
                     {% if forloop.Counter <= 10 %}
-                    <div class="flex-1 rounded-t opacity-80 hover:opacity-100 transition-opacity" 
+                    <div class="flex-1 rounded-t opacity-80 hover:opacity-100 transition-opacity"
                         style="height: {{ count }}px; max-height: 32px; background-color: {{ author|contributorColor }};"
                         title="{{ author }}: {{ count }} commits">
                     </div>
@@ -283,37 +333,750 @@ AST Metrics - Bus Factor
                 <p class="text-xs text-gray-800 mt-1">Commit distribution</p>
             </div>
 
-        <!-- Top Contributors -->
-        <div class="border-t border-gray-100 pt-3">
-            <p class="text-xs font-medium text-gray-500 mb-2">Top Contributors</p>
-            <div class="space-y-1">
-                {% for author, count in committers %}
-                {% if forloop.Counter <= 5 %}
-                <div class="flex justify-between items-center text-xs">
-                    <div class="flex items-center gap-2 flex-1 min-w-0">
-                        <div class="contributor-avatar contributor-avatar-small" style="background-color: {{ author|contributorColor }};">
-                            {{ author|contributorInitials }}
+            <div class="border-t border-gray-100 pt-3">
+                <p class="text-xs font-medium text-gray-500 mb-2">Top Contributors</p>
+                <div class="space-y-1">
+                    {% for author, count in committers %}
+                    {% if forloop.Counter <= 5 %}
+                    <div class="flex justify-between items-center text-xs">
+                        <div class="flex items-center gap-2 flex-1 min-w-0">
+                            <div class="contributor-avatar contributor-avatar-small" style="background-color: {{ author|contributorColor }};">
+                                {{ author|contributorInitials }}
+                            </div>
+                            <span class="text-gray-900 truncate" title="{{ author }}">{{ author }}</span>
                         </div>
-                        <span class="text-gray-900 truncate" title="{{ author }}">{{ author }}</span>
+                        <span class="text-gray-500 bg-gray-100 px-2 py-0.5 rounded-full font-medium ml-2 flex-shrink-0">{{ count }}</span>
                     </div>
-                    <span class="text-gray-500 bg-gray-100 px-2 py-0.5 rounded-full font-medium ml-2 flex-shrink-0">{{ count }}</span>
+                    {% endif %}
+                    {% endfor %}
+                    {% if committers|length > 5 %}
+                    <p class="text-xs text-gray-800 mt-2">+ {{ committers|length|add:"-5" }} more</p>
+                    {% endif %}
                 </div>
-                {% endif %}
-                {% endfor %}
-                {% if committers|length > 5 %}
-                <p class="text-xs text-gray-800 mt-2">+ {{ committers|length|add:"-5" }} more</p>
-                {% endif %}
             </div>
         </div>
+        {% endfor %}
     </div>
-{% endfor %}
+    {% else %}
+    <div class="dashboard-card p-6">
+        <p class="text-gray-600">No community data available. Run community detection to see per-community bus factor metrics.</p>
+    </div>
+    {% endif %}
 </div>
-</div>
-{% else %}
-<div class="dashboard-card p-6 mt-8">
-    <p class="text-gray-600">No community data available. Run community detection to see per-community bus factor
-        metrics.</p>
-</div>
-{% endif %}
 
+{% endblock %}
+
+{% block javascripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    var folderSection = document.getElementById('bf-folder-section');
+    var communitySection = document.getElementById('bf-community-section');
+    var folderGrid = document.getElementById('bf-folder-grid');
+    var folderLoading = document.getElementById('bf-folder-loading');
+    var folderEmpty = document.getElementById('bf-folder-empty');
+    var pruningMeta = document.getElementById('bf-folder-pruning-meta');
+    var granularityInput = document.getElementById('bf-granularity');
+    var granularityLabelEl = document.getElementById('bf-granularity-label');
+    if (!folderSection || !communitySection || !folderGrid || !folderLoading || !folderEmpty || !pruningMeta || !granularityInput || !granularityLabelEl) return;
+
+    var files = (window.__AST_DATA__ && Array.isArray(window.__AST_DATA__.files)) ? window.__AST_DATA__.files : [];
+    var radios = document.querySelectorAll('input[name="bf-view"]');
+    var communityRadio = document.querySelector('input[name="bf-view"][value="community"]');
+    var folderRadio = document.querySelector('input[name="bf-view"][value="folder"]');
+
+    function normalizePath(path) {
+        return String(path || '').replace(/\\/g, '/');
+    }
+
+    function commonPrefix(paths) {
+        if (!paths.length) return '';
+        var parts0 = paths[0].split('/');
+        var prefix = '';
+        for (var depth = 0; depth < parts0.length - 1; depth++) {
+            var candidate = parts0.slice(0, depth + 1).join('/') + '/';
+            var allMatch = paths.every(function(p) { return p.indexOf(candidate) === 0; });
+            if (!allMatch) break;
+            prefix = candidate;
+        }
+        return prefix;
+    }
+
+    function toFolderPath(path) {
+        var normalized = normalizePath(path);
+        var idx = normalized.lastIndexOf('/');
+        if (idx <= 0) return '/';
+        return normalized.slice(0, idx);
+    }
+
+    function initials(name) {
+        var cleaned = String(name || '').trim();
+        if (!cleaned) return '?';
+        var parts = cleaned.split(/\s+/).filter(Boolean);
+        if (!parts.length) return '?';
+        if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+        return (parts[0][0] + parts[1][0]).toUpperCase();
+    }
+
+    function colorFor(name) {
+        var hash = 0;
+        var input = String(name || '');
+        for (var i = 0; i < input.length; i++) {
+            hash = ((hash << 5) - hash) + input.charCodeAt(i);
+            hash |= 0;
+        }
+        var hue = Math.abs(hash) % 360;
+        return 'hsl(' + hue + ', 65%, 45%)';
+    }
+
+    function computeBusFactor(sortedCommitters, totalCommits) {
+        if (totalCommits <= 0 || sortedCommitters.length === 0) return 0;
+        var boundary = Math.floor(totalCommits / 2);
+        var acc = 0;
+        var factor = 0;
+        for (var i = 0; i < sortedCommitters.length; i++) {
+            acc += sortedCommitters[i].count;
+            factor++;
+            if (acc >= boundary) break;
+        }
+        return factor;
+    }
+
+    function clamp(value, min, max) {
+        return Math.max(min, Math.min(max, value));
+    }
+
+    function granularityLabel(value) {
+        if (value <= 33) return 'Compact';
+        if (value >= 67) return 'Detailed';
+        return 'Normal';
+    }
+
+    function authorDiversity(counts) {
+        var keys = Object.keys(counts || {});
+        if (!keys.length) {
+            return { authorCount: 0, dominance: 0, entropyNorm: 0, concentration: 1 };
+        }
+
+        var total = 0;
+        var maxCount = 0;
+        keys.forEach(function(key) {
+            var value = counts[key] || 0;
+            total += value;
+            if (value > maxCount) maxCount = value;
+        });
+        if (total <= 0) {
+            return { authorCount: keys.length, dominance: 0, entropyNorm: 0, concentration: 1 };
+        }
+
+        var entropy = 0;
+        keys.forEach(function(key) {
+            var p = (counts[key] || 0) / total;
+            if (p > 0) entropy -= p * Math.log(p);
+        });
+        var entropyNorm = keys.length > 1 ? (entropy / Math.log(keys.length)) : 0;
+        entropyNorm = clamp(entropyNorm, 0, 1);
+        return {
+            authorCount: keys.length,
+            dominance: maxCount / total,
+            entropyNorm: entropyNorm,
+            concentration: 1 - entropyNorm
+        };
+    }
+
+    function cloneCounts(source) {
+        var copy = {};
+        Object.keys(source || {}).forEach(function(key) {
+            copy[key] = source[key];
+        });
+        return copy;
+    }
+
+    function mergeCounts(target, source) {
+        Object.keys(source || {}).forEach(function(key) {
+            target[key] = (target[key] || 0) + source[key];
+        });
+        return target;
+    }
+
+    function totalCounts(counts) {
+        return Object.keys(counts || {}).reduce(function(sum, key) {
+            return sum + (counts[key] || 0);
+        }, 0);
+    }
+
+    function toSortedCommitters(counts) {
+        return Object.keys(counts || {}).map(function(author) {
+            return { name: author, count: counts[author] };
+        }).sort(function(a, b) {
+            if (b.count !== a.count) return b.count - a.count;
+            return a.name.localeCompare(b.name);
+        });
+    }
+
+    function jensenShannon(countsA, totalA, countsB, totalB) {
+        if (totalA <= 0 || totalB <= 0) return 0;
+        var keys = {};
+        Object.keys(countsA || {}).forEach(function(key) {
+            if (countsA[key] > 0) keys[key] = true;
+        });
+        Object.keys(countsB || {}).forEach(function(key) {
+            if (countsB[key] > 0) keys[key] = true;
+        });
+        var klA = 0;
+        var klB = 0;
+        Object.keys(keys).forEach(function(key) {
+            var pa = (countsA[key] || 0) / totalA;
+            var pb = (countsB[key] || 0) / totalB;
+            var mid = 0.5 * (pa + pb);
+            if (pa > 0 && mid > 0) klA += pa * Math.log(pa / mid);
+            if (pb > 0 && mid > 0) klB += pb * Math.log(pb / mid);
+        });
+        return 0.5 * (klA + klB);
+    }
+
+    function newFolderNode(path, parent, depth) {
+        return {
+            path: path,
+            parent: parent || null,
+            depth: depth || 0,
+            childrenByName: {},
+            children: [],
+            selfCounts: {},
+            selfTotal: 0,
+            totalCounts: {},
+            totalCommits: 0,
+            leafProfiles: [],
+            collapseLoss: 0,
+            committersSelf: [],
+            committersTotal: []
+        };
+    }
+
+    function insertFolder(root, folderPath, counts) {
+        var node = root;
+        var segments = folderPath === '/' ? [] : folderPath.split('/').filter(Boolean);
+        segments.forEach(function(segment) {
+            if (!node.childrenByName[segment]) {
+                var childPath = node.path === '/' ? segment : node.path + '/' + segment;
+                node.childrenByName[segment] = newFolderNode(childPath, node, node.depth + 1);
+            }
+            node = node.childrenByName[segment];
+        });
+        mergeCounts(node.selfCounts, counts);
+    }
+
+    function finalizeTree(node) {
+        var names = Object.keys(node.childrenByName).sort();
+        node.children = names.map(function(name) { return node.childrenByName[name]; });
+
+        node.selfTotal = totalCounts(node.selfCounts);
+        node.totalCounts = cloneCounts(node.selfCounts);
+        node.totalCommits = node.selfTotal;
+        node.leafProfiles = [];
+        if (node.selfTotal > 0) {
+            node.leafProfiles.push({ counts: node.selfCounts, total: node.selfTotal });
+        }
+
+        node.children.forEach(function(child) {
+            finalizeTree(child);
+            mergeCounts(node.totalCounts, child.totalCounts);
+            node.totalCommits += child.totalCommits;
+            if (child.leafProfiles.length > 0) {
+                node.leafProfiles = node.leafProfiles.concat(child.leafProfiles);
+            }
+        });
+
+        node.committersSelf = toSortedCommitters(node.selfCounts);
+        node.committersTotal = toSortedCommitters(node.totalCounts);
+
+        var loss = 0;
+        if (node.totalCommits > 0 && node.leafProfiles.length > 0) {
+            node.leafProfiles.forEach(function(leaf) {
+                loss += leaf.total * jensenShannon(leaf.counts, leaf.total, node.totalCounts, node.totalCommits);
+            });
+        }
+        node.collapseLoss = loss;
+    }
+
+    function nodeDisplayPenalty(node, lambda, depthWeight) {
+        return lambda * (1 + (depthWeight * (node.depth || 0)));
+    }
+
+    function solvePruning(node, lambda, depthWeight) {
+        if (node.totalCommits <= 0) {
+            return { cost: 0, selection: [] };
+        }
+
+        var collapse = {
+            cost: node.collapseLoss + nodeDisplayPenalty(node, lambda, depthWeight),
+            selection: [{ node: node, mode: 'aggregate' }]
+        };
+
+        var expandCost = 0;
+        var expandSelection = [];
+        if (node.selfTotal > 0) {
+            expandCost += nodeDisplayPenalty(node, lambda, depthWeight);
+            expandSelection.push({ node: node, mode: 'self' });
+        }
+        node.children.forEach(function(child) {
+            var sub = solvePruning(child, lambda, depthWeight);
+            expandCost += sub.cost;
+            if (sub.selection.length > 0) {
+                expandSelection = expandSelection.concat(sub.selection);
+            }
+        });
+
+        if (expandSelection.length === 0) {
+            return collapse;
+        }
+        return collapse.cost <= expandCost ? collapse : { cost: expandCost, selection: expandSelection };
+    }
+
+    function selectionInfoLoss(selection) {
+        var loss = 0;
+        (selection || []).forEach(function(sel) {
+            if (sel.mode === 'aggregate') {
+                loss += sel.node.collapseLoss || 0;
+            }
+        });
+        return loss;
+    }
+
+    function selectionToStats(selection) {
+        return (selection || []).map(function(sel) {
+            var useAggregate = sel.mode === 'aggregate';
+            var totalCommits = useAggregate ? sel.node.totalCommits : sel.node.selfTotal;
+            var committers = useAggregate ? sel.node.committersTotal : sel.node.committersSelf;
+            var subtitle = 'Folder';
+            if (useAggregate && sel.node.children.length > 0) {
+                subtitle = 'Folder group';
+            } else if (!useAggregate && sel.node.children.length > 0) {
+                subtitle = 'Folder (direct files)';
+            }
+            return {
+                folder: sel.node.path || '/',
+                subtitle: subtitle,
+                totalCommits: totalCommits,
+                committers: committers,
+                busFactor: computeBusFactor(committers, totalCommits)
+            };
+        }).filter(function(item) {
+            return item.totalCommits > 0;
+        }).sort(function(a, b) {
+            if (b.totalCommits !== a.totalCommits) return b.totalCommits - a.totalCommits;
+            return a.folder.localeCompare(b.folder);
+        });
+    }
+
+    function enforceMinimumSelection(selection, minNodes) {
+        var out = (selection || []).slice();
+        while (out.length < minNodes) {
+            var bestIdx = -1;
+            var bestWeight = 0;
+            for (var i = 0; i < out.length; i++) {
+                var entry = out[i];
+                if (entry.mode !== 'aggregate') continue;
+                var expandableChildren = entry.node.children.filter(function(child) { return child.totalCommits > 0; });
+                var possible = expandableChildren.length + (entry.node.selfTotal > 0 ? 1 : 0);
+                if (possible <= 1) continue;
+                var weight = entry.node.totalCommits;
+                if (weight > bestWeight) {
+                    bestWeight = weight;
+                    bestIdx = i;
+                }
+            }
+            if (bestIdx === -1) break;
+
+            var picked = out[bestIdx];
+            out.splice(bestIdx, 1);
+
+            var replacements = [];
+            var remaining = minNodes - out.length;
+            if (picked.node.selfTotal > 0 && remaining > 0) {
+                replacements.push({ node: picked.node, mode: 'self' });
+                remaining--;
+            }
+
+            var children = picked.node.children
+                .filter(function(child) { return child.totalCommits > 0; })
+                .sort(function(a, b) { return b.totalCommits - a.totalCommits; });
+
+            var take = children.length;
+            if (remaining > 0) {
+                take = Math.min(children.length, Math.max(1, remaining));
+            } else {
+                take = Math.min(children.length, 1);
+            }
+            for (var c = 0; c < take; c++) {
+                replacements.push({ node: children[c], mode: 'aggregate' });
+            }
+            if (!replacements.length) break;
+            out = out.concat(replacements);
+        }
+        return out;
+    }
+
+    function autoPruneFolderGroups(folderCommitters, granularityValue) {
+        var root = newFolderNode('/', null, 0);
+        Object.keys(folderCommitters).forEach(function(folder) {
+            insertFolder(root, folder, folderCommitters[folder]);
+        });
+        finalizeTree(root);
+
+        if (root.totalCommits <= 0 || root.leafProfiles.length === 0) {
+            return {
+                stats: [],
+                leafCount: 0,
+                lambda: 0
+            };
+        }
+
+        var leafCount = root.leafProfiles.length;
+        var totalCommitsInTree = root.totalCommits;
+        var normalizedGranularity = clamp(Number(granularityValue), 0, 100);
+        if (!isFinite(normalizedGranularity)) normalizedGranularity = 50;
+        var detailBias = (normalizedGranularity - 50) / 50; // [-1..1]
+        var compactness = clamp((50 - normalizedGranularity) / 50, 0, 1);
+        var detailness = clamp((normalizedGranularity - 50) / 50, 0, 1);
+        var diversity = authorDiversity(root.totalCounts);
+        var concentration = clamp(diversity.concentration, 0, 1);
+
+        var baseTargetNodes = Math.max(8, Math.min(40, Math.round(6 + (3.2 * Math.log(leafCount + 1)))));
+        var targetScale = 1 + (detailBias * 0.55);
+        var concentrationTargetScale = 1 - (0.40 * concentration * (0.5 + compactness));
+        var targetNodes = Math.max(5, Math.min(56, Math.round(baseTargetNodes * targetScale * concentrationTargetScale)));
+        var minTarget = Math.max(6, Math.floor(targetNodes * 0.85));
+        var maxTarget = Math.max(minTarget + 2, Math.ceil(targetNodes * 1.15));
+
+        var depthWeight = clamp(0.35 * (1 - (detailBias * 0.55)) * (1 + (concentration * (0.25 + compactness * 0.45))), 0.12, 1.2);
+        var lambdaBoost = 1 + (concentration * (0.6 + compactness * 1.1));
+        var baseLambdaRaw = Math.max(0.05, Math.log(totalCommitsInTree + 1) * 0.6 * (1 - (detailBias * 0.65)) * lambdaBoost);
+        var baseLambda = Math.max(0.0001, baseLambdaRaw);
+        var minLambda = Math.max(0.0005, 0.01 * (0.6 + concentration * 2.2) * (1 + compactness * 1.4));
+        var maxLambda = Math.max(2048, baseLambda * 4096);
+
+        var candidates = [];
+        var seen = {};
+        function addCandidate(lambda) {
+            if (!isFinite(lambda) || lambda <= 0) return;
+            lambda = Math.max(minLambda, Math.min(maxLambda, lambda));
+            var key = lambda.toExponential(6);
+            if (seen[key]) return;
+            seen[key] = true;
+            var solved = solvePruning(root, lambda, depthWeight);
+            candidates.push({
+                lambda: lambda,
+                solution: solved,
+                count: solved.selection.length,
+                infoLoss: selectionInfoLoss(solved.selection)
+            });
+        }
+
+        addCandidate(baseLambda);
+        var probe = baseLambda;
+        for (var i = 0; i < 14; i++) {
+            probe = Math.max(minLambda, probe / 1.8);
+            addCandidate(probe);
+            if (probe <= minLambda) break;
+        }
+        probe = baseLambda;
+        for (var j = 0; j < 14; j++) {
+            probe = Math.min(maxLambda, probe * 1.8);
+            addCandidate(probe);
+            if (probe >= maxLambda) break;
+        }
+
+        var observed = candidates.map(function(c) { return c.lambda; });
+        var observedMin = Math.min.apply(null, observed);
+        var observedMax = Math.max.apply(null, observed);
+        var logMin = Math.log(observedMin);
+        var logMax = Math.log(observedMax);
+        for (var k = 0; k < 24; k++) {
+            var t = k / 23;
+            addCandidate(Math.exp(logMin + (logMax - logMin) * t));
+        }
+
+        candidates.sort(function(a, b) {
+            var missA = 0;
+            var missB = 0;
+            var overWeight = 1 + (compactness * 3.0) + (concentration * 1.5);
+            var underWeight = 1 + (detailness * 2.0);
+            if (a.count < minTarget) missA = (minTarget - a.count) * underWeight;
+            else if (a.count > maxTarget) missA = (a.count - maxTarget) * overWeight;
+            if (b.count < minTarget) missB = (minTarget - b.count) * underWeight;
+            else if (b.count > maxTarget) missB = (b.count - maxTarget) * overWeight;
+            if (missA !== missB) return missA - missB;
+
+            var distA = Math.abs(a.count - targetNodes);
+            var distB = Math.abs(b.count - targetNodes);
+            if (distA !== distB) return distA - distB;
+            if (a.infoLoss !== b.infoLoss) return a.infoLoss - b.infoLoss;
+            return a.lambda - b.lambda;
+        });
+
+        var best = candidates[0];
+        var minDisplayBase = Math.max(5, Math.min(18, Math.round(2.2 * Math.log(leafCount + 1))));
+        var minDisplayNodes = Math.max(4, Math.round(minDisplayBase * (1 + (detailBias * 0.45)) * (1 - concentration * 0.25)));
+        var floorApplied = false;
+        var finalSelection = best.solution.selection;
+        if (finalSelection.length < minDisplayNodes && leafCount > finalSelection.length) {
+            finalSelection = enforceMinimumSelection(finalSelection, minDisplayNodes);
+            floorApplied = true;
+        }
+
+        var stats = selectionToStats(finalSelection);
+
+        return {
+            stats: stats,
+            leafCount: leafCount,
+            lambda: best.lambda,
+            targetNodes: targetNodes,
+            floorApplied: floorApplied,
+            depthWeight: depthWeight,
+            granularity: normalizedGranularity,
+            dominance: diversity.dominance,
+            authorCount: diversity.authorCount
+        };
+    }
+
+    var allPaths = files
+        .map(function(f) { return normalizePath(f.path || f.shortPath || ''); })
+        .filter(Boolean);
+    var prefix = commonPrefix(allPaths);
+
+    var folderCommitters = {};
+    files.forEach(function(file) {
+        var path = normalizePath(file.path || file.shortPath || '');
+        if (!path) return;
+        var relPath = (prefix && path.indexOf(prefix) === 0) ? path.slice(prefix.length) : path;
+        var folder = toFolderPath(relPath);
+        if (!folderCommitters[folder]) folderCommitters[folder] = {};
+
+        var commits = (file.commits && Array.isArray(file.commits.commits)) ? file.commits.commits : [];
+        commits.forEach(function(commit) {
+            var author = commit && typeof commit.author === 'string' ? commit.author.trim() : '';
+            if (!author || author === 'noreply@github.com') return;
+            folderCommitters[folder][author] = (folderCommitters[folder][author] || 0) + 1;
+        });
+    });
+
+    function renderFolderCards(items) {
+        folderGrid.innerHTML = '';
+        if (!items.length) {
+            folderEmpty.classList.remove('hidden');
+            return;
+        }
+        folderEmpty.classList.add('hidden');
+
+        items.forEach(function(item, index) {
+            var card = document.createElement('div');
+            card.className = 'dashboard-card p-5 animate-fade-in-up';
+            card.style.animationDelay = Math.min(index * 0.03, 0.3).toFixed(2) + 's';
+
+            var header = document.createElement('div');
+            header.className = 'flex items-start justify-between mb-3';
+
+            var left = document.createElement('div');
+            left.className = 'flex-1 min-w-0';
+            var title = document.createElement('h3');
+            title.className = 'text-lg font-semibold text-gray-900 mb-1 truncate';
+            title.textContent = item.folder;
+            title.title = item.folder;
+            var subtitle = document.createElement('p');
+            subtitle.className = 'text-xs text-gray-500';
+            subtitle.textContent = item.subtitle || 'Folder';
+            left.appendChild(title);
+            left.appendChild(subtitle);
+
+            var right = document.createElement('div');
+            right.className = 'text-right ml-2';
+            var value = document.createElement('div');
+            value.className = 'text-2xl font-bold text-blue-600 metric-value';
+            value.textContent = String(item.busFactor);
+            var valueLabel = document.createElement('p');
+            valueLabel.className = 'text-xs text-gray-500';
+            valueLabel.textContent = 'Bus Factor';
+            var contributors = document.createElement('div');
+            contributors.className = 'mt-2 text-sm text-gray-600';
+            var contributorCount = document.createElement('span');
+            contributorCount.className = 'font-medium';
+            contributorCount.textContent = String(item.committers.length);
+            var contributorLabel = document.createElement('span');
+            contributorLabel.className = 'text-xs text-gray-800 ml-1';
+            contributorLabel.textContent = 'contributors';
+            contributors.appendChild(contributorCount);
+            contributors.appendChild(contributorLabel);
+            right.appendChild(value);
+            right.appendChild(valueLabel);
+            right.appendChild(contributors);
+
+            header.appendChild(left);
+            header.appendChild(right);
+            card.appendChild(header);
+
+            var sparklineWrap = document.createElement('div');
+            sparklineWrap.className = 'mb-3';
+            var sparkline = document.createElement('div');
+            sparkline.className = 'flex items-end justify-between h-8 gap-0.5';
+            var top10 = item.committers.slice(0, 10);
+            var maxCount = top10.length ? top10[0].count : 1;
+            top10.forEach(function(c) {
+                var bar = document.createElement('div');
+                bar.className = 'flex-1 rounded-t opacity-80 hover:opacity-100 transition-opacity';
+                var height = Math.max(4, Math.round((c.count / maxCount) * 32));
+                bar.style.height = height + 'px';
+                bar.style.maxHeight = '32px';
+                bar.style.backgroundColor = colorFor(c.name);
+                bar.title = c.name + ': ' + c.count + ' commits';
+                sparkline.appendChild(bar);
+            });
+            var sparklineLabel = document.createElement('p');
+            sparklineLabel.className = 'text-xs text-gray-800 mt-1';
+            sparklineLabel.textContent = 'Commit distribution';
+            sparklineWrap.appendChild(sparkline);
+            sparklineWrap.appendChild(sparklineLabel);
+            card.appendChild(sparklineWrap);
+
+            var topWrap = document.createElement('div');
+            topWrap.className = 'border-t border-gray-100 pt-3';
+            var topTitle = document.createElement('p');
+            topTitle.className = 'text-xs font-medium text-gray-500 mb-2';
+            topTitle.textContent = 'Top Contributors';
+            var list = document.createElement('div');
+            list.className = 'space-y-1';
+            item.committers.slice(0, 5).forEach(function(c) {
+                var row = document.createElement('div');
+                row.className = 'flex justify-between items-center text-xs';
+
+                var leftRow = document.createElement('div');
+                leftRow.className = 'flex items-center gap-2 flex-1 min-w-0';
+                var avatar = document.createElement('div');
+                avatar.className = 'contributor-avatar contributor-avatar-small';
+                avatar.style.backgroundColor = colorFor(c.name);
+                avatar.textContent = initials(c.name);
+                var name = document.createElement('span');
+                name.className = 'text-gray-900 truncate';
+                name.textContent = c.name;
+                name.title = c.name;
+                leftRow.appendChild(avatar);
+                leftRow.appendChild(name);
+
+                var count = document.createElement('span');
+                count.className = 'text-gray-500 bg-gray-100 px-2 py-0.5 rounded-full font-medium ml-2 flex-shrink-0';
+                count.textContent = String(c.count);
+
+                row.appendChild(leftRow);
+                row.appendChild(count);
+                list.appendChild(row);
+            });
+            if (item.committers.length > 5) {
+                var more = document.createElement('p');
+                more.className = 'text-xs text-gray-800 mt-2';
+                more.textContent = '+ ' + (item.committers.length - 5) + ' more';
+                list.appendChild(more);
+            }
+            topWrap.appendChild(topTitle);
+            topWrap.appendChild(list);
+            card.appendChild(topWrap);
+
+            folderGrid.appendChild(card);
+        });
+    }
+
+    var hasCommunityData = communitySection.getAttribute('data-has-community') === '1';
+    var hasFolderData = false;
+
+    function setFolderLoading(isLoading) {
+        if (isLoading) {
+            folderLoading.classList.remove('hidden');
+        } else {
+            folderLoading.classList.add('hidden');
+        }
+    }
+
+    function renderFoldersForGranularity(value, options) {
+        var opts = options || {};
+        var doRender = function() {
+            var pruning = autoPruneFolderGroups(folderCommitters, value);
+            var folderStats = pruning.stats;
+            hasFolderData = folderStats.length > 0;
+            if (pruning.leafCount > 0) {
+                pruningMeta.textContent = 'Adaptive pruning: ' + folderStats.length + ' groups shown over ' +
+                    pruning.leafCount + ' folder leaves (target ≈ ' + pruning.targetNodes + ', lambda = ' +
+                    pruning.lambda.toFixed(2) + ', depthWeight = ' + pruning.depthWeight.toFixed(2) + ', ' +
+                    granularityLabel(pruning.granularity) + ', dominant ' + Math.round((pruning.dominance || 0) * 100) +
+                    '% across ' + (pruning.authorCount || 0) + ' author' + ((pruning.authorCount || 0) === 1 ? '' : 's') + ')' +
+                    (pruning.floorApplied ? ' [display floor applied]' : '') + '.';
+            } else {
+                pruningMeta.textContent = '';
+            }
+            renderFolderCards(folderStats);
+            if (typeof opts.done === 'function') opts.done();
+        };
+
+        if (opts.withLoading) {
+            setFolderLoading(true);
+            requestAnimationFrame(function() {
+                try {
+                    doRender();
+                } finally {
+                    setFolderLoading(false);
+                }
+            });
+            return;
+        }
+        doRender();
+    }
+
+    function setMode(mode) {
+        if (mode === 'community' && hasCommunityData) {
+            folderSection.classList.add('hidden');
+            communitySection.classList.remove('hidden');
+            return;
+        }
+        folderSection.classList.remove('hidden');
+        communitySection.classList.add('hidden');
+    }
+
+    radios.forEach(function(radio) {
+        radio.addEventListener('change', function() {
+            setMode(this.value);
+        });
+    });
+
+    var bfGranularityRAF = null;
+    function scheduleGranularityRender() {
+        if (bfGranularityRAF) cancelAnimationFrame(bfGranularityRAF);
+        bfGranularityRAF = requestAnimationFrame(function() {
+            bfGranularityRAF = null;
+            var value = parseInt(granularityInput.value, 10);
+            if (!isFinite(value)) value = 50;
+            granularityLabelEl.textContent = granularityLabel(value);
+            renderFoldersForGranularity(value, { withLoading: false });
+        });
+    }
+
+    granularityInput.addEventListener('input', scheduleGranularityRender);
+    granularityInput.addEventListener('change', scheduleGranularityRender);
+
+    var initialGranularity = parseInt(granularityInput.value, 10);
+    if (!isFinite(initialGranularity)) initialGranularity = 50;
+    granularityLabelEl.textContent = granularityLabel(initialGranularity);
+    renderFoldersForGranularity(initialGranularity, {
+        withLoading: true,
+        done: function() {
+            var initialMode = 'folder';
+            if (!hasFolderData && hasCommunityData) {
+                initialMode = 'community';
+            }
+            if (!hasCommunityData && communityRadio) {
+                communityRadio.checked = false;
+            }
+            if (initialMode === 'folder' && folderRadio) folderRadio.checked = true;
+            if (initialMode === 'community' && communityRadio) communityRadio.checked = true;
+            setMode(initialMode);
+        }
+    });
+});
+</script>
 {% endblock %}
