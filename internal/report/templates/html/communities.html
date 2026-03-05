@@ -1927,7 +1927,7 @@
             <tr class="border-t hover:bg-slate-50 odd:bg-white even:bg-slate-50/30">
                 <td class="px-3 py-2 font-medium text-gray-900">{% for k, n in cm.DisplayNamePerComm %}{% if k == id %}{{ n }}{% endif %}{% endfor %}</td>
                 <td class="px-3 py-2 tabular-nums">{{ size }}</td>
-                <td class="px-3 py-2 text-gray-400">-</td>
+                <td class="px-3 py-2 text-gray-500">-</td>
                 <td class="px-3 py-2">
                     <div class="flex items-center gap-2">
                         <div class="w-32 h-2.5 bg-gray-200 rounded">
@@ -1966,7 +1966,7 @@
                     {% if hint == "split_candidate" %}
                         <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-amber-50 text-amber-800 ring-1 ring-amber-200" title="Large and low-purity community; consider splitting.">split candidate</span>
                     {% else %}
-                        <span class="text-gray-400">-</span>
+                        <span class="text-gray-500">-</span>
                     {% endif %}
                 </td>
             </tr>
