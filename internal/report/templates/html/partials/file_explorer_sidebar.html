@@ -19,7 +19,7 @@
                 </svg>
                 Files
             </h3>
-            <button @click="toggle()" class="p-1 rounded hover:bg-slate-200 text-slate-500">
+            <button @click="toggle()" aria-label="Close file explorer" class="p-1 rounded hover:bg-slate-200 text-slate-500">
                 <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
                 </svg>
@@ -34,8 +34,8 @@
 
         <!-- Min risks filter -->
         <div class="px-3 py-2 border-b border-slate-100 flex items-center gap-2">
-            <label class="text-xs text-slate-500 whitespace-nowrap">Min risks</label>
-            <input type="number" min="0" x-model.number="minRisks"
+            <label for="min-risks-input" class="text-xs text-slate-500 whitespace-nowrap">Min risks</label>
+            <input type="number" min="0" x-model.number="minRisks" id="min-risks-input"
                    class="w-16 px-2 py-1 text-xs border border-slate-200 rounded-md focus:outline-none focus:ring-1 focus:ring-slate-400 bg-white">
         </div>
 
@@ -77,7 +77,8 @@
     <!-- FAB toggle -->
     <button x-show="!open" x-transition @click="toggle()"
             class="fixed bottom-6 right-6 z-50 w-12 h-12 bg-slate-700 hover:bg-slate-800 text-white rounded-full shadow-lg flex items-center justify-center transition-colors"
-            title="Browse files (Ctrl+B)">
+            title="Browse files (Ctrl+B)"
+            aria-label="Browse files">
         <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 12.75V12A2.25 2.25 0 0 1 4.5 9.75h15A2.25 2.25 0 0 1 21.75 12v.75m-8.69-6.44-2.12-2.12a1.5 1.5 0 0 0-1.061-.44H4.5A2.25 2.25 0 0 0 2.25 6v12a2.25 2.25 0 0 0 2.25 2.25h15A2.25 2.25 0 0 0 21.75 18V9a2.25 2.25 0 0 0-2.25-2.25h-5.379a1.5 1.5 0 0 1-1.06-.44Z" />
         </svg>
