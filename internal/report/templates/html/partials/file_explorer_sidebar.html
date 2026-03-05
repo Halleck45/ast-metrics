@@ -131,7 +131,7 @@ function fileSidebar() {
         },
 
         pushMain(push) {
-            const main = document.querySelector('main.col-span-6');
+            const main = document.querySelector('main.col-span-full, main.col-span-6');
             if (main) {
                 main.style.transition = 'margin-right 0.3s ease';
                 main.style.marginRight = push ? '320px' : '0';
