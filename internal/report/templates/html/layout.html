@@ -288,10 +288,8 @@
                 </div>
                 <!-- end: share buttons -->
 
-                {% if page != 'explorer.html' %}
                 <script id="sidebar-files-data" type="application/json">{{ filesJSON|safe }}</script>
                 <script id="sidebar-risks-data" type="application/json">{{ risksJSON|safe }}</script>
-                {% endif %}
 
                 {% block content %}{% endblock %}
             </div>
