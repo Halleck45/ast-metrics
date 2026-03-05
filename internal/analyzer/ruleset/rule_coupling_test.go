@@ -37,7 +37,7 @@ func TestCouplingRule_CheckFile_NilConfig(t *testing.T) {
 	errors := []issue.RequirementError{}
 	successes := []string{}
 
-	rule.CheckFile(file, 
+	rule.CheckFile(file,
 		func(e issue.RequirementError) { errors = append(errors, e) },
 		func(s string) { successes = append(successes, s) })
 
@@ -56,12 +56,20 @@ func TestCouplingRule_CheckFile_ForbiddenCoupling(t *testing.T) {
 		},
 	}
 	rule := NewCouplingRule(cfg)
-	
+
+	// Dependencies at class level (as tree-sitter produces them)
 	file := &pb.File{
 		Path: "/src/controller/UserController.go",
 		Stmts: &pb.Stmts{
-			StmtExternalDependencies: []*pb.StmtExternalDependency{
-				{ClassName: "repository.UserRepository"},
+			StmtClass: []*pb.StmtClass{
+				{
+					Name: &pb.Name{Short: "UserController"},
+					Stmts: &pb.Stmts{
+						StmtExternalDependencies: []*pb.StmtExternalDependency{
+							{ClassName: "repository.UserRepository"},
+						},
+					},
+				},
 			},
 		},
 	}
@@ -69,7 +77,7 @@ func TestCouplingRule_CheckFile_ForbiddenCoupling(t *testing.T) {
 	errors := []issue.RequirementError{}
 	successes := []string{}
 
-	rule.CheckFile(file, 
+	rule.CheckFile(file,
 		func(e issue.RequirementError) { errors = append(errors, e) },
 		func(s string) { successes = append(successes, s) })
 
@@ -86,6 +94,46 @@ func TestCouplingRule_CheckFile_ForbiddenCoupling(t *testing.T) {
 	}
 }
 
+func TestCouplingRule_CheckFile_ForbiddenCoupling_CaseInsensitive(t *testing.T) {
+	cfg := &configuration.ConfigurationCouplingRule{
+		Forbidden: []struct {
+			From string `yaml:"from"`
+			To   string `yaml:"to"`
+		}{
+			{From: "Service", To: "Controller"},
+		},
+	}
+	rule := NewCouplingRule(cfg)
+
+	// lowercase path and dependency — should still match
+	file := &pb.File{
+		Path: "/src/service/userservice.go",
+		Stmts: &pb.Stmts{
+			StmtClass: []*pb.StmtClass{
+				{
+					Name: &pb.Name{Short: "UserService"},
+					Stmts: &pb.Stmts{
+						StmtExternalDependencies: []*pb.StmtExternalDependency{
+							{ClassName: "controller.UserController"},
+						},
+					},
+				},
+			},
+		},
+	}
+
+	errors := []issue.RequirementError{}
+	successes := []string{}
+
+	rule.CheckFile(file,
+		func(e issue.RequirementError) { errors = append(errors, e) },
+		func(s string) { successes = append(successes, s) })
+
+	if len(errors) != 1 {
+		t.Fatalf("expected 1 error (case-insensitive match), got %d", len(errors))
+	}
+}
+
 func TestCouplingRule_CheckFile_AllowedCoupling(t *testing.T) {
 	cfg := &configuration.ConfigurationCouplingRule{
 		Forbidden: []struct {
@@ -96,12 +144,19 @@ func TestCouplingRule_CheckFile_AllowedCoupling(t *testing.T) {
 		},
 	}
 	rule := NewCouplingRule(cfg)
-	
+
 	file := &pb.File{
 		Path: "/src/controller/UserController.go",
 		Stmts: &pb.Stmts{
-			StmtExternalDependencies: []*pb.StmtExternalDependency{
-				{ClassName: "service.UserService"},
+			StmtClass: []*pb.StmtClass{
+				{
+					Name: &pb.Name{Short: "UserController"},
+					Stmts: &pb.Stmts{
+						StmtExternalDependencies: []*pb.StmtExternalDependency{
+							{ClassName: "service.UserService"},
+						},
+					},
+				},
 			},
 		},
 	}
@@ -109,7 +164,7 @@ func TestCouplingRule_CheckFile_AllowedCoupling(t *testing.T) {
 	errors := []issue.RequirementError{}
 	successes := []string{}
 
-	rule.CheckFile(file, 
+	rule.CheckFile(file,
 		func(e issue.RequirementError) { errors = append(errors, e) },
 		func(s string) { successes = append(successes, s) })
 
@@ -134,12 +189,19 @@ func TestCouplingRule_CheckFile_NoMatchingFromPattern(t *testing.T) {
 		},
 	}
 	rule := NewCouplingRule(cfg)
-	
+
 	file := &pb.File{
 		Path: "/src/service/UserService.go",
 		Stmts: &pb.Stmts{
-			StmtExternalDependencies: []*pb.StmtExternalDependency{
-				{ClassName: "repository.UserRepository"},
+			StmtClass: []*pb.StmtClass{
+				{
+					Name: &pb.Name{Short: "UserService"},
+					Stmts: &pb.Stmts{
+						StmtExternalDependencies: []*pb.StmtExternalDependency{
+							{ClassName: "repository.UserRepository"},
+						},
+					},
+				},
 			},
 		},
 	}
@@ -147,7 +209,7 @@ func TestCouplingRule_CheckFile_NoMatchingFromPattern(t *testing.T) {
 	errors := []issue.RequirementError{}
 	successes := []string{}
 
-	rule.CheckFile(file, 
+	rule.CheckFile(file,
 		func(e issue.RequirementError) { errors = append(errors, e) },
 		func(s string) { successes = append(successes, s) })
 
@@ -170,13 +232,20 @@ func TestCouplingRule_CheckFile_MultipleForbiddenRules(t *testing.T) {
 		},
 	}
 	rule := NewCouplingRule(cfg)
-	
+
 	file := &pb.File{
 		Path: "/src/controller/UserController.go",
 		Stmts: &pb.Stmts{
-			StmtExternalDependencies: []*pb.StmtExternalDependency{
-				{ClassName: "repository.UserRepository"},
-				{ClassName: "database.Connection"},
+			StmtClass: []*pb.StmtClass{
+				{
+					Name: &pb.Name{Short: "UserController"},
+					Stmts: &pb.Stmts{
+						StmtExternalDependencies: []*pb.StmtExternalDependency{
+							{ClassName: "repository.UserRepository"},
+							{ClassName: "database.Connection"},
+						},
+					},
+				},
 			},
 		},
 	}
@@ -184,12 +253,55 @@ func TestCouplingRule_CheckFile_MultipleForbiddenRules(t *testing.T) {
 	errors := []issue.RequirementError{}
 	successes := []string{}
 
-	rule.CheckFile(file, 
+	rule.CheckFile(file,
 		func(e issue.RequirementError) { errors = append(errors, e) },
 		func(s string) { successes = append(successes, s) })
 
-	// Should stop at first violation
+	// Both forbidden rules match: Repository and Database
+	if len(errors) != 2 {
+		t.Fatalf("expected 2 errors (one per forbidden rule), got %d", len(errors))
+	}
+	if len(successes) != 0 {
+		t.Errorf("expected no successes when violations found, got %d", len(successes))
+	}
+}
+
+func TestCouplingRule_CheckFile_DepsAtNamespaceLevel(t *testing.T) {
+	cfg := &configuration.ConfigurationCouplingRule{
+		Forbidden: []struct {
+			From string `yaml:"from"`
+			To   string `yaml:"to"`
+		}{
+			{From: "Controller", To: "Repository"},
+		},
+	}
+	rule := NewCouplingRule(cfg)
+
+	// Dependencies at namespace level (as Go/Python parsers produce them)
+	file := &pb.File{
+		Path: "/src/controller/UserController.go",
+		Stmts: &pb.Stmts{
+			StmtNamespace: []*pb.StmtNamespace{
+				{
+					Name: &pb.Name{Short: "controller"},
+					Stmts: &pb.Stmts{
+						StmtExternalDependencies: []*pb.StmtExternalDependency{
+							{ClassName: "UserRepository", Namespace: "repository"},
+						},
+					},
+				},
+			},
+		},
+	}
+
+	errors := []issue.RequirementError{}
+	successes := []string{}
+
+	rule.CheckFile(file,
+		func(e issue.RequirementError) { errors = append(errors, e) },
+		func(s string) { successes = append(successes, s) })
+
 	if len(errors) != 1 {
-		t.Fatalf("expected 1 error (stops at first violation), got %d", len(errors))
+		t.Fatalf("expected 1 error for namespace-level dependency, got %d", len(errors))
 	}
 }

@@ -6,6 +6,7 @@ import (
 
 	"github.com/halleck45/ast-metrics/internal/analyzer/issue"
 	"github.com/halleck45/ast-metrics/internal/configuration"
+	"github.com/halleck45/ast-metrics/internal/engine"
 	pb "github.com/halleck45/ast-metrics/pb"
 )
 
@@ -26,17 +27,25 @@ func (c *couplingRule) Description() string {
 }
 
 func (c *couplingRule) CheckFile(file *pb.File, addError func(issue.RequirementError), addSuccess func(string)) {
-	if c.cfg == nil || file.Stmts == nil || file.Stmts.StmtExternalDependencies == nil {
+	if c.cfg == nil || file.Stmts == nil {
+		return
+	}
+
+	// Aggregate dependencies from all levels (file, namespace, class, function)
+	dependencies := engine.GetDependenciesInFile(file)
+	if len(dependencies) == 0 {
 		return
 	}
 
 	hasError := false
 	for _, forbidden := range c.cfg.Forbidden {
-		if !regexp.MustCompile(forbidden.From).MatchString(file.Path) {
+		fromRegex := regexp.MustCompile("(?i)" + forbidden.From)
+		if !fromRegex.MatchString(file.Path) {
 			continue
 		}
-		for _, dependency := range file.Stmts.StmtExternalDependencies {
-			if regexp.MustCompile(forbidden.To).MatchString(dependency.ClassName) {
+		toRegex := regexp.MustCompile("(?i)" + forbidden.To)
+		for _, dependency := range dependencies {
+			if toRegex.MatchString(dependency.ClassName) {
 				addError(issue.RequirementError{
 					Severity: issue.SeverityUnknown,
 					Code:     c.Name(),
@@ -52,6 +61,3 @@ func (c *couplingRule) CheckFile(file *pb.File, addError func(issue.RequirementE
 		addSuccess("Coupling OK")
 	}
 }
-
-// Ensure imports used
-var _ = configuration.ConfigurationDefaultRule{}
