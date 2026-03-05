@@ -74,34 +74,6 @@ AST Metrics - Explorer
     animation: slideIn 0.3s ease-out backwards;
   }
 
-  /* Antigravity-inspired search */
-  .search-input {
-    transition: all 0.2s ease;
-    border: 1.5px solid #e2e8f0;
-  }
-
-  .search-input:focus {
-    border-color: #3b82f6;
-    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
-    outline: none;
-  }
-
-  /* File tree styling */
-  .file-item {
-    transition: all 0.15s ease;
-    border-radius: 8px;
-  }
-
-  .file-item:hover {
-    background: #f8fafc;
-    transform: translateX(2px);
-  }
-
-  .file-item.selected {
-    background: linear-gradient(90deg, #eff6ff, #dbeafe);
-    border-left: 3px solid #3b82f6;
-  }
-
   /* Metric cards */
   .metric-card {
     transition: all 0.2s ease;
@@ -123,144 +95,16 @@ AST Metrics - Explorer
   }
 </style>
 
-<div x-data="explorer()" x-init="init()">
+<div x-data="explorer()" x-init="init()" @sidebar-select-file.window="selectByPath($event.detail)">
   <div :inert="openGlossary" :aria-hidden="openGlossary ? 'true' : 'false'">
     <!-- Hero Section -->
     <div class="mb-8 animate-fade-in-up">
       <h1 class="text-4xl font-bold text-gray-900 mb-3" style="letter-spacing: -0.02em;">File Explorer</h1>
-      <p class="text-base text-gray-600 font-light">Browse, analyze, and understand your codebase structure</p>
+      <p class="text-base text-gray-600 font-light">Browse, analyze, and understand your codebase structure. Use the sidebar to select a file.</p>
     </div>
-    <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
 
-      <!-- Left: Tree, search and filters -->
-      <div class="lg:col-span-1">
-
-        <div class="dashboard-card p-6 animate-fade-in-up">
-
-          <!-- start: filters-->
-          <div class="space-y-4 mb-6">
-            <!-- start: search -->
-            <div>
-              <label class="block text-xs font-semibold text-gray-700 mb-2 uppercase tracking-wide">Search files</label>
-              <div class="flex justify-start items-center relative">
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2"
-                  stroke="currentColor" class="absolute left-3 text-gray-400 size-5">
-                  <path stroke-linecap="round" stroke-linejoin="round"
-                    d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z" />
-                </svg>
-                <input x-model="filters.q" type="text" placeholder="Type to search..."
-                  class="search-input pl-10 w-full rounded-xl px-4 py-3 text-sm bg-gray-50 focus:bg-white" />
-              </div>
-            </div>
-            <!-- end: search -->
-
-            <!-- start: min -->
-            <div>
-              <label for="ipt-min-risks"
-                class="block text-xs font-semibold text-gray-700 mb-2 uppercase tracking-wide">Minimum risks</label>
-              <input id="ipt-min-risks" x-model.number="filters.minRisks" type="number" min="0"
-                class="search-input w-full rounded-xl px-4 py-3 text-sm bg-gray-50 focus:bg-white" />
-            </div>
-            <!-- end: min -->
-          </div>
-          <!-- end: filters-->
-
-          <div class="max-h-[65vh] overflow-auto pr-2 -mr-2">
-            <!-- start: no result-->
-            <template x-if="tree.length === 0">
-              <div class="empty-state text-center py-12 px-4">
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
-                  stroke="currentColor" class="w-12 h-12 text-gray-300 mx-auto mb-3">
-                  <path stroke-linecap="round" stroke-linejoin="round"
-                    d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z" />
-                </svg>
-                <p class="text-sm font-medium text-gray-400">No files match your filters</p>
-                <p class="text-xs text-gray-400 mt-1">Try adjusting your search criteria</p>
-              </div>
-            </template>
-            <!-- end: no result-->
-
-            <!-- start: tree -->
-            <ul class="text-sm space-y-1">
-              <template x-for="root in tree" :key="root.name">
-                <li class="mt-3 first:mt-0">
-                  <div
-                    class="cursor-pointer font-semibold text-gray-800 hover:text-gray-900 flex items-center gap-2 py-2 px-2 rounded-lg hover:bg-gray-50 transition-colors"
-                    @click="root.expanded = !root.expanded">
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2"
-                      stroke="currentColor" class="text-gray-500 size-4 transition-transform"
-                      :class="root.expanded ? 'rotate-90' : ''">
-                      <path stroke-linecap="round" stroke-linejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
-                    </svg>
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
-                      stroke="currentColor" class="text-gray-400 size-4">
-                      <path stroke-linecap="round" stroke-linejoin="round"
-                        d="M6.429 9.75 2.25 12l4.179 2.25m0-4.5 5.571 3 5.571-3m-11.142 0L2.25 7.5 12 2.25l9.75 5.25-4.179 2.25m0 0L21.75 12l-4.179 2.25m0 0 4.179 2.25L12 21.75 2.25 16.5l4.179-2.25m11.142 0-5.571 3-5.571-3" />
-                    </svg>
-                    <span class="font-medium" x-text="root.name"></span>
-                  </div>
-                  <ul class="ml-6 mt-1 space-y-0.5" x-show="root.expanded" x-transition>
-                    <template x-for="dir in root.dirs" :key="dir.path">
-                      <li class="my-1">
-                        <div
-                          class="cursor-pointer font-medium text-gray-700 hover:text-gray-900 flex items-center gap-2 py-1.5 px-2 rounded-lg hover:bg-gray-50 transition-colors"
-                          @click="dir.expanded = !dir.expanded">
-                          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2"
-                            stroke="currentColor" class="text-gray-400 size-3.5 transition-transform"
-                            :class="dir.expanded ? 'rotate-90' : ''">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
-                          </svg>
-                          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
-                            stroke="currentColor" class="text-gray-400 size-3.5">
-                            <path stroke-linecap="round" stroke-linejoin="round"
-                              d="M2.25 12.75V12A2.25 2.25 0 0 1 4.5 9.75h15A2.25 2.25 0 0 1 21.75 12v.75m-8.69-6.44-2.12-2.12a1.5 1.5 0 0 0-1.061-.44H4.5A2.25 2.25 0 0 0 2.25 6v12a2.25 2.25 0 0 0 2.25 2.25h15A2.25 2.25 0 0 0 21.75 18V9a2.25 2.25 0 0 0-2.25-2.25h-5.379a1.5 1.5 0 0 1-1.06-.44Z" />
-                          </svg>
-                          <span class="text-sm" x-text="dir.name.split('/').pop()"></span>
-                        </div>
-                        <ul class="ml-6 mt-0.5 space-y-0.5" x-show="dir.expanded" x-transition>
-                          <template x-for="f in dir.files" :key="f.path">
-                            <li @click="select(f)" class="file-item px-3 py-2 rounded-lg cursor-pointer my-0.5"
-                              :class="selected && selected.path === f.path ? 'selected' : ''">
-                              <div class="flex items-start justify-between gap-2">
-                                <div class="flex-1 min-w-0">
-                                  <div class="flex items-center gap-2 mb-1">
-                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
-                                      stroke-width="1.5" stroke="currentColor"
-                                      class="text-gray-400 size-3.5 shrink-0 mt-0.5">
-                                      <path stroke-linecap="round" stroke-linejoin="round"
-                                        d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m2.25 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z" />
-                                    </svg>
-                                    <span class="text-sm font-medium text-gray-900 truncate"
-                                      :class="riskColorByCount(nbRisksFor(f))"
-                                      x-text="f.shortPath ? f.shortPath.split('/').pop() : f.path.split('/').pop()"></span>
-                                  </div>
-                                  <div class="flex items-center gap-2 text-xs text-gray-500 ml-5">
-                                    <span class="badge-modern"
-                                      :class="nbRisksFor(f) > 0 ? 'text-amber-600' : 'text-green-600'">
-                                      <span x-text="nbRisksFor(f)"></span> risk<span
-                                        x-text="nbRisksFor(f) !== 1 ? 's' : ''"></span>
-                                    </span>
-                                    <span class="text-gray-300">•</span>
-                                    <span class="text-gray-400" x-text="fileRiskScore(f).toFixed(1)"></span>
-                                  </div>
-                                </div>
-                              </div>
-                            </li>
-                          </template>
-                        </ul>
-                      </li>
-                    </template>
-                  </ul>
-                </li>
-              </template>
-            </ul>
-            <!-- end: tree -->
-          </div>
-        </div>
-      </div>
-
-      <!-- Right: Details panel -->
-      <div class="lg:col-span-2">
+      <!-- Details panel -->
+      <div>
         <div class="dashboard-card p-8 animate-fade-in-up">
           <template x-if="!selected">
             <div class="empty-state text-center py-16 px-4">
@@ -281,7 +125,7 @@ AST Metrics - Explorer
                 <div class="flex items-start justify-between gap-4">
                   <div class="flex-1 min-w-0">
                     <h2 class="text-2xl font-bold text-gray-900 mb-3 break-words" style="letter-spacing: -0.02em;"
-                      x-text="selected.path"></h2>
+                      x-text="selected.shortPath || selected.path"></h2>
                     <div class="flex flex-wrap items-center gap-2">
                       <span
                         class="inline-flex items-center px-3 py-1 rounded-full bg-gray-100 text-gray-700 text-xs font-medium badge-modern">
@@ -608,7 +452,6 @@ AST Metrics - Explorer
           </template>
         </div>
       </div>
-    </div>
   </div>
 
   <!-- Glossary modal -->
@@ -676,8 +519,7 @@ AST Metrics - Explorer
       // state
       files: [],
       risksByPath: {},
-      filters: { q: '', miMax: 128, minRisks: 0, onlyHigh: false, groupByCategory: true },
-      tree: [],
+      filters: { onlyHigh: false, groupByCategory: true },
       selected: null,
       risks: [],
       classes: [],
@@ -714,6 +556,12 @@ AST Metrics - Explorer
           const fileToSelect = this.findFileByQueryParam(requestedFile);
           if (fileToSelect) this.select(fileToSelect);
         }
+      },
+
+      selectByPath(detail) {
+        if (!detail || !detail.path) return;
+        const f = this.files.find(f => f.path === detail.path);
+        if (f) this.select(f);
       },
 
       // helpers
@@ -760,7 +608,6 @@ AST Metrics - Explorer
           return true;
         });
       },
-      riskColorByCount(count) { return count >= 5 ? 'text-red-700' : count >= 3 ? 'text-orange-700' : count >= 1 ? 'text-amber-700' : 'text-green-700'; },
       fileMImax(f) {
         let minMI = 128;
         const classes = f?.stmts?.stmtClass || [];
@@ -817,6 +664,7 @@ AST Metrics - Explorer
       select(f) {
         this.selected = f;
         this.updateUrlWithSelectedFile(f);
+        window.dispatchEvent(new CustomEvent('explorer-file-selected', { detail: { path: f.path } }));
         this.risks = (this.risksByPath[f.pathHash] || []).slice();
         const classes = f?.stmts?.stmtClass || [];
         this.classes = classes;

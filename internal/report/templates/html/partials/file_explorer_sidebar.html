@@ -1,4 +1,3 @@
-{% if page != 'explorer.html' %}
 <!-- File Explorer Sidebar -->
 <div x-data="fileSidebar()" x-cloak
      @keydown.window="if ((e=$event).ctrlKey && e.key==='b') { e.preventDefault(); toggle(); }">
@@ -33,8 +32,15 @@
                    class="w-full px-3 py-1.5 text-xs border border-slate-200 rounded-md focus:outline-none focus:ring-1 focus:ring-slate-400 bg-white">
         </div>
 
+        <!-- Min risks filter -->
+        <div class="px-3 py-2 border-b border-slate-100 flex items-center gap-2">
+            <label class="text-xs text-slate-500 whitespace-nowrap">Min risks</label>
+            <input type="number" min="0" x-model.number="minRisks"
+                   class="w-16 px-2 py-1 text-xs border border-slate-200 rounded-md focus:outline-none focus:ring-1 focus:ring-slate-400 bg-white">
+        </div>
+
         <!-- Tree -->
-        <div class="overflow-y-auto flex-1 px-2 py-2" style="max-height: calc(100vh - 110px);">
+        <div class="overflow-y-auto flex-1 px-2 py-2" style="max-height: calc(100vh - 150px);">
             <template x-for="root in tree" :key="root.name">
                 <div class="mb-1">
                     <template x-for="dir in root.dirs" :key="dir.path">
@@ -51,12 +57,13 @@
                             </button>
                             <div x-show="dir.expanded" class="ml-4">
                                 <template x-for="f in dir.files" :key="f.path">
-                                    <a :href="'explorer.html?file=' + encodeURIComponent(f.pathHash || f.shortPath || f.path)"
-                                       class="flex items-center gap-1.5 px-2 py-0.5 text-xs text-slate-600 hover:bg-slate-100 rounded truncate group">
+                                    <div @click="selectFile(f)"
+                                       class="flex items-center gap-1.5 px-2 py-0.5 text-xs text-slate-600 hover:bg-slate-100 rounded truncate group cursor-pointer"
+                                       :class="selectedPath === f.path ? 'bg-blue-50 text-blue-700 font-medium' : ''">
                                         <span class="w-1.5 h-1.5 rounded-full flex-shrink-0"
                                               :class="riskDot(f)"></span>
                                         <span class="truncate" x-text="fileName(f)"></span>
-                                    </a>
+                                    </div>
                                 </template>
                             </div>
                         </div>
@@ -83,13 +90,17 @@ function fileSidebar() {
     const stored = localStorage.getItem('ast-sidebar-open');
     const defaultOpen = isDesktop ? true : false;
     const initialOpen = stored !== null ? stored === 'true' : defaultOpen;
+    const isExplorerPage = {% if page == 'explorer.html' %}true{% else %}false{% endif %};
 
     return {
         open: initialOpen,
         query: '',
+        minRisks: 0,
         files: [],
         risksByPath: {},
         tree: [],
+        selectedPath: '',
+        isExplorerPage: isExplorerPage,
 
         init() {
             const parse = (id) => { try { return JSON.parse(document.getElementById(id)?.textContent || 'null'); } catch (e) { return null; } };
@@ -97,7 +108,15 @@ function fileSidebar() {
             this.risksByPath = parse('sidebar-risks-data') || {};
             this.buildTree();
             this.$watch('query', () => this.buildTree());
+            this.$watch('minRisks', () => this.buildTree());
             if (this.open && isDesktop) this.pushMain(true);
+
+            // On explorer page, listen for external selection (e.g. URL deep-link)
+            if (this.isExplorerPage) {
+                window.addEventListener('explorer-file-selected', (e) => {
+                    if (e.detail && e.detail.path) this.selectedPath = e.detail.path;
+                });
+            }
         },
 
         toggle() {
@@ -121,9 +140,12 @@ function fileSidebar() {
 
         buildTree() {
             const q = (this.query || '').toLowerCase();
-            const filtered = q
-                ? this.files.filter(f => (f.path || '').toLowerCase().includes(q) || (f.shortPath || '').toLowerCase().includes(q))
-                : this.files;
+            const mr = this.minRisks || 0;
+            const filtered = this.files.filter(f => {
+                if (q && !(f.path || '').toLowerCase().includes(q) && !(f.shortPath || '').toLowerCase().includes(q)) return false;
+                if (mr > 0 && (this.risksByPath[f.path] || []).length < mr) return false;
+                return true;
+            });
 
             const byDir = {};
             for (const f of filtered) {
@@ -145,10 +167,19 @@ function fileSidebar() {
                 dirs: rootsMap[root].sort().map(d => ({
                     name: d,
                     path: d,
-                    expanded: !!q || Object.keys(rootsMap).length <= 3,
+                    expanded: !!q || !!mr || Object.keys(rootsMap).length <= 3,
                     files: (byDir[d] || []).sort((a, b) => (a.path || '').localeCompare(b.path || ''))
                 }))
             }));
+        },
+
+        selectFile(f) {
+            this.selectedPath = f.path;
+            if (this.isExplorerPage) {
+                this.$dispatch('sidebar-select-file', { path: f.path, pathHash: f.pathHash || f.shortPath || f.path });
+            } else {
+                window.location.href = 'explorer.html?file=' + encodeURIComponent(f.pathHash || f.shortPath || f.path);
+            }
         },
 
         riskDot(f) {
@@ -166,4 +197,3 @@ function fileSidebar() {
     };
 }
 </script>
-{% endif %}
