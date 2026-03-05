@@ -253,6 +253,9 @@ document.addEventListener('DOMContentLoaded', function() {
         var activeSimulation = null;
         var scale = 1, panX = 0, panY = 0;
         var isPanning = false, panStartX = 0, panStartY = 0, panStartPX = 0, panStartPY = 0;
+        var currentNodes = null;
+        var currentLinks = null;
+        var currentW = 0, currentH = 0;
 
         function hexToPixi(hex) {
             if (typeof hex === 'string' && hex.charAt(0) === '#') {
@@ -329,6 +332,7 @@ document.addEventListener('DOMContentLoaded', function() {
             worldContainer.addChild(edgesGfx);
 
             scale = 1; panX = 0; panY = 0;
+            currentW = w; currentH = h;
 
             // Zoom
             canvasEl.addEventListener('wheel', function(e) {
@@ -614,7 +618,11 @@ document.addEventListener('DOMContentLoaded', function() {
                     });
                     drawEdges(links);
                 })
-                .on('end', function() { fitToView(nodes, W, H); });
+                .on('end', function() {
+                    currentNodes = nodes;
+                    currentLinks = links;
+                    fitToView(nodes, W, H);
+                });
         }
 
         // ---- Render folder view ----
@@ -756,8 +764,35 @@ document.addEventListener('DOMContentLoaded', function() {
                     });
                     drawEdges(links);
                 })
-                .on('end', function() { fitToView(nodes, W, H); });
+                .on('end', function() {
+                    currentNodes = nodes;
+                    currentLinks = links;
+                    fitToView(nodes, W, H);
+                });
         }
+
+        // Resize observer for sidebar toggle / window resize
+        var depResizeRAF = null;
+        var depResizeObserver = new ResizeObserver(function(entries) {
+            if (!app || !worldContainer) return;
+            var entry = entries[0];
+            var newW = entry.contentRect.width;
+            if (newW > 0 && newW !== currentW) {
+                var newH = Math.max(600, parseInt(canvasEl.style.height) || 600);
+                if (depResizeRAF) cancelAnimationFrame(depResizeRAF);
+                depResizeRAF = requestAnimationFrame(function() {
+                    depResizeRAF = null;
+                    currentW = newW;
+                    currentH = newH;
+                    app.renderer.resize(newW, newH);
+                    if (currentNodes && currentLinks) {
+                        drawEdges(currentLinks);
+                        fitToView(currentNodes, newW, newH);
+                    }
+                });
+            }
+        });
+        depResizeObserver.observe(wrapperEl);
 
         // Radio buttons for view mode
         var hasFolderData = (folderDeps && folderDeps.folders && Object.keys(folderDeps.folders).length > 0);
