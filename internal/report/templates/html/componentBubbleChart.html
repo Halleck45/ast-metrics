@@ -67,16 +67,11 @@ document.addEventListener('DOMContentLoaded', function() {
         if (!window.d3) return;
         if (!window.PIXI) return;
 
-        var filesRaw = [];
-        try {
-            filesRaw = JSON.parse(document.getElementById('bubble-files-data').textContent || '[]');
-        } catch(e) { return; }
+        var _d = window.__AST_DATA__ || {};
+        var filesRaw = _d.files || [];
         if (!filesRaw.length) return;
 
-        var n2c = {};
-        try {
-            n2c = JSON.parse(document.getElementById('bubble-n2c-data').textContent || '{}');
-        } catch(e) {}
+        var n2c = _d.nodeToCommunity || {};
 
         var explorerUrl = 'explorer.html';
         try {

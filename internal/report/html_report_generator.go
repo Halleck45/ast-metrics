@@ -16,6 +16,7 @@ import (
 
 	"github.com/flosch/pongo2/v5"
 	"github.com/halleck45/ast-metrics/internal/analyzer"
+	"github.com/halleck45/ast-metrics/internal/analyzer/requirement"
 	"github.com/halleck45/ast-metrics/internal/engine"
 	"github.com/halleck45/ast-metrics/internal/ui"
 	pb "github.com/halleck45/ast-metrics/pb"
@@ -196,7 +197,54 @@ func (v *HtmlReportGenerator) Generate(files []*pb.File, projectAggregated analy
 		cd.folderDepsJSON = buildFolderDepsJSON(files, lang, dict)
 
 		cd.dictionaryJSON = dict.ToJSON()
+
 		v.langCache[lang] = cd
+	}
+
+	// Write shared data JS files (one per language) to avoid duplicating JSON in every HTML page
+	dataDir := fmt.Sprintf("%s/data", v.ReportPath)
+	err = v.EnsureFolder(dataDir)
+	if err != nil {
+		return nil, err
+	}
+	for lang, cd := range v.langCache {
+		var jsBuilder strings.Builder
+		jsBuilder.WriteString("window.__AST_DATA__={")
+		jsBuilder.WriteString("files:")
+		jsBuilder.WriteString(cd.filesJSON)
+		jsBuilder.WriteString(",risks:")
+		jsBuilder.WriteString(cd.risksJSON)
+		jsBuilder.WriteString(",dictionary:")
+		jsBuilder.WriteString(cd.dictionaryJSON)
+		jsBuilder.WriteString(",fileDeps:")
+		if cd.fileDepsJSON == "" || cd.fileDepsJSON == "{}" {
+			jsBuilder.WriteString("{}")
+		} else {
+			jsBuilder.WriteString(cd.fileDepsJSON)
+		}
+		jsBuilder.WriteString(",folderDeps:")
+		if cd.folderDepsJSON == "" {
+			jsBuilder.WriteString("null")
+		} else {
+			jsBuilder.WriteString(cd.folderDepsJSON)
+		}
+		jsBuilder.WriteString(",depFileCount:")
+		jsBuilder.WriteString(fmt.Sprintf("%d", cd.depFileCount))
+		jsBuilder.WriteString(",nodeToCommunity:")
+		jsBuilder.WriteString(cd.nodeToCommunityJSON)
+		jsBuilder.WriteString(",testQuality:")
+		jsBuilder.WriteString(cd.testQualityJSON)
+		jsBuilder.WriteString("};")
+		dataFile := fmt.Sprintf("%s/data_%s.js", dataDir, lang)
+		if err := os.WriteFile(dataFile, []byte(jsBuilder.String()), 0644); err != nil {
+			return nil, err
+		}
+	}
+
+	// Write shared linter data file (one copy for all languages, dictionary-encoded)
+	linterJS := buildLinterDataJS(projectAggregated.Evaluation)
+	if err := os.WriteFile(fmt.Sprintf("%s/linters.js", dataDir), []byte(linterJS), 0644); err != nil {
+		return nil, err
 	}
 
 	// Overview
@@ -462,6 +510,51 @@ func buildRisksJSON(risksByPath map[string][]riskItemForTpl, dict *StringDiction
 		return "{}"
 	}
 	return string(data)
+}
+
+// linterDataJS builds the content of data/linters.js: a dictionary-encoded
+// representation of linter errors and successes.
+// Format: window.__AST_LINTERS__={d:{hash:string,...},e:[[ruleHash,sevHash,fileHash,msg],...],s:[[ruleHash,sevHash,fileHash,msg],...]}
+func buildLinterDataJS(eval *requirement.EvaluationResult) string {
+	dict := NewStringDictionary()
+	encodeOutcomes := func(outcomes []requirement.RuleOutcome) string {
+		if len(outcomes) == 0 {
+			return "[]"
+		}
+		var b strings.Builder
+		b.WriteString("[")
+		for i, o := range outcomes {
+			if i > 0 {
+				b.WriteString(",")
+			}
+			ruleHash := dict.Add(o.Rule)
+			sevHash := dict.Add(string(o.Severity))
+			fileHash := dict.Add(o.File)
+			msgBytes, _ := json.Marshal(o.Message)
+			fmt.Fprintf(&b, "[%q,%q,%q,%s]", ruleHash, sevHash, fileHash, msgBytes)
+		}
+		b.WriteString("]")
+		return b.String()
+	}
+
+	var errJSON, succJSON string
+	if eval == nil {
+		errJSON = "[]"
+		succJSON = "[]"
+	} else {
+		errJSON = encodeOutcomes(eval.Errors)
+		succJSON = encodeOutcomes(eval.Successes)
+	}
+
+	var js strings.Builder
+	js.WriteString("window.__AST_LINTERS__={d:")
+	js.WriteString(dict.ToJSON())
+	js.WriteString(",e:")
+	js.WriteString(errJSON)
+	js.WriteString(",s:")
+	js.WriteString(succJSON)
+	js.WriteString("};")
+	return js.String()
 }
 
 // buildFileDepsJSON builds a JSON map of file dependency relationships keyed by path hash.
@@ -795,7 +888,9 @@ func (v *HtmlReportGenerator) GenerateLanguagePage(template string, language str
 
 	// Use pre-computed cached data for this language
 	cd := v.langCache[language]
-	out, err := tpl.Execute(pongo2.Context{"datetime": datetime, "page": template, "currentLanguage": language, "currentView": currentView, "projectAggregated": projectAggregated, "files": files, "risksByPath": cd.risksByPath, "filesJSON": cd.filesJSON, "risksJSON": cd.risksJSON, "nodeToCommunityJSON": cd.nodeToCommunityJSON, "testQualityJSON": cd.testQualityJSON, "fileDepsJSON": cd.fileDepsJSON, "folderDepsJSON": cd.folderDepsJSON, "depFileCount": cd.depFileCount, "dictionaryJSON": cd.dictionaryJSON})
+	dataScriptPath := fmt.Sprintf("data/data_%s.js", language)
+	linterScriptPath := "data/linters.js"
+	out, err := tpl.Execute(pongo2.Context{"datetime": datetime, "page": template, "currentLanguage": language, "currentView": currentView, "projectAggregated": projectAggregated, "files": files, "risksByPath": cd.risksByPath, "dataScriptPath": dataScriptPath, "linterScriptPath": linterScriptPath})
 	if err != nil {
 		log.Error(err)
 		return err

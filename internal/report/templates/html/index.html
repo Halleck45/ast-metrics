@@ -153,8 +153,6 @@ document.addEventListener('alpine:init', () => {
                 <p class="text-xs text-gray-500 leading-relaxed">Each bubble is a class (or file). Color = complexity, size = lines of code, glow = git activity.</p>
             </div>
         </div>
-        <script id="bubble-files-data" type="application/json">{{ filesJSON|safe }}</script>
-        <script id="bubble-n2c-data" type="application/json">{{ nodeToCommunityJSON|safe }}</script>
         <script id="bubble-explorer-url" type="application/json">"explorer{% if currentLanguage != "All" %}_{{ currentLanguage }}{% endif %}.html"</script>
         {% include "componentBubbleChart.html" %}
     </div>
