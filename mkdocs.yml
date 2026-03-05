@@ -5,9 +5,6 @@ site_description: >-
   Understand your code, any language
 edit_uri: edit/documentation/docs/
 site_url: https://halleck45.github.io/ast-metrics/
-
-extra_files:
-  - CNAME
   
 theme:
   name: material
