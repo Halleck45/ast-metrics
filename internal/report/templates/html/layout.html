@@ -113,6 +113,25 @@
             opacity: 1;
             transform: translate(-50%, calc(-100% - 8px));
         }
+
+        /* File explorer sidebar */
+        .file-sidebar {
+            position: fixed;
+            right: 0;
+            top: 0;
+            height: 100vh;
+            z-index: 40;
+            background: white;
+            border-left: 1px solid #e2e8f0;
+            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            transform: translateX(100%);
+            display: flex;
+            flex-direction: column;
+        }
+        .file-sidebar.translate-x-0 { transform: translateX(0); }
+        .file-sidebar.translate-x-full { transform: translateX(100%); }
+        @media (min-width: 1024px) { .file-sidebar { width: 320px; } }
+        @media (max-width: 1023px) { .file-sidebar { width: 85vw; max-width: 360px; } }
     </style>
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
 </head>
@@ -269,6 +288,11 @@
                 </div>
                 <!-- end: share buttons -->
 
+                {% if page != 'explorer.html' %}
+                <script id="sidebar-files-data" type="application/json">{{ filesJSON|safe }}</script>
+                <script id="sidebar-risks-data" type="application/json">{{ risksJSON|safe }}</script>
+                {% endif %}
+
                 {% block content %}{% endblock %}
             </div>
 
@@ -314,6 +338,8 @@
                 </div>
             </footer>
         </main>
+
+        {% include "partials/file_explorer_sidebar.html" %}
     </div>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/tablesort/5.2.1/tablesort.min.js"

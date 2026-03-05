@@ -104,6 +104,7 @@ func (v *HtmlReportGenerator) Generate(files []*pb.File, projectAggregated analy
 		"busfactor.html",
 		"testquality.html",
 		"partials/suggestions.html",
+		"partials/file_explorer_sidebar.html",
 	} {
 		// read the file
 		bytes, err := htmlContent.ReadFile(fmt.Sprintf("templates/html/%s", file))
