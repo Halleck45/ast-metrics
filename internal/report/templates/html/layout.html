@@ -114,6 +114,25 @@
             transform: translate(-50%, calc(-100% - 8px));
         }
 
+        /* Navigation sidebar - hidden on mobile, overlay when toggled */
+        @media (max-width: 1023px) {
+            .nav-sidebar {
+                position: fixed;
+                left: 0;
+                top: 0;
+                z-index: 40;
+                width: 260px;
+                transform: translateX(-100%);
+                transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+                box-shadow: none;
+            }
+            .nav-sidebar.nav-open {
+                display: flex;
+                transform: translateX(0);
+                box-shadow: 4px 0 12px rgba(0,0,0,0.1);
+            }
+        }
+
         /* File explorer sidebar */
         .file-sidebar {
             position: fixed;
@@ -138,9 +157,20 @@
 
 <body>
 
-    <div class="grid grid-cols-7">
-        <aside
-            class="self-start sticky top-0 col-span-1 flex flex-col h-screen px-4 py-8 overflow-y-auto bg-white border-r rtl:border-r-0 rtl:border-l ">
+    <!-- Mobile nav toggle -->
+    <button id="nav-toggle" onclick="document.getElementById('nav-sidebar').classList.toggle('nav-open');document.getElementById('nav-backdrop').classList.toggle('hidden');"
+            class="lg:hidden fixed top-4 left-4 z-50 w-10 h-10 bg-white border border-slate-200 rounded-lg shadow flex items-center justify-center text-slate-600">
+        <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />
+        </svg>
+    </button>
+    <!-- Mobile nav backdrop -->
+    <div id="nav-backdrop" class="hidden fixed inset-0 bg-black/30 z-30 lg:hidden"
+         onclick="document.getElementById('nav-sidebar').classList.remove('nav-open');this.classList.add('hidden');"></div>
+
+    <div class="lg:grid lg:grid-cols-7">
+        <aside id="nav-sidebar"
+            class="nav-sidebar hidden lg:flex self-start lg:sticky top-0 col-span-1 flex-col h-screen px-4 py-8 overflow-y-auto bg-white border-r rtl:border-r-0 rtl:border-l">
             <a href="https://github.com/Halleck45/ast-metrics">
                 <img src="images/logo-ast-metrics-small.png" alt="AST Metrics" class="h-auto mx-auto hover:opacity-70">
             </a>
@@ -258,35 +288,28 @@
 
                 </nav>
             </div>
+
+            <!-- Share buttons -->
+            <div class="flex items-center gap-2 px-4 pt-4 border-t border-gray-100">
+                <a aria-label="Visit Github repository of AST Metrics"
+                    href="https://github.com/Halleck45/ast-metrics/"
+                    class="p-1.5 rounded hover:bg-gray-100 text-gray-500 hover:text-gray-700 transition-colors">
+                    <svg viewBox="0 0 24 24" aria-hidden="true" class="h-5 w-5 fill-current">
+                        <path fill-rule="evenodd" clip-rule="evenodd"
+                            d="M12 2C6.477 2 2 6.463 2 11.97c0 4.404 2.865 8.14 6.839 9.458.5.092.682-.216.682-.48 0-.236-.008-.864-.013-1.695-2.782.602-3.369-1.337-3.369-1.337-.454-1.151-1.11-1.458-1.11-1.458-.908-.618.069-.606.069-.606 1.003.07 1.531 1.027 1.531 1.027.892 1.524 2.341 1.084 2.91.828.092-.643.35-1.083.636-1.332-2.22-.251-4.555-1.107-4.555-4.927 0-1.088.39-1.979 1.029-2.675-.103-.252-.446-1.266.098-2.638 0 0 .84-.268 2.75 1.022A9.607 9.607 0 0 1 12 6.82c.85.004 1.705.114 2.504.336 1.909-1.29 2.747-1.022 2.747-1.022.546 1.372.202 2.386.1 2.638.64.696 1.028 1.587 1.028 2.675 0 3.83-2.339 4.673-4.566 4.92.359.307.678.915.678 1.846 0 1.332-.012 2.407-.012 2.734 0 .267.18.577.688.48 3.97-1.32 6.833-5.054 6.833-9.458C22 6.463 17.522 2 12 2Z">
+                        </path>
+                    </svg>
+                </a>
+                <a id="share-twitter" class="cursor-pointer p-1.5 rounded hover:bg-gray-100 text-gray-500 hover:text-gray-700 transition-colors">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M14.095479,10.316482L22.286354,1h-1.940718l-7.115352,8.087682L7.551414,1H1l8.589488,12.231093L1,23h1.940717l7.509372-8.542861L16.448587,23H23L14.095479,10.316482z M11.436522,13.338465l-0.871624-1.218704l-6.924311-9.68815h2.981339l5.58978,7.82155l0.867949,1.218704l7.26506,10.166271h-2.981339L11.436522,13.338465z" />
+                    </svg>
+                </a>
+            </div>
         </aside>
 
-        <main class="col-span-6">
+        <main class="col-span-full lg:col-span-6">
             <div class="bg-gray-100 py-8 px-8">
-
-                <!-- start: share buttons -->
-                <div id="share-container" class="w-16 absolute right-10 grid grid-cols-2 gap-0">
-                    <div class="rounded px-1 py-1 hover:bg-gray-200">
-                        <a aria-label="Visit Github repository of AST Metrics"
-                            href="https://github.com/Halleck45/ast-metrics/">
-                            <svg viewBox="0 0 24 24" aria-hidden="true" class="h-6 w-6 fill-slate-900">
-                                <path fill-rule="evenodd" clip-rule="evenodd"
-                                    d="M12 2C6.477 2 2 6.463 2 11.97c0 4.404 2.865 8.14 6.839 9.458.5.092.682-.216.682-.48 0-.236-.008-.864-.013-1.695-2.782.602-3.369-1.337-3.369-1.337-.454-1.151-1.11-1.458-1.11-1.458-.908-.618.069-.606.069-.606 1.003.07 1.531 1.027 1.531 1.027.892 1.524 2.341 1.084 2.91.828.092-.643.35-1.083.636-1.332-2.22-.251-4.555-1.107-4.555-4.927 0-1.088.39-1.979 1.029-2.675-.103-.252-.446-1.266.098-2.638 0 0 .84-.268 2.75 1.022A9.607 9.607 0 0 1 12 6.82c.85.004 1.705.114 2.504.336 1.909-1.29 2.747-1.022 2.747-1.022.546 1.372.202 2.386.1 2.638.64.696 1.028 1.587 1.028 2.675 0 3.83-2.339 4.673-4.566 4.92.359.307.678.915.678 1.846 0 1.332-.012 2.407-.012 2.734 0 .267.18.577.688.48 3.97-1.32 6.833-5.054 6.833-9.458C22 6.463 17.522 2 12 2Z">
-                                </path>
-                            </svg>
-                        </a>
-                    </div>
-                    <div class="rounded px-1 py-1 hover:bg-gray-200">
-                        <a id="share-twitter" class="cursor-pointer">
-                            <svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"
-                                version="1.1" id="Layer_1" width="22px" height="22px" viewBox="0 0 22 22"
-                                style="enable-background:new 0 0 24 24;" xml:space="preserve">
-                                <path
-                                    d="M14.095479,10.316482L22.286354,1h-1.940718l-7.115352,8.087682L7.551414,1H1l8.589488,12.231093L1,23h1.940717  l7.509372-8.542861L16.448587,23H23L14.095479,10.316482z M11.436522,13.338465l-0.871624-1.218704l-6.924311-9.68815h2.981339  l5.58978,7.82155l0.867949,1.218704l7.26506,10.166271h-2.981339L11.436522,13.338465z" />
-                            </svg>
-                        </a>
-                    </div>
-                </div>
-                <!-- end: share buttons -->
 
                 <script id="sidebar-files-data" type="application/json">{{ filesJSON|safe }}</script>
                 <script id="sidebar-risks-data" type="application/json">{{ risksJSON|safe }}</script>
