@@ -108,6 +108,213 @@ func TestBuildFilesJSONPruned_ContainsOutsideFunctions(t *testing.T) {
 	}
 }
 
+func TestBuildRisksJSON_ValidJSON(t *testing.T) {
+	dict := NewStringDictionary()
+	risks := map[string][]riskItemForTpl{
+		"/tmp/foo.go": {
+			{ID: "R1", Title: "High complexity", Severity: 0.8, Details: "cyclomatic > 20"},
+		},
+		"/tmp/bar.go": {},
+	}
+	raw := buildRisksJSON(risks, dict)
+	var decoded map[string][]riskItemForTpl
+	if err := json.Unmarshal([]byte(raw), &decoded); err != nil {
+		t.Fatalf("expected valid json, got error: %v\nraw: %s", err, raw)
+	}
+	// Keys should be hashes, not paths
+	for k := range decoded {
+		if len(k) != 16 {
+			t.Fatalf("expected 16-char hash key, got %q", k)
+		}
+	}
+	// Should have 2 entries
+	if len(decoded) != 2 {
+		t.Fatalf("expected 2 entries, got %d", len(decoded))
+	}
+}
+
+func TestBuildRisksJSON_EmptySliceNotNull(t *testing.T) {
+	dict := NewStringDictionary()
+	risks := map[string][]riskItemForTpl{
+		"/tmp/bar.go": {},
+	}
+	raw := buildRisksJSON(risks, dict)
+	// Ensure the empty list produces [] not null
+	if !json.Valid([]byte(raw)) {
+		t.Fatalf("invalid json: %s", raw)
+	}
+	var decoded map[string][]riskItemForTpl
+	if err := json.Unmarshal([]byte(raw), &decoded); err != nil {
+		t.Fatalf("unmarshal error: %v", err)
+	}
+	for _, v := range decoded {
+		if v == nil {
+			t.Fatalf("expected empty slice, got nil")
+		}
+	}
+}
+
+func TestBuildNodeToCommunityJSON_ValidJSON(t *testing.T) {
+	n2c := map[string]string{
+		"App\\Controller": "0",
+		"App\\Service":    "1",
+	}
+	raw := buildNodeToCommunityJSON(n2c)
+	if !json.Valid([]byte(raw)) {
+		t.Fatalf("invalid json: %s", raw)
+	}
+	var decoded map[string]string
+	if err := json.Unmarshal([]byte(raw), &decoded); err != nil {
+		t.Fatalf("unmarshal error: %v", err)
+	}
+	if decoded["App\\Controller"] != "0" {
+		t.Fatalf("expected community 0 for App\\Controller, got %q", decoded["App\\Controller"])
+	}
+}
+
+func TestBuildNodeToCommunityJSON_Empty(t *testing.T) {
+	raw := buildNodeToCommunityJSON(map[string]string{})
+	if raw != "{}" {
+		t.Fatalf("expected empty json object, got %s", raw)
+	}
+}
+
+func TestBuildFileDepsJSON_EmptySlicesNotNull(t *testing.T) {
+	dict := NewStringDictionary()
+	// File with a class that references itself (self-dep should be skipped)
+	file := &pb.File{
+		Path:                "/tmp/a.go",
+		ProgrammingLanguage: "Golang",
+		Stmts: &pb.Stmts{
+			StmtClass: []*pb.StmtClass{
+				{Name: &pb.Name{Short: "Foo", Qualified: "pkg\\Foo"}},
+			},
+		},
+	}
+	raw := buildFileDepsJSON([]*pb.File{file}, "All", dict)
+	if raw != "{}" {
+		t.Fatalf("expected empty json for no deps, got %s", raw)
+	}
+}
+
+func TestBuildFileDepsJSON_HashedKeys(t *testing.T) {
+	dict := NewStringDictionary()
+	fileA := &pb.File{
+		Path:                "/tmp/a.go",
+		ProgrammingLanguage: "Golang",
+		Stmts: &pb.Stmts{
+			StmtClass: []*pb.StmtClass{
+				{Name: &pb.Name{Short: "Foo", Qualified: "pkg\\Foo"}},
+			},
+			StmtExternalDependencies: []*pb.StmtExternalDependency{
+				{ClassName: "Bar"},
+			},
+		},
+	}
+	fileB := &pb.File{
+		Path:                "/tmp/b.go",
+		ProgrammingLanguage: "Golang",
+		Stmts: &pb.Stmts{
+			StmtClass: []*pb.StmtClass{
+				{Name: &pb.Name{Short: "Bar", Qualified: "pkg\\Bar"}},
+			},
+		},
+	}
+	raw := buildFileDepsJSON([]*pb.File{fileA, fileB}, "All", dict)
+	if !json.Valid([]byte(raw)) {
+		t.Fatalf("invalid json: %s", raw)
+	}
+	var decoded map[string]fileDepsEntry
+	if err := json.Unmarshal([]byte(raw), &decoded); err != nil {
+		t.Fatalf("unmarshal error: %v", err)
+	}
+	for k, v := range decoded {
+		if len(k) != 16 {
+			t.Fatalf("expected 16-char hash key, got %q", k)
+		}
+		if v.Efferent == nil || v.Afferent == nil {
+			t.Fatalf("expected non-nil slices for key %s", k)
+		}
+	}
+}
+
+func TestBuildFolderDepsJSON_HashedKeys(t *testing.T) {
+	dict := NewStringDictionary()
+	fileA := &pb.File{
+		Path:                "/tmp/pkgA/a.go",
+		ProgrammingLanguage: "Golang",
+		Stmts: &pb.Stmts{
+			StmtClass: []*pb.StmtClass{
+				{Name: &pb.Name{Short: "Foo", Qualified: "pkgA\\Foo"}},
+			},
+			StmtExternalDependencies: []*pb.StmtExternalDependency{
+				{ClassName: "Bar"},
+			},
+		},
+	}
+	fileB := &pb.File{
+		Path:                "/tmp/pkgB/b.go",
+		ProgrammingLanguage: "Golang",
+		Stmts: &pb.Stmts{
+			StmtClass: []*pb.StmtClass{
+				{Name: &pb.Name{Short: "Bar", Qualified: "pkgB\\Bar"}},
+			},
+		},
+	}
+	raw := buildFolderDepsJSON([]*pb.File{fileA, fileB}, "All", dict)
+	if raw == "" {
+		t.Fatalf("expected non-empty json for cross-folder deps")
+	}
+	if !json.Valid([]byte(raw)) {
+		t.Fatalf("invalid json: %s", raw)
+	}
+	var decoded folderDepsPayload
+	if err := json.Unmarshal([]byte(raw), &decoded); err != nil {
+		t.Fatalf("unmarshal error: %v", err)
+	}
+	for k, v := range decoded.Folders {
+		if len(k) != 16 {
+			t.Fatalf("expected 16-char hash key, got %q", k)
+		}
+		if v.Efferent == nil || v.Afferent == nil {
+			t.Fatalf("expected non-nil slices for folder %s", k)
+		}
+	}
+	// Dictionary should contain the original paths
+	dictJSON := dict.ToJSON()
+	if !json.Valid([]byte(dictJSON)) {
+		t.Fatalf("invalid dict json: %s", dictJSON)
+	}
+}
+
+func TestStringDictionary_AddAndResolve(t *testing.T) {
+	dict := NewStringDictionary()
+	h1 := dict.Add("/tmp/foo.go")
+	h2 := dict.Add("/tmp/bar.go")
+	if h1 == h2 {
+		t.Fatalf("expected different hashes, got same: %s", h1)
+	}
+	if len(h1) != 16 {
+		t.Fatalf("expected 16-char hash, got %d chars: %s", len(h1), h1)
+	}
+	// Same input produces same hash
+	if dict.Add("/tmp/foo.go") != h1 {
+		t.Fatalf("expected stable hash")
+	}
+	// ToJSON should contain both entries
+	raw := dict.ToJSON()
+	var m map[string]string
+	if err := json.Unmarshal([]byte(raw), &m); err != nil {
+		t.Fatalf("invalid dict json: %v", err)
+	}
+	if m[h1] != "/tmp/foo.go" {
+		t.Fatalf("expected /tmp/foo.go, got %s", m[h1])
+	}
+	if m[h2] != "/tmp/bar.go" {
+		t.Fatalf("expected /tmp/bar.go, got %s", m[h2])
+	}
+}
+
 func TestBuildFilesJSONPruned_PathHashStableAndDistinct(t *testing.T) {
 	makeFile := func(path string) *pb.File {
 		return &pb.File{
