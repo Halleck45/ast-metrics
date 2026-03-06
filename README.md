@@ -44,6 +44,16 @@ It helps the project grow and reach more developers.
 
 <p>Paste a GitHub URL. Get a full report. No install.</p>
 
+<p><b>Or explore live examples:</b></p>
+
+<p>
+<a href="https://analyze.ast-metrics.dev/spf13/cobra"><img src="https://img.shields.io/badge/spf13%2Fcobra-Go-00ADD8?style=flat-square&logo=go&logoColor=white" alt="spf13/cobra"></a>
+<a href="https://analyze.ast-metrics.dev/fatih/color"><img src="https://img.shields.io/badge/fatih%2Fcolor-Go-00ADD8?style=flat-square&logo=go&logoColor=white" alt="fatih/color"></a>
+<a href="https://analyze.ast-metrics.dev/gorilla/mux"><img src="https://img.shields.io/badge/gorilla%2Fmux-Go-00ADD8?style=flat-square&logo=go&logoColor=white" alt="gorilla/mux"></a>
+<a href="https://analyze.ast-metrics.dev/guzzle/psr7"><img src="https://img.shields.io/badge/guzzle%2Fpsr7-PHP-777BB4?style=flat-square&logo=php&logoColor=white" alt="guzzle/psr7"></a>
+<a href="https://analyze.ast-metrics.dev/thephpleague/flysystem"><img src="https://img.shields.io/badge/thephpleague%2Fflysystem-PHP-777BB4?style=flat-square&logo=php&logoColor=white" alt="thephpleague/flysystem"></a>
+</p>
+
 <br />
 
 </td>
