@@ -19,6 +19,7 @@ It provides <b>architectural insights</b>, <b>complexity metrics</b>, and <b>act
 <img src="https://img.shields.io/github/downloads/Halleck45/ast-metrics/total" alt="GitHub all releases">
 <a href="https://goreportcard.com/report/github.com/Halleck45/ast-metrics"><img src="https://goreportcard.com/badge/github.com/Halleck45/ast-metrics" alt="Go Report Card"></a>
 <a href="https://codecov.io/gh/Halleck45/ast-metrics"><img src="https://codecov.io/gh/Halleck45/ast-metrics/branch/main/graph/badge.svg" alt="codecov"></a></p>
+<a href="https://analyze.ast-metrics.dev/halleck45/ast-metrics"><img src="https://img.shields.io/badge/AST--Metrics-report-181717?logo=github" alt="AST-Metrics report"></a>
 </p>
 
 <p align="center">
