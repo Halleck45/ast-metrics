@@ -18,9 +18,7 @@ It provides <b>architectural insights</b>, <b>complexity metrics</b>, and <b>act
 <a href="https://github.com/sponsors/Halleck45"><img src="https://img.shields.io/static/v1?label=Sponsor&amp;message=%E2%9D%A4&amp;logo=GitHub&amp;color=%23fe8e86" alt=""></a>
 <img src="https://img.shields.io/github/downloads/Halleck45/ast-metrics/total" alt="GitHub all releases">
 <a href="https://goreportcard.com/report/github.com/Halleck45/ast-metrics"><img src="https://goreportcard.com/badge/github.com/Halleck45/ast-metrics" alt="Go Report Card"></a>
-<a href="https://codecov.io/gh/Halleck45/ast-metrics"><img src="https://codecov.io/gh/Halleck45/ast-metrics/branch/main/graph/badge.svg" alt="codecov"></a>
-<img src="https://img.shields.io/badge/Architecture%20insights%20for%20PHP%2C%20Go%2C%20Python%2C%20Rust-orange" />
-</p>
+<a href="https://codecov.io/gh/Halleck45/ast-metrics"><img src="https://codecov.io/gh/Halleck45/ast-metrics/branch/main/graph/badge.svg" alt="codecov"></a></p>
 </p>
 
 <p align="center">
@@ -29,12 +27,31 @@ It helps the project grow and reach more developers.
 </p>
 
 <p align="center" style="text-align:center">
-<a href="https://halleck45.github.io/ast-metrics/">Documentation</a> | <a href=".github/CONTRIBUTING.md">Contributing</a> | <a href="https://twitter.com/Halleck45">Twitter</a>
+<a href="https://ast-metrics.dev/">Documentation</a> | <a href=".github/CONTRIBUTING.md">Contributing</a> | <a href="https://twitter.com/Halleck45">Twitter</a>
 </p>
 
 <img width="1280" height="640" alt="banner" src="https://github.com/user-attachments/assets/4a7d518d-82fe-4c18-880f-479fe1738878" />
 
-<br /><br/>
+<br />
+
+<table align="center">
+<tr>
+<td align="center">
+<br />
+
+<a href="https://analyze.ast-metrics.dev"><img src="https://img.shields.io/badge/Analyze_your_project-4f46e5?style=for-the-badge&logo=data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0id2hpdGUiPjxwYXRoIGQ9Ik0xMiAyQzYuNDggMiAyIDYuNDggMiAxMnM0LjQ4IDEwIDEwIDEwIDEwLTQuNDggMTAtMTBTMTcuNTIgMiAxMiAyem0tMiAxNWwtNS01IDEuNDEtMS40MUwxMCAxNC4xN2w3LjU5LTcuNTlMMTkgOGwtOSA5eiIvPjwvc3ZnPg==&logoColor=white" alt="Analyze your project" height="45"></a>
+
+<p>Paste a GitHub URL. Get a full report. No install.</p>
+
+<b>Share your score:</b> add a badge to your README<br /><br />
+<pre>[![AST Metrics](https://analyze.ast-metrics.dev/api/badge/your-org/your-repo)](https://analyze.ast-metrics.dev/report/your-org/your-repo)</pre>
+<br /><br />
+
+</td>
+</tr>
+</table>
+
+<br />
 
 ## Why AST Metrics?
 
@@ -52,7 +69,7 @@ It helps the project grow and reach more developers.
 + **Activity metrics**: commits, bus factor.
 + **Readable reports**: detailed HTML dashboards.
 
-[Read more in the documentation](https://halleck45.github.io/ast-metrics/)
+[Read more in the documentation](https://ast-metrics.dev/)
 
 ## Getting Started
 
@@ -64,7 +81,7 @@ curl -s https://raw.githubusercontent.com/Halleck45/ast-metrics/main/scripts/dow
 ./ast-metrics analyze --report-html=<directory> /path/to/your/code
 ```
 
-> To install it manually follow the detailed [installation instructions](https://halleck45.github.io/ast-metrics/getting-started/install/).
+> To install it manually follow the detailed [installation instructions](https://ast-metrics.dev/getting-started/install/).
 
 
 ## Linting your code
