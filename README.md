@@ -43,9 +43,7 @@ It helps the project grow and reach more developers.
 
 <p>Paste a GitHub URL. Get a full report. No install.</p>
 
-<b>Share your score:</b> add a badge to your README<br /><br />
-<code>[![AST Metrics](https://analyze.ast-metrics.dev/api/badge/ORG/REPO)]<br />(https://analyze.ast-metrics.dev/report/ORG/REPO)</code>
-<br /><br />
+<br />
 
 </td>
 </tr>
