@@ -238,8 +238,8 @@ AST Metrics - Bus Factor
 {% set hasCommunityData = cm and cm.TopCommittersPerCommunity %}
 
 <!-- View toggle -->
-<div id="bf-view-toggle" class="flex flex-wrap items-center gap-3 mt-8 mb-4 text-xs font-medium text-gray-600">
-    <span class="text-gray-500">Aggregate by:</span>
+<div id="bf-view-toggle" class="flex flex-wrap items-center gap-3 mt-8 mb-4 text-xs font-medium text-gray-700">
+    <span class="text-gray-700">Aggregate by:</span>
     <label class="flex items-center gap-1.5 cursor-pointer bg-gray-50 px-3 py-1.5 rounded-lg hover:bg-gray-100 transition-colors">
         <input type="radio" name="bf-view" value="folder" checked class="w-3.5 h-3.5 text-blue-600">
         <span>By folder</span>
@@ -257,18 +257,18 @@ AST Metrics - Bus Factor
         Folder metrics are computed from git commits on files inside each directory.
     </div>
     <div class="mt-4 mb-2">
-        <div class="flex items-center justify-between gap-4 text-xs text-gray-600">
-            <span class="font-medium text-gray-500">Granularity</span>
-            <span id="bf-granularity-label" class="text-gray-500">Normal</span>
+        <div class="flex items-center justify-between gap-4 text-xs text-gray-700">
+            <label for="bf-granularity" class="font-medium text-gray-700">Granularity</label>
+            <span id="bf-granularity-label" class="text-gray-700">Normal</span>
         </div>
         <input id="bf-granularity" type="range" min="0" max="100" step="1" value="50" class="w-full accent-blue-600 mt-2">
-        <div class="flex items-center justify-between text-[11px] text-gray-400 mt-1">
+        <div class="flex items-center justify-between text-[11px] text-gray-600 mt-1">
             <span>Compact</span>
             <span>Normal</span>
             <span>Detailed</span>
         </div>
     </div>
-    <p id="bf-folder-pruning-meta" class="text-xs text-gray-500 mt-2 mb-6"></p>
+    <p id="bf-folder-pruning-meta" class="text-xs text-gray-600 mt-2 mb-6"></p>
     <div class="relative min-h-[96px]">
         <div id="bf-folder-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"></div>
         <div id="bf-folder-loading" class="absolute inset-0 z-10 flex items-center justify-center bg-white/80 rounded-xl">
@@ -334,7 +334,7 @@ AST Metrics - Bus Factor
             </div>
 
             <div class="border-t border-gray-100 pt-3">
-                <p class="text-xs font-medium text-gray-500 mb-2">Top Contributors</p>
+                <p class="text-xs font-medium text-gray-600 mb-2">Top Contributors</p>
                 <div class="space-y-1">
                     {% for author, count in committers %}
                     {% if forloop.Counter <= 5 %}
@@ -345,7 +345,7 @@ AST Metrics - Bus Factor
                             </div>
                             <span class="text-gray-900 truncate" title="{{ author }}">{{ author }}</span>
                         </div>
-                        <span class="text-gray-500 bg-gray-100 px-2 py-0.5 rounded-full font-medium ml-2 flex-shrink-0">{{ count }}</span>
+                        <span class="text-gray-700 bg-gray-100 px-2 py-0.5 rounded-full font-medium ml-2 flex-shrink-0">{{ count }}</span>
                     </div>
                     {% endif %}
                     {% endfor %}
@@ -883,7 +883,7 @@ document.addEventListener('DOMContentLoaded', function() {
             title.textContent = item.folder;
             title.title = item.folder;
             var subtitle = document.createElement('p');
-            subtitle.className = 'text-xs text-gray-500';
+            subtitle.className = 'text-xs text-gray-600';
             subtitle.textContent = item.subtitle || 'Folder';
             left.appendChild(title);
             left.appendChild(subtitle);
@@ -894,7 +894,7 @@ document.addEventListener('DOMContentLoaded', function() {
             value.className = 'text-2xl font-bold text-blue-600 metric-value';
             value.textContent = String(item.busFactor);
             var valueLabel = document.createElement('p');
-            valueLabel.className = 'text-xs text-gray-500';
+            valueLabel.className = 'text-xs text-gray-600';
             valueLabel.textContent = 'Bus Factor';
             var contributors = document.createElement('div');
             contributors.className = 'mt-2 text-sm text-gray-600';
@@ -940,7 +940,7 @@ document.addEventListener('DOMContentLoaded', function() {
             var topWrap = document.createElement('div');
             topWrap.className = 'border-t border-gray-100 pt-3';
             var topTitle = document.createElement('p');
-            topTitle.className = 'text-xs font-medium text-gray-500 mb-2';
+            topTitle.className = 'text-xs font-medium text-gray-600 mb-2';
             topTitle.textContent = 'Top Contributors';
             var list = document.createElement('div');
             list.className = 'space-y-1';
@@ -962,7 +962,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 leftRow.appendChild(name);
 
                 var count = document.createElement('span');
-                count.className = 'text-gray-500 bg-gray-100 px-2 py-0.5 rounded-full font-medium ml-2 flex-shrink-0';
+                count.className = 'text-gray-700 bg-gray-100 px-2 py-0.5 rounded-full font-medium ml-2 flex-shrink-0';
                 count.textContent = String(c.count);
 
                 row.appendChild(leftRow);
