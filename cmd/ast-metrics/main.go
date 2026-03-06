@@ -340,7 +340,7 @@ func main() {
 
 					// CI mode
 					if cCtx.Bool("ci") {
-						cli.PrintWarning("[DEPRECATION] L'option --ci pour 'analyze' est dépréciée. Utilisez plutôt la commande: ast-metrics ci")
+						cli.PrintWarning("[DEPRECATION] The --ci option for 'analyze' is deprecated. Please use the dedicated command: ast-metrics ci")
 						if config.Reports.Html == "" {
 							config.Reports.Html = "ast-metrics-html-report"
 						}
@@ -708,7 +708,7 @@ func main() {
 
 	if err := app.Run(os.Args); err != nil {
 		logrus.Error(err)
-                os.Exit(1)
+		os.Exit(1)
 	}
 }
 
