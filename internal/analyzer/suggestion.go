@@ -13,4 +13,6 @@ type Suggestion struct {
     Why string
     // DetailedExplanation provides one or more paragraphs with concrete guidance.
     DetailedExplanation string
+    // Category groups suggestions for display (e.g., "coupling", "purity", "boundary").
+    Category string
 }

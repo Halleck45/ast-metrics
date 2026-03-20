@@ -83,6 +83,12 @@ func (ga *GraphAggregator) Calculate(aggregate *Aggregated) {
 		}
 	}
 
+	// Track internal sources (nodes that originate from project source files)
+	internalSources := make(map[string]bool, len(edgesCount))
+	for fromNs := range edgesCount {
+		internalSources[fromNs] = true
+	}
+
 	// Apply combined filtering: abs + relative threshold and top-K per source, with fallback top-1
 	const (
 		absThreshold = 1
@@ -125,6 +131,16 @@ func (ga *GraphAggregator) Calculate(aggregate *Aggregated) {
 		}
 		for toNs := range kept {
 			addEdge(fromNs, toNs)
+		}
+	}
+
+	// Mark external nodes (nodes that are only targets, never sources)
+	if aggregate.ExternalNodes == nil {
+		aggregate.ExternalNodes = make(map[string]bool)
+	}
+	for id := range aggregate.Graph.Nodes {
+		if !internalSources[id] {
+			aggregate.ExternalNodes[id] = true
 		}
 	}
 }

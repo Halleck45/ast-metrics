@@ -871,6 +871,7 @@ func (ca *CommunityAggregator) Calculate(aggregate *Aggregated) {
 					Location:            cid,
 					Why:                 fmt.Sprintf("High outbound coupling ratio: %d%% (> 70%%)", pct),
 					DetailedExplanation: "This community depends on many others. Introduce a façade or API boundary to reduce direct dependencies and stabilize interactions.",
+					Category:            "coupling",
 				})
 				seen[msg] = true
 			}
@@ -888,6 +889,7 @@ func (ca *CommunityAggregator) Calculate(aggregate *Aggregated) {
 					Location:            cid,
 					Why:                 fmt.Sprintf("Large and impure community: size=%d (>50), purity=%d%% (<60%%)", size, int(pur*100+0.5)),
 					DetailedExplanation: "This community aggregates several concerns. Consider splitting it into smaller, cohesive modules aligned by domain or namespace to improve purity and maintainability.",
+					Category:            "purity",
 				})
 				seen[msg] = true
 			}
@@ -906,6 +908,7 @@ func (ca *CommunityAggregator) Calculate(aggregate *Aggregated) {
 				Location:            nid,
 				Why:                 "Boundary node detected: participates in edges crossing communities",
 				DetailedExplanation: "This node connects multiple communities and can create tight coupling. Consider introducing anti-corruption layers, moving responsibilities, or clarifying ownership to reduce boundary crossings.",
+				Category:            "boundary",
 			})
 			seen[msg] = true
 		}

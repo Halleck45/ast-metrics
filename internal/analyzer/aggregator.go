@@ -84,6 +84,7 @@ type Aggregated struct {
 	ResultOfGitAnalysis                     []ResultOfGitAnalysis
 	PackageRelations                        map[string]map[string]int // counter of dependencies. Ex: A -> B -> 2
 	Graph                                   *pb.Graph
+	ExternalNodes                           map[string]bool // node IDs that are external (not from project source)
 	Community                               *CommunityMetrics
 	TestQuality                             *TestQualityMetrics
 	Suggestions                             []Suggestion
@@ -178,6 +179,7 @@ func newAggregated() Aggregated {
 		ResultOfGitAnalysis:                     nil,
 		PackageRelations:                        make(map[string]map[string]int),
 		Graph:                                   &pb.Graph{Nodes: make(map[string]*pb.Node)},
+		ExternalNodes:                           make(map[string]bool),
 		Community:                               nil,
 		TestQuality:                             nil,
 		Suggestions:                             make([]Suggestion, 0),

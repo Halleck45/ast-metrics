@@ -927,6 +927,28 @@ func (v *HtmlReportGenerator) EnsureFolder(path string) error {
 
 func (v *HtmlReportGenerator) RegisterFilters() {
 
+	// countCategory counts suggestions matching a given category string.
+	// Usage: {{ suggestions|countCategory:"coupling" }}
+	pongo2.RegisterFilter("countCategory", func(in *pongo2.Value, param *pongo2.Value) (out *pongo2.Value, err *pongo2.Error) {
+		cat := param.String()
+		suggestions, ok := in.Interface().([]analyzer.Suggestion)
+		if !ok {
+			return pongo2.AsValue(0), nil
+		}
+		known := map[string]bool{"coupling": true, "purity": true, "boundary": true}
+		count := 0
+		for _, s := range suggestions {
+			if cat == "other" {
+				if !known[s.Category] {
+					count++
+				}
+			} else if s.Category == cat {
+				count++
+			}
+		}
+		return pongo2.AsValue(count), nil
+	})
+
 	pongo2.RegisterFilter("sortMaintainabilityIndex", func(in *pongo2.Value, param *pongo2.Value) (out *pongo2.Value, err *pongo2.Error) {
 		// get the list to sort
 		// create new empty list
