@@ -179,12 +179,11 @@ document.addEventListener('alpine:init', () => {
             {{ currentView|barchartCyclomaticByMethodRepartition}}
         </div>
         <p class="mt-3 text-xs text-gray-500 border-t border-gray-100 pt-2">
-            Avg. execution paths. Lower is better.
+            Avg. decision paths per method. Lower is simpler.
         </p>
     </div>
 
-    {% if not cm or cm.Communities|length == 0 %}
-    <!-- LCOM Card -->
+    <!-- Class Cohesion Card -->
     <div class="dashboard-card p-5 animate-fade-in-up stagger-3">
         <div class="flex items-start justify-between">
             <div>
@@ -197,10 +196,10 @@ document.addEventListener('alpine:init', () => {
                     {% if currentView.Comparaison %}
                     {% include 'componentComparaisonBadge.html' with comparaisonMode='lowIsBetter' diff=currentView.Comparaison.AverageLcom4 round=2 %}
                     {% endif %}
-                    LCOM4
+                    Class Cohesion
                 </p>
             </div>
-            <button x-data @click="Object.assign($store.helpModal, { open: true, title: 'LCOM4', video: 'https://ast-metrics.dev/animations/lcom.webm', link: 'https://ast-metrics.dev/metrics/lcom4/' })" class="text-gray-300 hover:text-blue-500 transition-colors flex items-center gap-1" title="Watch video explanation">
+            <button x-data @click="Object.assign($store.helpModal, { open: true, title: 'Class Cohesion (LCOM4)', video: 'https://ast-metrics.dev/animations/lcom.webm', link: 'https://ast-metrics.dev/metrics/lcom4/' })" class="text-gray-300 hover:text-blue-500 transition-colors flex items-center gap-1" title="Watch video explanation">
                 <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /><path stroke-linecap="round" stroke-linejoin="round" d="M15.91 11.672a.375.375 0 010 .656l-5.603 3.113a.375.375 0 01-.557-.328V8.887c0-.286.307-.466.557-.327l5.603 3.112z" /></svg>
             </button>
         </div>
@@ -208,10 +207,9 @@ document.addEventListener('alpine:init', () => {
             {{ currentView|barchartLcomRepartition}}
         </div>
         <p class="mt-3 text-xs text-gray-500 border-t border-gray-100 pt-2">
-            Lack of Cohesion. Lower is better.
+            How focused classes are. Closer to 1 is better.
         </p>
     </div>
-    {% endif %}
 
     <!-- Maintainability Card -->
     <div class="dashboard-card p-5 animate-fade-in-up stagger-4">
@@ -232,7 +230,7 @@ document.addEventListener('alpine:init', () => {
             {{ currentView|barchartMaintainabilityIndexRepartition}}
         </div>
         <p class="mt-3 text-xs text-gray-500 border-t border-gray-100 pt-2">
-            Higher is better (> 85).
+            Ease of maintenance. Higher is better (> 85).
         </p>
     </div>
 
@@ -246,44 +244,17 @@ document.addEventListener('alpine:init', () => {
                 {% if currentView.Comparaison %}
                 {% include 'componentComparaisonBadge.html' with comparaisonMode='lowIsBetter' diff=currentView.Comparaison.AverageLocPerMethod round=2 %}
                 {% endif %}
-                LOC / Method
+                Method Size
             </p>
         </div>
         <div class="card-graph mt-3">
             {{ currentView|barchartLocPerMethodRepartition}}
         </div>
         <p class="mt-3 text-xs text-gray-500 border-t border-gray-100 pt-2">
-            Ideally lower than 20.
+            Avg. lines per method. Ideally under 20.
         </p>
     </div>
 
-    <!-- LCOM Card -->
-    <div class="dashboard-card p-5 animate-fade-in-up stagger-4">
-        <div class="flex items-start justify-between">
-            <div>
-                <h5 class="text-2xl font-semibold text-gray-900 mb-0.5 metric-value tracking-tight flex items-center gap-2">
-                    {% set color="red" %}
-                    {% if currentView.Lcom4PerClass.Avg < 1.7 %} {% set color="emerald" %} {% elif currentView.Lcom4PerClass.Avg> 1.7 %} {% set color="amber" %} {% endif %}
-                        <span class="text-{{ color }}-600">{{ currentView.Lcom4PerClass.Avg | floatformat:1 }}</span>
-                </h5>
-                <p class="text-xs font-medium text-gray-500 flex items-center gap-2 mb-3">
-                    {% if currentView.Comparaison %}
-                    {% include 'componentComparaisonBadge.html' with comparaisonMode='lowIsBetter' diff=currentView.Comparaison.AverageLcom4 round=2 %}
-                    {% endif %}
-                    LCOM4
-                </p>
-            </div>
-            <button x-data @click="Object.assign($store.helpModal, { open: true, title: 'LCOM4', video: 'https://ast-metrics.dev/animations/lcom.webm', link: 'https://ast-metrics.dev/metrics/lcom4/' })" class="text-gray-300 hover:text-blue-500 transition-colors flex items-center gap-1" title="Watch video explanation">
-                <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /><path stroke-linecap="round" stroke-linejoin="round" d="M15.91 11.672a.375.375 0 010 .656l-5.603 3.113a.375.375 0 01-.557-.328V8.887c0-.286.307-.466.557-.327l5.603 3.112z" /></svg>
-            </button>
-        </div>
-        <div class="card-graph mt-3">
-            {{ currentView|barchartLcomRepartition}}
-        </div>
-        <p class="mt-3 text-xs text-gray-500 border-t border-gray-100 pt-2">
-            Lack of Cohesion. Lower is better.
-        </p>
-    </div>
 </div>
 
 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mt-6">
@@ -342,7 +313,7 @@ document.addEventListener('alpine:init', () => {
                     {{ currentView.BusFactor }}
                 </h5>
                 <p class="text-sm font-medium text-gray-500 mb-1">Bus Factor</p>
-                <p class="text-xs text-gray-500">Ideally > 3</p>
+                <p class="text-xs text-gray-500">Min. key people who understand the code. Ideally > 3.</p>
             </div>
             <button x-data @click="Object.assign($store.helpModal, { open: true, title: 'Bus Factor', video: 'https://ast-metrics.dev/animations/bus-factor.webm', link: 'https://ast-metrics.dev/metrics/bus-factor/' })" class="text-gray-300 hover:text-blue-500 transition-colors flex items-center gap-1" title="Watch video explanation">
                 <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /><path stroke-linecap="round" stroke-linejoin="round" d="M15.91 11.672a.375.375 0 010 .656l-5.603 3.113a.375.375 0 01-.557-.328V8.887c0-.286.307-.466.557-.327l5.603 3.112z" /></svg>
@@ -417,47 +388,6 @@ document.addEventListener('alpine:init', () => {
     </div>
 </div>
 
-<div class="grid grid-cols-1 md:grid-cols-2  gap-4 mt-6">
-    <!-- Packages / Dependency Diagram -->
-    <div class="dashboard-card p-6 animate-fade-in-up stagger-6 mt-8">
-        <h5 class="text-lg font-semibold text-gray-900 mb-1">Packages</h5>
-        <p class="text-sm text-gray-500 mb-4">Relations map</p>
-        <div class="chart-container  justify-center">
-            {% include "componentDependencyDiagram.html" %}
-        </div>
-    </div>
-
-    <div>
-    <!-- Instability -->
-    <div class="dashboard-card p-6 animate-fade-in-up stagger-6  mt-8">
-        <h5 class="text-3xl font-bold text-gray-900 metric-value tracking-tight mb-1">
-            {% if currentView.Instability.Avg == 0.00 %} - {% else %} {{ currentView.Instability.Avg | floatformat:2 }} {% endif %}
-        </h5>
-        <p class="text-sm text-gray-500 mb-4">Avg. Instability</p>
-
-        {% if currentView.Instability.Avg != 0.00 %}
-        <div class="grid grid-cols-2 gap-4">
-            <div class="text-center">
-                <div class="chart-container scale-75 origin-top" style="min-height: 200px;">
-                    {% include "componentChartRadiusBarAfferent.html" %}
-                </div>
-                <p class="text-xs text-gray-500 mt-1">Afferent</p>
-            </div>
-            <div class="text-center">
-                <div class="chart-container scale-75 origin-top" style="min-height: 200px;">
-                    {% include "componentChartRadiusBarEfferent.html" %}
-                </div>
-                <p class="text-xs text-gray-500 mt-1">Efferent</p>
-            </div>
-        </div>
-        {% else %}
-        <p class="text-xs text-gray-500 italic">Not available for this language.</p>
-        {% endif %}
-    </div>
-</div>
-
-    </div> <!-- End Bento Grid -->
-</div>
 
 <!-- Help Modal -->
 <div x-data x-show="$store.helpModal.open" x-cloak class="fixed inset-0 z-50 flex items-center justify-center p-4"
