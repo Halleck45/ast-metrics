@@ -301,6 +301,148 @@ func TestBuildTestQualityJSON(t *testing.T) {
 	assert.Contains(t, json, "\"isolationHistogram\":[1,2,0,1,1]")
 }
 
+func TestTestQualityAggregator_FunctionTraceability(t *testing.T) {
+	// Test that standalone functions (not in classes) are tracked for traceability.
+	// This is critical for functional codebases (TypeScript, JS, Python).
+	agg := newAggregated()
+
+	ccn := int32(3)
+	prodFile := &pb.File{
+		Path:                "src/utils.ts",
+		ShortPath:           "utils.ts",
+		ProgrammingLanguage: "TypeScript",
+		IsTest:              false,
+		Stmts: &pb.Stmts{
+			StmtNamespace: []*pb.StmtNamespace{
+				{
+					Name: &pb.Name{Qualified: "utils", Short: "utils"},
+					Stmts: &pb.Stmts{
+						StmtFunction: []*pb.StmtFunction{
+							{
+								Name: &pb.Name{Qualified: "formatDate", Short: "formatDate"},
+								Stmts: &pb.Stmts{
+									Analyze: &pb.Analyze{
+										Complexity: &pb.Complexity{Cyclomatic: &ccn},
+									},
+								},
+							},
+							{
+								Name: &pb.Name{Qualified: "parseJSON", Short: "parseJSON"},
+								Stmts: &pb.Stmts{
+									Analyze: &pb.Analyze{
+										Complexity: &pb.Complexity{Cyclomatic: &ccn},
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+
+	testFile := &pb.File{
+		Path:                "src/utils.test.ts",
+		ShortPath:           "utils.test.ts",
+		ProgrammingLanguage: "TypeScript",
+		IsTest:              true,
+		Stmts: &pb.Stmts{
+			StmtExternalDependencies: []*pb.StmtExternalDependency{
+				{
+					ClassName: "formatDate",
+					Namespace: "./utils",
+					From:      "utils.test",
+				},
+			},
+		},
+	}
+
+	agg.ConcernedFiles = []*pb.File{prodFile, testFile}
+
+	tqa := NewTestQualityAggregator()
+	tqa.Calculate(&agg)
+
+	assert.NotNil(t, agg.TestQuality)
+	assert.Equal(t, 1, agg.TestQuality.NbTestFiles)
+	assert.Equal(t, 1, agg.TestQuality.NbProdFiles)
+	// 2 prod structures: formatDate + parseJSON
+	assert.Equal(t, 2, agg.TestQuality.NbProdClasses)
+	// 1 tested (formatDate)
+	assert.Equal(t, 1, agg.TestQuality.NbTestedClasses)
+	assert.Equal(t, float64(50), agg.TestQuality.TraceabilityPct)
+	// parseJSON should be orphan
+	assert.Equal(t, 1, len(agg.TestQuality.OrphanClasses))
+	assert.Equal(t, "parseJSON", agg.TestQuality.OrphanClasses[0].ClassName)
+}
+
+func TestTestQualityAggregator_MixedClassesAndFunctions(t *testing.T) {
+	// Test that both classes and standalone functions contribute to traceability
+	agg := newAggregated()
+
+	ccn := int32(5)
+	prodFile := &pb.File{
+		Path:                "src/app.ts",
+		ShortPath:           "app.ts",
+		ProgrammingLanguage: "TypeScript",
+		IsTest:              false,
+		Stmts: &pb.Stmts{
+			StmtClass: []*pb.StmtClass{
+				{
+					Name: &pb.Name{Qualified: "AppService", Short: "AppService"},
+					Stmts: &pb.Stmts{
+						Analyze: &pb.Analyze{
+							Complexity: &pb.Complexity{Cyclomatic: &ccn},
+						},
+					},
+				},
+			},
+			StmtNamespace: []*pb.StmtNamespace{
+				{
+					Name: &pb.Name{Qualified: "app", Short: "app"},
+					Stmts: &pb.Stmts{
+						StmtFunction: []*pb.StmtFunction{
+							{
+								Name: &pb.Name{Qualified: "initApp", Short: "initApp"},
+								Stmts: &pb.Stmts{
+									Analyze: &pb.Analyze{
+										Complexity: &pb.Complexity{Cyclomatic: &ccn},
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+
+	testFile := &pb.File{
+		Path:                "src/app.test.ts",
+		ShortPath:           "app.test.ts",
+		ProgrammingLanguage: "TypeScript",
+		IsTest:              true,
+		Stmts: &pb.Stmts{
+			StmtExternalDependencies: []*pb.StmtExternalDependency{
+				{ClassName: "AppService", Namespace: "./app", From: "app.test"},
+				{ClassName: "initApp", Namespace: "./app", From: "app.test"},
+			},
+		},
+	}
+
+	agg.ConcernedFiles = []*pb.File{prodFile, testFile}
+
+	tqa := NewTestQualityAggregator()
+	tqa.Calculate(&agg)
+
+	assert.NotNil(t, agg.TestQuality)
+	// 2 prod structures: AppService (class) + initApp (function)
+	assert.Equal(t, 2, agg.TestQuality.NbProdClasses)
+	// Both tested
+	assert.Equal(t, 2, agg.TestQuality.NbTestedClasses)
+	assert.Equal(t, float64(100), agg.TestQuality.TraceabilityPct)
+	assert.Equal(t, 0, len(agg.TestQuality.OrphanClasses))
+}
+
 func TestBuildTestQualityJSON_Nil(t *testing.T) {
 	json := BuildTestQualityJSON(nil)
 	assert.Equal(t, "{}", json)
