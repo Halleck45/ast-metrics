@@ -867,9 +867,46 @@
         return tokens;
     }
 
+    function detectPrefixTokens(classNames) {
+        if (!classNames || classNames.length <= 1) return new Set();
+        var tokenClassCount = {};
+        for (var i = 0; i < classNames.length; i++) {
+            var segments = classNames[i].split(/[\/\\.]/);
+            if (segments.length < 2) continue;
+            // Take all segments except the last one (namespace segments only)
+            var nsSegments = segments.slice(0, segments.length - 1);
+            var seen = {};
+            for (var s = 0; s < nsSegments.length; s++) {
+                var seg = nsSegments[s];
+                if (!seg) continue;
+                var raw = seg.replace(/([a-z0-9])([A-Z])/g, '$1\x00$2')
+                             .replace(/([A-Z]+)([A-Z][a-z])/g, '$1\x00$2')
+                             .split(/[\x00_\-]+/);
+                for (var r = 0; r < raw.length; r++) {
+                    var t = raw[r].toLowerCase();
+                    if (t.length <= 1) continue;
+                    if (!seen[t]) {
+                        seen[t] = true;
+                        tokenClassCount[t] = (tokenClassCount[t] || 0) + 1;
+                    }
+                }
+            }
+        }
+        var threshold = classNames.length * 0.8;
+        var prefixSet = new Set();
+        var keys = Object.keys(tokenClassCount);
+        for (var k = 0; k < keys.length; k++) {
+            if (tokenClassCount[keys[k]] >= threshold) {
+                prefixSet.add(keys[k]);
+            }
+        }
+        return prefixSet;
+    }
+
     function nameCommunity(classNames) {
         if (!classNames || classNames.length === 0) return 'Unknown';
         var stops = getStopTokens();
+        var prefixTokens = detectPrefixTokens(classNames);
         var freq = {};
         var total = 0;
         for (var i = 0; i < classNames.length; i++) {
@@ -889,8 +926,9 @@
             var token = keys[k];
             var tf = freq[token] / total;
             var stopPenalty = stops.has(token) ? 0.2 : 1;
+            var prefixPenalty = prefixTokens.has(token) ? 0.05 : 1;
             var lengthBonus = Math.min(token.length / 8, 1);
-            var score = tf * stopPenalty * (0.6 + 0.4 * lengthBonus);
+            var score = tf * stopPenalty * prefixPenalty * (0.6 + 0.4 * lengthBonus);
             scored.push([token, score]);
         }
         scored.sort(function(a, b) { return b[1] - a[1]; });
