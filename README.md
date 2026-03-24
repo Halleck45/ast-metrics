@@ -188,6 +188,10 @@ This starts a stdio MCP server exposing 8 tools:
 | `get_communities` | Architectural community detection and metrics |
 | `get_test_quality` | Test isolation, traceability, god tests, orphan classes |
 
+Once configured, just talk to your AI agent naturally. For example:
+
+*"What are the riskiest files to refactor?"* · *"Show me the dependencies of the UserService class — what would break if I change it?"* · *"Are there complex classes with no tests?"* · *"I need to work on src/billing/invoice.go, what should I know?"*
+
 To use it with Claude Code or any MCP-compatible agent, add a `.mcp.json` at your project root:
 
 ```json
