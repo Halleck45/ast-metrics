@@ -4,7 +4,6 @@ import (
 	"bufio"
 	"errors"
 	"fmt"
-	"strings"
 
 	"github.com/fsnotify/fsnotify"
 	"github.com/halleck45/ast-metrics/internal/analyzer"
@@ -14,7 +13,6 @@ import (
 	"github.com/halleck45/ast-metrics/internal/cli"
 	"github.com/halleck45/ast-metrics/internal/configuration"
 	"github.com/halleck45/ast-metrics/internal/engine"
-	filefinder "github.com/halleck45/ast-metrics/internal/file"
 	pb "github.com/halleck45/ast-metrics/pb"
 	"github.com/halleck45/ast-metrics/internal/report"
 	"github.com/inancgumus/screen"
@@ -257,73 +255,17 @@ func buildProjectContext(pa analyzer.ProjectAggregated) ruleset.ProjectContext {
 	return ctx
 }
 
-func uniqueExts(s []string) []string {
-	seen := make(map[string]bool, len(s))
-	result := make([]string, 0, len(s))
-	for _, v := range s {
-		if !strings.HasPrefix(v, ".") {
-			v = "." + v
-		}
-		if !seen[v] {
-			seen[v] = true
-			result = append(result, v)
-		}
-	}
-	return result
-}
 
 func (v *AnalyzeCommand) ExecuteRunnerAnalysis(config *configuration.Configuration) ([]*pb.File, error) {
-	// Precompute file discovery for all languages in a single directory walk
-	if config.FileDiscovery == nil {
-		discovery := &filefinder.FileDiscovery{}
-		finder := filefinder.Finder{Configuration: *config}
-		allExts := []string{".go", ".php", ".py", ".rs"}
-		if config.Extensions != nil {
-			for _, exts := range config.Extensions {
-				allExts = append(allExts, exts...)
-			}
-		}
-		discovery.Precompute(finder, uniqueExts(allExts))
-		config.FileDiscovery = discovery
+	if v.moonSpinner != nil {
+		v.moonSpinner.UpdateText("Parsing source files...")
 	}
 
-	var allParsed []*pb.File
-
-	for _, runner := range v.runners {
-
-		runner.SetConfiguration(config)
-
-		if !runner.IsRequired() {
-			continue
-		}
-
-		runner.SetProgressbar(nil)
-
-		if v.moonSpinner != nil {
-			v.moonSpinner.UpdateText("Parsing source files...")
-		}
-
-		err := runner.Ensure()
-		if err != nil {
-			cli.PrintError(err.Error())
-			return nil, err
-		}
-
-		// Parse files (in parallel within DumpAST)
-		if v.moonSpinner != nil {
-			v.moonSpinner.UpdateText("Building AST...")
-		}
-
-		parsed := runner.DumpAST()
-		allParsed = append(allParsed, parsed...)
-
-		// Cleaning up
-		err = runner.Finish()
-		if err != nil {
-			cli.PrintError(err.Error())
-			// pass
-		}
+	parsed, err := engine.ParseFiles(config, v.runners)
+	if err != nil {
+		cli.PrintError(err.Error())
+		return nil, err
 	}
 
-	return allParsed, nil
+	return parsed, nil
 }
