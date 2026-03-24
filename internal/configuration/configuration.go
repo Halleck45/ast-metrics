@@ -201,7 +201,7 @@ func (c *Configuration) SetExcludePatterns(patterns []string) {
 }
 
 var defaultExtensions = map[string]string{
-	"php": ".php", "go": ".go", "python": ".py", "rust": ".rs",
+	"php": ".php", "go": ".go", "python": ".py", "rust": ".rs", "typescript": ".ts",
 }
 
 func (c *Configuration) GetExtensionsForLanguage(lang string) []string {

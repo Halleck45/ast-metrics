@@ -91,13 +91,15 @@ func (tqa *TestQualityAggregator) Calculate(aggregate *Aggregated) {
 		return
 	}
 
-	// 2. Build prod class index: qualifiedName -> class info
-	type prodClassInfo struct {
-		class    *pb.StmtClass
+	// 2. Build prod structure index: qualifiedName -> structure info
+	// Includes both classes and top-level functions (for functional codebases like TS/JS)
+	type prodStructInfo struct {
+		class    *pb.StmtClass    // non-nil for classes
+		function *pb.StmtFunction // non-nil for standalone functions
 		filePath string
 	}
-	prodClassIndex := make(map[string]*prodClassInfo)
-	// Also track complexity/coupling per class for orphan weighting
+	prodClassIndex := make(map[string]*prodStructInfo)
+	// Index classes
 	for _, f := range prodFiles {
 		classes := engine.GetClassesInFile(f)
 		for _, c := range classes {
@@ -111,7 +113,25 @@ func (tqa *TestQualityAggregator) Calculate(aggregate *Aggregated) {
 			if qName == "" {
 				continue
 			}
-			prodClassIndex[qName] = &prodClassInfo{class: c, filePath: f.Path}
+			prodClassIndex[qName] = &prodStructInfo{class: c, filePath: f.Path}
+		}
+		// Index top-level functions (not inside classes)
+		funcs := engine.GetFunctionsOutsideClassesInFile(f)
+		for _, fn := range funcs {
+			if fn == nil || fn.Name == nil {
+				continue
+			}
+			qName := fn.Name.GetQualified()
+			if qName == "" {
+				qName = fn.Name.GetShort()
+			}
+			if qName == "" {
+				continue
+			}
+			// Don't overwrite a class entry with a function entry
+			if _, exists := prodClassIndex[qName]; !exists {
+				prodClassIndex[qName] = &prodStructInfo{function: fn, filePath: f.Path}
+			}
 		}
 	}
 
@@ -226,13 +246,20 @@ func (tqa *TestQualityAggregator) Calculate(aggregate *Aggregated) {
 		var complexity int32
 		var efferent, afferent int32
 
-		if info.class.Stmts != nil && info.class.Stmts.Analyze != nil {
-			if info.class.Stmts.Analyze.Complexity != nil && info.class.Stmts.Analyze.Complexity.Cyclomatic != nil {
-				complexity = *info.class.Stmts.Analyze.Complexity.Cyclomatic
+		// Extract metrics from class or function
+		var stmts *pb.Stmts
+		if info.class != nil {
+			stmts = info.class.Stmts
+		} else if info.function != nil {
+			stmts = info.function.Stmts
+		}
+		if stmts != nil && stmts.Analyze != nil {
+			if stmts.Analyze.Complexity != nil && stmts.Analyze.Complexity.Cyclomatic != nil {
+				complexity = *stmts.Analyze.Complexity.Cyclomatic
 			}
-			if info.class.Stmts.Analyze.Coupling != nil {
-				efferent = info.class.Stmts.Analyze.Coupling.Efferent
-				afferent = info.class.Stmts.Analyze.Coupling.Afferent
+			if stmts.Analyze.Coupling != nil {
+				efferent = stmts.Analyze.Coupling.Efferent
+				afferent = stmts.Analyze.Coupling.Afferent
 			}
 		}
 

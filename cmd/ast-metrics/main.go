@@ -16,6 +16,7 @@ import (
 	"github.com/halleck45/ast-metrics/internal/engine/php"
 	"github.com/halleck45/ast-metrics/internal/engine/python"
 	"github.com/halleck45/ast-metrics/internal/engine/rust"
+	"github.com/halleck45/ast-metrics/internal/engine/typescript"
 	"github.com/halleck45/ast-metrics/internal/watcher"
 	"github.com/pterm/pterm"
 	"github.com/sirupsen/logrus"
@@ -47,7 +48,8 @@ func main() {
 	runnerGolang := golang.GolangRunner{}
 	runnerPython := python.PythonRunner{}
 	runnerRust := rust.RustRunner{}
-	runners := []engine.Engine{&runnerPhp, &runnerGolang, &runnerPython, &runnerRust}
+	runnerTypeScript := typescript.TypeScriptRunner{}
+	runners := []engine.Engine{&runnerPhp, &runnerGolang, &runnerPython, &runnerRust, &runnerTypeScript}
 
 	app := &cliV2.App{
 		Name:  "ast-metrics",
@@ -220,6 +222,11 @@ func main() {
 					&cliV2.StringFlag{
 						Name:     "rust-extensions",
 						Usage:    "Extra file extensions for Rust (comma-separated)",
+						Category: "File selection",
+					},
+					&cliV2.StringFlag{
+						Name:     "typescript-extensions",
+						Usage:    "Extra file extensions for TypeScript (comma-separated)",
 						Category: "File selection",
 					},
 				},
@@ -484,6 +491,7 @@ func main() {
 					&cliV2.StringFlag{Name: "go-extensions", Usage: "Extra file extensions for Go (comma-separated)", Category: "File selection"},
 					&cliV2.StringFlag{Name: "python-extensions", Usage: "Extra file extensions for Python (comma-separated)", Category: "File selection"},
 					&cliV2.StringFlag{Name: "rust-extensions", Usage: "Extra file extensions for Rust (comma-separated)", Category: "File selection"},
+					&cliV2.StringFlag{Name: "typescript-extensions", Usage: "Extra file extensions for TypeScript (comma-separated)", Category: "File selection"},
 				},
 				Action: func(cCtx *cliV2.Context) error {
 					if cCtx.Bool("verbose") {
@@ -557,6 +565,7 @@ func main() {
 					&cliV2.StringFlag{Name: "go-extensions", Usage: "Extra file extensions for Go (comma-separated)", Category: "File selection"},
 					&cliV2.StringFlag{Name: "python-extensions", Usage: "Extra file extensions for Python (comma-separated)", Category: "File selection"},
 					&cliV2.StringFlag{Name: "rust-extensions", Usage: "Extra file extensions for Rust (comma-separated)", Category: "File selection"},
+					&cliV2.StringFlag{Name: "typescript-extensions", Usage: "Extra file extensions for TypeScript (comma-separated)", Category: "File selection"},
 				},
 				Action: func(cCtx *cliV2.Context) error {
 					if cCtx.Bool("verbose") {
@@ -716,6 +725,7 @@ func mergeExtensionFlags(cCtx *cliV2.Context, config *configuration.Configuratio
 	for _, pair := range []struct{ flag, lang string }{
 		{"php-extensions", "php"}, {"go-extensions", "go"},
 		{"python-extensions", "python"}, {"rust-extensions", "rust"},
+		{"typescript-extensions", "typescript"},
 	} {
 		if v := cCtx.String(pair.flag); v != "" {
 			if config.Extensions == nil {
