@@ -16,6 +16,9 @@ ast-metrics --report-html=<report-directory> /path/to/your/project
 
 Where `<report-directory>` is the directory where the report will be saved.
 
+!!! info "v0.35.0"
+    Dashboard labels have been simplified for clarity (e.g., "LCOM" is now displayed as "Class cohesion").
+
 ## 📄 Markdown report
 
 AST Metrics can also generate Markdown reports. The reports provide an overview of the codebase, in markdown format.

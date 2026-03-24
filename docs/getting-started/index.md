@@ -30,6 +30,6 @@ It helps you answer critical questions:
 
 ## Key Benefits
 
-- **Language-agnostic**: Works with PHP, Python, Go, Java, and more.
+- **Language-agnostic**: Works with PHP, Python, Go, Java, TypeScript, and more.
 - **Standalone**: No complex setup, databases, or servers required. Just a single binary.
 - **Fast**: Written in Go for high performance on large codebases.

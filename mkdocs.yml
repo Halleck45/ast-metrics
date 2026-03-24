@@ -13,7 +13,9 @@ theme:
     - content.action.edit
     - content.code.copy
     - navigation.tabs
+    - navigation.tabs.sticky
     - navigation.sections
+    - navigation.indexes
     - navigation.top
     - toc.integrate
   palette:
@@ -51,25 +53,27 @@ nav:
     - First execution: getting-started/first-execution.md
     - Understanding the output: getting-started/understand.md
     - Generating a report: getting-started/generate-reports.md
-    - Continuous integration:
-      - Rulesets & Linting: ci/linting-architecture.md
-      - GitHub Actions: ci/github-actions.md
-      - Gilab CI: ci/gitlab-ci.md
-      - Tips for CI: ci/tips.md
-    - Metrics Guide:
-      - Overview: metrics/index.md
-      - Volume: metrics/volume.md
-      - Cyclomatic Complexity: metrics/cyclomatic-complexity.md
-      - Maintainability Index: metrics/maintainability-index.md
-      - Risk Score: metrics/risk.md
-      - Coupling & Instability: metrics/coupling.md
-      - LCOM4 (Cohesion): metrics/lcom4.md
-      - Community Detection: metrics/community-detection.md
-      - Architecture Map: metrics/architecture-map.md
-      - Bus Factor: metrics/bus-factor.md
     - Advanced usage:
-      - Watching a directory: advanced-usage/watch-directory.md
-      - Comparing two versions of your code: advanced-usage/compare-versions.md
+      - Watch mode: advanced-usage/watch-directory.md
+      - Compare versions: advanced-usage/compare-versions.md
+  - Metrics:
+    - metrics/index.md
+    - Volume: metrics/volume.md
+    - Cyclomatic Complexity: metrics/cyclomatic-complexity.md
+    - Maintainability Index: metrics/maintainability-index.md
+    - Risk Score: metrics/risk.md
+    - Coupling & Instability: metrics/coupling.md
+    - Class Cohesion (LCOM4): metrics/lcom4.md
+    - Community Detection: metrics/community-detection.md
+    - Architecture Map: metrics/architecture-map.md
+    - Bus Factor: metrics/bus-factor.md
+  - CI/CD:
+    - Rulesets & Linting: ci/linting-architecture.md
+    - GitHub Actions: ci/github-actions.md
+    - GitLab CI: ci/gitlab-ci.md
+    - Tips: ci/tips.md
+  - AI Integration:
+    - MCP Server: ai/mcp-server.md
 
 
 # Repository

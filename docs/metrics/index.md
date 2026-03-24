@@ -3,6 +3,7 @@
 AST Metrics provides a comprehensive set of metrics to help you understand the quality, structure, and health of your codebase.
 
 We believe that **code quality is not just about style**. It's about:
+
 - **Reliability**: How likely is it to break?
 - **Maintainability**: How easy is it to change?
 - **Architecture**: Does the code structure match your mental model?

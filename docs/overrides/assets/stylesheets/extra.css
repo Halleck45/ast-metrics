@@ -305,6 +305,107 @@ h6 {
   margin-bottom: 0;
 }
 
+/* MCP Tools Grid (docs page) */
+.mcp-tools-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 1rem;
+  margin: 1.5rem 0;
+}
+
+.mcp-tool {
+  padding: 1.25rem 1.5rem;
+  border-radius: 12px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.mcp-tool:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
+}
+
+.mcp-tool h3 {
+  font-size: 0.95rem !important;
+  font-family: 'JetBrains Mono', monospace;
+  color: #2563eb;
+  margin: 0 0 0.5rem 0 !important;
+}
+
+.mcp-tool p {
+  font-size: 0.9rem;
+  color: #4b5563;
+  margin: 0;
+  line-height: 1.5;
+}
+
+/* AI Integration Section */
+.ai-section {
+  padding: 6rem 0;
+  background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+  color: white;
+}
+
+.ai-container {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 0 1.5rem;
+  text-align: center;
+}
+
+.ai-content h2 {
+  font-size: 2.5rem;
+  font-weight: 800;
+  margin-bottom: 1rem;
+  color: white;
+}
+
+.ai-content p {
+  font-size: 1.25rem;
+  color: #94a3b8;
+  margin-bottom: 2rem;
+  line-height: 1.6;
+  max-width: 700px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.ai-tools {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.75rem;
+  margin-top: 1.5rem;
+}
+
+.ai-tool-tag {
+  display: inline-block;
+  padding: 0.5rem 1rem;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 99px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.875rem;
+  color: #e2e8f0;
+  transition: background 0.2s ease;
+}
+
+.ai-tool-tag:hover {
+  background: rgba(255, 255, 255, 0.15);
+}
+
+.ai-section .cta-button {
+  background: white;
+  color: #0f172a;
+}
+
+.ai-section .cta-button:hover {
+  background: #e2e8f0;
+  color: #0f172a;
+  transform: translateY(-2px);
+}
+
 /* Fix Header Icons (GitHub) */
 .md-header__source {
   color: #1a1b26 !important;
