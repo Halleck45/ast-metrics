@@ -78,6 +78,7 @@ curl -s https://raw.githubusercontent.com/Halleck45/ast-metrics/main/scripts/dow
 | **Linter** | Enforce thresholds on coupling, complexity, LOC per method |
 | **CI/CD ready** | GitHub Actions, GitLab CI, any pipeline — exits non-zero on violations |
 | **Multiple report formats** | HTML dashboard, JSON, Markdown, SARIF, OpenMetrics |
+| **MCP server** | Give AI coding agents architectural awareness via Model Context Protocol |
 
 [Read more in the documentation](https://ast-metrics.dev/)
 
@@ -165,6 +166,40 @@ jobs:
         - uses: halleck45/action-ast-metrics@v1
 ```
 
+
+## MCP Server for AI agents
+
+AI coding agents (Claude Code, Cursor, Copilot...) read code linearly and lack architectural awareness. AST Metrics can act as an [MCP server](https://modelcontextprotocol.io/) to give them on-demand access to complexity, coupling, dependency graphs, community detection, risk scoring, and test quality — without reading every file.
+
+```bash
+ast-metrics mcp .
+```
+
+This starts a stdio MCP server exposing 8 tools:
+
+| Tool | Purpose |
+|---|---|
+| `analyze_project` | High-level overview: languages, complexity, maintainability, top risks |
+| `get_file_metrics` | Detailed metrics for a specific file |
+| `find_risky_code` | Files/classes with highest risk scores |
+| `find_complex_code` | Functions/classes above a complexity threshold |
+| `get_dependencies` | Dependency subgraph around a component |
+| `get_coupling` | Afferent/efferent coupling for a component |
+| `get_communities` | Architectural community detection and metrics |
+| `get_test_quality` | Test isolation, traceability, god tests, orphan classes |
+
+To use it with Claude Code or any MCP-compatible agent, add a `.mcp.json` at your project root:
+
+```json
+{
+  "mcpServers": {
+    "ast-metrics": {
+      "command": "ast-metrics",
+      "args": ["mcp", "."]
+    }
+  }
+}
+```
 
 ## Supported languages
 

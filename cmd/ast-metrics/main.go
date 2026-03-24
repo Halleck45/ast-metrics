@@ -11,6 +11,7 @@ import (
 	"github.com/halleck45/ast-metrics/internal/cli"
 	"github.com/halleck45/ast-metrics/internal/command"
 	"github.com/halleck45/ast-metrics/internal/configuration"
+	mcpserver "github.com/halleck45/ast-metrics/internal/mcp"
 	"github.com/halleck45/ast-metrics/internal/engine"
 	"github.com/halleck45/ast-metrics/internal/engine/golang"
 	"github.com/halleck45/ast-metrics/internal/engine/php"
@@ -709,6 +710,73 @@ func main() {
 						return err
 					}
 					return nil
+				},
+			},
+			{
+				Name:  "mcp",
+				Usage: "Start MCP (Model Context Protocol) server for AI coding agents (stdio transport)",
+				Flags: []cliV2.Flag{
+					&cliV2.StringSliceFlag{
+						Name:     "exclude",
+						Usage:    "Regular expression to exclude files from analysis",
+						Category: "File selection",
+					},
+					&cliV2.StringFlag{
+						Name:     "config",
+						Usage:    "Load configuration from file",
+						Category: "Configuration",
+					},
+					&cliV2.StringFlag{Name: "php-extensions", Usage: "Extra file extensions for PHP (comma-separated, e.g. .inc,.module)", Category: "File selection"},
+					&cliV2.StringFlag{Name: "go-extensions", Usage: "Extra file extensions for Go (comma-separated)", Category: "File selection"},
+					&cliV2.StringFlag{Name: "python-extensions", Usage: "Extra file extensions for Python (comma-separated)", Category: "File selection"},
+					&cliV2.StringFlag{Name: "rust-extensions", Usage: "Extra file extensions for Rust (comma-separated)", Category: "File selection"},
+				},
+				Action: func(cCtx *cliV2.Context) error {
+					// Redirect all logging to stderr (stdout is reserved for JSON-RPC)
+					logrus.SetOutput(os.Stderr)
+					logrus.SetLevel(logrus.WarnLevel)
+
+					// Disable pterm output (would corrupt JSON-RPC on stdout)
+					pterm.DisableColor()
+					pterm.DisableOutput()
+
+					// Prepare configuration
+					config := configuration.NewConfiguration()
+					loader := configuration.NewConfigurationLoader()
+					if cCtx.String("config") != "" {
+						loader.FilenameToChecks = []string{cCtx.String("config")}
+					}
+					config, err = loader.Loads(config)
+					if err != nil {
+						logrus.Warn("Cannot load configuration file: " + err.Error())
+					}
+
+					// Paths from args
+					paths := cCtx.Args()
+					if paths.Len() > 0 {
+						pathsSlice := make([]string, paths.Len())
+						for i := 0; i < paths.Len(); i++ {
+							pathsSlice[i] = paths.Get(i)
+						}
+						if err := config.SetSourcesToAnalyzePath(pathsSlice); err != nil {
+							return err
+						}
+					}
+
+					// Exclude patterns
+					if len(config.ExcludePatterns) == 0 {
+						excludePatterns := cCtx.StringSlice("exclude")
+						if len(excludePatterns) > 0 {
+							config.SetExcludePatterns(excludePatterns)
+						}
+					}
+
+					// Merge extra file extensions from CLI flags into config
+					mergeExtensionFlags(cCtx, config)
+
+					// Create and start MCP server
+					s := mcpserver.NewMCPServer(version, config, runners)
+					return mcpserver.ServeStdio(s)
 				},
 			},
 		},
