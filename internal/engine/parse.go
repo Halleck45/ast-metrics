@@ -17,7 +17,7 @@ func ParseFiles(config *configuration.Configuration, runners []Engine) ([]*pb.Fi
 	if config.FileDiscovery == nil {
 		discovery := &filefinder.FileDiscovery{}
 		finder := filefinder.Finder{Configuration: *config}
-		allExts := []string{".go", ".php", ".py", ".rs"}
+		allExts := []string{".go", ".php", ".py", ".rs", ".ts", ".tsx"}
 		if config.Extensions != nil {
 			for _, exts := range config.Extensions {
 				allExts = append(allExts, exts...)
