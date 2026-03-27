@@ -140,7 +140,7 @@ type ConfigurationDefaultRule struct {
 func NewConfiguration() *Configuration {
 	return &Configuration{
 		SourcesToAnalyzePath:   []string{},
-		ExcludePatterns:        []string{"/vendor/", "/node_modules/", "/.git/", "/.idea/", "/_ide_helper/", "/var/"},
+		ExcludePatterns:        []string{"/vendor/", "/node_modules/", "/.git/", "/.idea/", "/_ide_helper/", "/var/", "/.claude/"},
 		Watching:               false,
 		CompareWith:            "",
 		Storage:                storage.Default(),

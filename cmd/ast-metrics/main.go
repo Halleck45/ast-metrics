@@ -302,6 +302,13 @@ func main() {
 								// we try to ask the user to select a file
 								pathsSlice = cli.AskUserToSelectFile()
 							}
+						} else {
+							// Resolve config-sourced paths to absolute (verify existence, clean)
+							err := config.SetSourcesToAnalyzePath(config.SourcesToAnalyzePath)
+							if err != nil {
+								cli.PrintError(err.Error())
+								return err
+							}
 						}
 					} else {
 						if len(pathsSlice) == 0 && (config.SourcesToAnalyzePath == nil || len(config.SourcesToAnalyzePath) == 0) {
