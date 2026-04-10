@@ -146,12 +146,14 @@ func (v *AnalyzeCommand) Execute() error {
 	}
 
 	// AI-based architecture classification
-	predictor := classifier.NewPredictor(v.Configuration.ModelClassifierDirectory)
-	predictions, err := predictor.Predict(allResults, v.Configuration.SourcesToAnalyzePath[0])
-	if err != nil {
-		log.Debugf("Classification skipped: %v", err)
-	} else {
-		projectAggregated.Predictions = predictions
+	if len(v.Configuration.SourcesToAnalyzePath) > 0 {
+		predictor := classifier.NewPredictor(v.Configuration.ModelClassifierDirectory)
+		predictions, err := predictor.Predict(allResults, v.Configuration.SourcesToAnalyzePath[0])
+		if err != nil {
+			log.Debugf("Classification skipped: %v", err)
+		} else {
+			projectAggregated.Predictions = predictions
+		}
 	}
 
 	// Generate reports

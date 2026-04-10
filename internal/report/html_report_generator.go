@@ -1403,11 +1403,9 @@ func (v *HtmlReportGenerator) RegisterFilters() {
 		for _, family := range families {
 			familyData, exists := grouped[family.Key]
 			if !exists {
-				fmt.Println("Skipping family", family.Key, ": not present in predictions")
 				continue
 			}
 			if len(familyData) == 0 {
-				fmt.Println("Skipping family", family.Key, "as it has no data")
 				continue
 			}
 

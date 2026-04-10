@@ -40,26 +40,21 @@ func (p *Predictor) Predict(files []*pb.File, workdir string) ([]ClassPrediction
 
 		model, err := LoadModel(modelFile)
 		if err != nil {
-			log.Debugf("Model not available for %s: %v", lang, err)
 			continue
 		}
 
 		// Required metadata for hashing path
 		if model.Features.HashingNFeatures <= 0 {
-			log.Debugf("Model invalid for %s: hashing_n_features missing/invalid", lang)
 			continue
 		}
 		if len(model.Features.NumericalColsOrder) == 0 {
-			log.Debugf("Model invalid for %s: numerical_cols_order missing", lang)
 			continue
 		}
 		if _, ok := model.Vectorizers["class_name"]; !ok {
-			log.Debugf("Model invalid for %s: vectorizer class_name missing", lang)
 			continue
 		}
 		for _, col := range model.Features.NlpCols {
 			if _, ok := model.Vectorizers[col]; !ok {
-				log.Debugf("Model invalid for %s: vectorizer %s missing", lang, col)
 				continue
 			}
 		}

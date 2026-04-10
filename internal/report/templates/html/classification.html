@@ -1,5 +1,7 @@
 {% extends "layout.html" %}
 
+{% block pageTitle %}Architecture Classification{% endblock %}
+
 {% block content %}
 <style>
     :root {
@@ -510,6 +512,42 @@
         from { opacity: 0; transform: translateY(20px); }
         to { opacity: 1; transform: translateY(0); }
     }
+
+    /* Tab Navigation */
+    .architecture-tabs {
+        display: flex;
+        gap: 0;
+        margin-bottom: 1.5rem;
+        border-bottom: 2px solid #e2e8f0;
+    }
+
+    .architecture-tab {
+        padding: 0.75rem 1.5rem;
+        font-size: 0.875rem;
+        font-weight: 500;
+        color: #64748b;
+        background: none;
+        border: none;
+        border-bottom: 2px solid transparent;
+        margin-bottom: -2px;
+        cursor: pointer;
+        transition: all 0.2s;
+        font-family: var(--font-family);
+    }
+
+    .architecture-tab:hover {
+        color: #1e293b;
+    }
+
+    .architecture-tab.active {
+        color: #3b82f6;
+        border-bottom-color: #3b82f6;
+    }
+
+    /* Overview Diagram */
+    .overview-legend {
+        font-family: var(--font-family);
+    }
 </style>
 
 <div class="container-fluid px-4 py-3">
@@ -545,8 +583,21 @@
     </p>
 </div>
 
+<!-- Tab Navigation -->
+<div class="architecture-tabs">
+    <button class="architecture-tab active" data-tab="overview" onclick="switchTab('overview')">Overview</button>
+    <button class="architecture-tab" data-tab="details" onclick="switchTab('details')">Details by class</button>
+</div>
 
-  
+<!-- Overview Tab -->
+<div id="overviewTab">
+    <div class="architecture-diagram-container" id="overviewDiagram">
+        <svg id="overviewSvg" width="100%" height="100%"></svg>
+    </div>
+</div>
+
+<!-- Details Tab -->
+<div id="detailsTab" style="display:none">
 
   <div class="mt-16 flex items-center justify-center mb-4">
     <div class="heatmap-controls">
@@ -610,10 +661,7 @@
         </div>
     </div>
 
-
-
-
-    
+</div> {# end detailsTab #}
 
     {% endif %}
 </div>
@@ -974,6 +1022,7 @@
 
     // Render main architecture diagram on page load
     document.addEventListener('DOMContentLoaded', function() {
+        renderOverviewDiagram();
         renderMainArchitectureDiagram();
         initGlobalTooltip();
     });
@@ -1611,6 +1660,648 @@
         });
         
         isUpdatingHeatmap = false;
+    }
+
+    // Tab switching
+    function switchTab(tab) {
+        document.getElementById('overviewTab').style.display = tab === 'overview' ? 'block' : 'none';
+        document.getElementById('detailsTab').style.display = tab === 'details' ? 'block' : 'none';
+
+        document.querySelectorAll('.architecture-tab').forEach(btn => {
+            btn.classList.toggle('active', btn.dataset.tab === tab);
+        });
+
+        if (tab === 'details') {
+            renderMainArchitectureDiagram();
+        }
+    }
+
+    // Overview macro bubble diagram — stable family layout, detail overlay on click
+    function renderOverviewDiagram() {
+        const container = document.getElementById('overviewDiagram');
+        const svg = document.getElementById('overviewSvg');
+        if (!svg || typeof d3 === 'undefined') return;
+
+        const width = container.clientWidth || 1000;
+        const height = 900;
+
+        const svgD3 = d3.select(svg);
+        svgD3.selectAll("*").remove();
+        svg.setAttribute('width', width);
+        svg.setAttribute('height', height);
+        container.style.height = height + 'px';
+
+        if (!architectureData || architectureData.length === 0) {
+            svgD3.append("text").attr("x", width / 2).attr("y", height / 2)
+                .attr("text-anchor", "middle").attr("fill", "#64748b")
+                .text("No architecture data available");
+            return;
+        }
+
+        const familyColors = {
+            'interface': '#3b82f6',
+            'application': '#8b5cf6',
+            'domain': '#10b981',
+            'infrastructure': '#f59e0b',
+            'core': '#ef4444',
+            'utility': '#06b6d4',
+            'development': '#64748b'
+        };
+
+        // Map every category label to its family
+        const categoryToFamily = new Map();
+        architectureData.forEach(layer => {
+            layer.categories.forEach(cat => {
+                categoryToFamily.set(cat.label, layer.family);
+            });
+        });
+
+        // Build family-level nodes
+        const nodes = [];
+        const nodeById = new Map();
+        architectureData.forEach(layer => {
+            let totalCount = 0;
+            layer.categories.forEach(cat => totalCount += cat.count);
+            const n = {
+                id: layer.family,
+                name: layer.family.charAt(0).toUpperCase() + layer.family.slice(1),
+                count: totalCount,
+                color: familyColors[layer.family] || '#94a3b8',
+                radius: Math.max(40, Math.sqrt(totalCount) * 11)
+            };
+            nodes.push(n);
+            nodeById.set(layer.family, n);
+        });
+
+        if (nodes.length === 0) return;
+
+        // Scale down bubble radii when they would overflow the viewport.
+        // With thousands of classes, sqrt(count)*11 can exceed the SVG dimensions.
+        (function() {
+            var pad = 60; // collision padding used by the simulation
+            var availableArea = width * height * 0.55;
+            var totalPackedArea = nodes.reduce(function(sum, n) {
+                return sum + Math.PI * (n.radius + pad) * (n.radius + pad);
+            }, 0);
+            if (totalPackedArea > availableArea) {
+                var sf = Math.sqrt(availableArea / totalPackedArea);
+                nodes.forEach(function(n) { n.radius = Math.max(35, n.radius * sf); });
+            }
+        })();
+
+        // Build family-level links
+        const pairMap = new Map();
+        (dependenciesData || []).forEach(dep => {
+            const fromFam = categoryToFamily.get(dep.fromCategory);
+            const toFam = categoryToFamily.get(dep.toCategory);
+            if (!fromFam || !toFam || fromFam === toFam) return;
+            const sorted = [fromFam, toFam].sort();
+            const key = sorted.join('||');
+            if (!pairMap.has(key)) {
+                pairMap.set(key, { a: sorted[0], b: sorted[1], aToB: 0, bToA: 0 });
+            }
+            const p = pairMap.get(key);
+            if (fromFam === p.a) p.aToB += dep.count;
+            else p.bToA += dep.count;
+        });
+
+        const links = [];
+        pairMap.forEach(p => {
+            links.push({
+                source: p.a,
+                target: p.b,
+                count: p.aToB + p.bToA,
+                bidirectional: p.aToB > 0 && p.bToA > 0
+            });
+        });
+
+        // SVG defs
+        const defs = svgD3.append("defs");
+
+        // Normal arrow (end)
+        defs.append("marker")
+            .attr("id", "ov-arrow")
+            .attr("viewBox", "0 0 10 6")
+            .attr("refX", 9).attr("refY", 3)
+            .attr("markerWidth", 10).attr("markerHeight", 8)
+            .attr("markerUnits", "userSpaceOnUse")
+            .attr("orient", "auto")
+            .append("polygon")
+            .attr("points", "0 0, 10 3, 0 6")
+            .attr("fill", "#94a3b8");
+
+        // Bidirectional arrow (end)
+        defs.append("marker")
+            .attr("id", "ov-arrow-bidir-end")
+            .attr("viewBox", "0 0 10 6")
+            .attr("refX", 9).attr("refY", 3)
+            .attr("markerWidth", 10).attr("markerHeight", 8)
+            .attr("markerUnits", "userSpaceOnUse")
+            .attr("orient", "auto")
+            .append("polygon")
+            .attr("points", "0 0, 10 3, 0 6")
+            .attr("fill", "#ef4444");
+
+        // Bidirectional arrow (start — reverse direction)
+        defs.append("marker")
+            .attr("id", "ov-arrow-bidir-start")
+            .attr("viewBox", "0 0 10 6")
+            .attr("refX", 1).attr("refY", 3)
+            .attr("markerWidth", 10).attr("markerHeight", 8)
+            .attr("markerUnits", "userSpaceOnUse")
+            .attr("orient", "auto")
+            .append("polygon")
+            .attr("points", "10 0, 0 3, 10 6")
+            .attr("fill", "#ef4444");
+
+        // Detail sub-arrow (small, for category links)
+        defs.append("marker")
+            .attr("id", "ov-arrow-detail")
+            .attr("viewBox", "0 0 10 6")
+            .attr("refX", 9).attr("refY", 3)
+            .attr("markerWidth", 8).attr("markerHeight", 6)
+            .attr("markerUnits", "userSpaceOnUse")
+            .attr("orient", "auto")
+            .append("polygon")
+            .attr("points", "0 0, 10 3, 0 6")
+            .attr("fill", "#94a3b8");
+
+        const filter = defs.append("filter")
+            .attr("id", "bubble-shadow")
+            .attr("x", "-20%").attr("y", "-20%")
+            .attr("width", "140%").attr("height", "140%");
+        filter.append("feDropShadow")
+            .attr("dx", 0).attr("dy", 3)
+            .attr("stdDeviation", 4).attr("flood-opacity", 0.12);
+
+        // Force simulation (family level only — stable)
+        const simulation = d3.forceSimulation(nodes)
+            .force("link", d3.forceLink(links).id(d => d.id).distance(300).strength(0.3))
+            .force("charge", d3.forceManyBody().strength(-1500))
+            .force("center", d3.forceCenter(width / 2, height / 2))
+            .force("collision", d3.forceCollide().radius(d => d.radius + 60))
+            .force("bounds", function() {
+                return function() {
+                    nodes.forEach(n => {
+                        n.x = Math.max(n.radius + 20, Math.min(width - n.radius - 20, n.x));
+                        n.y = Math.max(n.radius + 20, Math.min(height - n.radius - 20, n.y));
+                    });
+                };
+            }())
+            .alphaDecay(0.02);
+
+        function linkStroke(d) {
+            return Math.max(1.5, Math.min(5, 1 + Math.log(d.count + 1) * 0.8));
+        }
+
+        // Curve path helper
+        function curvePath(sx, sy, tx, ty) {
+            const dx = tx - sx, dy = ty - sy;
+            const dist = Math.sqrt(dx * dx + dy * dy) || 1;
+            const mx = (sx + tx) / 2, my = (sy + ty) / 2;
+            const off = dist * 0.08;
+            const cx = mx + (-dy / dist) * off;
+            const cy = my + (dx / dist) * off;
+            return { path: `M${sx},${sy} Q${cx},${cy} ${tx},${ty}`, lx: 0.25 * sx + 0.5 * cx + 0.25 * tx, ly: 0.25 * sy + 0.5 * cy + 0.25 * ty };
+        }
+
+        // Draw family-level links
+        const linkGroup = svgD3.append("g");
+        const linkEls = linkGroup.selectAll("path")
+            .data(links)
+            .join("path")
+            .attr("fill", "none")
+            .attr("stroke", d => d.bidirectional ? "#ef4444" : "#94a3b8")
+            .attr("stroke-width", linkStroke)
+            .attr("stroke-opacity", d => d.bidirectional ? 0.55 : 0.3)
+            .attr("marker-end", d => d.bidirectional ? "url(#ov-arrow-bidir-end)" : "url(#ov-arrow)")
+            .attr("marker-start", d => d.bidirectional ? "url(#ov-arrow-bidir-start)" : null);
+
+        // Dependency count labels
+        const linkLabels = svgD3.append("g");
+        const linkLabelEls = linkLabels.selectAll("g")
+            .data(links)
+            .join("g");
+
+        linkLabelEls.append("rect")
+            .attr("rx", 8)
+            .attr("fill", d => d.bidirectional ? "#fef2f2" : "white")
+            .attr("stroke", d => d.bidirectional ? "#fecaca" : "#e2e8f0")
+            .attr("stroke-width", 1);
+
+        linkLabelEls.append("text")
+            .text(d => d.count)
+            .attr("text-anchor", "middle")
+            .attr("dy", "0.35em")
+            .attr("font-size", 11)
+            .attr("font-weight", 600)
+            .attr("fill", d => d.bidirectional ? "#dc2626" : "#64748b")
+            .attr("pointer-events", "none");
+
+        linkLabelEls.each(function() {
+            const g = d3.select(this);
+            const text = g.select("text").node();
+            if (text) {
+                const bbox = text.getBBox();
+                g.select("rect")
+                    .attr("x", bbox.x - 6).attr("y", bbox.y - 3)
+                    .attr("width", bbox.width + 12).attr("height", bbox.height + 6);
+            }
+        });
+
+        // Draw family nodes
+        const nodeGroup = svgD3.append("g");
+        const nodeEls = nodeGroup.selectAll("g")
+            .data(nodes)
+            .join("g")
+            .style("cursor", "pointer")
+            .call(d3.drag()
+                .on("start", function(event, d) {
+                    d._dragged = false;
+                    d._startX = event.x; d._startY = event.y;
+                    d.fx = d.x; d.fy = d.y;
+                })
+                .on("drag", function(event, d) {
+                    const dx = event.x - d._startX, dy = event.y - d._startY;
+                    if (!d._dragged && (dx * dx + dy * dy) > 25) {
+                        d._dragged = true;
+                        if (!event.active) simulation.alphaTarget(0.02).restart();
+                    }
+                    if (d._dragged) {
+                        d.fx = event.x; d.fy = event.y;
+                    }
+                })
+                .on("end", function(event, d) {
+                    if (d._dragged) {
+                        if (!event.active) simulation.alphaTarget(0);
+                        d.fx = null; d.fy = null;
+                    } else {
+                        d.fx = null; d.fy = null;
+                    }
+                })
+            );
+
+        nodeEls.append("circle")
+            .attr("r", d => d.radius)
+            .attr("fill", d => d.color)
+            .attr("stroke", d => d3.color(d.color).darker(0.3))
+            .attr("stroke-width", 2.5)
+            .attr("filter", "url(#bubble-shadow)");
+
+        nodeEls.append("text")
+            .text(d => d.name)
+            .attr("text-anchor", "middle")
+            .attr("dy", "0.35em")
+            .attr("font-size", d => Math.max(13, Math.min(18, d.radius * 0.35)))
+            .attr("font-weight", 600)
+            .attr("fill", d => {
+                const c = d3.color(d.color);
+                const lum = 0.299 * c.r + 0.587 * c.g + 0.114 * c.b;
+                return lum > 150 ? '#1e293b' : '#ffffff';
+            })
+            .attr("pointer-events", "none");
+
+        nodeEls.append("text")
+            .text(d => d.count + ' classes')
+            .attr("text-anchor", "middle")
+            .attr("dy", d => Math.max(13, Math.min(18, d.radius * 0.35)) * 0.8 + 6)
+            .attr("font-size", d => Math.max(10, Math.min(13, d.radius * 0.22)))
+            .attr("font-weight", 400)
+            .attr("fill", d => {
+                const c = d3.color(d.color);
+                const lum = 0.299 * c.r + 0.587 * c.g + 0.114 * c.b;
+                return lum > 150 ? '#475569' : 'rgba(255,255,255,0.8)';
+            })
+            .attr("pointer-events", "none");
+
+        // Detail overlay layer (hidden by default)
+        const detailLayer = svgD3.append("g").attr("class", "detail-overlay").style("display", "none");
+        let activeFamily = null;
+
+        function showDetail(familyKey) {
+            if (activeFamily === familyKey) {
+                hideDetail();
+                return;
+            }
+            activeFamily = familyKey;
+            detailLayer.selectAll("*").remove();
+            detailLayer.style("display", null);
+
+            // Hide all family-level arrows (replaced by detail arrows for the active family)
+            linkEls.attr("stroke-opacity", 0);
+            linkLabelEls.attr("opacity", 0);
+            nodeEls.select("circle").attr("opacity", d => d.id === familyKey ? 1 : 0.35);
+            nodeEls.selectAll("text").attr("opacity", d => d.id === familyKey ? 1 : 0.35);
+
+            const parentNode = nodeById.get(familyKey);
+            if (!parentNode) return;
+            const layer = architectureData.find(l => l.family === familyKey);
+            if (!layer) return;
+
+            // Build category sub-nodes arranged in a circle around the parent
+            const cats = layer.categories;
+            const catNodes = [];
+            const catById = new Map();
+            const maxSubR = Math.max(18, parentNode.radius * 0.6);
+            const subRadius = parentNode.radius + Math.max(60, maxSubR + 30);
+            cats.forEach((cat, i) => {
+                const angle = (2 * Math.PI / cats.length) * i - Math.PI / 2;
+                let name = cat.shortName.replace(/_/g, ' ');
+                name = name.charAt(0).toUpperCase() + name.slice(1);
+                const r = Math.min(maxSubR, Math.max(18, Math.sqrt(cat.count) * 7));
+                const rawX = parentNode.x + subRadius * Math.cos(angle);
+                const rawY = parentNode.y + subRadius * Math.sin(angle);
+                const cn = {
+                    id: cat.label,
+                    name: name,
+                    count: cat.count,
+                    x: Math.max(r + 10, Math.min(width - r - 10, rawX)),
+                    y: Math.max(r + 10, Math.min(height - r - 10, rawY)),
+                    radius: r,
+                    color: parentNode.color
+                };
+                catNodes.push(cn);
+                catById.set(cat.label, cn);
+            });
+
+            // Build intra-family category links
+            const catPairMap = new Map();
+            (dependenciesData || []).forEach(dep => {
+                const fFrom = categoryToFamily.get(dep.fromCategory);
+                const fTo = categoryToFamily.get(dep.toCategory);
+                if (fFrom !== familyKey || fTo !== familyKey) return;
+                if (dep.fromCategory === dep.toCategory) return;
+                if (!catById.has(dep.fromCategory) || !catById.has(dep.toCategory)) return;
+                const sorted = [dep.fromCategory, dep.toCategory].sort();
+                const key = sorted.join('||');
+                if (!catPairMap.has(key)) {
+                    catPairMap.set(key, { a: sorted[0], b: sorted[1], aToB: 0, bToA: 0 });
+                }
+                const p = catPairMap.get(key);
+                if (dep.fromCategory === p.a) p.aToB += dep.count;
+                else p.bToA += dep.count;
+            });
+
+            const catLinks = [];
+            catPairMap.forEach(p => {
+                catLinks.push({
+                    source: catById.get(p.a),
+                    target: catById.get(p.b),
+                    count: p.aToB + p.bToA,
+                    bidirectional: p.aToB > 0 && p.bToA > 0
+                });
+            });
+
+            // Build cross-family links: other family bubble ↔ category sub-node
+            const crossPairMap = new Map();
+            (dependenciesData || []).forEach(dep => {
+                const fFrom = categoryToFamily.get(dep.fromCategory);
+                const fTo = categoryToFamily.get(dep.toCategory);
+                if (!fFrom || !fTo) return;
+
+                let catLabel, otherFam, fromIsActive;
+                if (fFrom === familyKey && fTo !== familyKey) {
+                    catLabel = dep.fromCategory; otherFam = fTo; fromIsActive = true;
+                } else if (fTo === familyKey && fFrom !== familyKey) {
+                    catLabel = dep.toCategory; otherFam = fFrom; fromIsActive = false;
+                } else {
+                    return;
+                }
+                if (!catById.has(catLabel) || !nodeById.has(otherFam)) return;
+
+                const sorted = [catLabel, otherFam].sort();
+                const key = sorted.join('||');
+                if (!crossPairMap.has(key)) {
+                    crossPairMap.set(key, { a: sorted[0], b: sorted[1], aToB: 0, bToA: 0 });
+                }
+                const p = crossPairMap.get(key);
+                // direction: active category → other family
+                if (fromIsActive) {
+                    if (catLabel === p.a) p.aToB += dep.count;
+                    else p.bToA += dep.count;
+                } else {
+                    if (otherFam === p.a) p.aToB += dep.count;
+                    else p.bToA += dep.count;
+                }
+            });
+
+            const crossLinks = [];
+            crossPairMap.forEach(p => {
+                const aIsCat = catById.has(p.a);
+                const catNode = aIsCat ? catById.get(p.a) : catById.get(p.b);
+                const famId = aIsCat ? p.b : p.a;
+                const famNode = nodeById.get(famId);
+                if (!catNode || !famNode) return;
+                crossLinks.push({
+                    catNode: catNode,
+                    famNode: famNode,
+                    famId: famId,
+                    count: p.aToB + p.bToA,
+                    bidirectional: p.aToB > 0 && p.bToA > 0
+                });
+            });
+
+            // Draw connecting spokes from parent to each sub-node
+            detailLayer.selectAll(".detail-spoke")
+                .data(catNodes)
+                .join("line")
+                .attr("class", "detail-spoke")
+                .attr("x1", parentNode.x).attr("y1", parentNode.y)
+                .attr("x2", d => d.x).attr("y2", d => d.y)
+                .attr("stroke", parentNode.color)
+                .attr("stroke-width", 1)
+                .attr("stroke-opacity", 0.15)
+                .attr("stroke-dasharray", "4 3");
+
+            // Draw cross-family links (other family → category sub-node)
+            detailLayer.selectAll(".detail-cross")
+                .data(crossLinks)
+                .join("path")
+                .attr("class", "detail-cross")
+                .attr("fill", "none")
+                .attr("stroke", d => d.bidirectional ? "#ef4444" : "#94a3b8")
+                .attr("stroke-width", d => Math.max(1.5, Math.min(4, 1 + Math.log(d.count + 1) * 0.7)))
+                .attr("stroke-opacity", d => d.bidirectional ? 0.5 : 0.3)
+                .attr("marker-end", d => d.bidirectional ? "url(#ov-arrow-bidir-end)" : "url(#ov-arrow)")
+                .attr("marker-start", d => d.bidirectional ? "url(#ov-arrow-bidir-start)" : null)
+                .attr("d", d => {
+                    const sx = d.famNode.x, sy = d.famNode.y;
+                    const tx = d.catNode.x, ty = d.catNode.y;
+                    const dx = tx - sx, dy = ty - sy;
+                    const dist = Math.sqrt(dx * dx + dy * dy) || 1;
+                    const startX = sx + (dx / dist) * d.famNode.radius;
+                    const startY = sy + (dy / dist) * d.famNode.radius;
+                    const endX = tx - (dx / dist) * (d.catNode.radius + 4);
+                    const endY = ty - (dy / dist) * (d.catNode.radius + 4);
+                    return curvePath(startX, startY, endX, endY).path;
+                });
+
+            // Draw cross-family link labels
+            detailLayer.selectAll(".detail-cross-label")
+                .data(crossLinks)
+                .join("g")
+                .attr("class", "detail-cross-label")
+                .each(function(d) {
+                    const g = d3.select(this);
+                    const sx = d.famNode.x, sy = d.famNode.y;
+                    const tx = d.catNode.x, ty = d.catNode.y;
+                    const dx = tx - sx, dy = ty - sy;
+                    const dist = Math.sqrt(dx * dx + dy * dy) || 1;
+                    const startX = sx + (dx / dist) * d.famNode.radius;
+                    const startY = sy + (dy / dist) * d.famNode.radius;
+                    const endX = tx - (dx / dist) * (d.catNode.radius + 4);
+                    const endY = ty - (dy / dist) * (d.catNode.radius + 4);
+                    const c = curvePath(startX, startY, endX, endY);
+                    g.attr("transform", `translate(${c.lx},${c.ly})`);
+                    g.append("rect").attr("rx", 6)
+                        .attr("fill", d.bidirectional ? "#fef2f2" : "white")
+                        .attr("stroke", d.bidirectional ? "#fecaca" : "#e2e8f0")
+                        .attr("stroke-width", 1);
+                    const txt = g.append("text").text(d.count)
+                        .attr("text-anchor", "middle").attr("dy", "0.35em")
+                        .attr("font-size", 10).attr("font-weight", 600)
+                        .attr("fill", d.bidirectional ? "#dc2626" : "#64748b")
+                        .attr("pointer-events", "none");
+                    const bbox = txt.node().getBBox();
+                    g.select("rect")
+                        .attr("x", bbox.x - 4).attr("y", bbox.y - 2)
+                        .attr("width", bbox.width + 8).attr("height", bbox.height + 4);
+                });
+
+            // Draw intra-family category links
+            detailLayer.selectAll(".detail-link")
+                .data(catLinks)
+                .join("path")
+                .attr("class", "detail-link")
+                .attr("fill", "none")
+                .attr("stroke", d => d.bidirectional ? "#ef4444" : "#94a3b8")
+                .attr("stroke-width", d => Math.max(1, Math.min(3, Math.log(d.count + 1) * 0.7)))
+                .attr("stroke-opacity", 0.5)
+                .attr("marker-end", "url(#ov-arrow-detail)")
+                .attr("d", d => {
+                    const dx = d.target.x - d.source.x, dy = d.target.y - d.source.y;
+                    const dist = Math.sqrt(dx * dx + dy * dy) || 1;
+                    const sx = d.source.x + (dx / dist) * d.source.radius;
+                    const sy = d.source.y + (dy / dist) * d.source.radius;
+                    const tx = d.target.x - (dx / dist) * (d.target.radius + 3);
+                    const ty = d.target.y - (dy / dist) * (d.target.radius + 3);
+                    return curvePath(sx, sy, tx, ty).path;
+                });
+
+            // Draw sub-bubbles
+            const subNodes = detailLayer.selectAll(".detail-node")
+                .data(catNodes)
+                .join("g")
+                .attr("class", "detail-node")
+                .attr("transform", d => `translate(${d.x},${d.y})`);
+
+            subNodes.append("circle")
+                .attr("r", d => d.radius)
+                .attr("fill", "white")
+                .attr("stroke", d => d.color)
+                .attr("stroke-width", 2)
+                .attr("filter", "url(#bubble-shadow)");
+
+            subNodes.append("text")
+                .text(d => d.name)
+                .attr("text-anchor", "middle")
+                .attr("dy", "-0.2em")
+                .attr("font-size", d => Math.max(9, Math.min(12, d.radius * 0.4)))
+                .attr("font-weight", 500)
+                .attr("fill", "#1e293b")
+                .attr("pointer-events", "none");
+
+            subNodes.append("text")
+                .text(d => d.count)
+                .attr("text-anchor", "middle")
+                .attr("dy", "1.1em")
+                .attr("font-size", d => Math.max(8, Math.min(10, d.radius * 0.35)))
+                .attr("font-weight", 400)
+                .attr("fill", "#64748b")
+                .attr("pointer-events", "none");
+        }
+
+        function hideDetail() {
+            activeFamily = null;
+            detailLayer.style("display", "none").selectAll("*").remove();
+            // Restore main view
+            linkEls.attr("stroke-opacity", d => d.bidirectional ? 0.55 : 0.3);
+            linkLabelEls.attr("opacity", 1);
+            nodeEls.select("circle").attr("opacity", 1);
+            nodeEls.selectAll("text").attr("opacity", 1);
+        }
+
+        // Click on family bubble → toggle detail
+        nodeEls.on("click", function(event, d) {
+            event.stopPropagation();
+            showDetail(d.id);
+        });
+
+        // Click on background → close detail
+        svgD3.on("click", function() {
+            if (activeFamily) hideDetail();
+        });
+
+        // Hover interactions (only when detail not shown)
+        nodeEls.on("mouseover", function(event, d) {
+            if (activeFamily) return;
+            linkEls
+                .attr("stroke-opacity", l => {
+                    const sId = l.source.id || l.source;
+                    const tId = l.target.id || l.target;
+                    return (sId === d.id || tId === d.id) ? 0.75 : 0.06;
+                })
+                .attr("stroke-width", l => {
+                    const sId = l.source.id || l.source;
+                    const tId = l.target.id || l.target;
+                    const base = linkStroke(l);
+                    return (sId === d.id || tId === d.id) ? base + 1.5 : base;
+                });
+            linkLabelEls.attr("opacity", l => {
+                const sId = l.source.id || l.source;
+                const tId = l.target.id || l.target;
+                return (sId === d.id || tId === d.id) ? 1 : 0.15;
+            });
+            d3.select(this).select("circle")
+                .attr("stroke-width", 4)
+                .attr("stroke", d3.color(d.color).darker(0.6));
+        })
+        .on("mouseout", function(event, d) {
+            if (activeFamily) return;
+            linkEls
+                .attr("stroke-opacity", l => l.bidirectional ? 0.55 : 0.3)
+                .attr("stroke-width", linkStroke);
+            linkLabelEls.attr("opacity", 1);
+            d3.select(this).select("circle")
+                .attr("stroke-width", 2.5)
+                .attr("stroke", d3.color(d.color).darker(0.3));
+        });
+
+        // Tick
+        simulation.on("tick", () => {
+            linkEls.attr("d", d => {
+                const dx = d.target.x - d.source.x, dy = d.target.y - d.source.y;
+                const dist = Math.sqrt(dx * dx + dy * dy) || 1;
+                const sx = d.source.x + (dx / dist) * d.source.radius;
+                const sy = d.source.y + (dy / dist) * d.source.radius;
+                const tx = d.target.x - (dx / dist) * (d.target.radius + 4);
+                const ty = d.target.y - (dy / dist) * (d.target.radius + 4);
+                return curvePath(sx, sy, tx, ty).path;
+            });
+
+            nodeEls.attr("transform", d => `translate(${d.x},${d.y})`);
+
+            linkLabelEls.attr("transform", d => {
+                const dx = d.target.x - d.source.x, dy = d.target.y - d.source.y;
+                const dist = Math.sqrt(dx * dx + dy * dy) || 1;
+                const sx = d.source.x + (dx / dist) * d.source.radius;
+                const sy = d.source.y + (dy / dist) * d.source.radius;
+                const tx = d.target.x - (dx / dist) * (d.target.radius + 4);
+                const ty = d.target.y - (dy / dist) * (d.target.radius + 4);
+                const c = curvePath(sx, sy, tx, ty);
+                return `translate(${c.lx},${c.ly})`;
+            });
+        });
     }
 </script>
 
