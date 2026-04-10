@@ -8,6 +8,7 @@ import (
 	"github.com/fsnotify/fsnotify"
 	"github.com/halleck45/ast-metrics/internal/analyzer"
 	Activity "github.com/halleck45/ast-metrics/internal/analyzer/activity"
+	"github.com/halleck45/ast-metrics/internal/analyzer/classifier"
 	requirement "github.com/halleck45/ast-metrics/internal/analyzer/requirement"
 	"github.com/halleck45/ast-metrics/internal/analyzer/ruleset"
 	"github.com/halleck45/ast-metrics/internal/cli"
@@ -142,6 +143,15 @@ func (v *AnalyzeCommand) Execute() error {
 		projectCtx := buildProjectContext(projectAggregated)
 		evaluation := requirementsEvaluator.Evaluate(allResults, requirement.ProjectAggregated{ProjectCtx: projectCtx})
 		projectAggregated.Evaluation = &evaluation
+	}
+
+	// AI-based architecture classification
+	predictor := classifier.NewPredictor(v.Configuration.ModelClassifierDirectory)
+	predictions, err := predictor.Predict(allResults, v.Configuration.SourcesToAnalyzePath[0])
+	if err != nil {
+		log.Debugf("Classification skipped: %v", err)
+	} else {
+		projectAggregated.Predictions = predictions
 	}
 
 	// Generate reports

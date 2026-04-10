@@ -21,3 +21,9 @@ metrics.txt
 
 samples
 ast-metrics-report
+
+# AI
+ai/training/classifier/models
+dataset
+classified_output
+*.plk
