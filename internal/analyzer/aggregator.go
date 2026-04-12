@@ -5,6 +5,7 @@ import (
 	"runtime"
 	"sync"
 
+	"github.com/halleck45/ast-metrics/internal/analyzer/classifier"
 	requirement "github.com/halleck45/ast-metrics/internal/analyzer/requirement"
 	engine "github.com/halleck45/ast-metrics/internal/engine"
 	Scm "github.com/halleck45/ast-metrics/internal/scm"
@@ -19,6 +20,7 @@ type ProjectAggregated struct {
 	ErroredFiles          []*pb.File
 	Evaluation            *requirement.EvaluationResult
 	Comparaison           *ProjectComparaison
+	Predictions           []classifier.ClassPrediction
 }
 
 type AggregateResult struct {
@@ -88,6 +90,7 @@ type Aggregated struct {
 	Community                               *CommunityMetrics
 	TestQuality                             *TestQualityMetrics
 	Suggestions                             []Suggestion
+	Architecture                            *ArchitectureMetrics
 }
 
 type ProjectComparaison struct {

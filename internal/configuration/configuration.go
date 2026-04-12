@@ -41,6 +41,8 @@ type Configuration struct {
 	// FileDiscovery holds a pre-computed file discovery cache (type *file.FileDiscovery).
 	// Stored as interface{} to avoid import cycles.
 	FileDiscovery FileDiscoveryCache `yaml:"-"`
+
+	ModelClassifierDirectory string
 }
 
 type ConfigurationReport struct {
@@ -139,12 +141,13 @@ type ConfigurationDefaultRule struct {
 
 func NewConfiguration() *Configuration {
 	return &Configuration{
-		SourcesToAnalyzePath:   []string{},
-		ExcludePatterns:        []string{"/vendor/", "/node_modules/", "/.git/", "/.idea/", "/_ide_helper/", "/var/", "/.claude/"},
-		Watching:               false,
-		CompareWith:            "",
-		Storage:                storage.Default(),
-		IsComingFromConfigFile: false,
+		SourcesToAnalyzePath:     []string{},
+		ExcludePatterns:          []string{"/vendor/", "/node_modules/", "/.git/", "/.idea/", "/_ide_helper/", "/var/", "/.claude/"},
+		Watching:                 false,
+		CompareWith:              "",
+		Storage:                  storage.Default(),
+		IsComingFromConfigFile:   false,
+		ModelClassifierDirectory: "ai/training/classifier/build",
 	}
 }
 
