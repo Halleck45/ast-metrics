@@ -158,7 +158,7 @@
                     </a>
                     {% for languageName, lang in projectAggregated.ByProgrammingLanguage %}
                     <a 
-                        href="risks_{{ languageName }}.html"
+                        href="risks_{{ languageName|langSlug }}.html"
                         class="lang-tab inline-flex items-center h-11 px-4 py-2 -mb-0.5 text-center {% if currentLanguage == languageName %}active{% else %}text-gray-600{% endif %} sm:px-6">
                         <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 mr-2" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z" />

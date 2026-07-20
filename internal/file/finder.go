@@ -82,7 +82,22 @@ func (r Finder) Search(fileExtension string) FileList {
 		if strings.HasSuffix(path, fileExtension) {
 			matches = append(matches, path)
 		} else {
-			matches, _ = filepathx.Glob(path + "/**/*" + fileExtension)
+			// Files sitting directly in the root directory (zero levels deep).
+			// The "**" recursive glob below is unreliable for the zero-level
+			// case on some platforms (notably macOS), so match the root
+			// explicitly with a plain glob.
+			rootMatches, _ := filepath.Glob(path + "/*" + fileExtension)
+			// Files nested in sub-directories (one or more levels deep).
+			nestedMatches, _ := filepathx.Glob(path + "/**/*" + fileExtension)
+
+			seen := make(map[string]bool, len(rootMatches)+len(nestedMatches))
+			for _, m := range append(rootMatches, nestedMatches...) {
+				m = filepath.Clean(m)
+				if !seen[m] {
+					seen[m] = true
+					matches = append(matches, m)
+				}
+			}
 		}
 
 		// deal with excluded files

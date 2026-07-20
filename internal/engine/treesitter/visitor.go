@@ -137,6 +137,16 @@ type InterfaceAware interface {
 	IsInterface(*sitter.Node) bool
 }
 
+// namespaceSeparator returns the separator used between a namespace and a
+// class name in qualified names. Defaults to "\\" (PHP-style); adapters can
+// implement NamespaceSeparator() to override (e.g. "." for Java/C#).
+func (v *Visitor) namespaceSeparator() string {
+	if s, ok := v.ad.(interface{ NamespaceSeparator() string }); ok {
+		return s.NamespaceSeparator()
+	}
+	return "\\"
+}
+
 func (v *Visitor) Visit(node *sitter.Node) {
 	switch {
 	case v.ad.IsModule(node):
@@ -155,7 +165,7 @@ func (v *Visitor) Visit(node *sitter.Node) {
 		if v.ns != nil && v.ns.Name != nil {
 			ns := v.ns.Name.Qualified
 			if ns != "" {
-				qualified = ns + "\\" + name
+				qualified = ns + v.namespaceSeparator() + name
 			}
 		}
 		itf := &pb.StmtInterface{
@@ -177,7 +187,7 @@ func (v *Visitor) Visit(node *sitter.Node) {
 		if v.ns != nil && v.ns.Name != nil {
 			ns := v.ns.Name.Qualified
 			if ns != "" {
-				qualified = ns + "\\" + name
+				qualified = ns + v.namespaceSeparator() + name
 			}
 		}
 		c := &pb.StmtClass{

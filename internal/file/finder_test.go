@@ -55,6 +55,41 @@ func TestFinder_Search(t *testing.T) {
 	})
 }
 
+func TestFinder_SearchRootLevelFiles(t *testing.T) {
+	// A file sitting directly in the analyzed directory (zero sub-directory
+	// levels) must be discovered. The recursive "**" glob mishandled this case
+	// on some platforms (notably macOS), so it is covered explicitly here.
+	t.Run("finds a file directly in the root directory", func(t *testing.T) {
+		base := t.TempDir()
+		_ = os.WriteFile(filepath.Join(base, "Root.cs"), []byte("// test\n"), 0o644)
+
+		finder := Finder{Configuration: configuration.Configuration{SourcesToAnalyzePath: []string{base}}}
+		result := finder.Search(".cs")
+
+		if len(result.Files) != 1 {
+			t.Fatalf("Expected 1 root-level .cs file, got %d (%v)", len(result.Files), result.Files)
+		}
+		if filepath.Base(result.Files[0]) != "Root.cs" {
+			t.Errorf("Expected Root.cs, got %s", result.Files[0])
+		}
+	})
+
+	t.Run("finds root-level and nested files without duplicates", func(t *testing.T) {
+		base := t.TempDir()
+		nested := filepath.Join(base, "pkg", "sub")
+		_ = os.MkdirAll(nested, 0o777)
+		_ = os.WriteFile(filepath.Join(base, "Root.java"), []byte("// test\n"), 0o644)
+		_ = os.WriteFile(filepath.Join(nested, "Deep.java"), []byte("// test\n"), 0o644)
+
+		finder := Finder{Configuration: configuration.Configuration{SourcesToAnalyzePath: []string{base}}}
+		result := finder.Search(".java")
+
+		if len(result.Files) != 2 {
+			t.Fatalf("Expected 2 .java files (one root, one nested), got %d (%v)", len(result.Files), result.Files)
+		}
+	})
+}
+
 func TestMergeFileLists(t *testing.T) {
 	t.Run("merges multiple file lists", func(t *testing.T) {
 		list1 := FileList{

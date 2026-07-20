@@ -120,7 +120,7 @@ AST Metrics - Bus Factor
     </a>
 
     {% for languageName, lang in projectAggregated.ByProgrammingLanguage %}
-    <a tabindex="0" href="busfactor_{{ languageName }}.html"
+    <a tabindex="0" href="busfactor_{{ languageName|langSlug }}.html"
         class="inline-flex items-center h-10 px-2 py-2 -mb-px text-center bg-transparent border-b-2 {% if currentLanguage == languageName %}text-blue-600 border-blue-500{% else %}text-gray-700 border-transparent{% endif %} sm:px-4 -px-1 hover:border-gray-400">
         <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 mx-1 sm:w-6 sm:h-6" fill="none" viewBox="0 0 24 24"
             stroke="currentColor">

@@ -72,6 +72,10 @@ func (v ScreenByProgrammingLanguage) GetScreenName() string {
 		emoji = "🐍 "
 	case "Golang":
 		emoji = "🐹 "
+	case "Java":
+		emoji = "☕ "
+	case "C#":
+		emoji = "🟦 "
 	}
 
 	count := 0

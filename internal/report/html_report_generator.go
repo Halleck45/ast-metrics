@@ -237,7 +237,7 @@ func (v *HtmlReportGenerator) Generate(files []*pb.File, projectAggregated analy
 		jsBuilder.WriteString(",testQuality:")
 		jsBuilder.WriteString(cd.testQualityJSON)
 		jsBuilder.WriteString("};")
-		dataFile := fmt.Sprintf("%s/data_%s.js", dataDir, lang)
+		dataFile := fmt.Sprintf("%s/data_%s.js", dataDir, languageURLSlug(lang))
 		if err := os.WriteFile(dataFile, []byte(jsBuilder.String()), 0644); err != nil {
 			return nil, err
 		}
@@ -899,7 +899,7 @@ func (v *HtmlReportGenerator) GenerateLanguagePage(template string, language str
 
 	// Use pre-computed cached data for this language
 	cd := v.langCache[language]
-	dataScriptPath := fmt.Sprintf("data/data_%s.js", language)
+	dataScriptPath := fmt.Sprintf("data/data_%s.js", languageURLSlug(language))
 	linterScriptPath := "data/linters.js"
 	out, err := tpl.Execute(pongo2.Context{"datetime": datetime, "page": template, "currentLanguage": language, "currentView": currentView, "projectAggregated": projectAggregated, "files": files, "risksByPath": cd.risksByPath, "dataScriptPath": dataScriptPath, "linterScriptPath": linterScriptPath, "classificationFamilies": classifier.ClassificationFamilies})
 	if err != nil {
@@ -910,7 +910,7 @@ func (v *HtmlReportGenerator) GenerateLanguagePage(template string, language str
 	// Write the result to the file
 	pageSuffix := ""
 	if language != "All" {
-		pageSuffix = fmt.Sprintf("_%s", language)
+		pageSuffix = fmt.Sprintf("_%s", languageURLSlug(language))
 	}
 	// prefix is template without the .html part
 	pagePrefix := template[:len(template)-5]
@@ -936,7 +936,32 @@ func (v *HtmlReportGenerator) EnsureFolder(path string) error {
 	return nil
 }
 
+// languageURLSlug returns a language name safe for use in file names and URLs.
+// "C#" would otherwise produce links like "index_C#.html" where the browser
+// treats "#" as a fragment delimiter. Existing language names are unchanged.
+func languageURLSlug(language string) string {
+	s := strings.ReplaceAll(language, "#", "Sharp")
+	s = strings.ReplaceAll(s, " ", "")
+	return s
+}
+
 func (v *HtmlReportGenerator) RegisterFilters() {
+
+	// langSlug converts a language name to a URL-safe slug (e.g. "C#" -> "CSharp").
+	// Usage: href="index_{{ languageName|langSlug }}.html"
+	pongo2.RegisterFilter("langSlug", func(in *pongo2.Value, param *pongo2.Value) (out *pongo2.Value, err *pongo2.Error) {
+		return pongo2.AsValue(languageURLSlug(in.String())), nil
+	})
+
+	// jsonEncode marshals any value to a JSON string for embedding in <script>.
+	// Usage: {{ value|jsonEncode|safe }}
+	pongo2.RegisterFilter("jsonEncode", func(in *pongo2.Value, param *pongo2.Value) (out *pongo2.Value, err *pongo2.Error) {
+		b, e := json.Marshal(in.Interface())
+		if e != nil {
+			return pongo2.AsValue("null"), nil
+		}
+		return pongo2.AsValue(string(b)), nil
+	})
 
 	// countCategory counts suggestions matching a given category string.
 	// Usage: {{ suggestions|countCategory:"coupling" }}
