@@ -13,7 +13,9 @@ import (
 	"github.com/halleck45/ast-metrics/internal/configuration"
 	mcpserver "github.com/halleck45/ast-metrics/internal/mcp"
 	"github.com/halleck45/ast-metrics/internal/engine"
+	"github.com/halleck45/ast-metrics/internal/engine/csharp"
 	"github.com/halleck45/ast-metrics/internal/engine/golang"
+	"github.com/halleck45/ast-metrics/internal/engine/java"
 	"github.com/halleck45/ast-metrics/internal/engine/php"
 	"github.com/halleck45/ast-metrics/internal/engine/python"
 	"github.com/halleck45/ast-metrics/internal/engine/rust"
@@ -50,7 +52,9 @@ func main() {
 	runnerPython := python.PythonRunner{}
 	runnerRust := rust.RustRunner{}
 	runnerTypeScript := typescript.TypeScriptRunner{}
-	runners := []engine.Engine{&runnerPhp, &runnerGolang, &runnerPython, &runnerRust, &runnerTypeScript}
+	runnerJava := java.JavaRunner{}
+	runnerCSharp := csharp.CSharpRunner{}
+	runners := []engine.Engine{&runnerPhp, &runnerGolang, &runnerPython, &runnerRust, &runnerTypeScript, &runnerJava, &runnerCSharp}
 
 	app := &cliV2.App{
 		Name:  "ast-metrics",
@@ -228,6 +232,16 @@ func main() {
 					&cliV2.StringFlag{
 						Name:     "typescript-extensions",
 						Usage:    "Extra file extensions for TypeScript (comma-separated)",
+						Category: "File selection",
+					},
+					&cliV2.StringFlag{
+						Name:     "java-extensions",
+						Usage:    "Extra file extensions for Java (comma-separated)",
+						Category: "File selection",
+					},
+					&cliV2.StringFlag{
+						Name:     "csharp-extensions",
+						Usage:    "Extra file extensions for C# (comma-separated)",
 						Category: "File selection",
 					},
 				},
@@ -500,6 +514,8 @@ func main() {
 					&cliV2.StringFlag{Name: "python-extensions", Usage: "Extra file extensions for Python (comma-separated)", Category: "File selection"},
 					&cliV2.StringFlag{Name: "rust-extensions", Usage: "Extra file extensions for Rust (comma-separated)", Category: "File selection"},
 					&cliV2.StringFlag{Name: "typescript-extensions", Usage: "Extra file extensions for TypeScript (comma-separated)", Category: "File selection"},
+					&cliV2.StringFlag{Name: "java-extensions", Usage: "Extra file extensions for Java (comma-separated)", Category: "File selection"},
+					&cliV2.StringFlag{Name: "csharp-extensions", Usage: "Extra file extensions for C# (comma-separated)", Category: "File selection"},
 				},
 				Action: func(cCtx *cliV2.Context) error {
 					if cCtx.Bool("verbose") {
@@ -574,6 +590,8 @@ func main() {
 					&cliV2.StringFlag{Name: "python-extensions", Usage: "Extra file extensions for Python (comma-separated)", Category: "File selection"},
 					&cliV2.StringFlag{Name: "rust-extensions", Usage: "Extra file extensions for Rust (comma-separated)", Category: "File selection"},
 					&cliV2.StringFlag{Name: "typescript-extensions", Usage: "Extra file extensions for TypeScript (comma-separated)", Category: "File selection"},
+					&cliV2.StringFlag{Name: "java-extensions", Usage: "Extra file extensions for Java (comma-separated)", Category: "File selection"},
+					&cliV2.StringFlag{Name: "csharp-extensions", Usage: "Extra file extensions for C# (comma-separated)", Category: "File selection"},
 				},
 				Action: func(cCtx *cliV2.Context) error {
 					if cCtx.Bool("verbose") {
@@ -737,6 +755,8 @@ func main() {
 					&cliV2.StringFlag{Name: "go-extensions", Usage: "Extra file extensions for Go (comma-separated)", Category: "File selection"},
 					&cliV2.StringFlag{Name: "python-extensions", Usage: "Extra file extensions for Python (comma-separated)", Category: "File selection"},
 					&cliV2.StringFlag{Name: "rust-extensions", Usage: "Extra file extensions for Rust (comma-separated)", Category: "File selection"},
+					&cliV2.StringFlag{Name: "java-extensions", Usage: "Extra file extensions for Java (comma-separated)", Category: "File selection"},
+					&cliV2.StringFlag{Name: "csharp-extensions", Usage: "Extra file extensions for C# (comma-separated)", Category: "File selection"},
 				},
 				Action: func(cCtx *cliV2.Context) error {
 					// Redirect all logging to stderr (stdout is reserved for JSON-RPC)
@@ -801,6 +821,7 @@ func mergeExtensionFlags(cCtx *cliV2.Context, config *configuration.Configuratio
 		{"php-extensions", "php"}, {"go-extensions", "go"},
 		{"python-extensions", "python"}, {"rust-extensions", "rust"},
 		{"typescript-extensions", "typescript"},
+		{"java-extensions", "java"}, {"csharp-extensions", "csharp"},
 	} {
 		if v := cCtx.String(pair.flag); v != "" {
 			if config.Extensions == nil {

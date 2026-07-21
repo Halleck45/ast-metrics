@@ -20,7 +20,6 @@ func TestLintCommand_Execute_ReturnsErrorOnViolations(t *testing.T) {
 
 	cfg := configuration.NewConfiguration()
 	cfg.Storage = work
-	cfg.ExcludePatterns = []string{} // clear defaults so temp files in /var/folders/ (macOS) aren't excluded
 	cfg.Requirements = configuration.NewConfigurationRequirements()
 	intVal := func(i int) *int { return &i }
 	cfg.Requirements.Rules.Volume.Loc = intVal(1)

@@ -35,7 +35,7 @@ document.addEventListener('alpine:init', () => {
 
     <!-- start: language tab -->
     {% for languageName, lang in projectAggregated.ByProgrammingLanguage %}
-    <a tabindex="0" href="index_{{ languageName }}.html"
+    <a tabindex="0" href="index_{{ languageName|langSlug }}.html"
         class="inline-flex items-center h-10 px-2 py-2 -mb-px text-center bg-transparent border-b-2 {% if currentLanguage == languageName %}text-blue-600 border-blue-500{% else %}text-gray-700   border-transparent{% endif %} sm:px-4 -px-1 hover:border-gray-400">
         <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 mx-1 sm:w-6 sm:h-6" fill="none" viewBox="0 0 24 24"
             stroke="currentColor">
@@ -153,7 +153,7 @@ document.addEventListener('alpine:init', () => {
                 <p class="text-xs text-gray-500 leading-relaxed">Each bubble is a class (or file). Color = complexity, size = lines of code, glow = git activity.</p>
             </div>
         </div>
-        <script id="bubble-explorer-url" type="application/json">"explorer{% if currentLanguage != "All" %}_{{ currentLanguage }}{% endif %}.html"</script>
+        <script id="bubble-explorer-url" type="application/json">"explorer{% if currentLanguage != "All" %}_{{ currentLanguage|langSlug }}{% endif %}.html"</script>
         {% include "componentBubbleChart.html" %}
     </div>
 

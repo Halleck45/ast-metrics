@@ -87,27 +87,19 @@ func (r Finder) Search(fileExtension string) FileList {
 
 		// deal with excluded files
 		for _, file := range matches {
-			excluded := false
-
-			for _, re := range compiledExcludes {
-				if re.MatchString(file) {
-					excluded = true
-					break
-				}
+			if isExcluded(file, path, compiledExcludes) {
+				continue
 			}
 
-			if !excluded {
-				result.Files = append(result.Files, file)
+			result.Files = append(result.Files, file)
 
-				// add file to filesByDirectory
-				directory := path
-				if _, ok := result.FilesByDirectory[directory]; !ok {
-					result.FilesByDirectory[directory] = []string{}
-				}
-
-				result.FilesByDirectory[directory] = append(result.FilesByDirectory[directory], file)
-
+			// add file to filesByDirectory
+			directory := path
+			if _, ok := result.FilesByDirectory[directory]; !ok {
+				result.FilesByDirectory[directory] = []string{}
 			}
+
+			result.FilesByDirectory[directory] = append(result.FilesByDirectory[directory], file)
 		}
 	}
 
@@ -150,7 +142,7 @@ func (r Finder) SearchMultiple(extensions []string) map[string]FileList {
 		if !info.IsDir() {
 			ext := filepath.Ext(srcPath)
 			if extSet[ext] {
-				if !isExcluded(srcPath, compiledExcludes) {
+				if !isExcluded(srcPath, srcPath, compiledExcludes) {
 					fl := results[ext]
 					fl.Files = append(fl.Files, srcPath)
 					fl.FilesByDirectory[srcPath] = append(fl.FilesByDirectory[srcPath], srcPath)
@@ -169,7 +161,7 @@ func (r Finder) SearchMultiple(extensions []string) map[string]FileList {
 			if !extSet[ext] {
 				return nil
 			}
-			if isExcluded(path, compiledExcludes) {
+			if isExcluded(path, srcPath, compiledExcludes) {
 				return nil
 			}
 			fl := results[ext]
@@ -197,9 +189,21 @@ func MergeFileLists(lists ...FileList) FileList {
 	return result
 }
 
-func isExcluded(path string, compiledExcludes []*regexp.Regexp) bool {
+// isExcluded reports whether a discovered file must be skipped. Exclude
+// patterns are matched against the file path relative to the analyzed root
+// (with a leading "/" and forward slashes), so that a directory named e.g.
+// "vendor" or "var" *inside* the project is excluded, while the absolute
+// location of the project itself never causes a false match (for instance a
+// macOS temp directory under /var/folders, or a project served from /var/www).
+// If the relative path cannot be computed, the absolute path is used as a
+// conservative fallback.
+func isExcluded(file, root string, compiledExcludes []*regexp.Regexp) bool {
+	target := file
+	if rel, err := filepath.Rel(root, file); err == nil {
+		target = "/" + filepath.ToSlash(rel)
+	}
 	for _, re := range compiledExcludes {
-		if re.MatchString(path) {
+		if re.MatchString(target) {
 			return true
 		}
 	}

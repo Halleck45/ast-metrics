@@ -211,9 +211,10 @@ To use it with Claude Code or any MCP-compatible agent, add a `.mcp.json` at you
 + ✅ **Python** `Python 2, Python 3`
 + ✅ **Rust** `any version`
 + ✅ **PHP** `<= PHP 8.5`
-+ 🕛 **TypeScript**
++ ✅ **Java** `any version`
++ ✅ **C#** `any version`
++ ✅ **TypeScript** `any version`
 + 🕛 **Flutter**
-+ 🕛 **Java**
 + 🕛 **C++**
 + 🕛 **Ruby**
 
