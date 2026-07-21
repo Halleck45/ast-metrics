@@ -90,6 +90,54 @@ func TestFinder_SearchRootLevelFiles(t *testing.T) {
 	})
 }
 
+func TestFinder_ExcludeRelativeToRoot(t *testing.T) {
+	// Exclude patterns must be matched relative to the analyzed root, not
+	// against the absolute path. Otherwise a project whose absolute location
+	// happens to contain an excluded segment (e.g. a macOS temp dir under
+	// /var/folders, or a project served from /var/www) would be wrongly
+	// emptied out by the default "/var/" pattern.
+	t.Run("does not exclude files because of the root's absolute path", func(t *testing.T) {
+		// A root that itself sits under a "/var/" path.
+		base := filepath.Join(t.TempDir(), "var", "www", "app")
+		_ = os.MkdirAll(base, 0o777)
+		_ = os.WriteFile(filepath.Join(base, "Service.cs"), []byte("// test\n"), 0o644)
+
+		finder := Finder{Configuration: configuration.Configuration{
+			SourcesToAnalyzePath: []string{base},
+			ExcludePatterns:      []string{"/var/", "/vendor/", "/node_modules/"},
+		}}
+		result := finder.Search(".cs")
+
+		if len(result.Files) != 1 {
+			t.Fatalf("Expected 1 file (root path under /var/ must not be excluded), got %d (%v)", len(result.Files), result.Files)
+		}
+	})
+
+	t.Run("still excludes matching sub-directories inside the project", func(t *testing.T) {
+		base := t.TempDir()
+		vendor := filepath.Join(base, "vendor", "lib")
+		varCache := filepath.Join(base, "var", "cache")
+		_ = os.MkdirAll(vendor, 0o777)
+		_ = os.MkdirAll(varCache, 0o777)
+		_ = os.WriteFile(filepath.Join(base, "Main.cs"), []byte("// test\n"), 0o644)
+		_ = os.WriteFile(filepath.Join(vendor, "Dep.cs"), []byte("// test\n"), 0o644)
+		_ = os.WriteFile(filepath.Join(varCache, "Gen.cs"), []byte("// test\n"), 0o644)
+
+		finder := Finder{Configuration: configuration.Configuration{
+			SourcesToAnalyzePath: []string{base},
+			ExcludePatterns:      []string{"/vendor/", "/var/"},
+		}}
+		result := finder.Search(".cs")
+
+		if len(result.Files) != 1 {
+			t.Fatalf("Expected 1 file (vendor/ and var/ sub-dirs excluded), got %d (%v)", len(result.Files), result.Files)
+		}
+		if filepath.Base(result.Files[0]) != "Main.cs" {
+			t.Errorf("Expected Main.cs to be the only kept file, got %s", result.Files[0])
+		}
+	})
+}
+
 func TestMergeFileLists(t *testing.T) {
 	t.Run("merges multiple file lists", func(t *testing.T) {
 		list1 := FileList{
