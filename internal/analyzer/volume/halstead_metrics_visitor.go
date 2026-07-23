@@ -172,6 +172,74 @@ func (v *HalsteadMetricsVisitor) Visit(stmts *pb.Stmts, parents *pb.Stmts) {
 	}
 }
 
+// aggregateScope fills the scope's Halstead metrics with the average of its
+// classes and top-level functions.
+func (v *HalsteadMetricsVisitor) aggregateScope(stmts *pb.Stmts) {
+	var n int32
+	var N int32
+	var hatN, V, D, E, T float64
+	cnt := 0
+
+	accumulate := func(vol *pb.Volume) {
+		if vol == nil || vol.HalsteadVocabulary == nil {
+			return
+		}
+		// an empty scope (e.g. a class without methods) has nothing to measure
+		// and must not drag the average down
+		if *vol.HalsteadVocabulary == 0 && *vol.HalsteadLength == 0 {
+			return
+		}
+		n += *vol.HalsteadVocabulary
+		N += *vol.HalsteadLength
+		hatN += *vol.HalsteadEstimatedLength
+		V += *vol.HalsteadVolume
+		D += *vol.HalsteadDifficulty
+		E += *vol.HalsteadEffort
+		T += *vol.HalsteadTime
+		cnt++
+	}
+
+	for _, cls := range stmts.StmtClass {
+		if cls.Stmts != nil && cls.Stmts.Analyze != nil {
+			accumulate(cls.Stmts.Analyze.Volume)
+		}
+	}
+	for _, fn := range stmts.StmtFunction {
+		if fn.Stmts != nil && fn.Stmts.Analyze != nil {
+			accumulate(fn.Stmts.Analyze.Volume)
+		}
+	}
+
+	if cnt == 0 {
+		return
+	}
+	n /= int32(cnt)
+	N /= int32(cnt)
+	hatN /= float64(cnt)
+	V /= float64(cnt)
+	D /= float64(cnt)
+	E /= float64(cnt)
+	T /= float64(cnt)
+
+	if stmts.Analyze == nil {
+		stmts.Analyze = &pb.Analyze{}
+	}
+	if stmts.Analyze.Volume == nil {
+		stmts.Analyze.Volume = &pb.Volume{}
+	}
+	stmts.Analyze.Volume.HalsteadVocabulary = &n
+	stmts.Analyze.Volume.HalsteadLength = &N
+	stmts.Analyze.Volume.HalsteadEstimatedLength = &hatN
+	stmts.Analyze.Volume.HalsteadVolume = &V
+	stmts.Analyze.Volume.HalsteadDifficulty = &D
+	stmts.Analyze.Volume.HalsteadEffort = &E
+	stmts.Analyze.Volume.HalsteadTime = &T
+	if V > 0 {
+		b := V / 3000.0
+		stmts.Analyze.Volume.HalsteadBugs = &b
+	}
+}
+
 func (v *HalsteadMetricsVisitor) LeaveNode(stmts *pb.Stmts) {
 	if stmts == nil {
 		return
@@ -247,6 +315,11 @@ func (v *HalsteadMetricsVisitor) LeaveNode(stmts *pb.Stmts) {
 				stmt.Stmts.Analyze.Volume.HalsteadBugs = &b
 			}
 		}
+
+		// Aggregate at the current scope (file or namespace) as the average of
+		// its classes and top-level functions, so files made only of classes
+		// still expose Halstead metrics (and thus a maintainability index).
+		v.aggregateScope(stmts)
 	} else {
 		// No classes: aggregate Halstead at the current (file/namespace) level using its functions
 		var n int32 = 0

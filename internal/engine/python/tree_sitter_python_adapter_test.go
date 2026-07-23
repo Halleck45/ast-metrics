@@ -86,3 +86,32 @@ func TestTreeSitterAdapter_CountComments(t *testing.T) {
 		t.Errorf("expected 0 comment lines for floor division, got %d", got)
 	}
 }
+
+func TestTreeSitterAdapter_ExtractOperatorsOperands(t *testing.T) {
+	src := []byte(`def divide(a, b):
+    q = a // b
+    return q + 1
+`)
+	adapter := NewTreeSitterAdapter(src)
+	ops, operands := adapter.ExtractOperatorsOperands(src, 1, 3)
+
+	// =, // and + ("//" is an operator here, not a comment)
+	if len(ops) != 3 {
+		t.Fatalf("expected 3 operators, got %d: %v", len(ops), ops)
+	}
+	// divide, a, b (signature), q, a, b, q, 1
+	if len(operands) != 8 {
+		t.Fatalf("expected 8 operands, got %d: %v", len(operands), operands)
+	}
+
+	// a "//" inside a string or comment is not an operator
+	src2 := []byte(`def f():
+    s = "no // here"  # nor // here
+    return s
+`)
+	adapter2 := NewTreeSitterAdapter(src2)
+	ops2, _ := adapter2.ExtractOperatorsOperands(src2, 1, 3)
+	if len(ops2) != 1 { // only the assignment
+		t.Fatalf("expected 1 operator, got %d: %v", len(ops2), ops2)
+	}
+}

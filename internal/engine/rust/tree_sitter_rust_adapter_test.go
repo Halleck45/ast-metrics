@@ -90,3 +90,22 @@ func TestTreeSitterAdapter_CountComments(t *testing.T) {
 		t.Errorf("expected 1 comment line with lifetimes present, got %d", got)
 	}
 }
+
+func TestTreeSitterAdapter_ExtractOperatorsOperands(t *testing.T) {
+	src := []byte(`fn add(a: i32, b: i32) -> i32 {
+    let x = a + b;
+    x * 2
+}
+`)
+	adapter := NewTreeSitterAdapter(src)
+	ops, operands := adapter.ExtractOperatorsOperands(src, 1, 4)
+
+	// ->, =, +, *
+	if len(ops) != 4 {
+		t.Fatalf("expected 4 operators, got %d: %v", len(ops), ops)
+	}
+	// add, a, b (signature), x, a, b, x, 2
+	if len(operands) != 8 {
+		t.Fatalf("expected 8 operands, got %d: %v", len(operands), operands)
+	}
+}

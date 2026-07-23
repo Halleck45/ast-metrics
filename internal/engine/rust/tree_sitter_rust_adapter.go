@@ -11,11 +11,15 @@ import (
 )
 
 type TreeSitterAdapter struct {
-	src []byte
+	src  []byte
+	root *sitter.Node
 }
 
 func NewTreeSitterAdapter(src []byte) *TreeSitterAdapter { return &TreeSitterAdapter{src: src} }
 func (a *TreeSitterAdapter) SetSource(src []byte)        { a.src = src }
+func (a *TreeSitterAdapter) SetRootNode(root *sitter.Node) {
+	a.root = root
+}
 
 func (a *TreeSitterAdapter) Language() *sitter.Language { return tsRust.GetLanguage() }
 
@@ -413,4 +417,47 @@ func stripRustStrings(s string) string {
 		out = append(out, rune(c))
 	}
 	return string(out)
+}
+
+// rustOperatorTokens lists the anonymous token types counted as Halstead
+// operators: arithmetic, comparison, logical, bitwise, ranges, error
+// propagation, field access, paths and casts.
+var rustOperatorTokens = map[string]bool{
+	"+": true, "-": true, "*": true, "/": true, "%": true,
+	"==": true, "!=": true, "<": true, ">": true, "<=": true, ">=": true,
+	"&&": true, "||": true, "!": true,
+	"&": true, "|": true, "^": true, "<<": true, ">>": true,
+	"=": true, "+=": true, "-=": true, "*=": true, "/=": true, "%=": true,
+	"&=": true, "|=": true, "^=": true, "<<=": true, ">>=": true,
+	"..": true, "..=": true, "?": true, ".": true, "::": true, "->": true, "=>": true,
+	"as": true,
+}
+
+// rustOperandTypes lists the named node types counted as Halstead operands:
+// identifiers and literals. String content is counted rather than the whole
+// string node, so quotes are ignored.
+var rustOperandTypes = map[string]bool{
+	"identifier": true, "field_identifier": true, "shorthand_field_identifier": true,
+	"self": true, "integer_literal": true, "float_literal": true, "char_literal": true,
+	"string_content": true, "boolean_literal": true,
+}
+
+// ExtractOperatorsOperands collects Halstead operators and operands from the
+// AST within the given 1-based inclusive line range.
+func (a *TreeSitterAdapter) ExtractOperatorsOperands(src []byte, startLine, endLine int) ([]string, []string) {
+	root := a.root
+	source := a.src
+	if root == nil {
+		if source == nil {
+			source = src
+		}
+		if source == nil {
+			return nil, nil
+		}
+		parser := sitter.NewParser()
+		parser.SetLanguage(a.Language())
+		tree := parser.Parse(nil, source)
+		root = tree.RootNode()
+	}
+	return Treesitter.ExtractOperatorsOperandsFromAST(root, source, startLine, endLine, rustOperatorTokens, rustOperandTypes)
 }

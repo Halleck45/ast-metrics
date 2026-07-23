@@ -11,12 +11,14 @@ import (
 )
 
 type TreeSitterAdapter struct {
-	src []byte
+	src  []byte
+	root *sitter.Node
 }
 
 func NewTreeSitterAdapter(src []byte) *TreeSitterAdapter { return &TreeSitterAdapter{src: src} }
 
-func (a *TreeSitterAdapter) SetSource(src []byte) { a.src = src }
+func (a *TreeSitterAdapter) SetSource(src []byte)          { a.src = src }
+func (a *TreeSitterAdapter) SetRootNode(root *sitter.Node) { a.root = root }
 
 func (a *TreeSitterAdapter) NodeName(n *sitter.Node) string {
 	if a.src == nil || n == nil {
@@ -395,4 +397,44 @@ func (a *TreeSitterAdapter) CountComments(lines []string, start, end int) int {
 // "//" is the floor division operator and "/* */" does not exist.
 func (a *TreeSitterAdapter) CommentMarkers() engine.CommentMarkers {
 	return engine.CommentMarkers{Hash: true}
+}
+
+// pythonOperatorTokens lists the anonymous token types counted as Halstead
+// operators: arithmetic, comparison, assignment, bitwise, walrus, attribute
+// access and the keyword operators (and/or/not/in/is).
+var pythonOperatorTokens = map[string]bool{
+	"+": true, "-": true, "*": true, "/": true, "//": true, "%": true, "**": true, "@": true,
+	"==": true, "!=": true, "<": true, ">": true, "<=": true, ">=": true, "<>": true,
+	"=": true, "+=": true, "-=": true, "*=": true, "/=": true, "//=": true, "%=": true,
+	"**=": true, "@=": true, "&=": true, "|=": true, "^=": true, "<<=": true, ">>=": true,
+	"&": true, "|": true, "^": true, "<<": true, ">>": true, "~": true, ":=": true,
+	".": true, "and": true, "or": true, "not": true, "in": true, "is": true,
+}
+
+// pythonOperandTypes lists the named node types counted as Halstead operands:
+// identifiers and literals. String content is counted rather than the whole
+// string node, so quotes and interpolation braces are ignored.
+var pythonOperandTypes = map[string]bool{
+	"identifier": true, "integer": true, "float": true, "string_content": true,
+	"true": true, "false": true, "none": true,
+}
+
+// ExtractOperatorsOperands collects Halstead operators and operands from the
+// AST within the given 1-based inclusive line range.
+func (a *TreeSitterAdapter) ExtractOperatorsOperands(src []byte, startLine, endLine int) ([]string, []string) {
+	root := a.root
+	source := a.src
+	if root == nil {
+		if source == nil {
+			source = src
+		}
+		if source == nil {
+			return nil, nil
+		}
+		parser := sitter.NewParser()
+		parser.SetLanguage(a.Language())
+		tree := parser.Parse(nil, source)
+		root = tree.RootNode()
+	}
+	return Treesitter.ExtractOperatorsOperandsFromAST(root, source, startLine, endLine, pythonOperatorTokens, pythonOperandTypes)
 }
