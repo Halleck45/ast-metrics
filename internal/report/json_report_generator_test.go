@@ -105,3 +105,28 @@ func TestGenerateJson(t *testing.T) {
 		return
 	}
 }
+
+// The three per-method maintainability averages come from three distinct
+// aggregates; a copy-paste once made MIwoc mirror the comment weight.
+func TestBuildReportMapsPerMethodMaintainability(t *testing.T) {
+	generator := &JsonReportGenerator{}
+	aggregated := analyzer.ProjectAggregated{
+		Combined: analyzer.Aggregated{
+			MaintainabilityPerMethod:                analyzer.AggregateResult{Avg: 80},
+			MaintainabilityPerMethodWithoutComments: analyzer.AggregateResult{Avg: 60},
+			MaintainabilityCommentWeightPerMethod:   analyzer.AggregateResult{Avg: 20},
+		},
+	}
+
+	r := generator.buildReport(aggregated)
+
+	if r.AverageMIPerMethod != 80 {
+		t.Errorf("expected AverageMIPerMethod 80, got %v", r.AverageMIPerMethod)
+	}
+	if r.AverageMIwocPerMethod != 60 {
+		t.Errorf("expected AverageMIwocPerMethod 60, got %v", r.AverageMIwocPerMethod)
+	}
+	if r.AverageMIcwPerMethod != 20 {
+		t.Errorf("expected AverageMIcwPerMethod 20, got %v", r.AverageMIcwPerMethod)
+	}
+}

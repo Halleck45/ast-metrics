@@ -435,6 +435,12 @@ func (r *Aggregator) mapSums(file *pb.File, specificAggregation Aggregated) Aggr
 	// Number of classes
 	result.NbClasses += len(classes)
 
+	// Number of standalone functions (declared outside of any class);
+	// class methods are counted in NbMethods
+	if file.Stmts != nil {
+		result.NbFunctions += len(file.Stmts.StmtFunction)
+	}
+
 	// Ensure LOC is set
 	if file.LinesOfCode == nil {
 		if file.Stmts != nil && file.Stmts.Analyze != nil && file.Stmts.Analyze.Volume != nil {
@@ -730,6 +736,7 @@ func (r *Aggregator) mergeChunks(aggregated Aggregated, chunk *Aggregated) Aggre
 	result.NbClasses += chunk.NbClasses
 	result.NbClassesWithCode += chunk.NbClassesWithCode
 	result.NbMethods += chunk.NbMethods
+	result.NbFunctions += chunk.NbFunctions
 
 	result.Loc.Sum += chunk.Loc.Sum
 	result.Loc.Counter += chunk.Loc.Counter

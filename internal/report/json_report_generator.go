@@ -168,7 +168,7 @@ func (j *JsonReportGenerator) buildReport(projectAggregated analyzer.ProjectAggr
 	r.AverageMIwoc = combined.MaintainabilityIndexWithoutComments.Avg
 	r.AverageMIcw = combined.MaintainabilityCommentWeight.Avg
 	r.AverageMIPerMethod = combined.MaintainabilityPerMethod.Avg
-	r.AverageMIwocPerMethod = combined.MaintainabilityCommentWeightPerMethod.Avg
+	r.AverageMIwocPerMethod = combined.MaintainabilityPerMethodWithoutComments.Avg
 	r.AverageMIcwPerMethod = combined.MaintainabilityCommentWeightPerMethod.Avg
 	r.AverageAfferentCoupling = combined.AfferentCoupling.Avg
 	r.AverageEfferentCoupling = combined.EfferentCoupling.Avg
