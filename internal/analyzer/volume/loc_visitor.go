@@ -44,7 +44,7 @@ func (v *LocVisitor) Visit(stmts *pb.Stmts, parents *pb.Stmts) {
 				continue
 			}
 
-			v.consolidate(class.Stmts, class.LinesOfCode)
+			v.consolidate(class.Stmts, class.LinesOfCode, true)
 		}
 	}
 
@@ -59,7 +59,7 @@ func (v *LocVisitor) Visit(stmts *pb.Stmts, parents *pb.Stmts) {
 			continue
 		}
 
-		v.consolidate(class.Stmts, class.LinesOfCode)
+		v.consolidate(class.Stmts, class.LinesOfCode, true)
 	}
 
 	// Consolidate foreach method (if file is not a class)
@@ -74,7 +74,9 @@ func (v *LocVisitor) Visit(stmts *pb.Stmts, parents *pb.Stmts) {
 			if target == nil {
 				target = stmts
 			}
-			v.consolidate(target, function.LinesOfCode)
+			// loc belongs to a single function here, not to the target scope:
+			// only the per-function sums are meaningful
+			v.consolidate(target, function.LinesOfCode, false)
 		}
 	}
 
@@ -126,7 +128,10 @@ func (v *LocVisitor) LeaveNode(stmts *pb.Stmts) {
 
 }
 
-func (v *LocVisitor) consolidate(stmts *pb.Stmts, loc *pb.LinesOfCode) {
+// consolidate fills the scope's Volume from loc and from the functions it
+// contains. preferScopeLloc is set when loc describes the scope itself (e.g.
+// a class range): its AST-based LLOC then wins over the sum of function LLOCs.
+func (v *LocVisitor) consolidate(stmts *pb.Stmts, loc *pb.LinesOfCode, preferScopeLloc bool) {
 
 	if stmts == nil {
 		return
@@ -158,7 +163,11 @@ func (v *LocVisitor) consolidate(stmts *pb.Stmts, loc *pb.LinesOfCode) {
 		locVal = sumLoc
 	}
 	stmts.Analyze.Volume.Loc = &locVal
-	stmts.Analyze.Volume.Lloc = &lloc
+	if preferScopeLloc && loc.LogicalLinesOfCode > 0 {
+		stmts.Analyze.Volume.Lloc = &loc.LogicalLinesOfCode
+	} else {
+		stmts.Analyze.Volume.Lloc = &lloc
+	}
 	// Preserve pre-set CLOC (e.g., class body CLOC) if already provided
 	if stmts.Analyze.Volume.Cloc == nil || *stmts.Analyze.Volume.Cloc == 0 {
 		stmts.Analyze.Volume.Cloc = &cloc

@@ -27,3 +27,9 @@ ai/training/classifier/models
 dataset
 classified_output
 *.plk
+.venv
+
+# AI Helpers
+.claude/
+.mcp.json
+CLAUDE.md

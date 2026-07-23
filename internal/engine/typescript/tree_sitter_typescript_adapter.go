@@ -289,8 +289,16 @@ func (a *TreeSitterAdapter) Imports(n *sitter.Node) []Treesitter.ImportItem {
 // CountElseIfAsIf: treat else-if as if for complexity aggregation (consistent with Go/PHP)
 func (a *TreeSitterAdapter) CountElseIfAsIf() bool { return true }
 
-// FileLlocOffset returns the offset to subtract when computing file-level LLOC.
-func (a *TreeSitterAdapter) FileLlocOffset() int { return 2 }
+// IsLogicalNode reports whether a node begins a logical line. In TypeScript,
+// "const"/"let"/"var" declarations are statements but their node types do not
+// carry the "_statement" suffix.
+func (a *TreeSitterAdapter) IsLogicalNode(n *sitter.Node) bool {
+	switch n.Type() {
+	case "lexical_declaration", "variable_declaration":
+		return true
+	}
+	return Treesitter.IsDefaultLogicalNode(n.Type())
+}
 
 // CountComments counts TypeScript comment lines (// and /* */ and /** */) in the given range.
 func (a *TreeSitterAdapter) CountComments(lines []string, start, end int) int {

@@ -4,6 +4,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/halleck45/ast-metrics/internal/engine"
 	Treesitter "github.com/halleck45/ast-metrics/internal/engine/treesitter"
 	sitter "github.com/smacker/go-tree-sitter"
 	tsRust "github.com/smacker/go-tree-sitter/rust"
@@ -323,4 +324,93 @@ func dedup(in []Treesitter.ImportItem) []Treesitter.ImportItem {
 		out = append(out, it)
 	}
 	return out
+}
+
+// CountComments counts Rust comment lines (//, ///, //! and /* ... */ blocks)
+// in the given 1-based inclusive line range. Block delimiter lines are
+// comment lines.
+func (a *TreeSitterAdapter) CountComments(lines []string, start, end int) int {
+	cnt := 0
+	inBlock := false
+	for i := start - 1; i < end && i < len(lines); i++ {
+		ln := strings.TrimSpace(lines[i])
+		if ln == "" {
+			continue
+		}
+		clean := stripRustStrings(ln)
+		if inBlock {
+			cnt++
+			if strings.Contains(clean, "*/") {
+				inBlock = false
+			}
+			continue
+		}
+		if strings.HasPrefix(clean, "//") {
+			cnt++
+			continue
+		}
+		if strings.HasPrefix(clean, "/*") {
+			cnt++
+			if !strings.Contains(clean, "*/") {
+				inBlock = true
+			}
+			continue
+		}
+	}
+	return cnt
+}
+
+// IsLogicalNode reports whether a node begins a logical line. Rust is
+// expression-oriented: on top of the default statement types, "let" bindings
+// and match arms count, as does the tail expression of a block (a direct
+// block child with no wrapping statement node).
+func (a *TreeSitterAdapter) IsLogicalNode(n *sitter.Node) bool {
+	t := n.Type()
+	switch t {
+	case "let_declaration", "match_arm":
+		return true
+	case "attribute_item", "inner_attribute_item", "line_comment", "block_comment", "block":
+		return false
+	}
+	if Treesitter.IsDefaultLogicalNode(t) {
+		return true
+	}
+	// tail expression of a block
+	if parent := n.Parent(); parent != nil && parent.Type() == "block" && n.IsNamed() {
+		return true
+	}
+	return false
+}
+
+// CommentMarkers declares Rust comment tokens: "//" and "/* */" only.
+// "#" introduces attributes (#[derive(...)]), which are code, not comments.
+func (a *TreeSitterAdapter) CommentMarkers() engine.CommentMarkers {
+	return engine.CommentMarkers{SlashSlash: true, SlashStar: true}
+}
+
+// stripRustStrings removes content inside double-quoted strings so comment
+// markers embedded in literals (e.g. URLs) are not miscounted. Single quotes
+// are left untouched: in Rust they also introduce lifetimes ('a), which have
+// no closing quote and would corrupt the scan.
+func stripRustStrings(s string) string {
+	out := make([]rune, 0, len(s))
+	inDq := false
+	for i := 0; i < len(s); i++ {
+		c := s[i]
+		if c == '\\' { // escape
+			if i+1 < len(s) {
+				i++
+			}
+			continue
+		}
+		if c == '"' {
+			inDq = !inDq
+			continue
+		}
+		if inDq {
+			continue
+		}
+		out = append(out, rune(c))
+	}
+	return string(out)
 }

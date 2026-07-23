@@ -338,3 +338,40 @@ func TestNamespacesParsing(t *testing.T) {
 	})
 
 }
+
+func TestGetLocPositionFromSourceWithMarkers(t *testing.T) {
+	// Python: "//" is floor division, "#" is a comment
+	pySource := []string{
+		"def divide(a, b):",
+		"    # a real comment",
+		"    return a // b",
+	}
+	loc := GetLocPositionFromSourceWithMarkers(pySource, 1, 3, CommentMarkers{Hash: true})
+	if loc.CommentLinesOfCode != 1 {
+		t.Errorf("python: expected 1 comment line, got %d", loc.CommentLinesOfCode)
+	}
+	if loc.LogicalLinesOfCode != 0 { // 3 - (1 + 0 + 2)
+		t.Errorf("python: expected 0 logical lines, got %d", loc.LogicalLinesOfCode)
+	}
+	// With every marker active, any line containing "//" counts as a comment
+	locAll := GetLocPositionFromSourceWithMarkers(pySource, 1, 3, AllCommentMarkers())
+	if locAll.CommentLinesOfCode != 2 {
+		t.Errorf("all markers: expected 2 comment lines, got %d", locAll.CommentLinesOfCode)
+	}
+
+	// Rust: "#[...]" is an attribute, "//" is a comment
+	rsSource := []string{
+		"fn f() {",
+		"    // a real comment",
+		"    #[allow(unused)]",
+		"    let x = 1;",
+		"}",
+	}
+	loc = GetLocPositionFromSourceWithMarkers(rsSource, 1, 5, CommentMarkers{SlashSlash: true, SlashStar: true})
+	if loc.CommentLinesOfCode != 1 {
+		t.Errorf("rust: expected 1 comment line, got %d", loc.CommentLinesOfCode)
+	}
+	if loc.LogicalLinesOfCode != 2 { // 5 - (1 + 0 + 2)
+		t.Errorf("rust: expected 2 logical lines, got %d", loc.LogicalLinesOfCode)
+	}
+}
