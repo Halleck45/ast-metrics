@@ -481,3 +481,34 @@ class Foo
 	assert.Equal(t, 1, aggregated.NbClasses)
 	assert.Equal(t, 2, aggregated.NbMethods)
 }
+
+// Every per-method aggregate must survive chunk merging: chunks are computed
+// concurrently per group of files, then merged into the final result.
+func TestMergeChunksKeepsPerMethodAggregates(t *testing.T) {
+	aggregator := Aggregator{}
+
+	chunk1 := Aggregated{
+		LocPerMethod:                  AggregateResult{Sum: 100, Counter: 10},
+		LlocPerMethod:                 AggregateResult{Sum: 60, Counter: 10},
+		ClocPerMethod:                 AggregateResult{Sum: 20, Counter: 10},
+		CyclomaticComplexityPerMethod: AggregateResult{Sum: 30, Counter: 10, Min: 2, Max: 9},
+	}
+	chunk2 := Aggregated{
+		LocPerMethod:                  AggregateResult{Sum: 50, Counter: 5},
+		LlocPerMethod:                 AggregateResult{Sum: 30, Counter: 5},
+		ClocPerMethod:                 AggregateResult{Sum: 10, Counter: 5},
+		CyclomaticComplexityPerMethod: AggregateResult{Sum: 25, Counter: 5, Min: 1, Max: 14},
+	}
+
+	result := aggregator.mergeChunks(Aggregated{}, &chunk1)
+	result = aggregator.mergeChunks(result, &chunk2)
+
+	assert.Equal(t, float64(150), result.LocPerMethod.Sum)
+	assert.Equal(t, 15, result.LocPerMethod.Counter)
+	assert.Equal(t, float64(90), result.LlocPerMethod.Sum)
+	assert.Equal(t, 15, result.LlocPerMethod.Counter)
+	assert.Equal(t, float64(30), result.ClocPerMethod.Sum)
+	assert.Equal(t, 15, result.ClocPerMethod.Counter)
+	assert.Equal(t, float64(1), result.CyclomaticComplexityPerMethod.Min)
+	assert.Equal(t, float64(14), result.CyclomaticComplexityPerMethod.Max)
+}

@@ -3,6 +3,7 @@ package java
 import (
 	"strings"
 
+	"github.com/halleck45/ast-metrics/internal/engine"
 	Treesitter "github.com/halleck45/ast-metrics/internal/engine/treesitter"
 	sitter "github.com/smacker/go-tree-sitter"
 	tsJava "github.com/smacker/go-tree-sitter/java"
@@ -258,6 +259,12 @@ func (a *TreeSitterAdapter) IsLogicalNode(n *sitter.Node) bool {
 }
 
 // CountComments counts Java comment lines (//, /* */ and /** */) in the given range.
+// CommentMarkers declares Java comment tokens: "//" and "/* */" only.
+// "#" has no meaning in Java source.
+func (a *TreeSitterAdapter) CommentMarkers() engine.CommentMarkers {
+	return engine.CommentMarkers{SlashSlash: true, SlashStar: true}
+}
+
 func (a *TreeSitterAdapter) CountComments(lines []string, start, end int) int {
 	cnt := 0
 	inBlock := false

@@ -3,6 +3,7 @@ package csharp
 import (
 	"strings"
 
+	"github.com/halleck45/ast-metrics/internal/engine"
 	Treesitter "github.com/halleck45/ast-metrics/internal/engine/treesitter"
 	sitter "github.com/smacker/go-tree-sitter"
 	tsCSharp "github.com/smacker/go-tree-sitter/csharp"
@@ -269,6 +270,12 @@ func (a *TreeSitterAdapter) Imports(n *sitter.Node) []Treesitter.ImportItem {
 func (a *TreeSitterAdapter) CountElseIfAsIf() bool { return true }
 
 // CountComments counts C# comment lines (//, /// and /* */) in the given range.
+// CommentMarkers declares C# comment tokens: "//" and "/* */" only.
+// "#" introduces preprocessor directives (#region, #if), which are code, not comments.
+func (a *TreeSitterAdapter) CommentMarkers() engine.CommentMarkers {
+	return engine.CommentMarkers{SlashSlash: true, SlashStar: true}
+}
+
 func (a *TreeSitterAdapter) CountComments(lines []string, start, end int) int {
 	cnt := 0
 	inBlock := false

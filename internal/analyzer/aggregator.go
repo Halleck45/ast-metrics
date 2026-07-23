@@ -744,8 +744,18 @@ func (r *Aggregator) mergeChunks(aggregated Aggregated, chunk *Aggregated) Aggre
 	result.LocPerClass.Counter += chunk.LocPerClass.Counter
 	result.LocPerMethod.Sum += chunk.LocPerMethod.Sum
 	result.LocPerMethod.Counter += chunk.LocPerMethod.Counter
+	result.LlocPerMethod.Sum += chunk.LlocPerMethod.Sum
+	result.LlocPerMethod.Counter += chunk.LlocPerMethod.Counter
+	result.ClocPerMethod.Sum += chunk.ClocPerMethod.Sum
+	result.ClocPerMethod.Counter += chunk.ClocPerMethod.Counter
 	result.CyclomaticComplexityPerMethod.Sum += chunk.CyclomaticComplexityPerMethod.Sum
 	result.CyclomaticComplexityPerMethod.Counter += chunk.CyclomaticComplexityPerMethod.Counter
+	if result.CyclomaticComplexityPerMethod.Min == 0 || (chunk.CyclomaticComplexityPerMethod.Min > 0 && chunk.CyclomaticComplexityPerMethod.Min < result.CyclomaticComplexityPerMethod.Min) {
+		result.CyclomaticComplexityPerMethod.Min = chunk.CyclomaticComplexityPerMethod.Min
+	}
+	if chunk.CyclomaticComplexityPerMethod.Max > result.CyclomaticComplexityPerMethod.Max {
+		result.CyclomaticComplexityPerMethod.Max = chunk.CyclomaticComplexityPerMethod.Max
+	}
 
 	result.CyclomaticComplexityPerClass.Sum += chunk.CyclomaticComplexityPerClass.Sum
 	result.CyclomaticComplexityPerClass.Counter += chunk.CyclomaticComplexityPerClass.Counter
