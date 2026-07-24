@@ -64,7 +64,7 @@ func Test_FileLevel_Maintainability_SampleGo(t *testing.T) {
 		t.Fatalf("missing Volume on sampleGo file")
 	}
 	if *file.Stmts.Analyze.Volume.HalsteadVocabulary != int32(15) {
-		t.Fatalf("incorrect halstead volume on file")
+		t.Fatalf("incorrect halstead volume on file, got %d", *file.Stmts.Analyze.Volume.HalsteadVocabulary)
 	}
 	if file.Stmts.Analyze.Volume.Loc == nil || file.Stmts.Analyze.Volume.Lloc == nil || file.Stmts.Analyze.Volume.Cloc == nil {
 		t.Fatalf("missing LOC/LLOC/CLOC on sampleGo file")

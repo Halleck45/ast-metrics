@@ -54,6 +54,7 @@ func (r RustRunner) Parse(path string) (*pb.File, error) {
 
 	tree := parser.Parse(nil, src)
 	root := tree.RootNode()
+	adapter.SetRootNode(root)
 
 	v := Treesitter.NewVisitor(adapter, path, src)
 	v.Visit(root)
