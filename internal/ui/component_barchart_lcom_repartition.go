@@ -52,6 +52,10 @@ func (c *ComponentBarchartLcomRepartition) GetData() *orderedmap.OrderedMap[stri
 				continue
 			}
 			mesured := *class.Stmts.Analyze.ClassCohesion.Lcom4
+			if mesured == 0 {
+				// no method to measure cohesion on: nothing to plot
+				continue
+			}
 
 			// map measured to bucket
 			// special case for exactly 1

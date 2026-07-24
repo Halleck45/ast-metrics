@@ -681,7 +681,8 @@ func (r *Aggregator) mapSums(file *pb.File, specificAggregation Aggregated) Aggr
 		}
 
 		// LCOM
-		if class.Stmts.Analyze.ClassCohesion != nil && class.Stmts.Analyze.ClassCohesion.Lcom4 != nil {
+		// LCOM4 = 0 means the class has no method to measure cohesion on: it is not aggregated
+		if class.Stmts.Analyze.ClassCohesion != nil && class.Stmts.Analyze.ClassCohesion.Lcom4 != nil && *class.Stmts.Analyze.ClassCohesion.Lcom4 > 0 {
 			// want a float64, got a int32
 			lcom4 := float64(*class.Stmts.Analyze.ClassCohesion.Lcom4)
 			result.Lcom4PerClass.Sum += lcom4
