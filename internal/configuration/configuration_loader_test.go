@@ -128,4 +128,15 @@ func TestCreateDefaultFile(t *testing.T) {
 	cfg, err := loader.Loads(&Configuration{})
 	assert.NoError(t, err)
 	assert.NotNil(t, cfg)
+
+	// The generated file must use field names that actually map onto the
+	// configuration schema, otherwise the requirements are silently ignored.
+	assert.NotNil(t, cfg.Requirements)
+	assert.NotNil(t, cfg.Requirements.Rules)
+	assert.NotNil(t, cfg.Requirements.Rules.Volume)
+	assert.NotNil(t, cfg.Requirements.Rules.Volume.Loc)
+	assert.Equal(t, 100, *cfg.Requirements.Rules.Volume.Loc)
+	assert.NotNil(t, cfg.Requirements.Rules.Complexity)
+	assert.NotNil(t, cfg.Requirements.Rules.Complexity.Cyclomatic)
+	assert.Equal(t, 10, *cfg.Requirements.Rules.Complexity.Cyclomatic)
 }

@@ -51,6 +51,7 @@ func (r *noGodClassRule) CheckFile(file *pb.File, addError func(issue.Requiremen
 					Severity: issue.SeverityLow,
 					Message:  fmt.Sprintf("God class detected: %d LOC, %d methods, LCOM4 %d", loc, methodCount, lcom),
 					Code:     r.Name(),
+					Line:     lineOf(class.GetLocation()),
 				})
 				return
 			}

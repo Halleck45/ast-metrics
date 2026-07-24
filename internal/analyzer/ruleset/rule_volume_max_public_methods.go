@@ -48,6 +48,7 @@ func (r *maxPublicMethodsRule) CheckFile(file *pb.File, addError func(issue.Requ
 					Severity: issue.SeverityMedium,
 					Message:  fmt.Sprintf("Class has %d public methods, maximum allowed is %d", publicCount, r.threshold),
 					Code:     r.Name(),
+					Line:     lineOf(class.GetLocation()),
 				})
 				return
 			}

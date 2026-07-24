@@ -39,6 +39,7 @@ func (r *maxMethodsPerClassRule) CheckFile(file *pb.File, addError func(issue.Re
 					Severity: issue.SeverityMedium,
 					Message:  fmt.Sprintf("Class has %d methods, maximum allowed is %d", methodCount, r.threshold),
 					Code:     r.Name(),
+					Line:     lineOf(class.GetLocation()),
 				})
 				return
 			}

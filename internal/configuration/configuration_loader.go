@@ -1,9 +1,11 @@
 package configuration
 
 import (
+	"bytes"
 	"errors"
 	"os"
 
+	"github.com/sirupsen/logrus"
 	"gopkg.in/yaml.v3"
 )
 
@@ -32,15 +34,22 @@ func (c *ConfigurationLoader) Loads(cfg *Configuration) (*Configuration, error) 
 		if _, err := os.Stat(filename); err == nil {
 
 			// Load configuration
-			f, err := os.Open(filename)
+			data, err := os.ReadFile(filename)
 			if err != nil {
 				return cfg, err
 			}
-			defer f.Close()
 
-			decoder := yaml.NewDecoder(f)
-			err = decoder.Decode(&cfg)
-			if err != nil {
+			// Strict pass: detect unknown fields and warn instead of silently
+			// ignoring them, so typos or outdated field names are surfaced.
+			strict := yaml.NewDecoder(bytes.NewReader(data))
+			strict.KnownFields(true)
+			var probe Configuration
+			if derr := strict.Decode(&probe); derr != nil {
+				logrus.Warnf("configuration file %s contains unexpected content and some settings may be ignored: %v", filename, derr)
+			}
+
+			// Authoritative pass: decode leniently into the running configuration.
+			if err := yaml.Unmarshal(data, &cfg); err != nil {
 				return cfg, err
 			}
 
@@ -107,30 +116,32 @@ reports:
 
 # Requirements. If a file does not meet these requirements, it will be reported
 requirements:
+  # Files matching these patterns are excluded from requirement checks
+  # exclude:
+  #   - /tests/
   rules:
-    fail_on_error: true
-
     architecture:
       # Coupling between components
       coupling:
-        forbidden: 
+        forbidden:
           # Fails if a Model is used in a Controller
-          # Regular expression is used
+          # Regular expressions are used
           - from: "Model"
             to: "Controller"
+      # max_afferent_coupling: 10
+      # max_efferent_coupling: 10
+      # min_maintainability: 70
 
     volume:
-      # Number of lines of code
-      loc:
-        max: 100
-        exclude: []
+      # Maximum number of lines of code per file
+      max_loc: 100
+      # max_logical_loc: 60
+      # max_loc_by_method: 30
+      # max_logical_loc_by_method: 20
 
-    # Legacy flat rules still supported for compatibility
-    # maintainability:
-    #   min: 85
-    # cyclomatic_complexity:
-    #   max: 10
-    #   exclude: []
+    complexity:
+      # Maximum cyclomatic complexity
+      max_cyclomatic: 10
 `)
 
 	if err != nil {
