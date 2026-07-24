@@ -176,6 +176,30 @@ func TestCompareMatchesMethodsInsideClasses(t *testing.T) {
 	assert.Equal(t, "CheckoutService::pay", result.Regressions[0].Subject)
 }
 
+func TestCompareDoesNotDuplicateMethodsExposedAtFileLevel(t *testing.T) {
+	// The PHP engine exposes class methods both inside the class and at
+	// file level: the review must report each method once, with its
+	// qualified name.
+	build := func(root string, checksum string, ccn int32) *pb.File {
+		method := newFunction("describeVerb", ccn, 40)
+		file := newFile(root+"/EventLogger.php", checksum, method)
+		file.Stmts.StmtClass = []*pb.StmtClass{
+			{
+				Name:  &pb.Name{Short: "EventLogger"},
+				Stmts: &pb.Stmts{StmtFunction: []*pb.StmtFunction{method}},
+			},
+		}
+		return file
+	}
+	base := []*pb.File{build("/base", "aaa", 2)}
+	head := []*pb.File{build("/head", "bbb", 17)}
+
+	result := Compare(head, base, "/head", "/base", DefaultOptions())
+
+	assert.Len(t, result.Regressions, 1)
+	assert.Equal(t, "EventLogger::describeVerb", result.Regressions[0].Subject)
+}
+
 func TestFindingsAreSortedBySeverityThenFile(t *testing.T) {
 	base := []*pb.File{
 		newFile("/base/a.go", "a1", newFunction("A", 8, 1)),
