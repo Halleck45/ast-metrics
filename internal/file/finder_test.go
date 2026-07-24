@@ -91,11 +91,13 @@ func TestFinder_SearchRootLevelFiles(t *testing.T) {
 }
 
 func TestFinder_ExcludeRelativeToRoot(t *testing.T) {
-	// Exclude patterns must be matched relative to the analyzed root, not
-	// against the absolute path. Otherwise a project whose absolute location
-	// happens to contain an excluded segment (e.g. a macOS temp dir under
-	// /var/folders, or a project served from /var/www) would be wrongly
-	// emptied out by the default "/var/" pattern.
+	// Exclude patterns must never be matched against the absolute path.
+	// Otherwise a project whose absolute location happens to contain an
+	// excluded segment (e.g. a macOS temp dir under /var/folders, or a
+	// project served from /var/www) would be wrongly emptied out by the
+	// default "/var/" pattern. Here the sources live outside the project
+	// root (the working directory), so matching falls back to the path
+	// relative to the analyzed source root.
 	t.Run("does not exclude files because of the root's absolute path", func(t *testing.T) {
 		// A root that itself sits under a "/var/" path.
 		base := filepath.Join(t.TempDir(), "var", "www", "app")
@@ -134,6 +136,82 @@ func TestFinder_ExcludeRelativeToRoot(t *testing.T) {
 		}
 		if filepath.Base(result.Files[0]) != "Main.cs" {
 			t.Errorf("Expected Main.cs to be the only kept file, got %s", result.Files[0])
+		}
+	})
+}
+
+func TestFinder_ExcludeRelativeToProjectRoot(t *testing.T) {
+	// https://github.com/Halleck45/ast-metrics/issues/147
+	// With several sources, patterns are matched relative to the project
+	// root (not to each analyzed root), so a pattern can target a file in
+	// one source without touching its sibling in another source.
+	setup := func(t *testing.T) (root, dirA, dirB string) {
+		root = t.TempDir()
+		dirA = filepath.Join(root, "a")
+		dirB = filepath.Join(root, "b")
+		_ = os.MkdirAll(dirA, 0o777)
+		_ = os.MkdirAll(dirB, 0o777)
+		_ = os.WriteFile(filepath.Join(dirA, "file.php"), []byte("<?php\n"), 0o644)
+		_ = os.WriteFile(filepath.Join(dirB, "file.php"), []byte("<?php\n"), 0o644)
+		return root, dirA, dirB
+	}
+
+	t.Run("Search can exclude a file in one source only", func(t *testing.T) {
+		root, dirA, dirB := setup(t)
+		finder := Finder{
+			Configuration: configuration.Configuration{
+				SourcesToAnalyzePath: []string{dirA, dirB},
+				ExcludePatterns:      []string{"/b/file"},
+			},
+			projectRoot: root,
+		}
+		result := finder.Search(".php")
+
+		if len(result.Files) != 1 {
+			t.Fatalf("Expected only a/file.php to remain, got %d files (%v)", len(result.Files), result.Files)
+		}
+		if result.Files[0] != filepath.Join(dirA, "file.php") {
+			t.Errorf("Expected a/file.php to be kept, got %s", result.Files[0])
+		}
+	})
+
+	t.Run("SearchMultiple can exclude a file in one source only", func(t *testing.T) {
+		root, dirA, dirB := setup(t)
+		finder := Finder{
+			Configuration: configuration.Configuration{
+				SourcesToAnalyzePath: []string{dirA, dirB},
+				ExcludePatterns:      []string{"/b/file"},
+			},
+			projectRoot: root,
+		}
+		results := finder.SearchMultiple([]string{".php"})
+
+		files := results[".php"].Files
+		if len(files) != 1 {
+			t.Fatalf("Expected only a/file.php to remain, got %d files (%v)", len(files), files)
+		}
+		if files[0] != filepath.Join(dirA, "file.php") {
+			t.Errorf("Expected a/file.php to be kept, got %s", files[0])
+		}
+	})
+
+	t.Run("project location under /var/ still never matches", func(t *testing.T) {
+		root := filepath.Join(t.TempDir(), "var", "www", "app")
+		src := filepath.Join(root, "src")
+		_ = os.MkdirAll(src, 0o777)
+		_ = os.WriteFile(filepath.Join(src, "Service.php"), []byte("<?php\n"), 0o644)
+
+		finder := Finder{
+			Configuration: configuration.Configuration{
+				SourcesToAnalyzePath: []string{src},
+				ExcludePatterns:      []string{"/var/", "/vendor/"},
+			},
+			projectRoot: root,
+		}
+		result := finder.Search(".php")
+
+		if len(result.Files) != 1 {
+			t.Fatalf("Expected 1 file (project path under /var/ must not be excluded), got %d (%v)", len(result.Files), result.Files)
 		}
 	})
 }

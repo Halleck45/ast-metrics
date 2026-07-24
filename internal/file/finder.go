@@ -46,6 +46,24 @@ type Finder struct {
 	// Discovery is an optional shared cache for multi-extension search.
 	// When set, Search() will check it before doing a full glob.
 	Discovery *FileDiscovery
+	// projectRoot overrides the directory used as the reference for exclude
+	// pattern matching. Empty means "use the working directory"; only tests
+	// set it.
+	projectRoot string
+}
+
+// resolveProjectRoot returns the directory exclude patterns are matched
+// against: the working directory (where the configuration file lives),
+// unless overridden for tests.
+func (r Finder) resolveProjectRoot() string {
+	if r.projectRoot != "" {
+		return r.projectRoot
+	}
+	wd, err := os.Getwd()
+	if err != nil {
+		return ""
+	}
+	return wd
 }
 
 func (r Finder) Search(fileExtension string) FileList {
@@ -74,6 +92,8 @@ func (r Finder) Search(fileExtension string) FileList {
 		}
 	}
 
+	projectRoot := r.resolveProjectRoot()
+
 	// Search for files in each directory
 	for _, path := range r.Configuration.SourcesToAnalyzePath {
 
@@ -87,7 +107,7 @@ func (r Finder) Search(fileExtension string) FileList {
 
 		// deal with excluded files
 		for _, file := range matches {
-			if isExcluded(file, path, compiledExcludes) {
+			if isExcluded(file, projectRoot, path, compiledExcludes) {
 				continue
 			}
 
@@ -131,6 +151,8 @@ func (r Finder) SearchMultiple(extensions []string) map[string]FileList {
 		}
 	}
 
+	projectRoot := r.resolveProjectRoot()
+
 	for _, srcPath := range r.Configuration.SourcesToAnalyzePath {
 		srcPath = strings.TrimRight(srcPath, "/")
 
@@ -142,7 +164,7 @@ func (r Finder) SearchMultiple(extensions []string) map[string]FileList {
 		if !info.IsDir() {
 			ext := filepath.Ext(srcPath)
 			if extSet[ext] {
-				if !isExcluded(srcPath, srcPath, compiledExcludes) {
+				if !isExcluded(srcPath, projectRoot, srcPath, compiledExcludes) {
 					fl := results[ext]
 					fl.Files = append(fl.Files, srcPath)
 					fl.FilesByDirectory[srcPath] = append(fl.FilesByDirectory[srcPath], srcPath)
@@ -161,7 +183,7 @@ func (r Finder) SearchMultiple(extensions []string) map[string]FileList {
 			if !extSet[ext] {
 				return nil
 			}
-			if isExcluded(path, srcPath, compiledExcludes) {
+			if isExcluded(path, projectRoot, srcPath, compiledExcludes) {
 				return nil
 			}
 			fl := results[ext]
@@ -190,17 +212,24 @@ func MergeFileLists(lists ...FileList) FileList {
 }
 
 // isExcluded reports whether a discovered file must be skipped. Exclude
-// patterns are matched against the file path relative to the analyzed root
-// (with a leading "/" and forward slashes), so that a directory named e.g.
-// "vendor" or "var" *inside* the project is excluded, while the absolute
-// location of the project itself never causes a false match (for instance a
-// macOS temp directory under /var/folders, or a project served from /var/www).
-// If the relative path cannot be computed, the absolute path is used as a
-// conservative fallback.
-func isExcluded(file, root string, compiledExcludes []*regexp.Regexp) bool {
-	target := file
-	if rel, err := filepath.Rel(root, file); err == nil {
-		target = "/" + filepath.ToSlash(rel)
+// patterns are matched against the file path relative to the project root
+// (the working directory, where the configuration file lives), with a
+// leading "/" and forward slashes. This keeps two properties at once:
+//   - the absolute location of the project never causes a false match (a
+//     project served from /var/www, or a macOS temp directory under
+//     /var/folders, is not emptied out by the default "/var/" pattern);
+//   - with several sources (e.g. "./a" and "./b"), a pattern can target one
+//     of them ("/b/file") because the source prefix is preserved.
+//
+// When the file lies outside the project root, the path relative to the
+// analyzed source root is used instead, and as a last resort the absolute
+// path.
+func isExcluded(file, projectRoot, sourceRoot string, compiledExcludes []*regexp.Regexp) bool {
+	target, ok := relativeTo(projectRoot, file)
+	if !ok {
+		if target, ok = relativeTo(sourceRoot, file); !ok {
+			target = file
+		}
 	}
 	for _, re := range compiledExcludes {
 		if re.MatchString(target) {
@@ -208,4 +237,17 @@ func isExcluded(file, root string, compiledExcludes []*regexp.Regexp) bool {
 		}
 	}
 	return false
+}
+
+// relativeTo returns file relative to root, with a leading "/" and forward
+// slashes. ok is false when root is empty or file is not located under root.
+func relativeTo(root, file string) (target string, ok bool) {
+	if root == "" {
+		return "", false
+	}
+	rel, err := filepath.Rel(root, file)
+	if err != nil || rel == ".." || strings.HasPrefix(rel, ".."+string(filepath.Separator)) {
+		return "", false
+	}
+	return "/" + filepath.ToSlash(rel), true
 }
