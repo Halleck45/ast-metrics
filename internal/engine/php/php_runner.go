@@ -21,9 +21,8 @@ type PhpRunner struct {
 	foundFiles    file.FileList
 }
 
-// IsRequired returns true if at least one Go file is found
+// IsRequired returns true if at least one PHP file is found
 func (r PhpRunner) IsRequired() bool {
-	// If at least one Go file is found, we need to run PHP engine
 	return len(r.getFileList().Files) > 0
 }
 
