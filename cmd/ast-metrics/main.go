@@ -679,6 +679,76 @@ func main() {
 				},
 			},
 			{
+				Name:  "review",
+				Usage: "Compare the current code with a base branch and report only new or worsened findings (PR-oriented)",
+				Flags: []cliV2.Flag{
+					&cliV2.BoolFlag{Name: "verbose", Aliases: []string{"v"}, Usage: "Enable verbose mode", Category: "Global options"},
+					&cliV2.StringFlag{Name: "base", Usage: "Git branch or commit to compare against (default: origin/main, origin/master, main or master)", Category: "Review"},
+					&cliV2.StringFlag{Name: "format", Usage: "Output format: text, markdown or json", Value: "text", Category: "Review"},
+					&cliV2.StringFlag{Name: "fail-on", Usage: "Fail when a regression of at least this severity exists: high, medium, any or never", Value: "never", Category: "Review"},
+					&cliV2.IntFlag{Name: "max-findings", Usage: "Maximum number of regressions displayed in text and markdown outputs", Value: 5, Category: "Review"},
+					&cliV2.StringFlag{Name: "report-markdown", Usage: "Write the Markdown report to the given file", Category: "Report"},
+					&cliV2.StringFlag{Name: "report-json", Usage: "Write the full JSON report to the given file", Category: "Report"},
+					&cliV2.StringFlag{Name: "report-sarif", Usage: "Write regressions as SARIF 2.1.0 to the given file", Category: "Report"},
+					&cliV2.StringSliceFlag{Name: "exclude", Usage: "Regular expression to exclude files from analysis", Category: "File selection"},
+					&cliV2.StringFlag{Name: "config", Usage: "Load configuration from file", Category: "Configuration"},
+					&cliV2.StringFlag{Name: "php-extensions", Usage: "Extra file extensions for PHP (comma-separated, e.g. .inc,.module)", Category: "File selection"},
+					&cliV2.StringFlag{Name: "go-extensions", Usage: "Extra file extensions for Go (comma-separated)", Category: "File selection"},
+					&cliV2.StringFlag{Name: "python-extensions", Usage: "Extra file extensions for Python (comma-separated)", Category: "File selection"},
+					&cliV2.StringFlag{Name: "rust-extensions", Usage: "Extra file extensions for Rust (comma-separated)", Category: "File selection"},
+					&cliV2.StringFlag{Name: "typescript-extensions", Usage: "Extra file extensions for TypeScript (comma-separated)", Category: "File selection"},
+					&cliV2.StringFlag{Name: "java-extensions", Usage: "Extra file extensions for Java (comma-separated)", Category: "File selection"},
+					&cliV2.StringFlag{Name: "csharp-extensions", Usage: "Extra file extensions for C# (comma-separated)", Category: "File selection"},
+				},
+				Action: func(cCtx *cliV2.Context) error {
+					if cCtx.Bool("verbose") {
+						logrus.SetLevel(logrus.DebugLevel)
+					}
+					config := configuration.NewConfiguration()
+					loader := configuration.NewConfigurationLoader()
+					if cCtx.String("config") != "" {
+						loader.FilenameToChecks = []string{cCtx.String("config")}
+					}
+					cfg, err := loader.Loads(config)
+					if err != nil {
+						cli.PrintError("Cannot load configuration file: " + err.Error())
+					}
+					// Paths from args, then configuration file, then current directory
+					pathsSlice := []string{}
+					for i := 0; i < cCtx.Args().Len(); i++ {
+						pathsSlice = append(pathsSlice, cCtx.Args().Get(i))
+					}
+					if len(pathsSlice) == 0 {
+						if len(cfg.SourcesToAnalyzePath) > 0 {
+							pathsSlice = cfg.SourcesToAnalyzePath
+						} else {
+							pathsSlice = []string{"."}
+						}
+					}
+					if err := cfg.SetSourcesToAnalyzePath(pathsSlice); err != nil {
+						cli.PrintError(err.Error())
+						return err
+					}
+					// Exclude patterns
+					if len(cfg.ExcludePatterns) == 0 {
+						if ex := cCtx.StringSlice("exclude"); len(ex) > 0 {
+							cfg.SetExcludePatterns(ex)
+						}
+					}
+					mergeExtensionFlags(cCtx, cfg)
+
+					cmd := command.NewReviewCommand(cfg, os.Stdout, runners)
+					cmd.BaseRef = cCtx.String("base")
+					cmd.Format = cCtx.String("format")
+					cmd.FailOn = cCtx.String("fail-on")
+					cmd.MaxFindings = cCtx.Int("max-findings")
+					cmd.ReportMarkdown = cCtx.String("report-markdown")
+					cmd.ReportJson = cCtx.String("report-json")
+					cmd.ReportSarif = cCtx.String("report-sarif")
+					return cmd.Execute()
+				},
+			},
+			{
 				Name:  "deploy:github",
 				Usage: "Deploy AST-Metrics workflow to all repositories in a GitHub organization. It open a PR for each repository.",
 				Flags: []cliV2.Flag{

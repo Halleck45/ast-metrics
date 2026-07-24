@@ -76,6 +76,7 @@ var allCompletions = []completionItem{
 	// Commands
 	{"analyze", "Analyze a project"},
 	{"lint", "Run lint rules on a project"},
+	{"review", "Compare with a base branch and report only new findings"},
 	{"ci", "Run lint + analysis with reports (CI mode)"},
 	{"ruleset list", "List available rulesets"},
 	{"ruleset show", "Show rules inside a ruleset"},

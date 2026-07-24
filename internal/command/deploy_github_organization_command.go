@@ -508,12 +508,15 @@ on:
   push:
   pull_request:
 
+permissions:
+  contents: read
+  pull-requests: write # optional: allows the action to comment on pull requests
+
 jobs:
   analyse:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: halleck45/action-ast-metrics@v1
+      - uses: halleck45/action-ast-metrics@v2
 `
 
 	// Encode content to base64
