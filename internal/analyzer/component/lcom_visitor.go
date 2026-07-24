@@ -7,6 +7,58 @@ import (
 )
 
 type LackOfCohesionOfMethodsVisitor struct {
+	// Language is the programming language of the file being visited. It uses the
+	// same values as pb.File.ProgrammingLanguage ("PHP", "Java", ...) and drives the
+	// detection of lifecycle methods, which are excluded from the LCOM4 graph.
+	// When left empty, a generic policy is applied (see genericLifecycleMethods).
+	Language string
+}
+
+// lifecycleMethodsByLanguage lists, per language, the methods excluded from the LCOM4
+// graph. A constructor or a destructor usually touches every attribute of the class:
+// keeping it in the graph connects all the other methods together and hides the real
+// lack of cohesion. See https://www.aivosto.com/project/help/pm-oo-cohesion.html
+var lifecycleMethodsByLanguage = map[string][]string{
+	"PHP":        {"__construct", "__destruct"},
+	"Python":     {"__init__", "__new__", "__del__"},
+	"TypeScript": {"constructor"},
+	"Java":       {"finalize"},
+	"C#":         {"Finalize"},
+	"Rust":       {"new", "drop"},
+	"Golang":     {},
+}
+
+// genericLifecycleMethods is used when the language is unknown. It only contains the
+// names that cannot be mistaken for a regular method in any supported language.
+var genericLifecycleMethods = []string{
+	"__construct", "__destruct",
+	"__init__", "__new__", "__del__",
+	"constructor",
+	"finalize", "Finalize",
+}
+
+// languagesWithConstructorNamedAfterClass lists the languages where the constructor
+// bears the name of the class. It also covers destructors in these languages, since
+// parsers expose "~Foo" as "Foo".
+var languagesWithConstructorNamedAfterClass = map[string]bool{
+	"Java": true,
+	"C#":   true,
+	"PHP":  true, // PHP 4 style constructors
+}
+
+// qualifiedNameSeparators lists the separators used by the parsers to build a
+// qualified name, from the outermost to the innermost scope.
+var qualifiedNameSeparators = []string{"\\", "::", "."}
+
+// receiverKeywords lists the identifiers designating the current instance. Some
+// parsers report them as plain operands ("self" in Python and Rust): they are not
+// attributes, and keeping them would connect every method of the class together.
+var receiverKeywords = map[string]bool{
+	"this":  true,
+	"self":  true,
+	"Self":  true,
+	"cls":   true,
+	"super": true,
 }
 
 func (v *LackOfCohesionOfMethodsVisitor) Visit(stmts *pb.Stmts, parents *pb.Stmts) {
@@ -41,11 +93,31 @@ func (v *LackOfCohesionOfMethodsVisitor) Calculate(stmts *pb.Stmts) {
 
 	classes = append(classes, stmts.StmtClass...)
 	for _, namespace := range stmts.StmtNamespace {
+		if namespace == nil || namespace.Stmts == nil {
+			continue
+		}
 		classes = append(classes, namespace.Stmts.StmtClass...)
 	}
 
 	for _, class := range classes {
-		if class == nil || class.Stmts.StmtFunction == nil || len(class.Stmts.StmtFunction) == 0 {
+		if class == nil || class.Stmts == nil {
+			continue
+		}
+		if class.Stmts.Analyze == nil {
+			class.Stmts.Analyze = &pb.Analyze{}
+		}
+		if class.Stmts.Analyze.ClassCohesion == nil {
+			class.Stmts.Analyze.ClassCohesion = &pb.ClassCohesion{}
+		}
+
+		// Only the methods carrying a responsibility take part in the graph
+		methods := v.methodsInGraph(class)
+
+		// A class without any of them (no method at all, or only constructors,
+		// destructors and empty stubs) has no cohesion to measure: LCOM4 = 0
+		if len(methods) == 0 {
+			none := int32(0)
+			class.Stmts.Analyze.ClassCohesion.Lcom4 = &none
 			continue
 		}
 
@@ -55,7 +127,7 @@ func (v *LackOfCohesionOfMethodsVisitor) Calculate(stmts *pb.Stmts) {
 		// initialize matrix
 		matrix := map[string]map[string]bool{}
 
-		for _, method := range class.Stmts.StmtFunction {
+		for _, method := range methods {
 
 			operandsInMethods := []string{}
 			for _, operand := range method.Operands {
@@ -64,6 +136,9 @@ func (v *LackOfCohesionOfMethodsVisitor) Calculate(stmts *pb.Stmts) {
 				// if name contains more than one dot => skip it. It's probably a dynamic attribute ($this->$foo->$bar item)
 				name := strings.TrimPrefix(operand.Name, "this.")
 				if strings.Count(name, ".") != 0 {
+					continue
+				}
+				if receiverKeywords[name] {
 					continue
 				}
 
@@ -98,12 +173,86 @@ func (v *LackOfCohesionOfMethodsVisitor) Calculate(stmts *pb.Stmts) {
 			}
 		}
 
-		l4 := int32(v.lcom4(matrix, class))
-		if class.Stmts.Analyze.ClassCohesion == nil {
-			class.Stmts.Analyze.ClassCohesion = &pb.ClassCohesion{}
-		}
+		l4 := int32(v.lcom4(matrix, methods))
 		class.Stmts.Analyze.ClassCohesion.Lcom4 = &l4
 	}
+}
+
+// methodsInGraph returns the methods of the class that are relevant for LCOM4.
+//
+// Two families of methods are left out:
+//   - lifecycle methods (constructors, destructors), which access most of the
+//     attributes and would therefore connect unrelated responsibilities;
+//   - empty methods (stubs, unimplemented interface methods), which have no edge
+//     at all and would each be counted as an extra component.
+func (v *LackOfCohesionOfMethodsVisitor) methodsInGraph(class *pb.StmtClass) []*pb.StmtFunction {
+	methods := make([]*pb.StmtFunction, 0, len(class.Stmts.StmtFunction))
+	for _, method := range class.Stmts.StmtFunction {
+		if method == nil || method.Name == nil {
+			continue
+		}
+		if v.isLifecycleMethod(class, method) {
+			continue
+		}
+		if isEmptyMethod(method) {
+			continue
+		}
+		methods = append(methods, method)
+	}
+	return methods
+}
+
+// isLifecycleMethod tells whether the method is a constructor or a destructor of the class.
+func (v *LackOfCohesionOfMethodsVisitor) isLifecycleMethod(class *pb.StmtClass, method *pb.StmtFunction) bool {
+	name := shortName(method.Name)
+	if name == "" {
+		return false
+	}
+
+	lifecycleMethods, isKnownLanguage := lifecycleMethodsByLanguage[v.Language]
+	if !isKnownLanguage {
+		lifecycleMethods = genericLifecycleMethods
+	}
+	for _, lifecycleMethod := range lifecycleMethods {
+		if name == lifecycleMethod {
+			return true
+		}
+	}
+
+	// A method named after its class is a constructor (or a destructor, parsers
+	// dropping the leading "~") in Java, C# and legacy PHP.
+	if isKnownLanguage && !languagesWithConstructorNamedAfterClass[v.Language] {
+		return false
+	}
+	if class.Name == nil {
+		return false
+	}
+	className := shortName(class.Name)
+
+	return className != "" && name == className
+}
+
+// isEmptyMethod tells whether the method body holds no statement.
+func isEmptyMethod(method *pb.StmtFunction) bool {
+	return method.LinesOfCode != nil && method.LinesOfCode.LogicalLinesOfCode == 0
+}
+
+// shortName returns the name of a symbol, without the scope it belongs to.
+func shortName(name *pb.Name) string {
+	if name == nil {
+		return ""
+	}
+	if name.Short != "" {
+		return name.Short
+	}
+
+	short := name.Qualified
+	for _, separator := range qualifiedNameSeparators {
+		if index := strings.LastIndex(short, separator); index != -1 {
+			short = short[index+len(separator):]
+		}
+	}
+	return short
 }
 
 // LCOM_HS (Henderson-Sellers) algorithm
@@ -174,16 +323,13 @@ func (v *LackOfCohesionOfMethodsVisitor) lcom1(matrix map[string]map[string]bool
 }
 
 // LCOM4 (Hitz & Montazeri) : nb de composantes connexes
-func (v *LackOfCohesionOfMethodsVisitor) lcom4(matrix map[string]map[string]bool, class *pb.StmtClass) int {
+func (v *LackOfCohesionOfMethodsVisitor) lcom4(matrix map[string]map[string]bool, methodsInGraph []*pb.StmtFunction) int {
 	// 1) Index simple -> qualifié pour résoudre "foo()" -> "Class::foo"
+	//    Seules les méthodes du graphe y figurent: un appel vers un constructeur
+	//    ou vers un stub vide ne doit pas créer d'arête.
 	nameIndex := map[string]string{}
-	for _, m := range class.Stmts.StmtFunction {
-		if m == nil || m.Name == nil {
-			continue
-		}
-		q := m.Name.Qualified
-		simple := m.Name.Short
-		nameIndex[simple] = q
+	for _, m := range methodsInGraph {
+		nameIndex[shortName(m.Name)] = m.Name.Qualified
 	}
 
 	// 2) Liste des méthodes (nœuds du graphe)
@@ -294,6 +440,6 @@ func (v *LackOfCohesionOfMethodsVisitor) lcom4(matrix map[string]map[string]bool
 		}
 	}
 
-	// fmt.Printf("%s LCOM4=%d\n", class.Name.Qualified, components)
+	// fmt.Printf("LCOM4=%d\n", components)
 	return components
 }

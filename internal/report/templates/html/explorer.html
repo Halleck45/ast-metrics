@@ -692,7 +692,8 @@ AST Metrics - Explorer
           .map(m => m?.stmts?.analyze?.complexity?.cyclomatic)
           .filter(x => typeof x === 'number');
         this.avgMethodCyclomatic = methodCyclo.length ? (methodCyclo.reduce((a, b) => a + b, 0) / methodCyclo.length) : 0;
-        const lcom = classes.map(c => c?.stmts?.analyze?.classCohesion?.lcom4).filter(x => typeof x === 'number');
+        // lcom4 = 0 means the class has no method to measure cohesion on: it is not averaged
+        const lcom = classes.map(c => c?.stmts?.analyze?.classCohesion?.lcom4).filter(x => typeof x === 'number' && x > 0);
         this.avgLCOM4Display = lcom.length ? (lcom.reduce((a, b) => a + b, 0) / lcom.length).toFixed(2) : '-';
         const vol = f?.stmts?.analyze?.volume;
         const fileLLOC = (vol && typeof vol.lloc === 'number') ? vol.lloc : null;
