@@ -37,6 +37,7 @@ func (r *maxResponsibilitiesRule) CheckFile(file *pb.File, addError func(issue.R
 				Severity: issue.SeverityMedium,
 				Message:  fmt.Sprintf("Class has LCOM4 of %d, maximum allowed is %d", int(*class.Stmts.Analyze.ClassCohesion.Lcom4), r.threshold),
 				Code:     r.Name(),
+				Line:     lineOf(class.GetLocation()),
 			})
 			return
 		}

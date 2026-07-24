@@ -19,4 +19,7 @@ type RequirementError struct {
 	Message  string
 	Code     string
 	Severity Severity
+	// Line is the 1-based line in the concerned file where the violation
+	// occurs. Zero means the rule is file-level (no specific line).
+	Line int
 }

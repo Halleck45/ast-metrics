@@ -37,6 +37,13 @@ func (c *couplingRule) CheckFile(file *pb.File, addError func(issue.RequirementE
 		return
 	}
 
+	// External dependencies carry no line of their own; anchor the violation
+	// to the offending class when the file exposes one.
+	line := 0
+	if classes := engine.GetClassesInFile(file); len(classes) > 0 {
+		line = lineOf(classes[0].GetLocation())
+	}
+
 	hasError := false
 	for _, forbidden := range c.cfg.Forbidden {
 		fromRegex := regexp.MustCompile("(?i)" + forbidden.From)
@@ -50,6 +57,7 @@ func (c *couplingRule) CheckFile(file *pb.File, addError func(issue.RequirementE
 					Severity: issue.SeverityUnknown,
 					Code:     c.Name(),
 					Message:  fmt.Sprintf("Forbidden coupling between %s and %s", file.Path, dependency.ClassName),
+					Line:     line,
 				})
 				hasError = true
 				break

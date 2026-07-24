@@ -37,6 +37,7 @@ func (r *locByMethodRule) CheckFile(file *pb.File, addError func(issue.Requireme
 				Severity: issue.SeverityMedium,
 				Message:  fmt.Sprintf("LOC too high in method %s(): got %d (max: %d)", f.Name.Short, value, *r.max),
 				Code:     r.Name(),
+				Line:     lineOf(f.GetLocation()),
 			})
 			ok = false
 			continue

@@ -1,9 +1,12 @@
 package report
 
 import (
+	"crypto/sha256"
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"os"
+	"strconv"
 
 	"github.com/halleck45/ast-metrics/internal/analyzer"
 	requirement "github.com/halleck45/ast-metrics/internal/analyzer/requirement"
@@ -29,17 +32,26 @@ type sarifTool struct {
 }
 
 type sarifDriver struct {
-	Name           string `json:"name"`
-	InformationURI string `json:"informationUri,omitempty"`
-	Version        string `json:"version,omitempty"`
+	Name           string          `json:"name"`
+	InformationURI string          `json:"informationUri,omitempty"`
+	Version        string          `json:"version,omitempty"`
+	Rules          []sarifRuleMeta `json:"rules,omitempty"`
+}
+
+type sarifRuleMeta struct {
+	ID               string        `json:"id"`
+	Name             string        `json:"name,omitempty"`
+	ShortDescription *sarifMessage `json:"shortDescription,omitempty"`
 }
 
 type sarifResult struct {
-	RuleID    string              `json:"ruleId,omitempty"`
-	Level     string              `json:"level,omitempty"`
-	Message   sarifMessage        `json:"message"`
-	Locations []sarifLocation     `json:"locations,omitempty"`
-	Properties map[string]string  `json:"properties,omitempty"`
+	RuleID              string            `json:"ruleId,omitempty"`
+	RuleIndex           *int              `json:"ruleIndex,omitempty"`
+	Level               string            `json:"level,omitempty"`
+	Message             sarifMessage      `json:"message"`
+	Locations           []sarifLocation   `json:"locations,omitempty"`
+	PartialFingerprints map[string]string `json:"partialFingerprints,omitempty"`
+	Properties          map[string]string `json:"properties,omitempty"`
 }
 
 type sarifMessage struct {
@@ -123,6 +135,26 @@ func writeSarifFile(reportPath string, outcomes []requirement.RuleOutcome) error
 		},
 	}
 
+	// Build the rule metadata catalog. Each distinct rule id is declared once
+	// in tool.driver.rules and referenced from results via ruleIndex, as
+	// recommended by the SARIF spec and expected by GitHub code scanning.
+	ruleIndexByID := make(map[string]int)
+	for _, out := range outcomes {
+		if out.Rule == "" {
+			continue
+		}
+		if _, ok := ruleIndexByID[out.Rule]; ok {
+			continue
+		}
+		idx := len(log.Runs[0].Tool.Driver.Rules)
+		ruleIndexByID[out.Rule] = idx
+		log.Runs[0].Tool.Driver.Rules = append(log.Runs[0].Tool.Driver.Rules, sarifRuleMeta{
+			ID:               out.Rule,
+			Name:             out.Rule,
+			ShortDescription: &sarifMessage{Text: out.Rule},
+		})
+	}
+
 	for _, out := range outcomes {
 		level := mapSeverity(out.Severity)
 		res := sarifResult{
@@ -133,14 +165,31 @@ func writeSarifFile(reportPath string, outcomes []requirement.RuleOutcome) error
 				"rule": out.Rule,
 			},
 		}
+		if idx, ok := ruleIndexByID[out.Rule]; ok {
+			i := idx
+			res.RuleIndex = &i
+		}
 		if out.File != "" {
+			// GitHub places annotations using a physical region; startLine must
+			// be >= 1. File-level findings (no specific line) anchor to line 1.
+			startLine := out.Line
+			if startLine < 1 {
+				startLine = 1
+			}
 			res.Locations = []sarifLocation{
 				{
 					PhysicalLocation: sarifPhysicalLocation{
 						ArtifactLocation: sarifArtifactLocation{URI: out.File},
+						Region:           &sarifRegion{StartLine: startLine},
 					},
 				},
 			}
+		}
+		// Stable fingerprint so GitHub can track an alert across commits and
+		// avoid duplicates. Built from rule + file + line only (not the volatile
+		// metric values in the message), so the alert persists as code evolves.
+		res.PartialFingerprints = map[string]string{
+			"astMetrics/v1": fingerprint(out.Rule, out.File, out.Line),
 		}
 		log.Runs[0].Results = append(log.Runs[0].Results, res)
 	}
@@ -156,6 +205,13 @@ func writeSarifFile(reportPath string, outcomes []requirement.RuleOutcome) error
 		return fmt.Errorf("cannot write SARIF report: %w", err)
 	}
 	return nil
+}
+
+// fingerprint returns a stable hex digest identifying a finding by rule,
+// file and line, independent of the run.
+func fingerprint(rule, file string, line int) string {
+	h := sha256.Sum256([]byte(rule + "\x00" + file + "\x00" + strconv.Itoa(line)))
+	return hex.EncodeToString(h[:])
 }
 
 func mapSeverity(sev requirement.Severity) string {

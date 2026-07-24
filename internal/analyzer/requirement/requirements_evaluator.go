@@ -28,6 +28,9 @@ type RuleOutcome struct {
 	Rule     string
 	Message  string
 	File     string
+	// Line is the 1-based line in File where the violation occurs.
+	// Zero means the violation is file-level (no specific line).
+	Line int
 }
 
 type RequirementsEvaluator struct {
@@ -145,7 +148,7 @@ func (r *RequirementsEvaluator) Evaluate(files []*pb.File, projectAggregated Pro
 					file,
 					func(err RequirementError) {
 						// Severity provided by rule; message should be clean already
-						evaluation.Errors = append(evaluation.Errors, RuleOutcome{Severity: err.Severity, Rule: rule.Name(), Message: err.Message, File: file.Path})
+						evaluation.Errors = append(evaluation.Errors, RuleOutcome{Severity: err.Severity, Rule: rule.Name(), Message: err.Message, File: file.Path, Line: err.Line})
 					},
 					func(ok string) {
 						sev, msg := parseSeverityFromMessage(ok)

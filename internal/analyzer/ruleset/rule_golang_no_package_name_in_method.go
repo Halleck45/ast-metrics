@@ -56,6 +56,7 @@ func (r *ruleNoPkgInMethod) CheckFile(file *pb.File, addError func(issue.Require
 				Severity: issue.SeverityMedium,
 				Message:  fmt.Sprintf("Function/method name '%s()' contains package name '%s'", name, pkg),
 				Code:     r.Name(),
+				Line:     lineOf(fn.GetLocation()),
 			})
 		}
 	}

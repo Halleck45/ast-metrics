@@ -36,6 +36,7 @@ func (r *maxParametersPerMethodRule) CheckFile(file *pb.File, addError func(issu
 				Severity: issue.SeverityMedium,
 				Message:  fmt.Sprintf("Method has %d parameters, maximum allowed is %d", len(function.Parameters), r.threshold),
 				Code:     r.Name(),
+				Line:     lineOf(function.GetLocation()),
 			})
 			return
 		}
@@ -51,6 +52,7 @@ func (r *maxParametersPerMethodRule) CheckFile(file *pb.File, addError func(issu
 							Severity: issue.SeverityMedium,
 							Message:  fmt.Sprintf("Method has %d parameters, maximum allowed is %d", len(method.Parameters), r.threshold),
 							Code:     r.Name(),
+							Line:     lineOf(method.GetLocation()),
 						})
 						return
 					}
