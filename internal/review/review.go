@@ -336,14 +336,60 @@ func findingsForModifiedFile(head *pb.File, base *pb.File, path string, opts Opt
 }
 
 // collectFunctions returns every function and method of a file, indexed by a
-// stable key (Class::method or function name).
+// stable key (Class::method or function name). Some engines expose class
+// methods both inside the class and at file or namespace level; methods are
+// therefore collected first, and top-level duplicates are skipped by identity
+// (name and start line).
 func collectFunctions(file *pb.File) map[string]*pb.StmtFunction {
 	functions := map[string]*pb.StmtFunction{}
 	if file == nil || file.Stmts == nil {
 		return functions
 	}
-	var walk func(stmts *pb.Stmts, prefix string)
-	walk = func(stmts *pb.Stmts, prefix string) {
+	seen := map[string]bool{}
+
+	identity := func(fn *pb.StmtFunction) string {
+		return fmt.Sprintf("%s@%d", nameOf(fn.Name), lineOf(fn))
+	}
+	add := func(fn *pb.StmtFunction, key string) {
+		if fn == nil || fn.Name == nil || key == "" {
+			return
+		}
+		id := identity(fn)
+		if seen[id] {
+			return
+		}
+		seen[id] = true
+		functions[key] = fn
+	}
+
+	var walkClasses func(stmts *pb.Stmts)
+	walkClasses = func(stmts *pb.Stmts) {
+		if stmts == nil {
+			return
+		}
+		for _, class := range stmts.StmtClass {
+			if class == nil || class.Stmts == nil {
+				continue
+			}
+			className := nameOf(class.Name)
+			for _, fn := range class.Stmts.StmtFunction {
+				if fn == nil || fn.Name == nil {
+					continue
+				}
+				key := nameOf(fn.Name)
+				if className != "" {
+					key = className + "::" + key
+				}
+				add(fn, key)
+			}
+		}
+		for _, ns := range stmts.StmtNamespace {
+			if ns != nil {
+				walkClasses(ns.Stmts)
+			}
+		}
+	}
+	walkTopLevel := func(stmts *pb.Stmts) {
 		if stmts == nil {
 			return
 		}
@@ -351,38 +397,29 @@ func collectFunctions(file *pb.File) map[string]*pb.StmtFunction {
 			if fn == nil || fn.Name == nil {
 				continue
 			}
-			name := fn.Name.Short
-			if name == "" {
-				name = fn.Name.Qualified
-			}
-			key := name
-			if prefix != "" {
-				key = prefix + "::" + name
-			}
-			functions[key] = fn
-		}
-		for _, class := range stmts.StmtClass {
-			if class == nil {
-				continue
-			}
-			className := ""
-			if class.Name != nil {
-				className = class.Name.Short
-				if className == "" {
-					className = class.Name.Qualified
-				}
-			}
-			walk(class.Stmts, className)
-		}
-		for _, ns := range stmts.StmtNamespace {
-			if ns == nil {
-				continue
-			}
-			walk(ns.Stmts, prefix)
+			add(fn, nameOf(fn.Name))
 		}
 	}
-	walk(file.Stmts, "")
+
+	// Class methods first, so they win with their qualified key
+	walkClasses(file.Stmts)
+	walkTopLevel(file.Stmts)
+	for _, ns := range file.Stmts.StmtNamespace {
+		if ns != nil {
+			walkTopLevel(ns.Stmts)
+		}
+	}
 	return functions
+}
+
+func nameOf(name *pb.Name) string {
+	if name == nil {
+		return ""
+	}
+	if name.Short != "" {
+		return name.Short
+	}
+	return name.Qualified
 }
 
 func cyclomaticOf(fn *pb.StmtFunction) int32 {
