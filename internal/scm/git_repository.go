@@ -174,6 +174,64 @@ func (git *GitRepository) Checkout(commit string) error {
 	return nil
 }
 
+// ResolveRef resolves a branch, tag or commit expression to a full SHA.
+func (git *GitRepository) ResolveRef(ref string) (string, error) {
+	if ref == "" {
+		return "", fmt.Errorf("ref is empty")
+	}
+	cmd := exec.Command("git", "rev-parse", "--verify", "--quiet", ref+"^{commit}")
+	cmd.Dir = git.Path
+	out, err := cmd.Output()
+	if err != nil {
+		return "", fmt.Errorf("cannot resolve ref %q", ref)
+	}
+	return strings.TrimSpace(string(out)), nil
+}
+
+// MergeBase returns the best common ancestor between two commits.
+func (git *GitRepository) MergeBase(a string, b string) (string, error) {
+	cmd := exec.Command("git", "merge-base", a, b)
+	cmd.Dir = git.Path
+	out, err := cmd.Output()
+	if err != nil {
+		return "", fmt.Errorf("cannot compute merge-base between %q and %q", a, b)
+	}
+	return strings.TrimSpace(string(out)), nil
+}
+
+// AddWorktree checks out the given commit in a detached temporary worktree
+// and returns its path. The caller is responsible for calling RemoveWorktree.
+func (git *GitRepository) AddWorktree(commit string) (string, error) {
+	dir, err := os.MkdirTemp("", "ast-metrics-worktree")
+	if err != nil {
+		return "", err
+	}
+	cmd := exec.Command("git", "worktree", "add", "--detach", "--force", dir, commit)
+	cmd.Dir = git.Path
+	if out, err := cmd.CombinedOutput(); err != nil {
+		os.RemoveAll(dir)
+		return "", fmt.Errorf("cannot create git worktree for %q: %s", commit, strings.TrimSpace(string(out)))
+	}
+	return dir, nil
+}
+
+// RemoveWorktree removes a worktree previously created with AddWorktree.
+func (git *GitRepository) RemoveWorktree(dir string) error {
+	if dir == "" {
+		return nil
+	}
+	cmd := exec.Command("git", "worktree", "remove", "--force", dir)
+	cmd.Dir = git.Path
+	if err := cmd.Run(); err != nil {
+		// best effort: prune metadata and remove the directory manually
+		os.RemoveAll(dir)
+		prune := exec.Command("git", "worktree", "prune")
+		prune.Dir = git.Path
+		prune.Run()
+	}
+	return nil
+}
+
 func (git *GitRepository) GetCurrentBranch() (string, error) {
 	cmd := exec.Command("git", "rev-parse", "--abbrev-ref", "HEAD")
 	cmd.Dir = git.Path
