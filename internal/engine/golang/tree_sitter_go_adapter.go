@@ -389,9 +389,16 @@ func (a *TreeSitterAdapter) CountElseIfAsIf() bool {
 	return true
 }
 
-// FileLlocOffset returns the offset to subtract when computing file-level LLOC.
-// Go tests expect not subtracting the historical constant 2 used elsewhere.
-func (a *TreeSitterAdapter) FileLlocOffset() int { return 0 }
+// IsLogicalNode reports whether a node begins a logical line. On top of the
+// default statement types, Go declares local variables with dedicated node
+// types that do not carry the "_statement" suffix.
+func (a *TreeSitterAdapter) IsLogicalNode(n *sitter.Node) bool {
+	switch n.Type() {
+	case "short_var_declaration", "var_declaration", "const_declaration":
+		return true
+	}
+	return Treesitter.IsDefaultLogicalNode(n.Type())
+}
 
 // CountComments counts Go comment lines (// and /* */) in the given range, ignoring markers inside strings
 func (a *TreeSitterAdapter) CountComments(lines []string, start, end int) int {

@@ -256,3 +256,38 @@ func TestPythonRunner_IsTest_NormalFile(t *testing.T) {
 		t.Fatalf("expected file NOT to be detected as test")
 	}
 }
+
+// "//" is the floor division operator in Python, not a comment: lines using
+// it count as logical lines of code.
+func TestPythonFloorDivisionIsNotAComment(t *testing.T) {
+	src := `def divide(a, b):
+    q = a // b
+    r = a - q * b
+    s = (a + b) // 2
+    t = q // 2 + s // 3
+    return q + r + s + t
+`
+	r := &PythonRunner{}
+	file, err := enginePkg.CreateTestFileWithCode(r, src)
+	if err != nil {
+		t.Fatalf("parse error: %v", err)
+	}
+	if len(file.Stmts.StmtNamespace) != 1 {
+		t.Fatalf("expected 1 namespace, got %d", len(file.Stmts.StmtNamespace))
+	}
+	ns := file.Stmts.StmtNamespace[0]
+	if len(ns.Stmts.StmtFunction) != 1 {
+		t.Fatalf("expected 1 function, got %d", len(ns.Stmts.StmtFunction))
+	}
+	fn := ns.Stmts.StmtFunction[0]
+	if fn.LinesOfCode == nil {
+		t.Fatalf("expected LinesOfCode on divide")
+	}
+	if fn.LinesOfCode.CommentLinesOfCode != 0 {
+		t.Errorf("expected 0 comment lines, got %d (floor division counted as comment)", fn.LinesOfCode.CommentLinesOfCode)
+	}
+	// 5 statement lines: the 4 assignments and the return
+	if fn.LinesOfCode.LogicalLinesOfCode != 5 {
+		t.Errorf("expected 5 logical lines, got %d", fn.LinesOfCode.LogicalLinesOfCode)
+	}
+}

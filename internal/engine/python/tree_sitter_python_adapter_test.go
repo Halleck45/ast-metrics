@@ -62,3 +62,27 @@ func TestTreeSitterAdapter_NodeBody_NilNode(t *testing.T) {
 		t.Error("expected nil body for nil node")
 	}
 }
+
+func TestTreeSitterAdapter_CountComments(t *testing.T) {
+	adapter := NewTreeSitterAdapter(nil)
+
+	lines := []string{
+		"# module comment",
+		"#!shebang-like comment",
+		"def divide(a, b):",
+		"    # inner comment",
+		"    return a // b  # floor division, line has code: not counted",
+		"",
+	}
+
+	cnt := adapter.CountComments(lines, 1, len(lines))
+	if cnt != 3 {
+		t.Errorf("expected 3 comment lines, got %d", cnt)
+	}
+
+	// "//" is floor division in Python, never a comment
+	floorDiv := []string{"x = a // b"}
+	if got := adapter.CountComments(floorDiv, 1, 1); got != 0 {
+		t.Errorf("expected 0 comment lines for floor division, got %d", got)
+	}
+}

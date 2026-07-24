@@ -4,6 +4,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/halleck45/ast-metrics/internal/engine"
 	Treesitter "github.com/halleck45/ast-metrics/internal/engine/treesitter"
 	sitter "github.com/smacker/go-tree-sitter"
 	tsPython "github.com/smacker/go-tree-sitter/python"
@@ -372,4 +373,26 @@ func dedup(in []Treesitter.ImportItem) []Treesitter.ImportItem {
 		out = append(out, it)
 	}
 	return out
+}
+
+// CountComments counts full-line "#" comments in the given 1-based inclusive
+// line range.
+func (a *TreeSitterAdapter) CountComments(lines []string, start, end int) int {
+	cnt := 0
+	for i := start - 1; i < end && i < len(lines); i++ {
+		ln := strings.TrimSpace(lines[i])
+		if ln == "" {
+			continue
+		}
+		if strings.HasPrefix(ln, "#") {
+			cnt++
+		}
+	}
+	return cnt
+}
+
+// CommentMarkers declares Python comment tokens: only "#" starts a comment.
+// "//" is the floor division operator and "/* */" does not exist.
+func (a *TreeSitterAdapter) CommentMarkers() engine.CommentMarkers {
+	return engine.CommentMarkers{Hash: true}
 }

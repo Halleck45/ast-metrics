@@ -247,8 +247,15 @@ func (a *TreeSitterAdapter) Imports(n *sitter.Node) []Treesitter.ImportItem {
 // CountElseIfAsIf: treat else-if as if for complexity aggregation (consistent with Go/PHP/TS)
 func (a *TreeSitterAdapter) CountElseIfAsIf() bool { return true }
 
-// FileLlocOffset returns the offset to subtract when computing file-level LLOC.
-func (a *TreeSitterAdapter) FileLlocOffset() int { return 2 }
+// IsLogicalNode reports whether a node begins a logical line. In Java, local
+// variable declarations are statements but their node type does not carry the
+// "_statement" suffix.
+func (a *TreeSitterAdapter) IsLogicalNode(n *sitter.Node) bool {
+	if n.Type() == "local_variable_declaration" {
+		return true
+	}
+	return Treesitter.IsDefaultLogicalNode(n.Type())
+}
 
 // CountComments counts Java comment lines (//, /* */ and /** */) in the given range.
 func (a *TreeSitterAdapter) CountComments(lines []string, start, end int) int {

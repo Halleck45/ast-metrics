@@ -268,9 +268,6 @@ func (a *TreeSitterAdapter) Imports(n *sitter.Node) []Treesitter.ImportItem {
 // CountElseIfAsIf: treat else-if as if for complexity aggregation (consistent with Go/PHP/TS)
 func (a *TreeSitterAdapter) CountElseIfAsIf() bool { return true }
 
-// FileLlocOffset returns the offset to subtract when computing file-level LLOC.
-func (a *TreeSitterAdapter) FileLlocOffset() int { return 2 }
-
 // CountComments counts C# comment lines (//, /// and /* */) in the given range.
 func (a *TreeSitterAdapter) CountComments(lines []string, start, end int) int {
 	cnt := 0

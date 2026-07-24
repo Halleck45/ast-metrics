@@ -17,6 +17,57 @@ type Visitor struct {
 
 	classStk []*pb.StmtClass
 	funcStk  []*pb.StmtFunction
+
+	// logicalLines holds the 1-based line numbers on which a statement starts.
+	// LLOC at every level (file, class, function) is the number of such lines
+	// in the scope's range.
+	logicalLines map[int]bool
+}
+
+// IsDefaultLogicalNode reports whether a tree-sitter node type is a statement
+// for LLOC purposes. Statements and local declarations count; pure structure
+// (blocks), member declarations (classes, functions, fields) and imports do
+// not. Adapters can refine this per grammar by implementing
+// IsLogicalNode(*sitter.Node) bool.
+func IsDefaultLogicalNode(nodeType string) bool {
+	switch nodeType {
+	case "compound_statement", "statement_block", "empty_statement",
+		"import_statement", "import_from_statement", "future_import_statement",
+		"export_statement":
+		return false
+	}
+	return strings.HasSuffix(nodeType, "_statement")
+}
+
+// collectLogicalLines walks the whole tree once and records the lines on
+// which a statement starts.
+func (v *Visitor) collectLogicalLines(node *sitter.Node) {
+	isLogical := func(n *sitter.Node) bool { return IsDefaultLogicalNode(n.Type()) }
+	if la, ok := v.ad.(interface{ IsLogicalNode(*sitter.Node) bool }); ok {
+		isLogical = la.IsLogicalNode
+	}
+	var walk func(n *sitter.Node)
+	walk = func(n *sitter.Node) {
+		if isLogical(n) {
+			v.logicalLines[int(n.StartPoint().Row)+1] = true
+		}
+		for i := 0; i < int(n.ChildCount()); i++ {
+			walk(n.Child(i))
+		}
+	}
+	walk(node)
+}
+
+// countLogicalLines returns the number of logical lines within the 1-based
+// inclusive line range.
+func (v *Visitor) countLogicalLines(start, end int) int {
+	cnt := 0
+	for line := range v.logicalLines {
+		if line >= start && line <= end {
+			cnt++
+		}
+	}
+	return cnt
 }
 
 func (v *Visitor) curStmts() *pb.Stmts {
@@ -41,6 +92,15 @@ func NewVisitor(ad LangAdapter, path string, src []byte) *Visitor {
 	}
 }
 
+// commentMarkers returns the comment tokens declared by the adapter, or every
+// marker when the adapter does not declare any.
+func (v *Visitor) commentMarkers() engine.CommentMarkers {
+	if cm, ok := v.ad.(interface{ CommentMarkers() engine.CommentMarkers }); ok {
+		return cm.CommentMarkers()
+	}
+	return engine.AllCommentMarkers()
+}
+
 func (v *Visitor) Result() *pb.File {
 	if len(v.file.Stmts.StmtNamespace) == 0 {
 		v.file.Stmts.StmtNamespace = append(v.file.Stmts.StmtNamespace, v.ns)
@@ -50,27 +110,11 @@ func (v *Visitor) Result() *pb.File {
 	if cc, ok := v.ad.(interface{ CountComments([]string, int, int) int }); ok {
 		newC := int32(cc.CountComments(v.lines, 1, len(v.lines)))
 		v.file.LinesOfCode.CommentLinesOfCode = newC
-		// also recompute LLOC and NCLOC at file-level using blank lines and updated CLOC
-		blank := 0
-		for _, ln := range v.lines {
-			if strings.TrimSpace(ln) == "" {
-				blank++
-			}
-		}
-		loc := int(v.file.LinesOfCode.LinesOfCode)
-		cloc := int(v.file.LinesOfCode.CommentLinesOfCode)
-		offset := 2
-		if tun, ok := v.ad.(interface{ FileLlocOffset() int }); ok {
-			offset = tun.FileLlocOffset()
-		}
-		lloc := loc - (cloc + blank + offset)
-		if lloc < 0 {
-			lloc = 0
-		}
-		ncloc := loc - cloc
-		v.file.LinesOfCode.LogicalLinesOfCode = int32(lloc)
-		v.file.LinesOfCode.NonCommentLinesOfCode = int32(ncloc)
+		v.file.LinesOfCode.NonCommentLinesOfCode = v.file.LinesOfCode.LinesOfCode - newC
 	}
+
+	// LLOC counts the lines on which a statement starts
+	v.file.LinesOfCode.LogicalLinesOfCode = int32(len(v.logicalLines))
 
 	return v.file
 }
@@ -148,6 +192,13 @@ func (v *Visitor) namespaceSeparator() string {
 }
 
 func (v *Visitor) Visit(node *sitter.Node) {
+	// The first call receives the root node: collect logical lines for the
+	// whole file before descending.
+	if v.logicalLines == nil {
+		v.logicalLines = map[int]bool{}
+		v.collectLogicalLines(node)
+	}
+
 	switch {
 	case v.ad.IsModule(node):
 		for i := 0; i < int(node.ChildCount()); i++ {
@@ -203,12 +254,13 @@ func (v *Visitor) Visit(node *sitter.Node) {
 			// body.EndPoint().Row points at the '}' line; do not add +1 here to avoid counting the next line.
 			end = max(start, int(body.EndPoint().Row))
 		}
-		c.LinesOfCode = engine.GetLocPositionFromSource(v.lines, start, end)
+		c.LinesOfCode = engine.GetLocPositionFromSourceWithMarkers(v.lines, start, end, v.commentMarkers())
 		// If adapter can count comments precisely (e.g., PHP docblocks), override class CLOC using adapter for class span
 		if cc, ok := v.ad.(interface{ CountComments([]string, int, int) int }); ok {
 			newC := int32(cc.CountComments(v.lines, start, end))
 			c.LinesOfCode.CommentLinesOfCode = newC
 		}
+		c.LinesOfCode.LogicalLinesOfCode = int32(v.countLogicalLines(start, end))
 
 		// Pre-initialize class-level CLOC from class body to preserve expected semantics in tests
 		if c.Stmts == nil {
@@ -287,7 +339,7 @@ func (v *Visitor) Visit(node *sitter.Node) {
 			locStart = int(body.StartPoint().Row) + 1
 			locEnd = int(body.EndPoint().Row) + 1
 		}
-		fn.LinesOfCode = engine.GetLocPositionFromSource(v.lines, locStart, locEnd)
+		fn.LinesOfCode = engine.GetLocPositionFromSourceWithMarkers(v.lines, locStart, locEnd, v.commentMarkers())
 
 		// allow adapter to provide a better comment count
 		if cc, ok := v.ad.(interface{ CountComments([]string, int, int) int }); ok {
@@ -296,6 +348,7 @@ func (v *Visitor) Visit(node *sitter.Node) {
 			newC := int32(cc.CountComments(v.lines, cs, ce))
 			fn.LinesOfCode.CommentLinesOfCode = newC
 		}
+		fn.LinesOfCode.LogicalLinesOfCode = int32(v.countLogicalLines(nodeStart, nodeEnd))
 
 		v.attachFunction(fn)
 		v.pushFunc(fn)

@@ -746,41 +746,20 @@ func (a *TreeSitterAdapter) CountComments(lines []string, start, end int) int {
 		clean := stripStrings(line)
 
 		if inBlock {
+			// Every line of a block comment is a comment line, including the
+			// closing "*/" delimiter line.
+			cnt++
 			if strings.Contains(clean, "*/") {
-				// closing delimiter on this line; do not count the delimiter line itself
-				// but if there is an inline comment after it (e.g., // ...), count that as one
-				after := strings.TrimSpace(clean[strings.Index(clean, "*/")+2:])
-				if strings.Contains(after, "//") || strings.HasPrefix(after, "#") || strings.Contains(after, "# ") {
-					cnt++
-				}
 				inBlock = false
-				continue
-			}
-			// count only interior lines that begin with '*'
-			if strings.HasPrefix(strings.TrimSpace(line), "*") {
-				cnt++
 			}
 			continue
 		}
 
 		if strings.HasPrefix(clean, "/*") {
-			// If it's a docblock opener "/**", count the opening line as a comment line
-			isDocblock := strings.HasPrefix(clean, "/**")
-			if strings.Contains(clean, "*/") {
-				// block opens and closes on the same line
-				if isDocblock {
-					cnt++ // count the opener line for docblock
-				}
-				// also count inline // or # after the closing delimiter
-				after := strings.TrimSpace(clean[strings.Index(clean, "*/")+2:])
-				if strings.Contains(after, "//") || strings.HasPrefix(after, "#") || strings.Contains(after, "# ") {
-					cnt++
-				}
-				// do not enter block since it closes here
-			} else {
-				if isDocblock {
-					cnt++ // count the opener line for docblock
-				}
+			// Opening line of a "/*" or "/**" block; a block closing on the
+			// same line stays a single comment line.
+			cnt++
+			if !strings.Contains(clean, "*/") {
 				inBlock = true
 			}
 			continue

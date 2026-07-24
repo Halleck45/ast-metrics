@@ -14,7 +14,26 @@ import (
 	"google.golang.org/protobuf/proto"
 )
 
+// CommentMarkers describes which comment tokens exist in a language, so the
+// generic line scanner does not misclassify code as comments (e.g. "//" is
+// floor division in Python, "#[...]" is an attribute in Rust).
+type CommentMarkers struct {
+	SlashSlash bool // "//" line comments
+	Hash       bool // "#" line comments
+	SlashStar  bool // "/* ... */" block comments
+}
+
+// AllCommentMarkers is the default used when a language declares nothing:
+// every marker is honored.
+func AllCommentMarkers() CommentMarkers {
+	return CommentMarkers{SlashSlash: true, Hash: true, SlashStar: true}
+}
+
 func GetLocPositionFromSource(sourceCode []string, start int, end int) *pb.LinesOfCode {
+	return GetLocPositionFromSourceWithMarkers(sourceCode, start, end, AllCommentMarkers())
+}
+
+func GetLocPositionFromSourceWithMarkers(sourceCode []string, start int, end int, markers CommentMarkers) *pb.LinesOfCode {
 	// Normalize boundaries
 	if start < 1 {
 		start = 1
@@ -42,34 +61,29 @@ func GetLocPositionFromSource(sourceCode []string, start int, end int) *pb.Lines
 		clean := stripQuotes(line)
 
 		if inBlock {
-			// Inside a block comment: count only interior lines that begin with '*'
-			// Do not count the opening or closing delimiter lines.
+			// Every line of a block comment is a comment line, including the
+			// closing "*/" delimiter line.
+			cloc++
 			if strings.Contains(clean, "*/") {
 				inBlock = false
-				continue
-			}
-			if strings.HasPrefix(strings.TrimSpace(line), "*") {
-				cloc++
 			}
 			continue
 		}
 
 		// line comments: count if present anywhere on the line (after stripping strings)
-		if strings.Contains(clean, "//") || strings.HasPrefix(clean, "#") || strings.Contains(clean, "# ") {
+		if markers.SlashSlash && strings.Contains(clean, "//") {
 			cloc++
 			continue
 		}
-		if strings.HasPrefix(clean, "/*") {
-			// If block opens and closes on the same line, count it as one comment line if there is any comment content before */
-			if strings.Contains(clean, "*/") {
-				idx := strings.Index(clean, "*/")
-				commentContent := strings.TrimSpace(strings.TrimPrefix(clean[:idx], "/*"))
-				if commentContent != "" {
-					cloc++
-				}
-				// block closes on same line; do not enter inBlock
-			} else {
-				// Do not count the opening delimiter line; count only inner lines
+		if markers.Hash && (strings.HasPrefix(clean, "#") || strings.Contains(clean, "# ")) {
+			cloc++
+			continue
+		}
+		if markers.SlashStar && strings.HasPrefix(clean, "/*") {
+			// Opening line of a block comment; a block closing on the same
+			// line stays a single comment line.
+			cloc++
+			if !strings.Contains(clean, "*/") {
 				inBlock = true
 			}
 			continue
@@ -77,8 +91,9 @@ func GetLocPositionFromSource(sourceCode []string, start int, end int) *pb.Lines
 		// not a comment line here
 	}
 
-	// Keep historical behavior for logical lines to match existing tests:
-	// LLOC = LOC - (CLOC + BLANK + 2)
+	// Line-based LLOC approximation. Callers with an AST at hand (the
+	// tree-sitter visitor) override this value with the number of lines on
+	// which a statement starts.
 	ncloc := loc - cloc
 	lloc := loc - (cloc + blank + 2)
 	if lloc < 0 {

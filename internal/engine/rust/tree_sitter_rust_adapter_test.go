@@ -54,3 +54,39 @@ func TestTreeSitterAdapter_NodeName_NilSource(t *testing.T) {
 		t.Errorf("expected empty name for nil source, got %s", name)
 	}
 }
+
+func TestTreeSitterAdapter_CountComments(t *testing.T) {
+	adapter := NewTreeSitterAdapter(nil)
+
+	lines := []string{
+		"//! Module doc",
+		"/// Item doc",
+		"// plain comment",
+		"/*",
+		" block body",
+		"*/",
+		"fn add(a: i32, b: i32) -> i32 {",
+		"    let url = \"http://example.com\"; // not stripped away wrongly",
+		"    a + b",
+		"}",
+	}
+
+	cnt := adapter.CountComments(lines, 1, len(lines))
+	// 3 line comments + 3 block lines (opener, body, closer); the trailing
+	// "//" after code is not counted (full-line comments only)
+	if cnt != 6 {
+		t.Errorf("expected 6 comment lines, got %d", cnt)
+	}
+
+	// A "//" inside a string literal must not be counted
+	inString := []string{"let s = \"//not-a-comment\";"}
+	if got := adapter.CountComments(inString, 1, 1); got != 0 {
+		t.Errorf("expected 0 comment lines for string content, got %d", got)
+	}
+
+	// Lifetimes must not corrupt the scan
+	lifetime := []string{"fn f<'a>(x: &'a str) -> &'a str {", "// comment", "}"}
+	if got := adapter.CountComments(lifetime, 1, 3); got != 1 {
+		t.Errorf("expected 1 comment line with lifetimes present, got %d", got)
+	}
+}

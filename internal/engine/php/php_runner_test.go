@@ -123,7 +123,8 @@ class calculatrice {
 	assert.Equal(t, int32(4), func1.LinesOfCode.CommentLinesOfCode, "Expected CLOC")
 	// Ensure LOC
 	assert.Equal(t, int32(12), func2.LinesOfCode.LinesOfCode, "Expected LOC")
-	assert.Equal(t, int32(7), func2.LinesOfCode.LogicalLinesOfCode, "Expected LLOC")
+	// 6 statement lines: if, throw, $d = ..., $d += 1, $e = ..., return
+	assert.Equal(t, int32(6), func2.LinesOfCode.LogicalLinesOfCode, "Expected LLOC")
 	assert.Equal(t, int32(0), func2.LinesOfCode.CommentLinesOfCode, "Expected CLOC")
 }
 
@@ -714,7 +715,9 @@ class Registry
 	class1 := file.Stmts.StmtClass[0]
 	assert.Equal(t, int32(20), *class1.Stmts.Analyze.Volume.Loc, "Incorrect number of lines of code")
 	assert.Equal(t, int32(6), *class1.Stmts.Analyze.Volume.Cloc, "Incorrect number of comment lines of code")
-	assert.Equal(t, int32(3), *class1.Stmts.Analyze.Volume.Lloc, "Incorrect number of logical lines of code")
+	// 2 statement lines in the class: the return of method2 (even though its
+	// line also carries comments) and the return of method3
+	assert.Equal(t, int32(2), *class1.Stmts.Analyze.Volume.Lloc, "Incorrect number of logical lines of code")
 
 	// Ensure methods
 	assert.Equal(t, 3, len(class1.Stmts.StmtFunction), "Incorrect number of methods")
@@ -723,13 +726,54 @@ class Registry
 	assert.Equal(t, int32(0), *class1.Stmts.StmtFunction[0].Stmts.Analyze.Volume.Cloc, "Incorrect number of comment lines of code")
 
 	assert.Equal(t, int32(6), *class1.Stmts.StmtFunction[1].Stmts.Analyze.Volume.Loc, "Incorrect number of lines of code")
-	assert.Equal(t, int32(2), *class1.Stmts.StmtFunction[1].Stmts.Analyze.Volume.Lloc, "Incorrect number of logical lines of code")
+	// the return statement counts even though its line also carries comments
+	assert.Equal(t, int32(1), *class1.Stmts.StmtFunction[1].Stmts.Analyze.Volume.Lloc, "Incorrect number of logical lines of code")
 	assert.Equal(t, int32(4), *class1.Stmts.StmtFunction[1].Stmts.Analyze.Volume.Cloc, "Incorrect number of comment lines of code")
 
 	assert.Equal(t, int32(5), *class1.Stmts.StmtFunction[2].Stmts.Analyze.Volume.Loc, "Incorrect number of lines of code")
 	assert.Equal(t, int32(1), *class1.Stmts.StmtFunction[2].Stmts.Analyze.Volume.Lloc, "Incorrect number of logical lines of code")
 	assert.Equal(t, int32(2), *class1.Stmts.StmtFunction[2].Stmts.Analyze.Volume.Cloc, "Incorrect number of comment lines of code")
 
+}
+
+// A multi-line PHPDoc docblock is entirely made of comment lines: the opener
+// "/**", the "*" body lines and the closing "*/" all count as CLOC, and none
+// of them counts as a logical line of code.
+func Test_Docblock_Does_Not_Count_As_Lloc(t *testing.T) {
+	src := `<?php
+
+namespace Foo;
+
+class Registry
+{
+    /**
+     * A well-formed docblock.
+     *
+     * @param int $a
+     * @param int $b
+     * @return int
+     */
+    public function add($a, $b)
+    {
+        return $a + $b;
+    }
+}`
+
+	file, err := engine.CreateTestFileWithCode(&PhpRunner{}, src)
+	assert.Nil(t, err)
+	analyzer.AnalyzeFile(file)
+
+	// 7 comment lines: "/**", 5 "*" body lines, "*/"
+	assert.Equal(t, int32(7), *file.Stmts.Analyze.Volume.Cloc, "Incorrect number of comment lines of code")
+	// a single statement line in the whole file: the return
+	assert.Equal(t, int32(1), *file.Stmts.Analyze.Volume.Lloc, "Incorrect number of logical lines of code")
+
+	// The method itself: body spans 3 lines ("{", "return", "}"), no comment
+	class := file.Stmts.StmtClass[0]
+	method := class.Stmts.StmtFunction[0]
+	assert.Equal(t, int32(3), *method.Stmts.Analyze.Volume.Loc, "Incorrect number of lines of code")
+	assert.Equal(t, int32(1), *method.Stmts.Analyze.Volume.Lloc, "Incorrect number of logical lines of code")
+	assert.Equal(t, int32(0), *method.Stmts.Analyze.Volume.Cloc, "Incorrect number of comment lines of code")
 }
 
 func Test_Fix_Empty_Maintainability(t *testing.T) {

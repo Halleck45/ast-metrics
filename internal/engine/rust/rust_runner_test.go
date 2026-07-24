@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/halleck45/ast-metrics/internal/configuration"
+	pb "github.com/halleck45/ast-metrics/pb"
 )
 
 func TestRustRunner_Name(t *testing.T) {
@@ -164,5 +165,59 @@ func TestRustRunner_IsTest_NormalFile(t *testing.T) {
 	}
 	if file.IsTest {
 		t.Fatalf("expected file NOT to be detected as test")
+	}
+}
+
+// "#[...]" introduces an attribute in Rust, not a comment: attribute lines
+// are not counted as comment lines, and being metadata rather than
+// statements they are not logical lines either.
+func TestRustAttributesAreNotComments(t *testing.T) {
+	tmpDir := t.TempDir()
+	tmpFile := filepath.Join(tmpDir, "attrs.rs")
+
+	rustCode := `fn compute(a: i32) -> i32 {
+    #[cfg(debug_assertions)]
+    let _dbg = true;
+    #[allow(unused)]
+    let _unused = 0;
+    a + 1
+}`
+
+	if err := os.WriteFile(tmpFile, []byte(rustCode), 0644); err != nil {
+		t.Fatalf("failed to create test file: %v", err)
+	}
+
+	runner := RustRunner{}
+	file, err := runner.Parse(tmpFile)
+	if err != nil {
+		t.Fatalf("parse error: %v", err)
+	}
+
+	var fn *pb.StmtFunction
+	all := file.Stmts.StmtFunction
+	for _, ns := range file.Stmts.StmtNamespace {
+		if ns != nil && ns.Stmts != nil {
+			all = append(all, ns.Stmts.StmtFunction...)
+		}
+	}
+	for _, f := range all {
+		if f != nil && f.Name != nil && f.Name.Short == "compute" {
+			fn = f
+			break
+		}
+	}
+	if fn == nil {
+		t.Fatalf("function compute not found")
+	}
+	if fn.LinesOfCode == nil {
+		t.Fatalf("expected LinesOfCode on compute")
+	}
+	if fn.LinesOfCode.CommentLinesOfCode != 0 {
+		t.Errorf("expected 0 comment lines, got %d (attributes counted as comments)", fn.LinesOfCode.CommentLinesOfCode)
+	}
+	// 3 statement lines: the two "let" bindings and the "a + 1" tail
+	// expression; attribute lines are neither comments nor statements
+	if fn.LinesOfCode.LogicalLinesOfCode != 3 {
+		t.Errorf("expected 3 logical lines, got %d", fn.LinesOfCode.LogicalLinesOfCode)
 	}
 }
