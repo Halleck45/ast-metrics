@@ -1,0 +1,17 @@
+name: AST Metrics review
+on:
+  pull_request:
+
+permissions:
+  contents: read
+  pull-requests: write # allows the action to comment on the pull request
+  security-events: write # allows the SARIF upload to code scanning
+
+jobs:
+  ast-metrics:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: halleck45/action-ast-metrics@v2
+        with:
+          version: v0.38.2
+          sarif: true
