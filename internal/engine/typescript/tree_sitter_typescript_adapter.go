@@ -4,6 +4,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/halleck45/ast-metrics/internal/engine"
 	Treesitter "github.com/halleck45/ast-metrics/internal/engine/treesitter"
 	sitter "github.com/smacker/go-tree-sitter"
 	tsTsx "github.com/smacker/go-tree-sitter/typescript/tsx"
@@ -15,7 +16,7 @@ type TreeSitterAdapter struct {
 
 func NewTreeSitterAdapter(src []byte) *TreeSitterAdapter { return &TreeSitterAdapter{src: src} }
 func (a *TreeSitterAdapter) SetSource(src []byte)        { a.src = src }
-func (a *TreeSitterAdapter) Language() *sitter.Language   { return tsTsx.GetLanguage() }
+func (a *TreeSitterAdapter) Language() *sitter.Language  { return tsTsx.GetLanguage() }
 
 func (a *TreeSitterAdapter) IsModule(n *sitter.Node) bool { return n.Type() == "program" }
 
@@ -301,6 +302,12 @@ func (a *TreeSitterAdapter) IsLogicalNode(n *sitter.Node) bool {
 }
 
 // CountComments counts TypeScript comment lines (// and /* */ and /** */) in the given range.
+// CommentMarkers declares TypeScript comment tokens: "//" and "/* */" only.
+// "#" introduces private class fields, which are code, not comments.
+func (a *TreeSitterAdapter) CommentMarkers() engine.CommentMarkers {
+	return engine.CommentMarkers{SlashSlash: true, SlashStar: true}
+}
+
 func (a *TreeSitterAdapter) CountComments(lines []string, start, end int) int {
 	cnt := 0
 	inBlock := false

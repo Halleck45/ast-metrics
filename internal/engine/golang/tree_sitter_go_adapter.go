@@ -4,6 +4,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/halleck45/ast-metrics/internal/engine"
 	Treesitter "github.com/halleck45/ast-metrics/internal/engine/treesitter"
 	sitter "github.com/smacker/go-tree-sitter"
 	tsGo "github.com/smacker/go-tree-sitter/golang"
@@ -401,6 +402,12 @@ func (a *TreeSitterAdapter) IsLogicalNode(n *sitter.Node) bool {
 }
 
 // CountComments counts Go comment lines (// and /* */) in the given range, ignoring markers inside strings
+// CommentMarkers declares Go comment tokens: "//" and "/* */" only.
+// "#" has no meaning in Go source.
+func (a *TreeSitterAdapter) CommentMarkers() engine.CommentMarkers {
+	return engine.CommentMarkers{SlashSlash: true, SlashStar: true}
+}
+
 func (a *TreeSitterAdapter) CountComments(lines []string, start, end int) int {
 	cnt := 0
 	inBlock := false
