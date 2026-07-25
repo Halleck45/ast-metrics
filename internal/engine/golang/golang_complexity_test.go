@@ -31,14 +31,18 @@ func Test_Cyclomatic_Complexity_Is_Correct(t *testing.T) {
 		t.Fatalf("incorrect comment Loc on sampleGo file, got %d", *file.Stmts.Analyze.Volume.Cloc)
 	}
 
-	if len(file.Stmts.StmtFunction) != 2 {
-		t.Fatal("functions not found in gofile")
+	// M has a receiver: it is a method of the struct C, not a function of the file
+	if len(file.Stmts.StmtFunction) != 1 {
+		t.Fatal("expected the top-level function F in gofile")
 	}
-	function1 := file.Stmts.StmtFunction[0]
-	assert.Equal(t, "M", function1.Name.Short)
+	if len(file.Stmts.StmtClass) != 1 || len(file.Stmts.StmtClass[0].Stmts.StmtFunction) != 1 {
+		t.Fatal("method M not attached to the struct C")
+	}
+	method := file.Stmts.StmtClass[0].Stmts.StmtFunction[0]
+	assert.Equal(t, "M", method.Name.Short)
 	expected := int32(1)
-	if *function1.Stmts.Analyze.Volume.Cloc != expected {
-		t.Fatalf("incorrect comment lines of code for function, got %d", *function1.Stmts.Analyze.Volume.Cloc)
+	if *method.Stmts.Analyze.Volume.Cloc != expected {
+		t.Fatalf("incorrect comment lines of code for method, got %d", *method.Stmts.Analyze.Volume.Cloc)
 	}
 
 }

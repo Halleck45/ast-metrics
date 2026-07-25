@@ -18,10 +18,22 @@ type Visitor struct {
 	classStk []*pb.StmtClass
 	funcStk  []*pb.StmtFunction
 
+	// receiverMethods holds the methods declared outside of the class they
+	// belong to (Go receivers). They are attached to their class once the whole
+	// file has been visited, because a method may be declared before its type.
+	receiverMethods []receiverMethod
+
 	// logicalLines holds the 1-based line numbers on which a statement starts.
 	// LLOC at every level (file, class, function) is the number of such lines
 	// in the scope's range.
 	logicalLines map[int]bool
+}
+
+// receiverMethod is a method waiting to be attached to the class of its
+// receiver.
+type receiverMethod struct {
+	fn       *pb.StmtFunction
+	receiver string
 }
 
 // IsDefaultLogicalNode reports whether a tree-sitter node type is a statement
@@ -117,6 +129,10 @@ func (v *Visitor) commentMarkers() engine.CommentMarkers {
 }
 
 func (v *Visitor) Result() *pb.File {
+	// methods declared outside of their class (Go receivers) are attached now
+	// that every class of the file is known
+	v.bindReceiverMethods()
+
 	if len(v.file.Stmts.StmtNamespace) == 0 {
 		v.file.Stmts.StmtNamespace = append(v.file.Stmts.StmtNamespace, v.ns)
 	}
@@ -194,6 +210,62 @@ func (v *Visitor) attachFunction(fn *pb.StmtFunction) {
 // An adapter can implement this to let Visitor create StmtInterface nodes.
 type InterfaceAware interface {
 	IsInterface(*sitter.Node) bool
+}
+
+// ReceiverAware lets an adapter tell that a function node is a method bound to a
+// type declared elsewhere in the file. Go declares its methods at the top level,
+// outside of the struct they belong to: without this, a struct would hold no
+// method at all and every class-level metric (cohesion, number of methods)
+// would ignore them.
+type ReceiverAware interface {
+	// ReceiverTypeName returns the short name of the type the method is bound
+	// to, or an empty string when the node is a plain function.
+	ReceiverTypeName(*sitter.Node) string
+}
+
+// bindReceiverMethods moves the methods declared with a receiver into the class
+// of that receiver. The method is moved and not copied, so that it stays
+// reachable exactly once from the file.
+func (v *Visitor) bindReceiverMethods() {
+	if len(v.receiverMethods) == 0 {
+		return
+	}
+
+	classes := map[string]*pb.StmtClass{}
+	for _, c := range v.ns.Stmts.StmtClass {
+		if c != nil && c.Name != nil {
+			classes[c.Name.Short] = c
+		}
+	}
+
+	for _, rm := range v.receiverMethods {
+		class, ok := classes[rm.receiver]
+		if !ok {
+			// the receiver type is declared in another file of the package: the
+			// method stays where it is
+			continue
+		}
+		if class.Stmts == nil {
+			class.Stmts = engine.FactoryStmts()
+		}
+		class.Stmts.StmtFunction = append(class.Stmts.StmtFunction, rm.fn)
+		v.file.Stmts.StmtFunction = removeFunction(v.file.Stmts.StmtFunction, rm.fn)
+		if rm.fn.Name != nil {
+			// qualify with the receiver: two structs of the same file may
+			// declare a method with the same name
+			rm.fn.Name.Qualified = v.ad.AttachQualified(class.Name.Qualified, rm.fn.Name.Short)
+		}
+	}
+	v.receiverMethods = nil
+}
+
+func removeFunction(list []*pb.StmtFunction, fn *pb.StmtFunction) []*pb.StmtFunction {
+	for i, item := range list {
+		if item == fn {
+			return append(list[:i], list[i+1:]...)
+		}
+	}
+	return list
 }
 
 // namespaceSeparator returns the separator used between a namespace and a
@@ -369,6 +441,11 @@ func (v *Visitor) Visit(node *sitter.Node) {
 		fn.LinesOfCode.LogicalLinesOfCode = int32(v.countLogicalLines(nodeStart, nodeEnd))
 
 		v.attachFunction(fn)
+		if ra, ok := v.ad.(ReceiverAware); ok && v.curClass() == nil {
+			if receiver := ra.ReceiverTypeName(node); receiver != "" {
+				v.receiverMethods = append(v.receiverMethods, receiverMethod{fn: fn, receiver: receiver})
+			}
+		}
 		v.pushFunc(fn)
 		v.ad.EachChildBody(body, func(ch *sitter.Node) { v.Visit(ch) })
 		// optional: extract operators/operands from source per adapter
