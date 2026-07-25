@@ -11,12 +11,33 @@ import (
 )
 
 type TreeSitterAdapter struct {
-	src []byte
+	src  []byte
+	root *sitter.Node
 }
 
-func NewTreeSitterAdapter(src []byte) *TreeSitterAdapter { return &TreeSitterAdapter{src: src} }
-func (a *TreeSitterAdapter) SetSource(src []byte)        { a.src = src }
-func (a *TreeSitterAdapter) Language() *sitter.Language  { return tsGo.GetLanguage() }
+func NewTreeSitterAdapter(src []byte) *TreeSitterAdapter   { return &TreeSitterAdapter{src: src} }
+func (a *TreeSitterAdapter) SetSource(src []byte)          { a.src = src }
+func (a *TreeSitterAdapter) SetRootNode(root *sitter.Node) { a.root = root }
+func (a *TreeSitterAdapter) Language() *sitter.Language    { return tsGo.GetLanguage() }
+
+// ensureRoot returns the tree shared by the runner, parsing the source when
+// the adapter is used on its own (tests).
+func (a *TreeSitterAdapter) ensureRoot(src []byte) (*sitter.Node, []byte) {
+	source := a.src
+	if source == nil {
+		source = src
+	}
+	if a.root != nil {
+		return a.root, source
+	}
+	if source == nil {
+		return nil, nil
+	}
+	parser := sitter.NewParser()
+	parser.SetLanguage(a.Language())
+	a.root = parser.Parse(nil, source).RootNode()
+	return a.root, source
+}
 
 func (a *TreeSitterAdapter) IsModule(n *sitter.Node) bool { return n.Type() == "source_file" }
 func (a *TreeSitterAdapter) IsClass(n *sitter.Node) bool {
@@ -59,9 +80,31 @@ func (a *TreeSitterAdapter) NodeBody(n *sitter.Node) *sitter.Node {
 func (a *TreeSitterAdapter) NodeParams(n *sitter.Node) *sitter.Node {
 	switch n.Type() {
 	case "function_declaration", "method_declaration":
+		// on a method, the first parameter_list child holds the receiver, not the
+		// parameters: rely on the field name to get the real ones
+		if p := n.ChildByFieldName("parameters"); p != nil {
+			return p
+		}
 		return firstChildOfType(n, "parameter_list")
 	}
 	return nil
+}
+
+// ReceiverTypeName returns the type a method is bound to: "Counter" for
+// `func (c *Counter) Add(n int)`. It is empty for a plain function. The visitor
+// uses it to attach the method to its struct, which Go declares separately.
+func (a *TreeSitterAdapter) ReceiverTypeName(n *sitter.Node) string {
+	if n == nil || n.Type() != "method_declaration" {
+		return ""
+	}
+	receiver := n.ChildByFieldName("receiver")
+	if receiver == nil {
+		return ""
+	}
+	if t := firstDescendantOfType(receiver, "type_identifier"); t != nil {
+		return text(a.src, t)
+	}
+	return ""
 }
 
 func (a *TreeSitterAdapter) EachParamIdent(params *sitter.Node, yield func(string)) {
@@ -266,123 +309,124 @@ func eachDescendantOfType(n *sitter.Node, t string, yield func(*sitter.Node)) {
 	}
 }
 
-// Provide simplistic operators/operands extraction for Go
+// goOperatorTokens lists the anonymous token types counted as Halstead
+// operators: arithmetic, comparison, logical, bitwise, assignments and
+// channel operations.
+var goOperatorTokens = map[string]bool{
+	"+": true, "-": true, "*": true, "/": true, "%": true,
+	"==": true, "!=": true, "<": true, ">": true, "<=": true, ">=": true,
+	"&&": true, "||": true, "!": true,
+	"&": true, "|": true, "^": true, "<<": true, ">>": true, "&^": true,
+	"=": true, ":=": true, "+=": true, "-=": true, "*=": true, "/=": true, "%=": true,
+	"&=": true, "|=": true, "^=": true, "<<=": true, ">>=": true, "&^=": true,
+	"++": true, "--": true, "<-": true,
+}
+
+// goOperandTypes lists the named node types counted as Halstead operands.
+// Literals are left out on purpose: the cohesion metrics read the operands,
+// and two methods sharing the literal 0 are not cohesive.
+var goOperandTypes = map[string]bool{
+	"identifier": true, "field_identifier": true,
+}
+
+// goPruneTypes lists the node types never walked: a type is not an operand,
+// and two methods sharing the type "int" are not cohesive.
+var goPruneTypes = map[string]bool{
+	"type_identifier": true, "qualified_type": true, "pointer_type": true,
+	"slice_type": true, "array_type": true, "map_type": true, "channel_type": true,
+	"function_type": true, "struct_type": true, "interface_type": true,
+	"generic_type": true, "type_arguments": true, "type_parameter_list": true,
+	"type_declaration": true,
+}
+
+// goPruneFields lists the children never walked, by field name: the receiver
+// and the result of a method hold types, not operands.
+var goPruneFields = map[string]bool{
+	"receiver": true, "result": true,
+}
+
+var goChainTypes = map[string]bool{"selector_expression": true}
+
+func (a *TreeSitterAdapter) operandSpec(root *sitter.Node, src []byte, startLine int) Treesitter.OperandSpec {
+	return Treesitter.OperandSpec{
+		OperatorTokens: goOperatorTokens,
+		OperandTypes:   goOperandTypes,
+		PruneTypes:     goPruneTypes,
+		PruneFields:    goPruneFields,
+		ChainTypes:     goChainTypes,
+		// the receiver of the method is the Go equivalent of "this":
+		// normalizing it is what lets the cohesion metrics tell an attribute
+		// access from a local variable
+		Receiver: goReceiverIdent(root, src, startLine),
+	}
+}
+
+// ExtractOperatorsOperands collects Halstead operators and operands from the
+// AST within the given 1-based inclusive line range.
 func (a *TreeSitterAdapter) ExtractOperatorsOperands(src []byte, startLine, endLine int) ([]string, []string) {
-	if src == nil || startLine <= 0 || endLine <= 0 || endLine < startLine {
+	root, source := a.ensureRoot(src)
+	if root == nil {
 		return nil, nil
 	}
-	// token list ordered longest-first to avoid partial matches
-	tokens := []string{
-		">>=", "<<=", "+=", "-=", "*=", "/=", "%=", "&=", "|=", "^=", "&^=",
-		"==", "!=", "<=", ">=", "&&", "||", "++", "--", ":=",
-		"<<", ">>", "&^",
-		"+", "-", "*", "/", "%", "&", "|", "^", "!", "<", ">", "=",
-		".", // selector used as operator in Halstead sense
+	return a.operandSpec(root, source, startLine).Extract(root, source, startLine, endLine)
+}
+
+// ExtractMethodCalls returns the methods called on the receiver of the method
+// declared at startLine, normalized as "this.Name": `e.reset()` gives
+// "this.reset". Calls made on another variable or on a package say nothing
+// about the cohesion of the struct and are not reported.
+func (a *TreeSitterAdapter) ExtractMethodCalls(src []byte, startLine, endLine int) []string {
+	root, source := a.ensureRoot(src)
+	if root == nil {
+		return nil
 	}
-	// Prepare lines and a helper to strip strings and comments
-	lines := strings.Split(string(src), "\n")
-	strip := func(s string) string {
-		out := make([]rune, 0, len(s))
-		inBack := false
-		inDq := false
-		inSq := false
-		for i := 0; i < len(s); i++ {
-			c := s[i]
-			if c == '\\' { // escape
-				if i+1 < len(s) {
-					i++
-				}
-				continue
-			}
-			if !inDq && !inSq && c == '`' {
-				inBack = !inBack
-				continue
-			}
-			if !inBack && !inSq && c == '"' {
-				inDq = !inDq
-				continue
-			}
-			if !inBack && !inDq && c == '\'' {
-				inSq = !inSq
-				continue
-			}
-			if inBack || inDq || inSq {
-				continue
-			}
-			out = append(out, rune(c))
-		}
-		return string(out)
+	spec := a.operandSpec(root, source, startLine)
+	if spec.Receiver == "" {
+		return nil
 	}
-	ops := []string{}
-	opr := []string{}
-	addOp := func(op string) { ops = append(ops, op) }
-	addOperand := func(name string) { opr = append(opr, name) }
+	return spec.MethodCalls(root, source, startLine, endLine)
+}
 
-	for i := startLine - 1; i < endLine && i < len(lines); i++ {
-		raw := strings.TrimSpace(lines[i])
-		if raw == "" {
-			continue
-		}
-		// remove line comments
-		line := raw
-		if idx := strings.Index(line, "//"); idx >= 0 {
-			line = line[:idx]
-		}
-		line = strip(line)
-		if strings.TrimSpace(line) == "" {
-			continue
-		}
+// goReceiverIdent returns the name of the receiver of the method declared at
+// startLine: "e" for `func (e *Example) Increment()`. It is empty for a plain
+// function, or for a method that does not name its receiver.
+func goReceiverIdent(root *sitter.Node, src []byte, startLine int) string {
+	method := goMethodAtLine(root, startLine)
+	if method == nil {
+		return ""
+	}
+	receiver := method.ChildByFieldName("receiver")
+	if receiver == nil {
+		return ""
+	}
+	decl := firstChildOfType(receiver, "parameter_declaration")
+	if decl == nil {
+		return ""
+	}
+	name := decl.ChildByFieldName("name")
+	if name == nil || name.Type() != "identifier" {
+		return ""
+	}
+	if ident := text(src, name); ident != "_" {
+		return ident
+	}
+	return ""
+}
 
-		// scan operators in order by searching earliest occurrence repeatedly
-		rest := line
-		for {
-			found := false
-			minPos := len(rest)
-			minTok := ""
-			for _, tok := range tokens {
-				if p := strings.Index(rest, tok); p >= 0 {
-					if p < minPos {
-						minPos = p
-						minTok = tok
-						found = true
-					}
-				}
-			}
-			if !found {
-				break
-			}
-			addOp(minTok)
-			rest = rest[minPos+len(minTok):]
-		}
-
-		// operands: identifiers and selectors a.b (without keywords)
-		cleaned := line
-		// replace delimiters with space
-		replacers := []string{",", ";", "(", ")", "[", "]", "{", "}", "*", "&", "|", "^", "/", "+", "-", "%", ":", "<", ">", "=", "!"}
-		for _, r := range replacers {
-			cleaned = strings.ReplaceAll(cleaned, r, " ")
-		}
-		fields := strings.Fields(cleaned)
-		isKeyword := func(s string) bool {
-			switch s {
-			case "package", "import", "func", "type", "var", "const", "return", "if", "else", "for", "range", "switch", "case", "default", "break", "continue", "go", "defer", "select", "struct", "interface", "map", "chan", "fallthrough":
-				return true
-			}
-			return false
-		}
-		for _, f := range fields {
-			if f == "" || isKeyword(f) {
-				continue
-			}
-			// retain simple identifiers and dotted selectors
-			// drop numeric literals
-			if f[0] >= '0' && f[0] <= '9' {
-				continue
-			}
-			addOperand(f)
+// goMethodAtLine returns the method declared on the given 1-based line, or nil.
+func goMethodAtLine(n *sitter.Node, line int) *sitter.Node {
+	if int(n.EndPoint().Row)+1 < line || int(n.StartPoint().Row)+1 > line {
+		return nil
+	}
+	if n.Type() == "method_declaration" && int(n.StartPoint().Row)+1 == line {
+		return n
+	}
+	for i := 0; i < int(n.ChildCount()); i++ {
+		if found := goMethodAtLine(n.Child(i), line); found != nil {
+			return found
 		}
 	}
-	return ops, opr
+	return nil
 }
 
 // Align with PHP counting: treat else-if as if for complexity aggregation

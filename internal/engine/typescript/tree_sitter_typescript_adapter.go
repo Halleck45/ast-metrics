@@ -11,12 +11,33 @@ import (
 )
 
 type TreeSitterAdapter struct {
-	src []byte
+	src  []byte
+	root *sitter.Node
 }
 
-func NewTreeSitterAdapter(src []byte) *TreeSitterAdapter { return &TreeSitterAdapter{src: src} }
-func (a *TreeSitterAdapter) SetSource(src []byte)        { a.src = src }
-func (a *TreeSitterAdapter) Language() *sitter.Language  { return tsTsx.GetLanguage() }
+func NewTreeSitterAdapter(src []byte) *TreeSitterAdapter   { return &TreeSitterAdapter{src: src} }
+func (a *TreeSitterAdapter) SetSource(src []byte)          { a.src = src }
+func (a *TreeSitterAdapter) SetRootNode(root *sitter.Node) { a.root = root }
+func (a *TreeSitterAdapter) Language() *sitter.Language    { return tsTsx.GetLanguage() }
+
+// ensureRoot returns the tree shared by the runner, parsing the source when
+// the adapter is used on its own (tests).
+func (a *TreeSitterAdapter) ensureRoot(src []byte) (*sitter.Node, []byte) {
+	source := a.src
+	if source == nil {
+		source = src
+	}
+	if a.root != nil {
+		return a.root, source
+	}
+	if source == nil {
+		return nil, nil
+	}
+	parser := sitter.NewParser()
+	parser.SetLanguage(a.Language())
+	a.root = parser.Parse(nil, source).RootNode()
+	return a.root, source
+}
 
 func (a *TreeSitterAdapter) IsModule(n *sitter.Node) bool { return n.Type() == "program" }
 
@@ -339,119 +360,84 @@ func (a *TreeSitterAdapter) CountComments(lines []string, start, end int) int {
 	return cnt
 }
 
-// ExtractOperatorsOperands extracts Halstead operators and operands from TypeScript source.
-func (a *TreeSitterAdapter) ExtractOperatorsOperands(src []byte, startLine, endLine int) ([]string, []string) {
-	if src == nil || startLine <= 0 || endLine <= 0 || endLine < startLine {
-		return nil, nil
-	}
-	tokens := []string{
-		">>>=", "===", "!==", ">>=", "<<=", "**=", "??=",
-		"+=", "-=", "*=", "/=", "%=", "&=", "|=", "^=",
-		"==", "!=", "<=", ">=", "&&", "||", "??", "?.",
-		"++", "--", "=>", "...", "**",
-		">>>", "<<", ">>",
-		"+", "-", "*", "/", "%", "&", "|", "^", "!", "<", ">", "=", "~",
-		".",
-	}
-
-	lines := strings.Split(string(src), "\n")
-	ops := []string{}
-	opr := []string{}
-
-	for i := startLine - 1; i < endLine && i < len(lines); i++ {
-		raw := strings.TrimSpace(lines[i])
-		if raw == "" {
-			continue
-		}
-		line := raw
-		if idx := strings.Index(line, "//"); idx >= 0 {
-			line = line[:idx]
-		}
-		line = stripTSStrings(line)
-		if strings.TrimSpace(line) == "" {
-			continue
-		}
-
-		// Scan operators
-		rest := line
-		for {
-			found := false
-			minPos := len(rest)
-			minTok := ""
-			for _, tok := range tokens {
-				if p := strings.Index(rest, tok); p >= 0 && p < minPos {
-					minPos = p
-					minTok = tok
-					found = true
-				}
-			}
-			if !found {
-				break
-			}
-			ops = append(ops, minTok)
-			rest = rest[minPos+len(minTok):]
-		}
-
-		// Operands: identifiers
-		cleaned := line
-		replacers := []string{",", ";", "(", ")", "[", "]", "{", "}", "*", "&", "|", "^", "/", "+", "-", "%", ":", "<", ">", "=", "!", "~", "?", "."}
-		for _, r := range replacers {
-			cleaned = strings.ReplaceAll(cleaned, r, " ")
-		}
-		fields := strings.Fields(cleaned)
-		for _, f := range fields {
-			if f == "" || isTSKeyword(f) {
-				continue
-			}
-			if f[0] >= '0' && f[0] <= '9' {
-				continue
-			}
-			opr = append(opr, f)
-		}
-	}
-	return ops, opr
+// tsOperatorTokens lists the anonymous token types counted as Halstead
+// operators: arithmetic, comparison, logical, bitwise, assignments, arrows
+// and spreads. The "<" and ">" of generics never reach this map: the AST
+// parses them as type arguments, which are pruned.
+var tsOperatorTokens = map[string]bool{
+	"+": true, "-": true, "*": true, "/": true, "%": true, "**": true,
+	"==": true, "===": true, "!=": true, "!==": true,
+	"<": true, ">": true, "<=": true, ">=": true,
+	"&&": true, "||": true, "??": true, "!": true,
+	"&": true, "|": true, "^": true, "~": true,
+	"<<": true, ">>": true, ">>>": true,
+	"=": true, "+=": true, "-=": true, "*=": true, "/=": true, "%=": true, "**=": true,
+	"&&=": true, "||=": true, "??=": true, "&=": true, "|=": true, "^=": true,
+	"<<=": true, ">>=": true, ">>>=": true,
+	"++": true, "--": true, "=>": true, "...": true,
 }
 
-// ExtractMethodCalls extracts method calls like this.foo, super.bar from TypeScript source.
+// tsOperandTypes lists the named node types counted as Halstead operands.
+// Literals are left out on purpose: the cohesion metrics read the operands,
+// and two methods sharing the literal 0 are not cohesive.
+var tsOperandTypes = map[string]bool{
+	"identifier":                            true,
+	"property_identifier":                   true,
+	"private_property_identifier":           true,
+	"shorthand_property_identifier":         true,
+	"shorthand_property_identifier_pattern": true,
+}
+
+// tsPruneTypes lists the node types never walked: a type annotation is not an
+// operand, and two methods typed "number" are not cohesive. The list names
+// every node the grammar reserves to type positions, so that a type reached
+// outside of an annotation ("raw as Currency") is dropped too.
+var tsPruneTypes = map[string]bool{
+	"type_annotation": true, "type_arguments": true, "type_parameters": true,
+	"type_alias_declaration": true, "interface_declaration": true,
+	"type_identifier": true, "predefined_type": true,
+	"object_type": true, "union_type": true, "intersection_type": true,
+	"generic_type": true, "literal_type": true, "array_type": true,
+	"tuple_type": true, "function_type": true, "constructor_type": true,
+	"type_predicate": true, "type_query": true, "lookup_type": true,
+	"index_type_query": true, "conditional_type": true,
+	"template_literal_type": true, "readonly_type": true,
+	"opting_type_annotation": true, "omitting_type_annotation": true,
+	"asserts": true,
+}
+
+var tsChainTypes = map[string]bool{"member_expression": true}
+
+var tsOperandSpec = Treesitter.OperandSpec{
+	OperatorTokens: tsOperatorTokens,
+	OperandTypes:   tsOperandTypes,
+	PruneTypes:     tsPruneTypes,
+	ChainTypes:     tsChainTypes,
+	// no Receiver: the current object is the keyword "this"
+}
+
+// ExtractOperatorsOperands collects Halstead operators and operands from the
+// AST within the given 1-based inclusive line range. A member access chain is
+// a single operand ("this.total", "console.log"), and an access through
+// "this" reads the attribute whatever is done with it afterwards:
+// "this.items" and "this.items.length" both read "this.items".
+func (a *TreeSitterAdapter) ExtractOperatorsOperands(src []byte, startLine, endLine int) ([]string, []string) {
+	root, source := a.ensureRoot(src)
+	if root == nil {
+		return nil, nil
+	}
+	return tsOperandSpec.Extract(root, source, startLine, endLine)
+}
+
+// ExtractMethodCalls returns the methods called on the current object
+// ("this.foo()", "super.bar()"). A plain read ("this.foo") is not a call: it
+// is an attribute access, reported as an operand by ExtractOperatorsOperands.
 func (a *TreeSitterAdapter) ExtractMethodCalls(src []byte, startLine, endLine int) []string {
-	if src == nil || startLine <= 0 || endLine <= 0 || endLine < startLine {
+	root, source := a.ensureRoot(src)
+	if root == nil {
 		return nil
 	}
-	lines := strings.Split(string(src), "\n")
-	var calls []string
-	for i := startLine - 1; i < endLine && i < len(lines); i++ {
-		ln := strings.TrimSpace(lines[i])
-		if ln == "" {
-			continue
-		}
-		// Strip comments
-		if idx := strings.Index(ln, "//"); idx >= 0 {
-			ln = ln[:idx]
-		}
-		ln = stripTSStrings(ln)
-		// Find this.xxx( or super.xxx( patterns
-		for _, prefix := range []string{"this.", "super."} {
-			rest := ln
-			for {
-				idx := strings.Index(rest, prefix)
-				if idx < 0 {
-					break
-				}
-				after := rest[idx+len(prefix):]
-				// Extract identifier
-				end := 0
-				for end < len(after) && (after[end] == '_' || after[end] == '$' || (after[end] >= 'a' && after[end] <= 'z') || (after[end] >= 'A' && after[end] <= 'Z') || (after[end] >= '0' && after[end] <= '9')) {
-					end++
-				}
-				if end > 0 {
-					name := prefix[:len(prefix)-1] + "." + after[:end]
-					calls = append(calls, name)
-				}
-				rest = after[end:]
-			}
-		}
-	}
-	return calls
+	return tsOperandSpec.MethodCalls(root, source, startLine, endLine)
 }
 
 // ClassDirectOperands scans class body for property declarations and returns property names.
@@ -540,22 +526,4 @@ func stripTSStrings(s string) string {
 		out = append(out, rune(c))
 	}
 	return string(out)
-}
-
-func isTSKeyword(s string) bool {
-	switch s {
-	case "import", "export", "from", "as", "default",
-		"function", "class", "extends", "implements", "interface",
-		"type", "enum", "namespace", "module", "declare",
-		"const", "let", "var", "return", "yield",
-		"if", "else", "for", "while", "do", "switch", "case", "break", "continue",
-		"try", "catch", "finally", "throw",
-		"new", "delete", "typeof", "instanceof", "void", "in", "of",
-		"async", "await", "static", "get", "set",
-		"public", "private", "protected", "readonly", "abstract", "override",
-		"true", "false", "null", "undefined",
-		"this", "super", "constructor":
-		return true
-	}
-	return false
 }
