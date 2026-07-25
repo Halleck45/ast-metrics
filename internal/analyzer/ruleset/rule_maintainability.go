@@ -40,6 +40,7 @@ func (r *maintainabilityRule) CheckFile(file *pb.File, addError func(issue.Requi
 				Severity: issue.SeverityHigh,
 				Message:  fmt.Sprintf("Maintainability too low: got %d (min: %d)", value, *r.min),
 				Code:     r.Name(),
+				Line:     lineOf(class.GetLocation()),
 			})
 			return
 		}

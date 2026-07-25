@@ -39,9 +39,15 @@ type sarifDriver struct {
 }
 
 type sarifRuleMeta struct {
-	ID               string        `json:"id"`
-	Name             string        `json:"name,omitempty"`
-	ShortDescription *sarifMessage `json:"shortDescription,omitempty"`
+	ID                   string                 `json:"id"`
+	Name                 string                 `json:"name,omitempty"`
+	ShortDescription     *sarifMessage          `json:"shortDescription,omitempty"`
+	DefaultConfiguration *sarifRuleConfig       `json:"defaultConfiguration,omitempty"`
+	Properties           map[string]interface{} `json:"properties,omitempty"`
+}
+
+type sarifRuleConfig struct {
+	Level string `json:"level,omitempty"`
 }
 
 type sarifResult struct {
@@ -149,9 +155,17 @@ func writeSarifFile(reportPath string, outcomes []requirement.RuleOutcome) error
 		idx := len(log.Runs[0].Tool.Driver.Rules)
 		ruleIndexByID[out.Rule] = idx
 		log.Runs[0].Tool.Driver.Rules = append(log.Runs[0].Tool.Driver.Rules, sarifRuleMeta{
-			ID:               out.Rule,
-			Name:             out.Rule,
-			ShortDescription: &sarifMessage{Text: out.Rule},
+			ID:                   out.Rule,
+			Name:                 out.Rule,
+			ShortDescription:     &sarifMessage{Text: out.Rule},
+			DefaultConfiguration: &sarifRuleConfig{Level: mapSeverity(out.Severity)},
+			// Quality tags (and no security-severity): GitHub code scanning
+			// then renders the alert with a plain error/warning/note severity
+			// instead of a security severity.
+			Properties: map[string]interface{}{
+				"tags":             []string{"quality", "maintainability"},
+				"problem.severity": mapSeverity(out.Severity),
+			},
 		})
 	}
 

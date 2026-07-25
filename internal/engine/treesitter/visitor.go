@@ -70,6 +70,21 @@ func (v *Visitor) countLogicalLines(start, end int) int {
 	return cnt
 }
 
+// locationOf converts a tree-sitter node position into a 1-based file
+// location. Downstream consumers (rules, review, SARIF) rely on it to anchor
+// findings to the exact line.
+func locationOf(node *sitter.Node) *pb.StmtLocationInFile {
+	if node == nil {
+		return nil
+	}
+	return &pb.StmtLocationInFile{
+		StartLine:    int32(node.StartPoint().Row) + 1,
+		EndLine:      int32(node.EndPoint().Row) + 1,
+		StartFilePos: int32(node.StartByte()),
+		EndFilePos:   int32(node.EndByte()),
+	}
+}
+
 func (v *Visitor) curStmts() *pb.Stmts {
 	if f := v.curFunc(); f != nil {
 		return f.Stmts
@@ -220,8 +235,9 @@ func (v *Visitor) Visit(node *sitter.Node) {
 			}
 		}
 		itf := &pb.StmtInterface{
-			Name:  &pb.Name{Short: name, Qualified: qualified},
-			Stmts: engine.FactoryStmts(),
+			Name:     &pb.Name{Short: name, Qualified: qualified},
+			Stmts:    engine.FactoryStmts(),
+			Location: locationOf(node),
 		}
 		body := v.ad.NodeBody(node)
 		// attach to namespace and file
@@ -245,6 +261,7 @@ func (v *Visitor) Visit(node *sitter.Node) {
 			Name:        &pb.Name{Short: name, Qualified: qualified},
 			Stmts:       engine.FactoryStmts(),
 			LinesOfCode: &pb.LinesOfCode{},
+			Location:    locationOf(node),
 		}
 		body := v.ad.NodeBody(node)
 		start := int(node.StartPoint().Row) + 1
@@ -324,6 +341,7 @@ func (v *Visitor) Visit(node *sitter.Node) {
 			Name:        &pb.Name{Short: name, Qualified: qualified},
 			Stmts:       engine.FactoryStmts(),
 			LinesOfCode: &pb.LinesOfCode{},
+			Location:    locationOf(node),
 		}
 		if params := v.ad.NodeParams(node); params != nil {
 			v.ad.EachParamIdent(params, func(id string) {
