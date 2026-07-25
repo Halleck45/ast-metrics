@@ -52,6 +52,11 @@ func TestSarifGenerator_GenerateWithOneViolation(t *testing.T) {
 	// Stable fingerprint for deduplication
 	assert.Contains(t, content, "\"partialFingerprints\"")
 	assert.Contains(t, content, "\"astMetrics/v1\"")
+	// Quality tags so GitHub code scanning does not treat findings as security alerts
+	assert.Contains(t, content, "\"maintainability\"")
+	assert.Contains(t, content, "\"quality\"")
+	assert.NotContains(t, content, "security-severity")
+	assert.Contains(t, content, "\"defaultConfiguration\"")
 }
 
 func TestSarifGenerator_FileLevelFindingDefaultsToLineOne(t *testing.T) {
