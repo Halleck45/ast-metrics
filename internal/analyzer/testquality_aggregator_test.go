@@ -443,6 +443,61 @@ func TestTestQualityAggregator_MixedClassesAndFunctions(t *testing.T) {
 	assert.Equal(t, 0, len(agg.TestQuality.OrphanClasses))
 }
 
+func TestTestQualityAggregator_GoTraceability(t *testing.T) {
+	// Go test files reference the tested symbols directly (no import): the Go
+	// engine emits synthetic dependencies for them. Structs arrive qualified
+	// with the package name ("counter\Counter"), top-level functions arrive
+	// with their short name ("NewCounter"). Both must match the prod index.
+	agg := newAggregated()
+
+	ccn := int32(2)
+	prodFile := &pb.File{
+		Path:                "counter/counter.go",
+		ShortPath:           "counter.go",
+		ProgrammingLanguage: "Golang",
+		IsTest:              false,
+		Stmts: &pb.Stmts{
+			StmtClass: []*pb.StmtClass{
+				{
+					Name:  &pb.Name{Qualified: `counter\Counter`, Short: "Counter"},
+					Stmts: &pb.Stmts{Analyze: &pb.Analyze{Complexity: &pb.Complexity{Cyclomatic: &ccn}}},
+				},
+			},
+			StmtFunction: []*pb.StmtFunction{
+				{
+					Name:  &pb.Name{Qualified: "NewCounter", Short: "NewCounter"},
+					Stmts: &pb.Stmts{Analyze: &pb.Analyze{Complexity: &pb.Complexity{Cyclomatic: &ccn}}},
+				},
+			},
+		},
+	}
+
+	testFile := &pb.File{
+		Path:                "counter/counter_test.go",
+		ShortPath:           "counter_test.go",
+		ProgrammingLanguage: "Golang",
+		IsTest:              true,
+		Stmts: &pb.Stmts{
+			StmtExternalDependencies: []*pb.StmtExternalDependency{
+				{ClassName: `counter\Counter`, Namespace: "counter", From: "counter"},
+				{ClassName: "NewCounter", Namespace: "counter", From: "counter"},
+				{ClassName: "testing", Namespace: "testing", From: "counter"},
+			},
+		},
+	}
+
+	agg.ConcernedFiles = []*pb.File{prodFile, testFile}
+
+	tqa := NewTestQualityAggregator()
+	tqa.Calculate(&agg)
+
+	assert.NotNil(t, agg.TestQuality)
+	assert.Equal(t, 2, agg.TestQuality.NbProdClasses)
+	assert.Equal(t, 2, agg.TestQuality.NbTestedClasses)
+	assert.Equal(t, float64(100), agg.TestQuality.TraceabilityPct)
+	assert.Equal(t, 0, len(agg.TestQuality.OrphanClasses))
+}
+
 func TestBuildTestQualityJSON_Nil(t *testing.T) {
 	json := BuildTestQualityJSON(nil)
 	assert.Equal(t, "{}", json)

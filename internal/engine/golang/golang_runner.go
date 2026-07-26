@@ -129,6 +129,9 @@ func (r *GolangRunner) Parse(path string) (*pb.File, error) {
 
 	// Detect if file is a test file
 	file.IsTest = r.isTestFile(path, file)
+	if file.IsTest {
+		attachTestSymbolRefs(file, adapter, root, src)
+	}
 
 	return file, nil
 }
