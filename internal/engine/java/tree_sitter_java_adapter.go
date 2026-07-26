@@ -11,14 +11,36 @@ import (
 
 type TreeSitterAdapter struct {
 	src []byte
+	// root caches the tree shared by the runner, to avoid re-parsing
+	root *sitter.Node
 	// pkg caches the declared package name (parsed lazily from src)
 	pkg       string
 	pkgParsed bool
 }
 
-func NewTreeSitterAdapter(src []byte) *TreeSitterAdapter { return &TreeSitterAdapter{src: src} }
-func (a *TreeSitterAdapter) SetSource(src []byte)        { a.src = src }
-func (a *TreeSitterAdapter) Language() *sitter.Language  { return tsJava.GetLanguage() }
+func NewTreeSitterAdapter(src []byte) *TreeSitterAdapter   { return &TreeSitterAdapter{src: src} }
+func (a *TreeSitterAdapter) SetSource(src []byte)          { a.src = src; a.root = nil }
+func (a *TreeSitterAdapter) SetRootNode(root *sitter.Node) { a.root = root }
+func (a *TreeSitterAdapter) Language() *sitter.Language    { return tsJava.GetLanguage() }
+
+// ensureRoot returns the tree shared by the runner, parsing the source when
+// the adapter is used on its own (tests).
+func (a *TreeSitterAdapter) ensureRoot(src []byte) (*sitter.Node, []byte) {
+	source := a.src
+	if source == nil {
+		source = src
+	}
+	if a.root != nil {
+		return a.root, source
+	}
+	if source == nil {
+		return nil, nil
+	}
+	parser := sitter.NewParser()
+	parser.SetLanguage(a.Language())
+	a.root = parser.Parse(nil, source).RootNode()
+	return a.root, source
+}
 
 func (a *TreeSitterAdapter) IsModule(n *sitter.Node) bool { return n.Type() == "program" }
 
@@ -296,76 +318,82 @@ func (a *TreeSitterAdapter) CountComments(lines []string, start, end int) int {
 	return cnt
 }
 
-// ExtractOperatorsOperands extracts Halstead operators and operands from Java source.
+// javaOperatorTokens lists the anonymous token types counted as Halstead
+// operators: arithmetic, comparison, logical, bitwise, assignments, the field
+// access, the argument separator, the subscript, the ternary and the keywords
+// that drive the control flow. Keywords count as operators: without them, a
+// body made of plain statements ("return this.items;") would hold none at all,
+// and its Halstead volume would collapse to zero.
+//
+// The ternary reports its "?" only: its ":" would count the same operator
+// twice, and the ":" of an enhanced "for" is already covered by the "for".
+var javaOperatorTokens = map[string]bool{
+	"+": true, "-": true, "*": true, "/": true, "%": true,
+	"==": true, "!=": true, "<": true, ">": true, "<=": true, ">=": true,
+	"&&": true, "||": true, "!": true,
+	"&": true, "|": true, "^": true, "~": true,
+	"<<": true, ">>": true, ">>>": true,
+	"=": true, "+=": true, "-=": true, "*=": true, "/=": true, "%=": true,
+	"&=": true, "|=": true, "^=": true, "<<=": true, ">>=": true, ">>>=": true,
+	"++": true, "--": true, "->": true, "::": true,
+	".": true, ",": true, "[": true, "?": true, "...": true,
+	"return": true, "if": true, "else": true, "for": true, "while": true,
+	"do": true, "switch": true, "case": true, "default": true,
+	"break": true, "continue": true, "yield": true,
+	"new": true, "instanceof": true,
+	"throw": true, "try": true, "catch": true, "finally": true,
+	"synchronized": true, "assert": true,
+}
+
+// javaOperandTypes lists the named node types counted as Halstead operands.
+// Literals are left out on purpose: the cohesion metrics read the operands,
+// and two methods sharing the literal 0 are not cohesive.
+var javaOperandTypes = map[string]bool{"identifier": true}
+
+// javaCallTypes lists the node types counted as one call operator. Object
+// creation is left out: it already reports its "new" keyword.
+var javaCallTypes = map[string]bool{
+	"method_invocation": true, "explicit_constructor_invocation": true,
+}
+
+// javaPruneTypes lists the node types never walked: a type is not an operand,
+// and two methods returning a "String" are not cohesive. Modifiers,
+// annotations and the "throws" clause describe the declaration, not what it
+// computes.
+var javaPruneTypes = map[string]bool{
+	"type_identifier": true, "scoped_type_identifier": true,
+	"generic_type": true, "type_arguments": true, "type_parameters": true,
+	"array_type": true, "dimensions": true, "integral_type": true,
+	"floating_point_type": true, "boolean_type": true, "void_type": true,
+	"catch_type": true, "throws": true, "modifiers": true,
+	"annotation": true, "marker_annotation": true, "wildcard": true,
+	"superclass": true, "super_interfaces": true, "type_bound": true,
+	"permits": true,
+}
+
+// javaChainTypes lists the field access node types. A Java method call has a
+// node of its own ("method_invocation") and is not a field access.
+var javaChainTypes = map[string]bool{"field_access": true}
+
+var javaOperandSpec = Treesitter.OperandSpec{
+	OperatorTokens: javaOperatorTokens,
+	OperandTypes:   javaOperandTypes,
+	CallTypes:      javaCallTypes,
+	PruneTypes:     javaPruneTypes,
+	ChainTypes:     javaChainTypes,
+	// no Receiver: the current object is the keyword "this"
+}
+
+// ExtractOperatorsOperands collects Halstead operators and operands from the
+// AST within the given 1-based inclusive line range. A field access is a
+// single operand ("this.items", "System.out"), and an access through "this"
+// reads the field whatever is done with it afterwards.
 func (a *TreeSitterAdapter) ExtractOperatorsOperands(src []byte, startLine, endLine int) ([]string, []string) {
-	if src == nil || startLine <= 0 || endLine <= 0 || endLine < startLine {
+	root, source := a.ensureRoot(src)
+	if root == nil {
 		return nil, nil
 	}
-	tokens := []string{
-		">>>=", ">>=", "<<=", ">>>",
-		"+=", "-=", "*=", "/=", "%=", "&=", "|=", "^=",
-		"==", "!=", "<=", ">=", "&&", "||",
-		"++", "--", "->", "::",
-		"<<", ">>",
-		"+", "-", "*", "/", "%", "&", "|", "^", "!", "<", ">", "=", "~",
-		".",
-	}
-
-	lines := strings.Split(string(src), "\n")
-	ops := []string{}
-	opr := []string{}
-
-	for i := startLine - 1; i < endLine && i < len(lines); i++ {
-		raw := strings.TrimSpace(lines[i])
-		if raw == "" {
-			continue
-		}
-		line := stripJavaStrings(raw)
-		if idx := strings.Index(line, "//"); idx >= 0 {
-			line = line[:idx]
-		}
-		if strings.TrimSpace(line) == "" {
-			continue
-		}
-
-		// Scan operators
-		rest := line
-		for {
-			found := false
-			minPos := len(rest)
-			minTok := ""
-			for _, tok := range tokens {
-				if p := strings.Index(rest, tok); p >= 0 && p < minPos {
-					minPos = p
-					minTok = tok
-					found = true
-				}
-			}
-			if !found {
-				break
-			}
-			ops = append(ops, minTok)
-			rest = rest[minPos+len(minTok):]
-		}
-
-		// Operands: identifiers
-		cleaned := line
-		replacers := []string{",", ";", "(", ")", "[", "]", "{", "}", "*", "&", "|", "^", "/", "+", "-", "%", ":", "<", ">", "=", "!", "~", "?", ".", "@"}
-		for _, r := range replacers {
-			cleaned = strings.ReplaceAll(cleaned, r, " ")
-		}
-		fields := strings.Fields(cleaned)
-		for _, f := range fields {
-			if f == "" || isJavaKeyword(f) {
-				continue
-			}
-			if f[0] >= '0' && f[0] <= '9' {
-				continue
-			}
-			opr = append(opr, f)
-		}
-	}
-	return ops, opr
+	return javaOperandSpec.Extract(root, source, startLine, endLine)
 }
 
 // ExtractMethodCalls extracts method calls like this.foo, super.bar from Java source.
@@ -455,21 +483,4 @@ func stripJavaStrings(s string) string {
 		out = append(out, rune(c))
 	}
 	return string(out)
-}
-
-func isJavaKeyword(s string) bool {
-	switch s {
-	case "abstract", "assert", "boolean", "break", "byte", "case", "catch",
-		"char", "class", "const", "continue", "default", "do", "double",
-		"else", "enum", "extends", "final", "finally", "float", "for",
-		"goto", "if", "implements", "import", "instanceof", "int",
-		"interface", "long", "native", "new", "package", "private",
-		"protected", "public", "record", "return", "sealed", "short",
-		"static", "strictfp", "super", "switch", "synchronized", "this",
-		"throw", "throws", "transient", "try", "var", "void", "volatile",
-		"while", "yield", "permits", "non-sealed",
-		"true", "false", "null":
-		return true
-	}
-	return false
 }

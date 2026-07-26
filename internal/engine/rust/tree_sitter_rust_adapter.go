@@ -421,7 +421,11 @@ func stripRustStrings(s string) string {
 
 // rustOperatorTokens lists the anonymous token types counted as Halstead
 // operators: arithmetic, comparison, logical, bitwise, ranges, error
-// propagation, field access, paths and casts.
+// propagation, field access, paths, casts, the argument separator, the
+// subscript and the keywords that drive the control flow. Keywords count as
+// operators: without them, a body made of plain statements
+// ("return self.items.clone()") would hold none at all, and its Halstead
+// volume would collapse to zero.
 var rustOperatorTokens = map[string]bool{
 	"+": true, "-": true, "*": true, "/": true, "%": true,
 	"==": true, "!=": true, "<": true, ">": true, "<=": true, ">=": true,
@@ -430,7 +434,10 @@ var rustOperatorTokens = map[string]bool{
 	"=": true, "+=": true, "-=": true, "*=": true, "/=": true, "%=": true,
 	"&=": true, "|=": true, "^=": true, "<<=": true, ">>=": true,
 	"..": true, "..=": true, "?": true, ".": true, "::": true, "->": true, "=>": true,
-	"as": true,
+	"as": true, ",": true, "[": true,
+	"return": true, "if": true, "else": true, "match": true, "for": true,
+	"in": true, "while": true, "loop": true, "break": true, "continue": true,
+	"await": true, "yield": true, "move": true, "ref": true,
 }
 
 // rustOperandTypes lists the named node types counted as Halstead operands:
@@ -440,6 +447,32 @@ var rustOperandTypes = map[string]bool{
 	"identifier": true, "field_identifier": true, "shorthand_field_identifier": true,
 	"self": true, "integer_literal": true, "float_literal": true, "char_literal": true,
 	"string_content": true, "boolean_literal": true,
+}
+
+// rustCallTypes lists the node types counted as one call operator. A macro
+// invocation already reports its "!" and is not counted twice.
+var rustCallTypes = map[string]bool{"call_expression": true}
+
+// rustPruneTypes lists the node types never walked: a type is not an operand,
+// and the "<" and ">" of "Vec<String>" are not comparisons.
+var rustPruneTypes = map[string]bool{
+	"type_identifier": true, "primitive_type": true, "generic_type": true,
+	"type_arguments": true, "type_parameters": true,
+	"scoped_type_identifier": true, "reference_type": true,
+	"pointer_type": true, "array_type": true, "tuple_type": true,
+	"dynamic_type": true, "function_type": true, "abstract_type": true,
+	"bounded_type": true, "removed_trait_bound": true, "lifetime": true,
+	"where_clause": true, "unit_type": true,
+}
+
+// rustOperandSpec reads a field access as two operands joined by the "."
+// operator ("self.items" gives "self" and "items"): the cohesion metrics rely
+// on the bare field name, since "self" is reported as an operand of its own.
+var rustOperandSpec = Treesitter.OperandSpec{
+	OperatorTokens: rustOperatorTokens,
+	OperandTypes:   rustOperandTypes,
+	CallTypes:      rustCallTypes,
+	PruneTypes:     rustPruneTypes,
 }
 
 // ExtractOperatorsOperands collects Halstead operators and operands from the
@@ -459,5 +492,5 @@ func (a *TreeSitterAdapter) ExtractOperatorsOperands(src []byte, startLine, endL
 		tree := parser.Parse(nil, source)
 		root = tree.RootNode()
 	}
-	return Treesitter.ExtractOperatorsOperandsFromAST(root, source, startLine, endLine, rustOperatorTokens, rustOperandTypes)
+	return rustOperandSpec.Extract(root, source, startLine, endLine)
 }

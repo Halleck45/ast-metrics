@@ -310,8 +310,11 @@ func eachDescendantOfType(n *sitter.Node, t string, yield func(*sitter.Node)) {
 }
 
 // goOperatorTokens lists the anonymous token types counted as Halstead
-// operators: arithmetic, comparison, logical, bitwise, assignments and
-// channel operations.
+// operators: arithmetic, comparison, logical, bitwise, assignments, channel
+// operations, the selector, the argument separator, the index and the keywords
+// that drive the control flow. Keywords count as operators: without them, a
+// body made of plain statements ("return c.items") would hold none at all, and
+// its Halstead volume would collapse to zero.
 var goOperatorTokens = map[string]bool{
 	"+": true, "-": true, "*": true, "/": true, "%": true,
 	"==": true, "!=": true, "<": true, ">": true, "<=": true, ">=": true,
@@ -320,6 +323,11 @@ var goOperatorTokens = map[string]bool{
 	"=": true, ":=": true, "+=": true, "-=": true, "*=": true, "/=": true, "%=": true,
 	"&=": true, "|=": true, "^=": true, "<<=": true, ">>=": true, "&^=": true,
 	"++": true, "--": true, "<-": true,
+	".": true, ",": true, "[": true, "...": true,
+	"return": true, "if": true, "else": true, "for": true, "range": true,
+	"switch": true, "case": true, "default": true, "select": true,
+	"break": true, "continue": true, "fallthrough": true, "goto": true,
+	"go": true, "defer": true,
 }
 
 // goOperandTypes lists the named node types counted as Halstead operands.
@@ -347,10 +355,16 @@ var goPruneFields = map[string]bool{
 
 var goChainTypes = map[string]bool{"selector_expression": true}
 
+// goCallTypes lists the node types counted as one call operator. A type
+// conversion ("int64(x)") reads as a call in the Go grammar, which is fine:
+// both apply an operator to an expression.
+var goCallTypes = map[string]bool{"call_expression": true}
+
 func (a *TreeSitterAdapter) operandSpec(root *sitter.Node, src []byte, startLine int) Treesitter.OperandSpec {
 	return Treesitter.OperandSpec{
 		OperatorTokens: goOperatorTokens,
 		OperandTypes:   goOperandTypes,
+		CallTypes:      goCallTypes,
 		PruneTypes:     goPruneTypes,
 		PruneFields:    goPruneFields,
 		ChainTypes:     goChainTypes,
