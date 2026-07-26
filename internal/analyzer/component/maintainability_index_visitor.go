@@ -73,6 +73,16 @@ func (v *MaintainabilityIndexVisitor) Calculate(stmts *pb.Stmts) {
 	var cloc int32 = *stmts.Analyze.Volume.Cloc
 	var cyclomatic int32 = *stmts.Analyze.Complexity.Cyclomatic
 	var halsteadVolume float64 = *stmts.Analyze.Volume.HalsteadVolume
+
+	// The index is built on the logarithm of the Halstead volume, so a volume of
+	// zero has no defined index. That covers a declaration holding no statement
+	// (a struct of fields, an interface) as well as a body made of a single
+	// distinct symbol, whose volume is N x log2(1) = 0. Leaving the index
+	// undefined keeps those out of the averages, where an invented value would
+	// drag the whole project down.
+	if halsteadVolume <= 0 {
+		return
+	}
 	var MIwoC float64 = 0
 	var MI float64 = 0
 	var commentWeight float64 = 0
@@ -101,11 +111,6 @@ func (v *MaintainabilityIndexVisitor) Calculate(stmts *pb.Stmts) {
 		MIwoC = 0
 		commentWeight = 0
 	}
-	// Fallback for empty Halstead on non-empty nodes, but only for class scopes (PHP expectation)
-	if v.inClass && MI == 0 && halsteadVolume == 0 && (loc > 0 || lloc > 0) {
-		MI = 7
-	}
-
 	MI32 := float64(MI)
 	MIwoC32 := float64(MIwoC)
 	commentWeight32 := float64(commentWeight)

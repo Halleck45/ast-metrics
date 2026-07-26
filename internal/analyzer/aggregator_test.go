@@ -512,3 +512,62 @@ func TestMergeChunksKeepsPerMethodAggregates(t *testing.T) {
 	assert.Equal(t, float64(1), result.CyclomaticComplexityPerMethod.Min)
 	assert.Equal(t, float64(14), result.CyclomaticComplexityPerMethod.Max)
 }
+
+// TestAggregatesByDirectory checks the per-directory aggregation: one aggregate
+// per path given on the command line, each file belonging to exactly one scope.
+func TestAggregatesByDirectory(t *testing.T) {
+	files := []*pb.File{
+		{Path: "/project/src/a.php", ProgrammingLanguage: "PHP"},
+		{Path: "/project/src/deep/b.php", ProgrammingLanguage: "PHP"},
+		{Path: "/project/lib/c.php", ProgrammingLanguage: "PHP"},
+		{Path: "/elsewhere/d.php", ProgrammingLanguage: "PHP"},
+	}
+
+	aggregator := NewAggregator(files, nil)
+	aggregator.WithAnalyzedPaths([]string{"/project/src", "/project/lib"})
+	project := aggregator.Aggregates()
+
+	assert.Len(t, project.ByDirectory, 2)
+	assert.Equal(t, 2, project.ByDirectory["/project/src"].NbFiles)
+	assert.Equal(t, 1, project.ByDirectory["/project/lib"].NbFiles)
+	assert.Len(t, project.ByDirectory["/project/src"].ConcernedFiles, 2)
+
+	// files outside every analyzed path are only counted globally
+	assert.Equal(t, 4, project.ByFile.NbFiles)
+}
+
+// TestAggregatesByDirectoryPicksTheMostSpecificPath checks that a file under two
+// nested analyzed paths belongs to the deepest one only.
+func TestAggregatesByDirectoryPicksTheMostSpecificPath(t *testing.T) {
+	files := []*pb.File{
+		{Path: "/project/src/a.php", ProgrammingLanguage: "PHP"},
+		{Path: "/project/src/vendor/b.php", ProgrammingLanguage: "PHP"},
+	}
+
+	aggregator := NewAggregator(files, nil)
+	aggregator.WithAnalyzedPaths([]string{"/project/src", "/project/src/vendor"})
+	project := aggregator.Aggregates()
+
+	assert.Equal(t, 1, project.ByDirectory["/project/src"].NbFiles)
+	assert.Equal(t, 1, project.ByDirectory["/project/src/vendor"].NbFiles)
+	assert.Equal(t, "/project/src/vendor/b.php", project.ByDirectory["/project/src/vendor"].ConcernedFiles[0].Path)
+}
+
+// TestAggregatesWithoutSeveralAnalyzedPaths guards the mono-folder case: a single
+// analyzed path must not duplicate the global view.
+func TestAggregatesWithoutSeveralAnalyzedPaths(t *testing.T) {
+	files := []*pb.File{{Path: "/project/src/a.php", ProgrammingLanguage: "PHP"}}
+
+	single := NewAggregator(files, nil)
+	single.WithAnalyzedPaths([]string{"/project/src"})
+	assert.Empty(t, single.Aggregates().ByDirectory)
+
+	// same path given twice is still a single scope
+	twice := NewAggregator(files, nil)
+	twice.WithAnalyzedPaths([]string{"/project/src", "/project/src/"})
+	assert.Empty(t, twice.Aggregates().ByDirectory)
+
+	// no analyzed path at all (lint, review, mcp)
+	none := NewAggregator(files, nil)
+	assert.Empty(t, none.Aggregates().ByDirectory)
+}

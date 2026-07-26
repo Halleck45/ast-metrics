@@ -1,4 +1,5 @@
-<!-- File Explorer Sidebar -->
+<!-- File explorer sidebar: a real nested tree, flattened into one list so Alpine
+     can render any depth with a single loop. -->
 <div x-data="fileSidebar()" x-cloak
      @keydown.window="if ((e=$event).ctrlKey && e.key==='b') { e.preventDefault(); toggle(); }">
 
@@ -11,15 +12,12 @@
 
     <!-- Sidebar panel -->
     <div :class="open ? 'translate-x-0' : 'translate-x-full'" class="file-sidebar" id="file-sidebar-panel">
+
         <!-- Header -->
-        <div class="flex items-center justify-between px-4 py-3 border-b border-slate-200 bg-slate-50">
-            <h3 class="text-sm font-semibold text-slate-700 flex items-center gap-2">
-                <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 12.75V12A2.25 2.25 0 0 1 4.5 9.75h15A2.25 2.25 0 0 1 21.75 12v.75m-8.69-6.44-2.12-2.12a1.5 1.5 0 0 0-1.061-.44H4.5A2.25 2.25 0 0 0 2.25 6v12a2.25 2.25 0 0 0 2.25 2.25h15A2.25 2.25 0 0 0 21.75 18V9a2.25 2.25 0 0 0-2.25-2.25h-5.379a1.5 1.5 0 0 1-1.06-.44Z" />
-                </svg>
-                Files
-            </h3>
-            <button @click="toggle()" aria-label="Close file explorer" class="p-1 rounded hover:bg-slate-200 text-slate-500">
+        <div class="flex items-center justify-between px-5 pt-5 pb-3">
+            <h2 class="card-title text-base">Files</h2>
+            <button @click="toggle()" aria-label="Close the file explorer"
+                    class="p-1.5 rounded-lg hover:bg-slate-100 text-slate-400 hover:text-slate-600 transition-colors">
                 <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
                 </svg>
@@ -27,56 +25,86 @@
         </div>
 
         <!-- Search -->
-        <div class="px-3 py-2 border-b border-slate-100">
-            <input type="text" x-model.debounce.200ms="query" placeholder="Search files..."
-                   class="w-full px-3 py-1.5 text-xs border border-slate-200 rounded-md focus:outline-none focus:ring-1 focus:ring-slate-400 bg-white">
+        <div class="px-5 pb-3">
+            <div class="relative">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"
+                     class="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z" />
+                </svg>
+                <input type="search" x-model.debounce.200ms="query" aria-label="Search a file"
+                       placeholder="Search a file"
+                       class="w-full bg-slate-50 border border-slate-200 rounded-full pl-10 pr-3 py-2 text-sm
+                              placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500
+                              focus:border-transparent focus:bg-white transition-colors">
+            </div>
         </div>
 
-        <!-- Min risks filter -->
-        <div class="px-3 py-2 border-b border-slate-100 flex items-center gap-2">
-            <label for="min-risks-input" class="text-xs text-slate-500 whitespace-nowrap">Min risks</label>
-            <input type="number" min="0" x-model.number="minRisks" id="min-risks-input"
-                   class="w-16 px-2 py-1 text-xs border border-slate-200 rounded-md focus:outline-none focus:ring-1 focus:ring-slate-400 bg-white">
+        <!-- Scope: everything, or only files carrying a risk -->
+        <div class="px-5 pb-3">
+            <div class="seg w-full" role="tablist" aria-label="Filter files">
+                <button role="tab" class="seg-item flex-1 text-center" :class="onlyAtRisk ? '' : 'seg-item--active'"
+                        :aria-selected="onlyAtRisk ? 'false' : 'true'" @click="onlyAtRisk = false">All</button>
+                <button role="tab" class="seg-item flex-1 text-center" :class="onlyAtRisk ? 'seg-item--active' : ''"
+                        :aria-selected="onlyAtRisk ? 'true' : 'false'" @click="onlyAtRisk = true">
+                    At risk <span class="text-slate-400 font-normal" x-text="atRiskCount"></span>
+                </button>
+            </div>
         </div>
 
         <!-- Tree -->
-        <div class="overflow-y-auto flex-1 px-2 py-2" style="max-height: calc(100vh - 150px);">
-            <template x-for="root in tree" :key="root.name">
-                <div class="mb-1">
-                    <template x-for="dir in root.dirs" :key="dir.path">
-                        <div class="mb-0.5">
-                            <button @click="dir.expanded = !dir.expanded"
-                                    class="flex items-center gap-1 w-full px-2 py-1 text-xs font-medium text-slate-600 hover:bg-slate-100 rounded truncate">
-                                <svg :class="dir.expanded ? 'rotate-90' : ''" class="w-3 h-3 transition-transform flex-shrink-0" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
-                                </svg>
-                                <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5 text-amber-500 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                                    <path d="M2 6a2 2 0 012-2h5l2 2h5a2 2 0 012 2v6a2 2 0 01-2 2H4a2 2 0 01-2-2V6z" />
-                                </svg>
-                                <span class="truncate" x-text="dir.name"></span>
-                            </button>
-                            <div x-show="dir.expanded" class="ml-4">
-                                <template x-for="f in dir.files" :key="f.path">
-                                    <div @click="selectFile(f)"
-                                       class="flex items-center gap-1.5 px-2 py-0.5 text-xs text-slate-600 hover:bg-slate-100 rounded truncate group cursor-pointer"
-                                       :class="selectedPath === f.path ? 'bg-blue-50 text-blue-700 font-medium' : ''">
-                                        <span class="w-1.5 h-1.5 rounded-full flex-shrink-0"
-                                              :class="riskDot(f)"></span>
-                                        <span class="truncate" x-text="fileName(f)"></span>
-                                    </div>
-                                </template>
-                            </div>
-                        </div>
-                    </template>
+        <div class="overflow-y-auto flex-1 px-3 pb-4">
+            <template x-for="n in visibleNodes" :key="n.id">
+                <div>
+                    <!-- Folder -->
+                    <button x-show="n.type === 'dir'" @click="toggleDir(n)"
+                            :style="`padding-left: ${0.5 + n.depth * 0.75}rem`"
+                            :aria-expanded="n.expanded ? 'true' : 'false'"
+                            class="w-full flex items-center gap-1.5 pr-2 py-1.5 rounded-lg text-left
+                                   text-slate-500 hover:bg-slate-50 transition-colors group">
+                        <svg :class="n.expanded ? 'rotate-90' : ''"
+                             class="w-3 h-3 shrink-0 text-slate-300 group-hover:text-slate-400 transition-transform"
+                             xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
+                        </svg>
+                        <span class="dot shrink-0" :class="n.sev"></span>
+                        <span class="font-mono text-xs truncate" x-text="n.name" :title="n.path"></span>
+                    </button>
+
+                    <!-- File -->
+                    <button x-show="n.type === 'file'" @click="selectFile(n.file)"
+                            :data-sb-path="n.path"
+                            :style="`padding-left: ${1.5 + n.depth * 0.75}rem`"
+                            :aria-current="n.file && selectedPath === n.file.path ? 'true' : 'false'"
+                            class="w-full flex items-center gap-1.5 pr-3 py-1.5 rounded-full text-left transition-colors"
+                            :class="n.file && selectedPath === n.file.path
+                                    ? 'bg-slate-900 text-white'
+                                    : 'text-slate-600 hover:bg-slate-50'">
+                        <span class="dot shrink-0" :class="n.sev"></span>
+                        <span class="font-mono text-xs truncate" x-text="n.name" :title="n.path"></span>
+                        <span x-show="n.file && n.file.isTest"
+                              class="shrink-0 px-1 py-px rounded text-[10px] font-medium leading-tight"
+                              :class="n.file && selectedPath === n.file.path ? 'bg-white/20 text-white' : 'bg-violet-50 text-violet-600'">test</span>
+                    </button>
                 </div>
             </template>
-            <div x-show="tree.length === 0" class="text-xs text-slate-400 text-center py-4">No files found</div>
+
+            <p x-show="!visibleNodes.length" class="text-xs text-slate-400 text-center py-8">
+                <span x-show="query">No file matches <span class="font-medium" x-text="query"></span>.</span>
+                <span x-show="!query && onlyAtRisk">No file carries a risk.</span>
+            </p>
+        </div>
+
+        <!-- Legend -->
+        <div class="px-5 py-3 border-t border-slate-100 flex items-center gap-4 text-[11px] text-slate-400">
+            <span class="flex items-center gap-1.5"><span class="dot sev-good"></span> clean</span>
+            <span class="flex items-center gap-1.5"><span class="dot sev-warn"></span> some risks</span>
+            <span class="flex items-center gap-1.5"><span class="dot sev-bad"></span> many risks</span>
         </div>
     </div>
 
     <!-- FAB toggle -->
     <button x-show="!open" x-transition @click="toggle()"
-            class="fixed bottom-6 right-6 z-50 w-12 h-12 bg-slate-700 hover:bg-slate-800 text-white rounded-full shadow-lg flex items-center justify-center transition-colors"
+            class="fixed bottom-6 right-6 z-50 w-12 h-12 bg-slate-800 hover:bg-slate-900 text-white rounded-full shadow-lg flex items-center justify-center transition-colors"
             title="Browse files (Ctrl+B)"
             aria-label="Browse files">
         <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
@@ -89,17 +117,19 @@
 function fileSidebar() {
     const isDesktop = window.innerWidth >= 1024;
     const stored = localStorage.getItem('ast-sidebar-open');
-    const defaultOpen = isDesktop ? true : false;
-    const initialOpen = stored !== null ? stored === 'true' : defaultOpen;
     const isExplorerPage = {% if page == 'explorer.html' %}true{% else %}false{% endif %};
+    // The tree is the explorer's main navigation, so it is always open there.
+    // Everywhere else it is a side tool: closed until asked for (FAB or Ctrl+B).
+    const initialOpen = isExplorerPage ? true : (stored !== null ? stored === 'true' : false);
 
     return {
         open: initialOpen,
         query: '',
-        minRisks: 0,
+        onlyAtRisk: false,
         files: [],
         risksByPath: {},
-        tree: [],
+        nodes: [],
+        collapsed: {},
         selectedPath: '',
         isExplorerPage: isExplorerPage,
 
@@ -108,15 +138,18 @@ function fileSidebar() {
             this.files = d.files || [];
             this.risksByPath = d.risks || {};
             this.buildTree();
-            this.$watch('query', () => this.buildTree());
-            this.$watch('minRisks', () => this.buildTree());
             if (this.open && isDesktop) this.pushMain(true);
 
-            // On explorer page, listen for external selection (e.g. URL deep-link)
             if (this.isExplorerPage) {
                 window.addEventListener('explorer-file-selected', (e) => {
-                    if (e.detail && e.detail.path) this.selectedPath = e.detail.path;
+                    if (e.detail && e.detail.path) {
+                        this.selectedPath = e.detail.path;
+                        this.revealPath(e.detail.path);
+                    }
                 });
+                // The explorer may have selected a deep-linked file before this
+                // component was listening, so resolve ?file= here as well.
+                this.selectFromQuery();
             }
         },
 
@@ -124,11 +157,7 @@ function fileSidebar() {
             this.open = !this.open;
             localStorage.setItem('ast-sidebar-open', this.open);
             if (window.innerWidth >= 1024) this.pushMain(this.open);
-            if (this.open && window.innerWidth < 1024) {
-                document.body.style.overflow = 'hidden';
-            } else {
-                document.body.style.overflow = '';
-            }
+            document.body.style.overflow = (this.open && window.innerWidth < 1024) ? 'hidden' : '';
         },
 
         pushMain(push) {
@@ -139,39 +168,134 @@ function fileSidebar() {
             }
         },
 
-        buildTree() {
-            const q = (this.query || '').toLowerCase();
-            const mr = this.minRisks || 0;
-            const filtered = this.files.filter(f => {
-                if (q && !(f.path || '').toLowerCase().includes(q) && !(f.shortPath || '').toLowerCase().includes(q)) return false;
-                if (mr > 0 && (this.risksByPath[f.path] || []).length < mr) return false;
-                return true;
-            });
+        // Resolve ?file=<hash|shortPath|path> the same way the explorer does
+        selectFromQuery() {
+            let param = null;
+            try { param = new URLSearchParams(window.location.search).get('file'); } catch (e) { return; }
+            if (!param) return;
+            const f = this.files.find(x => (x.pathHash || '') === param)
+                || this.files.find(x => (x.shortPath || '') === param)
+                || this.files.find(x => (x.path || '') === param);
+            if (!f) return;
+            this.selectedPath = f.path;
+            this.revealPath(f.path);
+        },
 
-            const byDir = {};
-            for (const f of filtered) {
-                const parts = (f.shortPath || f.path).split('/');
-                const dir = parts.slice(0, -1).join('/') || '/';
-                if (!byDir[dir]) byDir[dir] = [];
-                byDir[dir].push(f);
+        // Risks are keyed by path hash, like everywhere else in the report data
+        risksFor(f) { return this.risksByPath[f.pathHash] || []; },
+
+        severityOf(count) {
+            if (count >= 3) return 'sev-bad';
+            if (count >= 1) return 'sev-warn';
+            return 'sev-good';
+        },
+
+        get atRiskCount() {
+            return this.files.filter(f => this.risksFor(f).length > 0).length;
+        },
+
+        // Build a nested tree, then flatten it into an ordered list of nodes that
+        // carry their own depth. One Alpine loop can then render any depth.
+        buildTree() {
+            const root = { children: new Map(), files: [] };
+            for (const f of this.files) {
+                const parts = (f.shortPath || f.path || '').split('/').filter(Boolean);
+                const fileName = parts.pop();
+                let node = root;
+                for (const part of parts) {
+                    if (!node.children.has(part)) node.children.set(part, { children: new Map(), files: [] });
+                    node = node.children.get(part);
+                }
+                node.files.push({ name: fileName, file: f });
             }
 
-            const rootsMap = {};
-            Object.keys(byDir).forEach(d => {
-                const root = (d.split('/')[0]) || '/';
-                if (!rootsMap[root]) rootsMap[root] = [];
-                rootsMap[root].push(d);
-            });
+            const out = [];
+            let seq = 0;
+            const walk = (node, depth, prefix) => {
+                for (const [name, child] of [...node.children.entries()].sort((a, b) => a[0].localeCompare(b[0]))) {
+                    const path = prefix ? prefix + '/' + name : name;
+                    // A folder inherits the worst severity of what it contains
+                    const worst = this.worstSeverityIn(child);
+                    out.push({ id: 'd' + (seq++), type: 'dir', name, path, depth, sev: worst });
+                    walk(child, depth + 1, path);
+                }
+                for (const entry of node.files.sort((a, b) => a.name.localeCompare(b.name))) {
+                    const count = this.risksFor(entry.file).length;
+                    out.push({
+                        id: 'f' + (seq++), type: 'file', name: entry.name,
+                        path: entry.file.shortPath || entry.file.path,
+                        depth, file: entry.file, sev: this.severityOf(count),
+                    });
+                }
+            };
+            walk(root, 0, '');
+            this.nodes = out;
+        },
 
-            this.tree = Object.keys(rootsMap).sort().map(root => ({
-                name: root,
-                dirs: rootsMap[root].sort().map(d => ({
-                    name: d,
-                    path: d,
-                    expanded: !!q || !!mr || Object.keys(rootsMap).length <= 3,
-                    files: (byDir[d] || []).sort((a, b) => (a.path || '').localeCompare(b.path || ''))
-                }))
-            }));
+        worstSeverityIn(node) {
+            let max = 0;
+            const visit = (n) => {
+                for (const entry of n.files) max = Math.max(max, this.risksFor(entry.file).length);
+                for (const child of n.children.values()) visit(child);
+            };
+            visit(node);
+            return this.severityOf(max);
+        },
+
+        // Visibility is derived: a node shows when no ancestor is collapsed. A
+        // search or the "at risk" filter hides non-matching files and any folder
+        // left empty by the filter.
+        get visibleNodes() {
+            const q = this.query.trim().toLowerCase();
+            const keep = new Set();
+            if (q || this.onlyAtRisk) {
+                for (const n of this.nodes) {
+                    if (n.type !== 'file') continue;
+                    if (q && !(n.path || '').toLowerCase().includes(q)) continue;
+                    if (this.onlyAtRisk && this.risksFor(n.file).length === 0) continue;
+                    keep.add(n.path);
+                    const parts = (n.path || '').split('/');
+                    for (let i = 1; i < parts.length; i++) keep.add(parts.slice(0, i).join('/'));
+                }
+            }
+            const out = [];
+            for (const n of this.nodes) {
+                if ((q || this.onlyAtRisk) && !keep.has(n.path)) continue;
+                // While filtering, everything matching stays expanded
+                const collapsedAncestor = (q || this.onlyAtRisk) ? false : this.hasCollapsedAncestor(n.path);
+                if (collapsedAncestor) continue;
+                out.push(n.type === 'dir'
+                    ? { ...n, expanded: (q || this.onlyAtRisk) ? true : !this.collapsed[n.path] }
+                    : n);
+            }
+            return out;
+        },
+
+        hasCollapsedAncestor(path) {
+            const parts = (path || '').split('/');
+            for (let i = 1; i < parts.length; i++) {
+                if (this.collapsed[parts.slice(0, i).join('/')]) return true;
+            }
+            return false;
+        },
+
+        toggleDir(n) {
+            this.collapsed = { ...this.collapsed, [n.path]: !this.collapsed[n.path] };
+        },
+
+        // Make sure a deep-linked file is neither hidden inside a collapsed
+        // folder nor off-screen in a long tree
+        revealPath(fullPath) {
+            const f = this.files.find(x => x.path === fullPath);
+            const rel = (f && (f.shortPath || f.path)) || fullPath;
+            const parts = rel.split('/');
+            const next = { ...this.collapsed };
+            for (let i = 1; i < parts.length; i++) delete next[parts.slice(0, i).join('/')];
+            this.collapsed = next;
+            this.$nextTick(() => {
+                const el = document.querySelector(`[data-sb-path="${CSS.escape(rel)}"]`);
+                if (el) el.scrollIntoView({ block: 'center' });
+            });
         },
 
         selectFile(f) {
@@ -179,22 +303,9 @@ function fileSidebar() {
             if (this.isExplorerPage) {
                 this.$dispatch('sidebar-select-file', { path: f.path, pathHash: f.pathHash || f.shortPath || f.path });
             } else {
-                window.location.href = 'explorer.html?file=' + encodeURIComponent(f.pathHash || f.shortPath || f.path);
+                window.location.href = 'explorer{{ scopeSuffix }}.html?file=' + encodeURIComponent(f.pathHash || f.shortPath || f.path);
             }
         },
-
-        riskDot(f) {
-            const count = (this.risksByPath[f.path] || []).length;
-            if (count >= 5) return 'bg-red-500';
-            if (count >= 3) return 'bg-orange-500';
-            if (count >= 1) return 'bg-amber-400';
-            return 'bg-green-400';
-        },
-
-        fileName(f) {
-            const p = f.shortPath || f.path || '';
-            return p.split('/').pop() || p;
-        }
     };
 }
 </script>

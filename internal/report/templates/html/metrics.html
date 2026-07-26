@@ -1,0 +1,349 @@
+{% extends "layout.html" %}
+
+{% block title %}
+Metrics
+{% endblock %}
+
+{% block pageTitle %}
+AST Metrics - Metrics
+{% endblock %}
+
+{% block content %}
+
+<script>
+document.addEventListener('alpine:init', () => {
+    Alpine.store('helpModal', { open: false, title: '', video: '', link: '' });
+});
+</script>
+
+<style>
+    .metric-value {
+        font-family: var(--font-mono);
+        letter-spacing: -0.05em;
+    }
+</style>
+
+{% set avgCcPerMethod = currentView.CyclomaticComplexityPerMethod.Avg %}
+{% set avgLocPerMethod = currentView.LocPerMethod.Avg %}
+{% set avgLocPerFile = currentView.Loc.Avg %}
+
+<!-- Verdict -->
+<div class="page-hero animate-fade-in-up mb-6">
+    <div class="flex flex-wrap items-start justify-between gap-8">
+        <div class="min-w-0">
+            <p class="page-kicker mb-3">
+                {{ scopeLabel|upper }} ·
+                PRODUCTION FILES ONLY
+            </p>
+            <h1 class="verdict-title">
+                {% if avgCcPerMethod <= 5 %}
+                    {% if avgLocPerMethod <= 20 %}
+                        {% if avgLocPerFile > 250 %}
+                        Methods stay simple, files get long.<br>
+                        <span class="verdict-muted">The weight sits in how much each file holds.</span>
+                        {% else %}
+                        The code stays small and simple.<br>
+                        <span class="verdict-muted">Nothing in the aggregates stands out.</span>
+                        {% endif %}
+                    {% else %}
+                    Methods stay simple, but they run long.<br>
+                    <span class="verdict-muted">Few branches, many lines: mostly straight-line code.</span>
+                    {% endif %}
+                {% else %}
+                    {% if avgLocPerMethod <= 20 %}
+                    Short methods, dense logic.<br>
+                    <span class="verdict-muted">Each one packs more branches than its size suggests.</span>
+                    {% else %}
+                    Methods are long and branch-heavy.<br>
+                    <span class="verdict-muted">Both size and control flow run past the usual limits.</span>
+                    {% endif %}
+                {% endif %}
+            </h1>
+            <p class="verdict-lead mt-4">
+                On average a method holds <strong>{{ currentView.LocPerMethod.Avg|floatformat:0 }} lines</strong>
+                and <strong>{{ currentView.CyclomaticComplexityPerMethod.Avg|floatformat:1 }} decision paths</strong>,
+                while a file holds <strong>{{ currentView.Loc.Avg|floatformat:0 }} lines</strong>.
+                Maintainability averages <strong>{{ currentView.MaintainabilityIndex.Avg|floatformat:0 }}</strong>
+                against a target of 85, and a class covers
+                <strong>{{ currentView.Lcom4PerClass.Avg|floatformat:1 }}</strong> groups of unrelated methods
+                where 1 means one job per class.
+            </p>
+        </div>
+        <div class="kpi-strip kpi-strip--divided shrink-0">
+            <div>
+                <div class="kpi-value">{{ currentView.ConcernedFiles|length }}</div>
+                <div class="kpi-label">files</div>
+            </div>
+            <div>
+                <div class="kpi-value">{{ currentView.NbClasses }}</div>
+                <div class="kpi-label">classes<br>&amp; structs</div>
+            </div>
+            <div>
+                <div class="kpi-value">{{ currentView.NbMethods }}</div>
+                <div class="kpi-label">methods<br>&amp; functions</div>
+            </div>
+            <div>
+                <div class="kpi-value">{{ currentView.Loc.Sum|stringifyNumber }}</div>
+                <div class="kpi-label" tabindex="0" data-tip="Physical lines of the production files, comments and blank lines included. Logical lines: {{ currentView.Lloc.Sum|stringifyNumber }}.">lines of code ⓘ</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% include "partials/language_tabs.html" with pageBase="metrics" %}
+
+<p class="section-title mb-3">How the codebase spreads out</p>
+
+<!-- Distribution charts -->
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+
+    <!-- Complexity per method -->
+    <div class="soft-card animate-fade-in-up stagger-1">
+        <div class="flex items-start justify-between gap-2">
+            <div class="min-w-0">
+                <h2 class="card-title">Branching per method</h2>
+                <p class="card-sub">How many decision paths a method holds.</p>
+            </div>
+            <button x-data @click="Object.assign($store.helpModal, { open: true, title: 'Cyclomatic Complexity', video: 'https://ast-metrics.dev/animations/Cyclomatic-complexity.webm', link: 'https://ast-metrics.dev/metrics/cyclomatic-complexity/' })" class="shrink-0 text-gray-300 hover:text-blue-500 transition-colors" title="Watch video explanation">
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /><path stroke-linecap="round" stroke-linejoin="round" d="M15.91 11.672a.375.375 0 010 .656l-5.603 3.113a.375.375 0 01-.557-.328V8.887c0-.286.307-.466.557-.327l5.603 3.112z" /></svg>
+            </button>
+        </div>
+        <div class="flex items-baseline gap-2 mt-3">
+            <span class="stat-tile-value metric-value">{{ currentView.CyclomaticComplexityPerMethod.Avg | floatformat:2 }}</span>
+            {% if currentView.Comparaison %}
+            {% include 'componentComparaisonBadge.html' with comparaisonMode='lowIsBetter' diff=currentView.Comparaison.AverageCyclomaticComplexityPerMethod round=2 %}
+            {% endif %}
+        </div>
+        <div class="stat-tile-target">average per method &middot; target under 5</div>
+        <div class="card-graph mt-3">
+            {{ currentView|barchartCyclomaticByMethodRepartition}}
+        </div>
+    </div>
+
+    <!-- Class cohesion -->
+    <div class="soft-card animate-fade-in-up stagger-1">
+        <div class="flex items-start justify-between gap-2">
+            <div class="min-w-0">
+                <h2 class="card-title">Focused classes</h2>
+                <p class="card-sub">Unrelated groups of methods per class (LCOM4).</p>
+            </div>
+            <button x-data @click="Object.assign($store.helpModal, { open: true, title: 'Class Cohesion (LCOM4)', video: 'https://ast-metrics.dev/animations/lcom.webm', link: 'https://ast-metrics.dev/metrics/lcom4/' })" class="shrink-0 text-gray-300 hover:text-blue-500 transition-colors" title="Watch video explanation">
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /><path stroke-linecap="round" stroke-linejoin="round" d="M15.91 11.672a.375.375 0 010 .656l-5.603 3.113a.375.375 0 01-.557-.328V8.887c0-.286.307-.466.557-.327l5.603 3.112z" /></svg>
+            </button>
+        </div>
+        <div class="flex items-baseline gap-2 mt-3">
+            {% set lcomClass="text-bad" %}
+            {% if currentView.Lcom4PerClass.Avg < 1.7 %}{% set lcomClass="text-good" %}{% elif currentView.Lcom4PerClass.Avg < 3 %}{% set lcomClass="text-warn" %}{% endif %}
+            <span class="stat-tile-value metric-value {{ lcomClass }}">{{ currentView.Lcom4PerClass.Avg | floatformat:1 }}</span>
+            {% if currentView.Comparaison %}
+            {% include 'componentComparaisonBadge.html' with comparaisonMode='lowIsBetter' diff=currentView.Comparaison.AverageLcom4 round=2 %}
+            {% endif %}
+        </div>
+        <div class="stat-tile-target">average per class &middot; 1 is ideal</div>
+        <div class="card-graph mt-3">
+            {{ currentView|barchartLcomRepartition}}
+        </div>
+    </div>
+
+    <!-- Maintainability -->
+    <div class="soft-card animate-fade-in-up stagger-2">
+        <div class="min-w-0">
+            <h2 class="card-title">Ease of maintenance</h2>
+            <p class="card-sub">Maintainability Index, from 0 to 128.</p>
+        </div>
+        <div class="flex items-baseline gap-2 mt-3">
+            {% set miClass="text-bad" %}
+            {% if currentView.MaintainabilityIndex.Avg > 84 %}{% set miClass="text-good" %}{% elif currentView.MaintainabilityIndex.Avg > 64 %}{% set miClass="text-warn" %}{% endif %}
+            <span class="stat-tile-value metric-value {{ miClass }}">{{ currentView.MaintainabilityIndex.Avg | floatformat:0 }}</span>
+            {% if currentView.Comparaison %}
+            {% include 'componentComparaisonBadge.html' with comparaisonMode='highIsBetter' diff=currentView.Comparaison.AverageMI round=2 %}
+            {% endif %}
+        </div>
+        <div class="stat-tile-target">average per class &middot; target &ge; 85</div>
+        <div class="card-graph mt-3">
+            {{ currentView|barchartMaintainabilityIndexRepartition}}
+        </div>
+    </div>
+
+    <!-- Method size -->
+    <div class="soft-card animate-fade-in-up stagger-2">
+        <div class="min-w-0">
+            <h2 class="card-title">Method size</h2>
+            <p class="card-sub">Lines of code inside a single method.</p>
+        </div>
+        <div class="flex items-baseline gap-2 mt-3">
+            <span class="stat-tile-value metric-value">{{ currentView.LocPerMethod.Avg | floatformat:0 }}</span>
+            {% if currentView.Comparaison %}
+            {% include 'componentComparaisonBadge.html' with comparaisonMode='lowIsBetter' diff=currentView.Comparaison.AverageLocPerMethod round=2 %}
+            {% endif %}
+        </div>
+        <div class="stat-tile-target">average per method &middot; ideally under 20</div>
+        <div class="card-graph mt-3">
+            {{ currentView|barchartLocPerMethodRepartition}}
+        </div>
+    </div>
+</div>
+
+<p class="section-title mb-3">Every aggregate, in detail</p>
+
+<!-- Detailed aggregates -->
+<div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+
+    <!-- Size & volume -->
+    <div class="soft-card animate-fade-in-up stagger-3">
+        <h2 class="card-title">Size &amp; volume</h2>
+        <p class="card-sub mb-2">How much code there is, and how it splits between files and methods.</p>
+        <div>
+            <div class="data-row">
+                <span class="row-name flex-1 flex items-center gap-1.5">Lines of code (LOC), total
+                    <span tabindex="0" data-tip="Physical lines, comments and blank lines included." class="text-gray-300 text-xs">ⓘ</span></span>
+                <span class="row-value">{{ currentView.Loc.Sum|stringifyNumber }}</span>
+            </div>
+            <div class="data-row">
+                <span class="row-name flex-1 flex items-center gap-1.5">Logical lines (LLOC), total
+                    <span tabindex="0" data-tip="Statement lines only, the real amount of executable code." class="text-gray-300 text-xs">ⓘ</span></span>
+                <span class="row-value">{{ currentView.Lloc.Sum|stringifyNumber }}</span>
+            </div>
+            <div class="data-row">
+                <span class="row-name flex-1 flex items-center gap-1.5">Comment lines (CLOC), total
+                    <span tabindex="0" data-tip="Lines of comments." class="text-gray-300 text-xs">ⓘ</span></span>
+                <span class="row-value">{{ currentView.Cloc.Sum|stringifyNumber }}</span>
+            </div>
+            <div class="data-row">
+                <span class="row-name flex-1">Average LOC per file</span>
+                <span class="row-value">{{ currentView.Loc.Avg|floatformat:0 }}</span>
+            </div>
+            <div class="data-row">
+                <span class="row-name flex-1">Average LOC per method</span>
+                <span class="row-value">{{ currentView.LocPerMethod.Avg|floatformat:1 }}</span>
+            </div>
+            <div class="data-row">
+                <span class="row-name flex-1">Average LLOC per method</span>
+                <span class="row-value">{{ currentView.LlocPerMethod.Avg|floatformat:1 }}</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Complexity + cohesion & coupling -->
+    <div class="soft-card animate-fade-in-up stagger-3">
+        <h2 class="card-title">Complexity</h2>
+        <p class="card-sub mb-2">How much branching the code asks a reader to follow.</p>
+        <div>
+            <div class="data-row">
+                <span class="row-name flex-1 flex items-center gap-1.5">Cyclomatic complexity per method
+                    <span tabindex="0" data-tip="Average number of independent execution paths per method. Below 5 methods stay easy to test." class="text-gray-300 text-xs">ⓘ</span></span>
+                <span class="row-value">{{ currentView.CyclomaticComplexityPerMethod.Avg|floatformat:2 }}
+                    {% if currentView.CyclomaticComplexityPerMethod.Max > 0 %}<span class="text-xs text-gray-400 font-sans font-normal">min {{ currentView.CyclomaticComplexityPerMethod.Min|floatformat:0 }} · max {{ currentView.CyclomaticComplexityPerMethod.Max|floatformat:0 }}</span>{% endif %}</span>
+            </div>
+            <div class="data-row">
+                <span class="row-name flex-1 flex items-center gap-1.5">Cyclomatic complexity per class
+                    <span tabindex="0" data-tip="Average of the summed complexity of each class's methods." class="text-gray-300 text-xs">ⓘ</span></span>
+                <span class="row-value">{{ currentView.CyclomaticComplexityPerClass.Avg|floatformat:1 }}</span>
+            </div>
+        </div>
+
+        <h2 class="card-title mt-6">Cohesion &amp; coupling</h2>
+        <p class="card-sub mb-2">Whether each class does one job, and how tied together they are.</p>
+        <div>
+            <div class="data-row">
+                <span class="row-name flex-1 flex items-center gap-1.5">LCOM4 per class
+                    <span tabindex="0" data-tip="Number of unrelated responsibility groups per class. 1 means each class does one thing." class="text-gray-300 text-xs">ⓘ</span></span>
+                <span class="row-value">{{ currentView.Lcom4PerClass.Avg|floatformat:2 }}
+                    {% if currentView.Lcom4PerClass.Max > 0 %}<span class="text-xs text-gray-400 font-sans font-normal">min {{ currentView.Lcom4PerClass.Min|floatformat:0 }} · max {{ currentView.Lcom4PerClass.Max|floatformat:0 }}</span>{% endif %}</span>
+            </div>
+            <div class="data-row">
+                <span class="row-name flex-1 flex items-center gap-1.5">Afferent coupling (Ca)
+                    <span tabindex="0" data-tip="Average number of components that depend on a class. Shown as a dash when the language engine does not expose class-level dependencies." class="text-gray-300 text-xs">ⓘ</span></span>
+                <span class="row-value">{% if currentView.AfferentCoupling.Counter > 0 %}{{ currentView.AfferentCoupling.Avg|floatformat:2 }}{% else %}-{% endif %}</span>
+            </div>
+            <div class="data-row">
+                <span class="row-name flex-1 flex items-center gap-1.5">Efferent coupling (Ce)
+                    <span tabindex="0" data-tip="Average number of components a class depends on. Shown as a dash when the language engine does not expose class-level dependencies." class="text-gray-300 text-xs">ⓘ</span></span>
+                <span class="row-value">{% if currentView.EfferentCoupling.Counter > 0 %}{{ currentView.EfferentCoupling.Avg|floatformat:2 }}{% else %}-{% endif %}</span>
+            </div>
+            <div class="data-row">
+                <span class="row-name flex-1 flex items-center gap-1.5">Instability
+                    <span tabindex="0" data-tip="Ce / (Ce + Ca), from 0 (stable) to 1 (volatile), over the whole codebase." class="text-gray-300 text-xs">ⓘ</span></span>
+                <span class="row-value">{% if currentView.AfferentCoupling.Counter > 0 %}{{ currentView.Instability.Avg|floatformat:2 }}{% else %}-{% endif %}</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Maintainability -->
+    <div class="soft-card animate-fade-in-up stagger-4">
+        <h2 class="card-title">Maintainability</h2>
+        <p class="card-sub mb-2">How comfortable the code is to change, and how much comments help.</p>
+        <div>
+            <div class="data-row">
+                <span class="row-name flex-1 flex items-center gap-1.5">Maintainability Index
+                    <span tabindex="0" data-tip="Composite of size, complexity and Halstead volume (0-128). Above 85 the code is comfortable to work with." class="text-gray-300 text-xs">ⓘ</span></span>
+                <span class="row-value">{{ currentView.MaintainabilityIndex.Avg|floatformat:1 }}
+                    {% if currentView.MaintainabilityIndex.Max > 0 %}<span class="text-xs text-gray-400 font-sans font-normal">min {{ currentView.MaintainabilityIndex.Min|floatformat:0 }} · max {{ currentView.MaintainabilityIndex.Max|floatformat:0 }}</span>{% endif %}</span>
+            </div>
+            <div class="data-row">
+                <span class="row-name flex-1 flex items-center gap-1.5">Without comments
+                    <span tabindex="0" data-tip="Same index computed while ignoring comments. A large gap with the main index means readability relies heavily on comments." class="text-gray-300 text-xs">ⓘ</span></span>
+                <span class="row-value">{{ currentView.MaintainabilityIndexWithoutComments.Avg|floatformat:1 }}</span>
+            </div>
+            <div class="data-row">
+                <span class="row-name flex-1 flex items-center gap-1.5">Comment weight
+                    <span tabindex="0" data-tip="Contribution of comments to the Maintainability Index. Higher means comments help more." class="text-gray-300 text-xs">ⓘ</span></span>
+                <span class="row-value">{{ currentView.MaintainabilityCommentWeight.Avg|floatformat:1 }}</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Halstead -->
+    <div class="soft-card animate-fade-in-up stagger-4">
+        <h2 class="card-title">Halstead measures</h2>
+        <p class="card-sub mb-2">Average per class, derived from the count of operators and operands. Relative indicators.</p>
+        <div>
+            <div class="data-row">
+                <span class="row-name flex-1 flex items-center gap-1.5">Volume
+                    <span tabindex="0" data-tip="Size of the implementation in bits: length times log2(vocabulary)." class="text-gray-300 text-xs">ⓘ</span></span>
+                <span class="row-value">{{ currentView.HalsteadVolume.Avg|floatformat:0 }}</span>
+            </div>
+            <div class="data-row">
+                <span class="row-name flex-1 flex items-center gap-1.5">Difficulty
+                    <span tabindex="0" data-tip="How error-prone writing this code is, based on operator and operand reuse." class="text-gray-300 text-xs">ⓘ</span></span>
+                <span class="row-value">{{ currentView.HalsteadDifficulty.Avg|floatformat:1 }}</span>
+            </div>
+            <div class="data-row">
+                <span class="row-name flex-1 flex items-center gap-1.5">Effort
+                    <span tabindex="0" data-tip="Mental effort to implement or understand: difficulty times volume." class="text-gray-300 text-xs">ⓘ</span></span>
+                <span class="row-value">{{ currentView.HalsteadEffort.Avg|stringifyNumber }}</span>
+            </div>
+            <div class="data-row">
+                <span class="row-name flex-1 flex items-center gap-1.5">Time to program
+                    <span tabindex="0" data-tip="Theoretical implementation time per class: effort divided by 18 (Stroud number), in seconds." class="text-gray-300 text-xs">ⓘ</span></span>
+                <span class="row-value">{{ currentView.HalsteadTime.Avg|floatformat:0 }} s</span>
+            </div>
+        </div>
+        <p class="card-sub mt-4 pt-3 border-t border-gray-100">
+            Per-class Halstead details (vocabulary, length, bugs) are available on the <a href="classes{{ scopeSuffix }}.html" class="text-blue-600 hover:underline">Classes</a> page.
+        </p>
+    </div>
+</div>
+
+<!-- Help Modal -->
+<div x-data x-show="$store.helpModal.open" x-cloak class="fixed inset-0 z-50 flex items-center justify-center p-4"
+    style="backdrop-filter: blur(4px);">
+    <div class="absolute inset-0 bg-black/40" @click="$store.helpModal.open = false"></div>
+    <div class="relative soft-card w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+        <div class="flex items-center justify-between mb-4 pb-3 border-b border-gray-200">
+            <h3 class="card-title" x-text="$store.helpModal.title"></h3>
+            <button @click="$store.helpModal.open = false" class="text-gray-400 hover:text-gray-600 transition-colors">
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
+            </button>
+        </div>
+        <video x-ref="helpVideo" :src="$store.helpModal.video" autoplay loop controls playsinline class="w-full rounded-lg mb-4"
+            x-effect="if (!$store.helpModal.open) { $refs.helpVideo?.pause(); $refs.helpVideo?.removeAttribute('src'); }"></video>
+        <a :href="$store.helpModal.link" target="_blank" rel="noopener noreferrer"
+            class="inline-flex items-center gap-1.5 text-sm font-medium text-blue-600 hover:text-blue-700 hover:underline">
+            Read full documentation
+            <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" /></svg>
+        </a>
+    </div>
+</div>
+
+{% endblock %}

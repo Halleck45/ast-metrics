@@ -46,6 +46,10 @@ func (c *ComponentBarchartLcomRepartition) GetData() *orderedmap.OrderedMap[stri
 	}
 
 	for _, file := range c.Files {
+		// test files are not production code: exclude them from the repartition
+		if file.GetIsTest() {
+			continue
+		}
 		classes := engine.GetClassesInFile(file)
 		for _, class := range classes {
 			if class.Stmts == nil || class.Stmts.Analyze == nil || class.Stmts.Analyze.ClassCohesion == nil || class.Stmts.Analyze.ClassCohesion.Lcom4 == nil {

@@ -128,6 +128,8 @@ func (v *AnalyzeCommand) Execute() error {
 	// Start aggregating results
 	aggregator := analyzer.NewAggregator(allResults, v.gitSummaries)
 	aggregator.WithAggregateAnalyzer(Activity.NewBusFactor())
+	// Per-directory views of the HTML report: one scope per analyzed path
+	aggregator.WithAnalyzedPaths(v.Configuration.SourcesToAnalyzePath)
 	if v.Configuration.CompareWith != "" {
 		aggregator.WithComparaison(allResultsCloned, v.Configuration.CompareWith)
 	}

@@ -58,6 +58,9 @@
         <div class="flex items-center gap-2">
             <span>Size = Lines of code</span>
         </div>
+        <div class="flex items-center gap-2 text-gray-400">
+            <span>Test files are excluded</span>
+        </div>
     </div>
 </div>
 
@@ -68,14 +71,16 @@ document.addEventListener('DOMContentLoaded', function() {
         if (!window.PIXI) return;
 
         var _d = window.__AST_DATA__ || {};
-        var filesRaw = _d.files || [];
+        // Test files are not production code: exclude them from the chart
+        // (protojson only emits isTest when it is true)
+        var filesRaw = (_d.files || []).filter(function(f) { return f && !f.isTest; });
         if (!filesRaw.length) return;
 
         var n2c = _d.nodeToCommunity || {};
 
-        var explorerUrl = 'explorer.html';
+        var explorerUrl = 'explorer{{ scopeSuffix }}.html';
         try {
-            explorerUrl = JSON.parse(document.getElementById('bubble-explorer-url').textContent || '"explorer.html"');
+            explorerUrl = JSON.parse(document.getElementById('bubble-explorer-url').textContent || '"explorer{{ scopeSuffix }}.html"');
         } catch(e) {}
 
         // Find common prefix to strip from absolute paths

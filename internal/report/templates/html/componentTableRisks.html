@@ -3,39 +3,33 @@
         <thead>
             <tr class="border-b border-gray-200">
                 {% if detailled == true %}
-                    <th scope="col" class="py-3 px-4 text-xs font-semibold text-gray-600 uppercase tracking-wide text-left">Lang.</th>
+                    <th scope="col" class="py-3 px-4 text-xs font-semibold text-gray-600 uppercase tracking-wide text-left">Language</th>
                 {% endif %}
                 <th scope="col" class="py-3 px-4 text-xs font-semibold text-gray-600 uppercase tracking-wide text-left">Component</th>
                 {% if detailled == true %}
-                    <th scope="col" class="py-3 px-4 text-xs font-semibold text-gray-600 uppercase tracking-wide text-right">
-                        <acronym title="Cyclomatic complexity is the number of decision points in a program" class="cursor-help">
-                            Cyclomatic
-                        </acronym>
+                    <th scope="col" title="Cyclomatic complexity: the number of branches the component can take."
+                        class="py-3 px-4 text-xs font-semibold text-gray-600 uppercase tracking-wide text-right">
+                        Decision points
                     </th>
-                    <th scope="col" class="py-3 px-4 text-xs font-semibold text-gray-600 uppercase tracking-wide text-right">
-                        <acronym title="Halstead effort is calculated as the average effort required to implement a software programe." class="cursor-help">
-                            Effort
-                        </acronym>
+                    <th scope="col" title="Halstead effort: an estimate of the mental effort needed to write the component, computed from its operators and operands."
+                        class="py-3 px-4 text-xs font-semibold text-gray-600 uppercase tracking-wide text-right">
+                        Halstead effort
                     </th>
-                    <th scope="col" class="py-3 px-4 text-xs font-semibold text-gray-600 uppercase tracking-wide text-right">
-                        <acronym title="Lines of code (LOC)" class="cursor-help">
-                            LOC
-                        </acronym>
+                    <th scope="col" title="Lines of code (LOC), comments and blank lines included."
+                        class="py-3 px-4 text-xs font-semibold text-gray-600 uppercase tracking-wide text-right">
+                        Lines
                     </th>
-                    <th scope="col" class="py-3 px-4 text-xs font-semibold text-gray-600 uppercase tracking-wide text-right">
-                        <acronym title="Efferent coupling: number of external dependencies" class="cursor-help">
-                            C<sub>e</sub>
-                        </acronym>
+                    <th scope="col" title="Efferent coupling (Ce): how many other components this one uses."
+                        class="py-3 px-4 text-xs font-semibold text-gray-600 uppercase tracking-wide text-right">
+                        Depends on
                     </th>
-                    <th scope="col" class="py-3 px-4 text-xs font-semibold text-gray-600 uppercase tracking-wide text-right">
-                        <acronym title="Afferent coupling: number of times the component is used by other components" class="cursor-help">
-                            C<sub>a</sub>
-                        </acronym>
+                    <th scope="col" title="Afferent coupling (Ca): how many other components use this one."
+                        class="py-3 px-4 text-xs font-semibold text-gray-600 uppercase tracking-wide text-right">
+                        Used by
                     </th>
-                    <th scope="col" class="py-3 px-4 text-xs font-semibold text-gray-600 uppercase tracking-wide text-right">
-                        <acronym title="0 (stable) to 1 (unstable) - The ratio of efferent coupling (Ce) to total coupling (Ce + Ca)" class="cursor-help">
-                            Instability
-                        </acronym>
+                    <th scope="col" title="Instability: Ce / (Ce + Ca). 0 means nothing here points outside, 1 means everything does."
+                        class="py-3 px-4 text-xs font-semibold text-gray-600 uppercase tracking-wide text-right">
+                        Instability
                     </th>
                 {% endif %}
             </tr>
@@ -45,13 +39,11 @@
             {% if entries|length == 0 %}
             <tr>
                 <td class="px-4 py-12 text-center" colspan="{% if detailled == true %}8{% else %}1{% endif %}">
-                    <div class="empty-state">
-                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-12 h-12 text-green-300 mx-auto mb-3">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75 11.25 15 15 9.75m-3-7.036A11.959 11.959 0 0 1 3.598 6 11.99 11.99 0 0 0 3 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-4.902Z" />
-                        </svg>
-                        <p class="text-sm font-medium text-gray-500">No high-risk components found</p>
-                        <p class="text-xs text-gray-500 mt-1">Your codebase looks healthy!</p>
-                    </div>
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-12 h-12 text-green-300 mx-auto mb-3">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75 11.25 15 15 9.75m-3-7.036A11.959 11.959 0 0 1 3.598 6 11.99 11.99 0 0 0 3 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-4.902Z" />
+                    </svg>
+                    <p class="text-sm font-medium text-gray-500">Nothing to list here</p>
+                    <p class="text-xs text-gray-500 mt-1">No component was measured in this scope.</p>
                 </td>
             </tr>
             {% endif %}
@@ -60,7 +52,7 @@
                 {% set file = e.File %}
                 {% set class = e.Class %}
                 {% set name = e.Name %}
-                <tr class="table-row">
+                <tr class="hover:bg-slate-50 transition-colors">
                     {% if detailled == true %}
                         <td class="px-4 py-3 whitespace-nowrap">
                             <span class="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium bg-gray-100 text-gray-700">
@@ -70,9 +62,9 @@
                     {% endif %}
                     <td class="px-4 py-3">
                         <div class="max-w-md">
-                            <acronym title="{{ name }}" class="text-sm font-semibold text-gray-900 cursor-help hover:text-blue-600 transition-colors">
+                            <span title="{{ name }}" class="text-sm font-semibold text-gray-900">
                                 {{ name }}
-                            </acronym>
+                            </span>
                         </div>
                     </td>
                     {% if detailled == true %}

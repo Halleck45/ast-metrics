@@ -63,9 +63,10 @@ func Test_FileLevel_Maintainability_SampleGo(t *testing.T) {
 	if file.Stmts.Analyze.Volume == nil {
 		t.Fatalf("missing Volume on sampleGo file")
 	}
-	// average of the struct C (its method M) and of the top-level function F
-	if *file.Stmts.Analyze.Volume.HalsteadVocabulary != int32(7) {
-		t.Fatalf("incorrect halstead volume on file, got %d", *file.Stmts.Analyze.Volume.HalsteadVocabulary)
+	// Average of the struct C (whose only method M holds 8 distinct symbols) and
+	// of the top-level function F (3 distinct symbols): (8 + 3) / 2 = 5.5, so 6.
+	if *file.Stmts.Analyze.Volume.HalsteadVocabulary != int32(6) {
+		t.Fatalf("incorrect halstead vocabulary on file, got %d", *file.Stmts.Analyze.Volume.HalsteadVocabulary)
 	}
 	if file.Stmts.Analyze.Volume.Loc == nil || file.Stmts.Analyze.Volume.Lloc == nil || file.Stmts.Analyze.Volume.Cloc == nil {
 		t.Fatalf("missing LOC/LLOC/CLOC on sampleGo file")

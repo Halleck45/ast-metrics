@@ -10,404 +10,251 @@ AST Metrics - Overview
 
 {% block content %}
 
-<script>
-document.addEventListener('alpine:init', () => {
-    Alpine.store('helpModal', { open: false, title: '', video: '', link: '' });
-});
-</script>
-
-<!-- start: language tabs-->
-<div class="flex overflow-x-auto overflow-y-hidden border-b border-gray-200 whitespace-nowrap ">
-
-    <a tabindex="-1" href="index.html"
-        class="inline-flex items-center h-10 px-2 py-2 -mb-px text-center {% if currentLanguage == " All"%}text-blue-600 border-blue-500{% endif %} bg-transparent border-b-2 sm:px-4 -px-1 focus:outline-none">
-        <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 mx-1 sm:w-6 sm:h-6" fill="none" viewBox="0 0 24 24"
-            stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z" />
-        </svg>
-
-        <span class="mx-1 text-sm sm:text-base">
-            All languages <span class="text-xs sm:text-sm">({{ projectAggregated.Combined.ConcernedFiles|length }}
-                files)</span>
-        </span>
-    </a>
-
-    <!-- start: language tab -->
-    {% for languageName, lang in projectAggregated.ByProgrammingLanguage %}
-    <a tabindex="0" href="index_{{ languageName|langSlug }}.html"
-        class="inline-flex items-center h-10 px-2 py-2 -mb-px text-center bg-transparent border-b-2 {% if currentLanguage == languageName %}text-blue-600 border-blue-500{% else %}text-gray-700   border-transparent{% endif %} sm:px-4 -px-1 hover:border-gray-400">
-        <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 mx-1 sm:w-6 sm:h-6" fill="none" viewBox="0 0 24 24"
-            stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z" />
-        </svg>
-
-        <span class="mx-1 text-sm sm:text-base">
-            {{ languageName }} <span class="text-xs sm:text-sm">({{ lang.ConcernedFiles|length }} files)
-            </span>
-    </a>
-    {% endfor %}
-    <!-- end: language tab -->
-
-</div>
-<!-- end: language tabs-->
+{% include "partials/language_tabs.html" with pageBase="index" %}
 
 <!-- start alert -->
 {% if currentView.Comparaison %}
 {% if currentView.Comparaison.ChangedFiles|length > 0 %}
-<div class="flex bg-white rounded-2xl mt-6" style="box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
-    <div class="rounded-l-2xl flex items-center justify-center w-12 bg-blue-100">
-        <svg class="w-6 h-6 text-blue-600 fill-current" viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg">
-            <path
-                d="M20 3.33331C10.8 3.33331 3.33337 10.8 3.33337 20C3.33337 29.2 10.8 36.6666 20 36.6666C29.2 36.6666 36.6667 29.2 36.6667 20C36.6667 10.8 29.2 3.33331 20 3.33331ZM21.6667 28.3333H18.3334V25H21.6667V28.3333ZM21.6667 21.6666H18.3334V11.6666H21.6667V21.6666Z" />
-        </svg>
-    </div>
-
-    <div class="px-4 py-2 -mx-3">
-        <div class="mx-3">
-            <span class="font-normal text-gray-900">Code has changed</span>
-            <div class="text-sm text-gray-500 font-light mt-1">
-                Compared to {{ currentView.Comparaison.ComparedBranch }}.
-                <a href="compare.html" class="text-gray-600 hover:text-gray-900 underline">Explore changes</a>.
-            </div>
-        </div>
-    </div>
+<div class="insight mb-6">
+    <span class="dot sev-none" style="background-color:#3b82f6;"></span>
+    <span>Code has changed compared to <strong>{{ currentView.Comparaison.ComparedBranch }}</strong>.
+        <a href="compare{{ scopeSuffix }}.html"
+           class="text-blue-600 hover:underline font-medium">Explore the changes</a>.</span>
 </div>
 {% endif %}
 {% endif %}
 <!-- end alert -->
 
-{% set cm = currentView.Community %}
+<!-- start: verdict / summary -->
+<script>
+  // Raw aggregates injected by the template; the summary component below turns
+  // them into a plain-language verdict and two "going well / needs attention" lists.
+  window.__AST_SUMMARY_INPUT__ = {
+    ccn: {{ currentView.CyclomaticComplexityPerMethod.Avg|floatformat:2 }},
+    locPerMethod: {{ currentView.LocPerMethod.Avg|floatformat:1 }},
+    lcom: {{ currentView.Lcom4PerClass.Avg|floatformat:2 }},
+    mi: {{ currentView.MaintainabilityIndex.Avg|floatformat:1 }},
+    busFactor: {{ currentView.BusFactor }},
+    topCommitterPct: {% if currentView.TopCommitters|length > 0 %}{{ currentView.TopCommitters.0.Percentage|floatformat:1 }}{% else %}null{% endif %},
+    isolation: {% if currentView.TestQuality %}{{ currentView.TestQuality.GlobalIsolationScore|floatformat:1 }}{% else %}null{% endif %},
+    isolationLabel: {% if currentView.TestQuality %}"{{ currentView.TestQuality.IsolationLabel|escapejs }}"{% else %}null{% endif %},
+    godTests: {% if currentView.TestQuality %}{{ currentView.TestQuality.GodTests|length }}{% else %}0{% endif %},
+    nbTestFiles: {% if currentView.TestQuality %}{{ currentView.TestQuality.NbTestFiles }}{% else %}0{% endif %}
+  };
 
-<style>
-    /* Clean Google Labs / Antigravity style for dashboard */
-    #layered-map-dashboard {
-        background: transparent;
+  function codeSummary() {
+    const clamp = (v) => Math.max(0, Math.min(100, v));
+    return {
+      headline: '',
+      subline: '',
+      items: [],
+
+      init() {
+        const d = window.__AST_SUMMARY_INPUT__ || {};
+        const items = [];
+
+        // Each metric: plain-language label, technical name, judgment level,
+        // and a 0-100 sub-score used both for the bar and the overall score.
+        if (d.ccn > 0) {
+          items.push({
+            key: 'ccn', weight: 15,
+            label: 'Complexity per method',
+            href: 'classes{{ scopeSuffix }}.html?view=complex',
+            detail: 'Cyclomatic complexity · target < 5',
+            help: 'Average number of independent execution paths per method. Below 5 methods stay easy to read and test.',
+            display: d.ccn.toFixed(2),
+            level: d.ccn < 5 ? 'good' : (d.ccn < 10 ? 'warn' : 'bad'),
+            score: clamp((15 - d.ccn) / 13 * 100),
+            concern: d.ccn >= 10 ? 'methods are too complex' : null,
+          });
+        }
+        if (d.locPerMethod > 0) {
+          items.push({
+            key: 'size', weight: 10,
+            label: 'Method size',
+            href: 'metrics{{ scopeSuffix }}.html',
+            detail: 'Average lines per method · target < 20',
+            help: 'Average number of lines per method. Short methods are easier to name, test and reuse.',
+            display: d.locPerMethod.toFixed(0),
+            level: d.locPerMethod < 20 ? 'good' : (d.locPerMethod < 40 ? 'warn' : 'bad'),
+            score: clamp((60 - d.locPerMethod) / 50 * 100),
+            concern: d.locPerMethod >= 40 ? 'methods are too long' : null,
+          });
+        }
+        if (d.lcom > 0) {
+          items.push({
+            key: 'lcom', weight: 10,
+            label: 'Focused classes',
+            href: 'classes{{ scopeSuffix }}.html?view=cohesion',
+            detail: 'LCOM4 cohesion · target close to 1',
+            help: 'Average number of unrelated responsibility groups per class. 1 means each class does one thing.',
+            display: d.lcom.toFixed(1),
+            level: d.lcom <= 1.7 ? 'good' : (d.lcom <= 2.5 ? 'warn' : 'bad'),
+            score: clamp((4 - d.lcom) / 3 * 100),
+            concern: d.lcom > 2.5 ? 'classes mix several responsibilities' : null,
+          });
+        }
+        if (d.mi > 0) {
+          items.push({
+            key: 'mi', weight: 25,
+            label: 'Ease of maintenance',
+            href: 'classes{{ scopeSuffix }}.html?view=maintainability',
+            detail: 'Maintainability Index · target > 85',
+            help: 'Composite of size, complexity and Halstead volume (0-128). Above 85 the code is comfortable to work with.',
+            display: d.mi.toFixed(0),
+            level: d.mi >= 85 ? 'good' : (d.mi >= 65 ? 'warn' : 'bad'),
+            score: clamp((d.mi - 40) / 60 * 100),
+            concern: d.mi < 65 ? 'maintainability is low' : (d.mi < 85 ? 'maintainability is slipping' : null),
+          });
+        }
+        if (d.isolation !== null && d.nbTestFiles > 0) {
+          const detail = [
+            d.isolationLabel,
+            `${d.nbTestFiles} test file${d.nbTestFiles === 1 ? '' : 's'}`,
+            (d.godTests > 0 ? `${d.godTests} touching five structures or more` : null),
+          ].filter(Boolean).join(' · ');
+          items.push({
+            key: 'tests', weight: 25,
+            label: 'Test isolation',
+            href: 'testquality{{ scopeSuffix }}.html',
+            detail: detail + ' · target ≥ 80',
+            help: 'How few structures a single test touches. A focused test tells you precisely what broke; a test that touches everything breaks for unrelated reasons.',
+            display: d.isolation.toFixed(0),
+            level: d.isolation >= 80 ? 'good' : (d.isolation >= 50 ? 'warn' : 'bad'),
+            score: clamp(d.isolation),
+            concern: d.isolation < 50 ? 'the tests touch too much at once' : (d.isolation < 80 ? 'some tests touch too much at once' : null),
+          });
+        }
+        if (d.busFactor > 0) {
+          const bf = d.busFactor;
+          items.push({
+            key: 'bus', weight: 15,
+            label: 'People who carry the project',
+            href: 'busfactor{{ scopeSuffix }}.html',
+            detail: 'Bus factor · target ≥ 3' + (d.topCommitterPct ? ` · top contributor: ${d.topCommitterPct.toFixed(0)}% of commits` : ''),
+            help: 'Minimum number of people whose departure would endanger the project. The higher, the safer.',
+            display: String(bf),
+            level: bf >= 3 ? 'good' : (bf === 2 ? 'warn' : 'bad'),
+            score: bf >= 4 ? 100 : ({ 1: 15, 2: 50, 3: 80 }[bf] || 0),
+            concern: bf === 1 ? 'a single person carries it' : (bf === 2 ? 'only two people really know it' : null),
+          });
+        }
+
+        // Single list, healthy metrics first, critical ones last (reads top-down
+        // like a report: what holds, then what to fix).
+        const order = { good: 0, warn: 1, bad: 2 };
+        this.items = items.slice().sort((a, b) => order[a.level] - order[b.level]);
+
+        // Headline: judge the code itself on the four structural metrics.
+        const structural = items.filter(i => ['ccn', 'size', 'lcom', 'mi'].includes(i.key));
+        const badCount = structural.filter(i => i.level === 'bad').length;
+        const warnCount = structural.filter(i => i.level === 'warn').length;
+        if (structural.length === 0) {
+          this.headline = 'Not enough data to judge this codebase.';
+        } else if (badCount === 0 && warnCount <= 1) {
+          this.headline = 'Your code is in good shape.';
+        } else if (badCount === 0) {
+          this.headline = 'Your code is in decent shape.';
+        } else {
+          this.headline = 'Your code needs attention.';
+        }
+
+        // Subline: the concerns, phrased as one sentence. Tests and bus factor
+        // first: they are the concerns a reader can act on most directly.
+        const concernOrder = ['tests', 'bus', 'mi', 'ccn', 'size', 'lcom'];
+        const concerns = concernOrder
+          .map(k => items.find(i => i.key === k)?.concern)
+          .filter(Boolean);
+        if (concerns.length === 0) {
+          this.subline = items.length ? 'No weak point stands out.' : '';
+        } else {
+          let sentence;
+          if (concerns.length === 1) sentence = concerns[0];
+          else sentence = concerns.slice(0, -1).join(', ') + ', and ' + concerns[concerns.length - 1];
+          this.subline = sentence.charAt(0).toUpperCase() + sentence.slice(1) + '.';
+        }
+      },
+
+      dotClass(level) { return 'sev-' + (level || 'none'); },
+      barClass(level) { return 'sev-' + (level || 'none'); },
     }
+  }
+</script>
 
-    .dashboard-card {
-        background: white;
-        border: 1px solid #e2e8f0;
-        border-radius: 16px;
-        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-        position: relative;
-        overflow: hidden;
-    }
+<div x-data="codeSummary()" x-init="init()" class="page-hero animate-fade-in-up">
+  <p class="page-kicker mb-3">
+    {{ currentView.ConcernedFiles|length }} {% if scopeKind != "all" %}{{ scopeLabel }} {% endif %}files
+    &middot; analyzed on {{ datetime }}
+  </p>
+  <h1 class="verdict-title max-w-4xl">
+    <span x-text="headline"></span>
+    <span class="verdict-muted block" x-show="subline" x-text="subline"></span>
+  </h1>
 
-    .dashboard-card:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
-        border-color: #cbd5e1;
-    }
-
-    .dashboard-card::before {
-        content: '';
-        position: absolute;
-        top: 0;
-        left: 0;
-        right: 0;
-        height: 4px;
-        background: linear-gradient(90deg, #3b82f6, #8b5cf6);
-        opacity: 0;
-        transition: opacity 0.3s ease;
-    }
-
-    .dashboard-card:hover::before {
-        opacity: 1;
-    }
-
-    .metric-value {
-        font-family: var(--font-mono);
-        letter-spacing: -0.05em;
-    }
-
-    .contributor-avatar {
-        width: 36px;
-        height: 36px;
-        border-radius: 50%;
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        font-weight: 600;
-        font-size: 14px;
-        color: white;
-        flex-shrink: 0;
-        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-    }
-
-    .contributor-avatar-small {
-        width: 28px;
-        height: 28px;
-        font-size: 11px;
-    }
-</style>
-
-<!-- start: bento grid -->
-<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mt-6">
-    <!-- Code Health Bubble Chart - Hero Card (2x2) -->
-    <div class="col-span-1 md:col-span-2 lg:col-span-2 row-span-2 dashboard-card p-6 animate-fade-in-up stagger-1" style="border: 2px solid #e2e8f0;">
-        <div class="flex items-center justify-between mb-3">
-            <div>
-                <h5 class="text-xl font-bold text-gray-900 mb-1">Code Health</h5>
-                <p class="text-xs text-gray-500 leading-relaxed">Each bubble is a class (or file). Color = complexity, size = lines of code, glow = git activity.</p>
-            </div>
-        </div>
-        <script id="bubble-explorer-url" type="application/json">"explorer{% if currentLanguage != "All" %}_{{ currentLanguage|langSlug }}{% endif %}.html"</script>
-        {% include "componentBubbleChart.html" %}
-    </div>
-
-    <!-- Complexity Card -->
-    <div class="dashboard-card p-5 animate-fade-in-up stagger-3">
-        <div class="flex items-start justify-between">
-            <div>
-                <h5 class="text-2xl font-semibold text-gray-900 mb-0.5 metric-value tracking-tight">
-                    {{ currentView.CyclomaticComplexityPerMethod.Avg | floatformat:2 }}
-                </h5>
-                <p class="text-xs font-medium text-gray-500 flex items-center gap-2 mb-3">
-                    {% if currentView.Comparaison %}
-                    {% include 'componentComparaisonBadge.html' with comparaisonMode='lowIsBetter' diff=currentView.Comparaison.AverageCyclomaticComplexityPerMethod round=2 %}
-                    {% endif %}
-                    Complexity / Method
-                </p>
-            </div>
-            <button x-data @click="Object.assign($store.helpModal, { open: true, title: 'Cyclomatic Complexity', video: 'https://ast-metrics.dev/animations/Cyclomatic-complexity.webm', link: 'https://ast-metrics.dev/metrics/cyclomatic-complexity/' })" class="text-gray-300 hover:text-blue-500 transition-colors flex items-center gap-1" title="Watch video explanation">
-                <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /><path stroke-linecap="round" stroke-linejoin="round" d="M15.91 11.672a.375.375 0 010 .656l-5.603 3.113a.375.375 0 01-.557-.328V8.887c0-.286.307-.466.557-.327l5.603 3.112z" /></svg>
-            </button>
-        </div>
-        <div class="card-graph mt-3">
-            {{ currentView|barchartCyclomaticByMethodRepartition}}
-        </div>
-        <p class="mt-3 text-xs text-gray-500 border-t border-gray-100 pt-2">
-            Avg. decision paths per method. Lower is simpler.
-        </p>
-    </div>
-
-    <!-- Class Cohesion Card -->
-    <div class="dashboard-card p-5 animate-fade-in-up stagger-3">
-        <div class="flex items-start justify-between">
-            <div>
-                <h5 class="text-2xl font-semibold text-gray-900 mb-0.5 metric-value tracking-tight flex items-center gap-2">
-                    {% set color="red" %}
-                    {% if currentView.Lcom4PerClass.Avg < 1.7 %} {% set color="emerald" %} {% elif currentView.Lcom4PerClass.Avg> 1.7 %} {% set color="amber" %} {% endif %}
-                        <span class="text-{{ color }}-600">{{ currentView.Lcom4PerClass.Avg | floatformat:1 }}</span>
-                </h5>
-                <p class="text-xs font-medium text-gray-500 flex items-center gap-2 mb-3">
-                    {% if currentView.Comparaison %}
-                    {% include 'componentComparaisonBadge.html' with comparaisonMode='lowIsBetter' diff=currentView.Comparaison.AverageLcom4 round=2 %}
-                    {% endif %}
-                    Class Cohesion
-                </p>
-            </div>
-            <button x-data @click="Object.assign($store.helpModal, { open: true, title: 'Class Cohesion (LCOM4)', video: 'https://ast-metrics.dev/animations/lcom.webm', link: 'https://ast-metrics.dev/metrics/lcom4/' })" class="text-gray-300 hover:text-blue-500 transition-colors flex items-center gap-1" title="Watch video explanation">
-                <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /><path stroke-linecap="round" stroke-linejoin="round" d="M15.91 11.672a.375.375 0 010 .656l-5.603 3.113a.375.375 0 01-.557-.328V8.887c0-.286.307-.466.557-.327l5.603 3.112z" /></svg>
-            </button>
-        </div>
-        <div class="card-graph mt-3">
-            {{ currentView|barchartLcomRepartition}}
-        </div>
-        <p class="mt-3 text-xs text-gray-500 border-t border-gray-100 pt-2">
-            How focused classes are. Closer to 1 is better.
-        </p>
-    </div>
-
-    <!-- Maintainability Card -->
-    <div class="dashboard-card p-5 animate-fade-in-up stagger-4">
-        <div>
-            <h5 class="text-2xl font-semibold text-gray-900 mb-0.5 metric-value tracking-tight flex items-center gap-2">
-                {% set color="red" %}
-                {% if currentView.MaintainabilityIndex.Avg > 84 %} {% set color="emerald" %} {% elif currentView.MaintainabilityIndex.Avg > 64 %} {% set color="amber" %} {% endif %}
-                <span class="text-{{ color }}-600">{{ currentView.MaintainabilityIndex.Avg | floatformat:0 }}</span>
-            </h5>
-            <p class="text-xs font-medium text-gray-500 flex items-center gap-2 mb-3">
-                {% if currentView.Comparaison %}
-                {% include 'componentComparaisonBadge.html' with comparaisonMode='highIsBetter' diff=currentView.Comparaison.AverageMI round=2 %}
-                {% endif %}
-                Maintainability Index
-            </p>
-        </div>
-        <div class="card-graph mt-3">
-            {{ currentView|barchartMaintainabilityIndexRepartition}}
-        </div>
-        <p class="mt-3 text-xs text-gray-500 border-t border-gray-100 pt-2">
-            Ease of maintenance. Higher is better (> 85).
-        </p>
-    </div>
-
-    <!-- LOC/Method Card -->
-    <div class="dashboard-card p-5 animate-fade-in-up stagger-4">
-        <div>
-            <h5 class="text-2xl font-semibold text-gray-900 mb-0.5 metric-value tracking-tight">
-                {{ currentView.LocPerMethod.Avg | floatformat:0 }}
-            </h5>
-            <p class="text-xs font-medium text-gray-500 flex items-center gap-2 mb-3">
-                {% if currentView.Comparaison %}
-                {% include 'componentComparaisonBadge.html' with comparaisonMode='lowIsBetter' diff=currentView.Comparaison.AverageLocPerMethod round=2 %}
-                {% endif %}
-                Method Size
-            </p>
-        </div>
-        <div class="card-graph mt-3">
-            {{ currentView|barchartLocPerMethodRepartition}}
-        </div>
-        <p class="mt-3 text-xs text-gray-500 border-t border-gray-100 pt-2">
-            Avg. lines per method. Ideally under 20.
-        </p>
-    </div>
-
-</div>
-
-<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mt-6">
-    <!-- Git Activity Card (1 col) -->
-    <div class="dashboard-card md:col-span-1 p-4 animate-fade-in-up stagger-5 mt-8">
-        {% if currentView.ResultOfGitAnalysis %}
-        <div class="mb-3">
-            <h5 class="text-xl font-bold text-gray-900 metric-value tracking-tight">
-                {{ currentView.CommitCountForPeriod | stringifyNumber }}
-            </h5>
-            <p class="text-xs text-gray-500">Commits (12m)</p>
-        </div>
-        <div class="card-graph w-full h-24 mb-3">
-            {{ currentView|lineChartGitActivity}}
-        </div>
-        <div class="overflow-x-auto">
-            <table class="w-full text-left border-collapse text-xs">
-                <thead>
-                    <tr class="text-xs text-gray-500 border-b border-gray-100">
-                        <th class="py-1 font-medium">Repo</th>
-                        <th class="py-1 font-medium">Total</th>
-                        <th class="py-1 font-medium">Imp.</th>
-                    </tr>
-                </thead>
-                <tbody class="text-xs text-gray-600">
-                    {% for commitAnalysis in currentView.ResultOfGitAnalysis %}
-                    <tr class="border-b border-gray-50 last:border-0 hover:bg-gray-50 transition-colors">
-                        <td class="py-1 font-medium text-gray-900 truncate max-w-[100px]" title="{{ commitAnalysis.ReportRootDir }}">
-                            {{ commitAnalysis.ReportRootDir|truncatechars:15 }}
-                        </td>
-                        <td class="py-1">{{ commitAnalysis.CountCommits }}</td>
-                        <td class="py-1">{{ commitAnalysis.CountCommitsForLanguage }}</td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
-        {% else %}
-        <div class="mb-3">
-            <h5 class="text-xl font-bold text-gray-900 metric-value tracking-tight">
-                {{ currentView.CommitCountForPeriod | stringifyNumber }}
-            </h5>
-            <p class="text-xs text-gray-500">Commits</p>
-        </div>
-        <div class="card-graph h-24">
-            {{ currentView|lineChartGitActivity}}
-        </div>
-        {% endif %}
-    </div>
-
-    <!-- Bus Factor Card -->
-    <div class="dashboard-card md:col-span-2 p-6 animate-fade-in-up stagger-5 mt-8">
-        <div class="flex items-start justify-between mb-4">
-            <div>
-                <h5 class="text-4xl font-bold text-gray-900 metric-value tracking-tight mb-1">
-                    {{ currentView.BusFactor }}
-                </h5>
-                <p class="text-sm font-medium text-gray-500 mb-1">Bus Factor</p>
-                <p class="text-xs text-gray-500">Min. key people who understand the code. Ideally > 3.</p>
-            </div>
-            <button x-data @click="Object.assign($store.helpModal, { open: true, title: 'Bus Factor', video: 'https://ast-metrics.dev/animations/bus-factor.webm', link: 'https://ast-metrics.dev/metrics/bus-factor/' })" class="text-gray-300 hover:text-blue-500 transition-colors flex items-center gap-1" title="Watch video explanation">
-                <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /><path stroke-linecap="round" stroke-linejoin="round" d="M15.91 11.672a.375.375 0 010 .656l-5.603 3.113a.375.375 0 01-.557-.328V8.887c0-.286.307-.466.557-.327l5.603 3.112z" /></svg>
-            </button>
-        </div>
-
-        <!-- Sparkline Timeline -->
-        {% if currentView.TopCommitters|length > 0 %}
-        <div class="mb-4">
-            <div class="flex items-end justify-between h-8 gap-0.5" id="sparkline-committers">
-                {% for committer in currentView.TopCommitters %}
-                {% if forloop.Counter <= 10 %}
-                <div class="flex-1 rounded-t opacity-80 hover:opacity-100 transition-opacity sparkline-bar" 
-                    data-count="{{ committer.Count }}"
-                    style="background-color: {{ committer.Name|contributorColor }};"
-                    title="{{ committer.Name }}: {{ committer.Count }} commits">
-                </div>
-                {% endif %}
-                {% endfor %}
-            </div>
-            <p class="text-xs text-gray-500 mt-1">Commit distribution</p>
-        </div>
-        <script>
-            // Normalize sparkline heights
-            (function() {
-                const bars = document.querySelectorAll('#sparkline-committers .sparkline-bar');
-                if (bars.length === 0) return;
-                
-                const counts = Array.from(bars).map(bar => parseInt(bar.getAttribute('data-count')) || 0);
-                const maxCount = Math.max(...counts, 1);
-                
-                bars.forEach((bar, index) => {
-                    const count = counts[index];
-                    const height = maxCount > 0 ? (count / maxCount) * 32 : 0;
-                    bar.style.height = Math.max(2, height) + 'px';
-                });
-            })();
-        </script>
-        {% endif %}
-
-        <!-- Top Contributors -->
-        <div class="border-t border-gray-100 pt-3">
-            <p class="text-xs font-medium text-gray-500 mb-2">Top Contributors</p>
-            <div class="space-y-1">
-                {% for committer in currentView.TopCommitters %}
-                <div class="flex justify-between items-center text-xs">
-                    <div class="flex items-center gap-2 flex-1 min-w-0">
-                        <div class="contributor-avatar contributor-avatar-small" style="background-color: {{ committer.Name|contributorColor }};">
-                            {{ committer.Name|contributorInitials }}
-                        </div>
-                        <span class="text-gray-900 truncate" title="{{ committer.Name }}">{{ committer.Name }}</span>
-                    </div>
-                    <span class="text-gray-500 bg-blue-100 text-blue-800 px-2 py-0.5 rounded-full font-medium ml-2 flex-shrink-0">
-                        {{ committer.Percentage|floatformat:1 }}%
-                    </span>
-                </div>
-                {% endfor %}
-            </div>
-        </div>
-    </div>
-
-    <!-- Refactoring Candidates (2 cols) -->
-    <div class="col-span-1 md:col-span-1 dashboard-card p-6 animate-fade-in-up stagger-5 mt-8">
-        <div class="flex items-center justify-between mb-4">
-            <h5 class="text-lg font-semibold text-gray-900">Refactoring Candidates</h5>
-            <a href="risks.html" class="text-xs font-medium text-blue-600 hover:text-blue-700 hover:underline">View all</a>
-        </div>
-        <p class="text-sm text-gray-500 mb-4">Components with low maintainability & high churn.</p>
-        <div class="overflow-x-auto">
-            {% include "componentTableRisks.html" with detailled=false linesToDisplay=5 %}
-        </div>
-    </div>
-</div>
-
-
-<!-- Help Modal -->
-<div x-data x-show="$store.helpModal.open" x-cloak class="fixed inset-0 z-50 flex items-center justify-center p-4"
-    style="backdrop-filter: blur(4px);">
-    <div class="absolute inset-0 bg-black/40" @click="$store.helpModal.open = false"></div>
-    <div class="relative dashboard-card w-full max-w-2xl p-6 max-h-[90vh] overflow-y-auto">
-        <div class="flex items-center justify-between mb-4 pb-3 border-b border-gray-200">
-            <h3 class="text-lg font-semibold text-gray-900" x-text="$store.helpModal.title"></h3>
-            <button @click="$store.helpModal.open = false" class="text-gray-400 hover:text-gray-600 transition-colors">
-                <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
-            </button>
-        </div>
-        <video x-ref="helpVideo" :src="$store.helpModal.video" autoplay loop controls playsinline class="w-full rounded-lg mb-4"
-            x-effect="if (!$store.helpModal.open) { $refs.helpVideo?.pause(); $refs.helpVideo?.removeAttribute('src'); }"></video>
-        <a :href="$store.helpModal.link" target="_blank" rel="noopener noreferrer"
-            class="inline-flex items-center gap-1.5 text-sm font-medium text-blue-600 hover:text-blue-700 hover:underline">
-            Read full documentation
-            <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" /></svg>
+  <!-- One row per metric, healthy ones first -->
+  <div class="mt-8">
+    <template x-if="items.length === 0">
+      <p class="text-sm text-gray-500 py-2">Not enough data to summarize this codebase.</p>
+    </template>
+    <template x-for="it in items" :key="it.key">
+      <div class="summary-row">
+        <span class="dot" :class="dotClass(it.level)"></span>
+        <a :href="it.href" class="summary-row-label group">
+          <span class="truncate group-hover:underline" x-text="it.label"></span>
+          <svg class="summary-row-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5 21 12l-7.5 7.5M21 12H3" />
+          </svg>
         </a>
+        <span class="text-slate-300 text-xs shrink-0" tabindex="0" :data-tip="it.help + ' ' + it.detail + '.'">&#9432;</span>
+        <div class="w-28 md:w-44 shrink-0 ml-auto">
+          <div class="meter" style="margin-top:0">
+            <div class="meter-fill" :class="barClass(it.level)" :style="`width:${it.score}%`"></div>
+          </div>
+        </div>
+        <span class="w-16 text-right font-mono text-lg font-bold text-gray-900" x-text="it.display"></span>
+      </div>
+    </template>
+  </div>
+
+  <!-- Who keeps this code alive -->
+  {% if currentView.TopCommitters|length > 0 %}
+  <div class="mt-8 pt-6 border-t border-slate-200/60 flex flex-wrap items-center gap-x-4 gap-y-3">
+    <p class="section-title">Team</p>
+    <div class="flex items-center">
+      {% for committer in currentView.TopCommitters %}
+      <span class="contributor-chip" style="background-color: {{ committer.Name|contributorColor }};"
+            title="{{ committer.Name }} &mdash; {{ committer.Count }} commits ({{ committer.Percentage|floatformat:1 }}%)">
+        {% set avatar = committer.Email|gravatarUrl:64 %}
+        {% if avatar %}<img src="{{ avatar }}" alt="" loading="lazy" decoding="async"
+             onerror="this.remove()" class="contributor-chip-img">{% endif %}
+        {{ committer.Name|contributorInitials }}
+      </span>
+      {% endfor %}
     </div>
+    <p class="text-sm text-gray-600 min-w-0">
+      <span class="font-semibold text-gray-900">{{ currentView.TopCommitters.0.Name }}</span>
+      signs <strong class="font-semibold text-gray-900">{{ currentView.TopCommitters.0.Percentage|floatformat:1 }}%</strong>
+      of the commits.
+      <a href="busfactor{{ scopeSuffix }}.html" class="text-blue-600 hover:underline font-medium whitespace-nowrap">See the team</a>
+    </p>
+  </div>
+  {% endif %}
 </div>
+<!-- end: verdict / summary -->
+
+<!-- start: code map -->
+<div class="soft-card mt-6 animate-fade-in-up stagger-2">
+    <div class="flex items-start justify-between gap-4 mb-4">
+        <div>
+            <h2 class="card-title">Code map</h2>
+            <p class="card-sub">One bubble per class. Size = lines of code, color = complexity, ring = recent git activity.</p>
+        </div>
+        <a href="classes{{ scopeSuffix }}.html"
+           class="shrink-0 text-sm font-medium text-blue-600 hover:text-blue-700 hover:underline">Browse classes</a>
+    </div>
+    <script id="bubble-explorer-url" type="application/json">"explorer{{ scopeSuffix }}.html"</script>
+    {% include "componentBubbleChart.html" %}
+</div>
+<!-- end: code map -->
 
 {% endblock %}

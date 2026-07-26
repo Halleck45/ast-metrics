@@ -1,51 +1,10 @@
 {% extends "layout.html" %}
-{% block pageTitle %}Dependencies - {{ currentLanguage }}{% endblock %}
+{% block pageTitle %}Dependencies - {{ scopeLabel }}{% endblock %}
 {% block content %}
 
 <style>
-    .dashboard-card {
-        background: white;
-        border: 1px solid #e2e8f0;
-        border-radius: 16px;
-        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-        position: relative;
-        overflow: hidden;
-    }
-
-    .dashboard-card:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
-        border-color: #cbd5e1;
-    }
-
-    .dashboard-card::before {
-        content: '';
-        position: absolute;
-        top: 0;
-        left: 0;
-        right: 0;
-        height: 4px;
-        background: linear-gradient(90deg, #3b82f6, #8b5cf6);
-        opacity: 0;
-        transition: opacity 0.3s ease;
-    }
-
-    .dashboard-card:hover::before {
-        opacity: 1;
-    }
-
-    @keyframes fadeIn {
-        from { opacity: 0; transform: translateY(10px); }
-        to { opacity: 1; transform: translateY(0); }
-    }
-
-    .animate-fade-in-up {
-        animation: fadeIn 0.5s ease-out backwards;
-    }
-
-    #dep-graph-wrapper {
-        background: white;
-    }
+    /* Page-specific only: the graph surface, its tooltip and the view switch.
+       Everything else comes from the shared components in layout.html. */
     #dep-graph-canvas {
         width: 100%;
         min-height: 600px;
@@ -74,32 +33,39 @@
         word-break: break-all;
     }
     .dep-tooltip.visible { opacity: 1; }
+
+    /* Discreet segmented control for "By file / By folder" */
+    .dep-seg {
+        display: inline-flex;
+        background: #f1f5f9;
+        border-radius: 10px;
+        padding: 3px;
+        gap: 2px;
+    }
+    .dep-seg label {
+        cursor: pointer;
+        font-size: 12px;
+        font-weight: 500;
+        color: #64748b;
+        padding: 0.3rem 0.7rem;
+        border-radius: 8px;
+        white-space: nowrap;
+        transition: background-color 0.15s ease, color 0.15s ease;
+    }
+    .dep-seg label input { position: absolute; opacity: 0; width: 0; height: 0; }
+    .dep-seg label:hover { color: #334155; }
+    .dep-seg label:has(input:checked) {
+        background: white;
+        color: #0f172a;
+        box-shadow: 0 1px 2px rgba(15, 23, 42, 0.08);
+    }
+    .dep-seg label:focus-within { outline: 2px solid #3b82f6; outline-offset: 1px; }
+
+    @keyframes dep-spin { to { transform: rotate(360deg); } }
 </style>
 
 <!-- language tabs -->
-<div class="flex overflow-x-auto overflow-y-hidden border-b border-gray-200 whitespace-nowrap">
-    <a href="dependencies.html"
-       class="inline-flex items-center h-10 px-2 py-2 -mb-px text-center {% if currentLanguage == 'All' %}text-blue-600 border-blue-500{% endif %} bg-transparent border-b-2 sm:px-4 -px-1 focus:outline-none">
-        <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 mx-1 sm:w-6 sm:h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z" />
-        </svg>
-        <span class="mx-1 text-sm sm:text-base">
-            All languages <span class="text-xs sm:text-sm">({{ projectAggregated.Combined.ConcernedFiles|length }} files)</span>
-        </span>
-    </a>
-
-    {% for languageName, lang in projectAggregated.ByProgrammingLanguage %}
-    <a href="dependencies_{{ languageName|langSlug }}.html"
-       class="inline-flex items-center h-10 px-2 py-2 -mb-px text-center bg-transparent border-b-2 {% if currentLanguage == languageName %}text-blue-600 border-blue-500{% else %}text-gray-700 border-transparent{% endif %} sm:px-4 -px-1 hover:border-gray-400">
-        <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 mx-1 sm:w-6 sm:h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z" />
-        </svg>
-        <span class="mx-1 text-sm sm:text-base">
-            {{ languageName }} <span class="text-xs sm:text-sm">({{ lang.ConcernedFiles|length }} files)</span>
-        </span>
-    </a>
-    {% endfor %}
-</div>
+{% include "partials/language_tabs.html" with pageBase="dependencies" %}
 <!-- end language tabs -->
 
 
@@ -114,71 +80,87 @@
 
 <div id="dep-content" class="hidden">
 
-    <!-- KPI row -->
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mt-8 mb-8">
-        <div class="dashboard-card p-6 animate-fade-in-up">
-            <p class="text-sm font-medium text-gray-500 uppercase tracking-wider">Files with dependencies</p>
-            <p id="kpi-files" class="text-3xl font-bold text-gray-900 mt-2">0</p>
-        </div>
-        <div class="dashboard-card p-6 animate-fade-in-up" style="animation-delay:.1s">
-            <p class="text-sm font-medium text-gray-500 uppercase tracking-wider">Dependency edges</p>
-            <p id="kpi-edges" class="text-3xl font-bold text-gray-900 mt-2">0</p>
-        </div>
-        <div class="dashboard-card p-6 animate-fade-in-up" style="animation-delay:.2s">
-            <p class="text-sm font-medium text-gray-500 uppercase tracking-wider">Avg coupling / file</p>
-            <p id="kpi-avg" class="text-3xl font-bold text-gray-900 mt-2">0</p>
-        </div>
-    </div>
-
-    <!-- Legend -->
-    <div class="dashboard-card p-4 mb-6 animate-fade-in-up" style="animation-delay:.3s">
-        <div class="flex flex-wrap gap-6 items-center text-sm text-gray-600">
-            <span class="font-medium text-gray-700">Legend:</span>
-            <span class="flex items-center gap-2"><span class="inline-block w-3 h-3 rounded-full" style="background:#0d9488"></span> Mostly efferent (depends on others)</span>
-            <span class="flex items-center gap-2"><span class="inline-block w-3 h-3 rounded-full" style="background:#7c3aed"></span> Mostly afferent (depended on by others)</span>
-            <span class="flex items-center gap-2"><span class="inline-block w-3 h-3 rounded-full" style="background:#3b82f6"></span> Balanced</span>
-            <span class="flex items-center gap-2"><svg width="20" height="10"><line x1="0" y1="5" x2="14" y2="5" stroke="#94a3b8" stroke-width="1.5"/><polygon points="14,2 20,5 14,8" fill="#94a3b8"/></svg> Dependency direction</span>
-        </div>
-    </div>
-
-    <!-- View mode toggle -->
-    <div id="dep-view-toggle" class="flex flex-wrap items-center gap-3 mb-4 text-xs font-medium text-gray-600">
-        <span class="text-gray-400">View:</span>
-        <label class="flex items-center gap-1.5 cursor-pointer bg-gray-50 px-3 py-1.5 rounded-lg hover:bg-gray-100 transition-colors">
-            <input type="radio" name="dep-view" value="files" class="w-3.5 h-3.5 text-blue-600">
-            <span>By file</span>
-        </label>
-        <label id="dep-view-folder-label" class="flex items-center gap-1.5 cursor-pointer bg-gray-50 px-3 py-1.5 rounded-lg hover:bg-gray-100 transition-colors">
-            <input type="radio" name="dep-view" value="folders" class="w-3.5 h-3.5 text-blue-600">
-            <span>By folder</span>
-        </label>
-    </div>
-
-    <!-- Breadcrumb for drill-down -->
-    <div id="dep-breadcrumb" class="hidden mb-4 flex items-center gap-2 text-sm text-gray-600">
-        <a href="#" id="dep-breadcrumb-root" class="text-blue-600 hover:underline font-medium">All Folders</a>
-        <span class="text-gray-400">&rsaquo;</span>
-        <span id="dep-breadcrumb-current" class="font-medium text-gray-800"></span>
-    </div>
-
-    <!-- Graph container -->
-    <div id="dep-graph-wrapper" class="dashboard-card p-2 animate-fade-in-up" style="animation-delay:.4s;position:relative;background:white;">
-        <div id="dep-graph-canvas" style="width:100%;min-height:600px;"></div>
-        <!-- Loading skeleton -->
-        <div id="dep-graph-loading" class="absolute inset-0 flex flex-col items-center justify-center bg-white" style="z-index:10;border-radius:16px;">
-            <div class="relative" style="width:160px;height:160px;">
-                <div style="position:absolute;inset:0;border-radius:50%;border:3px solid #e2e8f0;"></div>
-                <div style="position:absolute;inset:0;border-radius:50%;border:3px solid transparent;border-top-color:#3b82f6;animation:dep-spin 0.8s linear infinite;"></div>
-                <svg viewBox="0 0 100 100" style="position:absolute;inset:15%;width:70%;height:70%;opacity:0.15;">
-                    <circle cx="30" cy="30" r="8" fill="#94a3b8"/><circle cx="70" cy="25" r="6" fill="#94a3b8"/><circle cx="50" cy="65" r="10" fill="#94a3b8"/><circle cx="20" cy="70" r="5" fill="#94a3b8"/><circle cx="80" cy="60" r="7" fill="#94a3b8"/>
-                    <line x1="30" y1="30" x2="70" y2="25" stroke="#cbd5e1" stroke-width="1.5"/><line x1="30" y1="30" x2="50" y2="65" stroke="#cbd5e1" stroke-width="1.5"/><line x1="70" y1="25" x2="50" y2="65" stroke="#cbd5e1" stroke-width="1.5"/><line x1="50" y1="65" x2="80" y2="60" stroke="#cbd5e1" stroke-width="1.5"/><line x1="20" y1="70" x2="50" y2="65" stroke="#cbd5e1" stroke-width="1.5"/>
-                </svg>
+    <!-- Verdict -->
+    <div class="page-hero animate-fade-in-up mt-8">
+        <div class="flex flex-wrap items-start justify-between gap-8">
+            <div class="min-w-0">
+                <p class="page-kicker mb-3">HOW THE FILES DEPEND ON EACH OTHER{% if scopeKind != "all" %} &middot; {{ scopeLabel|upper }}{% endif %}</p>
+                <h1 class="verdict-title" id="dep-verdict-title">Reading the dependency graph&hellip;</h1>
+                <p class="verdict-lead mt-4" id="dep-verdict-lead"></p>
             </div>
-            <p class="mt-4 text-sm text-gray-400 font-medium">Building dependency graph...</p>
+            <div class="kpi-strip kpi-strip--divided shrink-0">
+                <div>
+                    <div class="kpi-value" id="kpi-files">0</div>
+                    <div class="kpi-label">linked files</div>
+                </div>
+                <div>
+                    <div class="kpi-value" id="kpi-edges">0</div>
+                    <div class="kpi-label">links</div>
+                </div>
+                <div>
+                    <div class="kpi-value" id="kpi-avg">0</div>
+                    <div class="kpi-label">links per file</div>
+                </div>
+            </div>
         </div>
-        <style>
-            @keyframes dep-spin { to { transform: rotate(360deg); } }
-        </style>
+    </div>
+
+    <!-- Graph -->
+    <div class="soft-card mt-6 animate-fade-in-up stagger-1">
+        <div class="flex flex-wrap items-center justify-between gap-4 mb-4">
+            <div class="flex flex-wrap items-center gap-x-5 gap-y-2 text-xs text-gray-500">
+                <span class="flex items-center gap-2"><span class="dot" style="background:#0d9488"></span> Mostly uses others</span>
+                <span class="flex items-center gap-2"><span class="dot" style="background:#7c3aed"></span> Mostly used</span>
+                <span class="flex items-center gap-2"><span class="dot" style="background:#3b82f6"></span> Balanced</span>
+                <span class="text-gray-400">size = number of links</span>
+            </div>
+            <div id="dep-view-toggle" class="dep-seg">
+                <label><input type="radio" name="dep-view" value="files"><span>By file</span></label>
+                <label id="dep-view-folder-label"><input type="radio" name="dep-view" value="folders"><span>By folder</span></label>
+            </div>
+        </div>
+
+        <!-- Breadcrumb for drill-down -->
+        <div id="dep-breadcrumb" class="hidden mb-3 flex items-center gap-2 text-sm text-gray-600">
+            <a href="#" id="dep-breadcrumb-root" class="text-blue-600 hover:underline font-medium">All folders</a>
+            <span class="text-gray-400">&rsaquo;</span>
+            <span id="dep-breadcrumb-current" class="font-medium text-gray-800"></span>
+        </div>
+
+        <!-- Graph container -->
+        <div id="dep-graph-wrapper" style="position:relative;background:white;border-radius:14px;overflow:hidden;">
+            <div id="dep-graph-canvas" style="width:100%;min-height:600px;"></div>
+            <!-- Loading skeleton -->
+            <div id="dep-graph-loading" class="absolute inset-0 flex flex-col items-center justify-center bg-white" style="z-index:10;">
+                <div class="relative" style="width:160px;height:160px;">
+                    <div style="position:absolute;inset:0;border-radius:50%;border:3px solid #e2e8f0;"></div>
+                    <div style="position:absolute;inset:0;border-radius:50%;border:3px solid transparent;border-top-color:#3b82f6;animation:dep-spin 0.8s linear infinite;"></div>
+                    <svg viewBox="0 0 100 100" style="position:absolute;inset:15%;width:70%;height:70%;opacity:0.15;">
+                        <circle cx="30" cy="30" r="8" fill="#94a3b8"/><circle cx="70" cy="25" r="6" fill="#94a3b8"/><circle cx="50" cy="65" r="10" fill="#94a3b8"/><circle cx="20" cy="70" r="5" fill="#94a3b8"/><circle cx="80" cy="60" r="7" fill="#94a3b8"/>
+                        <line x1="30" y1="30" x2="70" y2="25" stroke="#cbd5e1" stroke-width="1.5"/><line x1="30" y1="30" x2="50" y2="65" stroke="#cbd5e1" stroke-width="1.5"/><line x1="70" y1="25" x2="50" y2="65" stroke="#cbd5e1" stroke-width="1.5"/><line x1="50" y1="65" x2="80" y2="60" stroke="#cbd5e1" stroke-width="1.5"/><line x1="20" y1="70" x2="50" y2="65" stroke="#cbd5e1" stroke-width="1.5"/>
+                    </svg>
+                </div>
+                <p class="mt-4 text-sm text-gray-400 font-medium">Building dependency graph...</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Where the coupling sits -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
+        <div class="soft-card animate-fade-in-up stagger-2">
+            <div class="mb-3">
+                <h2 class="card-title">Handle with care</h2>
+                <p class="card-sub">Many files depend on these. A change here propagates.</p>
+            </div>
+            <div id="dep-afferent-list"></div>
+        </div>
+        <div class="soft-card animate-fade-in-up stagger-3">
+            <div class="mb-3">
+                <h2 class="card-title">Heavily wired</h2>
+                <p class="card-sub">These files need many others to work.</p>
+            </div>
+            <div id="dep-efferent-list"></div>
+        </div>
     </div>
 </div>
 
@@ -229,11 +211,144 @@ document.addEventListener('DOMContentLoaded', function() {
         });
         var nodesFile = Object.values(nodeMapFile);
         var totalFilesKPI = nodesFile.length;
-        var avgCoupling = totalFilesKPI > 0 ? ((nodesFile.reduce(function(s,n) { return s + n.eff + n.aff; }, 0)) / totalFilesKPI).toFixed(1) : 0;
+        var avgCoupling = totalFilesKPI > 0 ? ((nodesFile.reduce(function(s,n) { return s + n.eff + n.aff; }, 0)) / totalFilesKPI).toFixed(1) : '0.0';
 
         document.getElementById('kpi-files').textContent = totalFilesKPI;
         document.getElementById('kpi-edges').textContent = totalEdgesFile;
         document.getElementById('kpi-avg').textContent = avgCoupling;
+
+        // ---- Verdict + coupling lists -------------------------------------
+        function esc(s) {
+            return String(s).replace(/[&<>"]/g, function(c) {
+                return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c];
+            });
+        }
+        function baseName(p) {
+            var parts = String(p).split('/').filter(Boolean);
+            return parts.length ? parts[parts.length - 1] : String(p);
+        }
+        // Keeps the last folders only: absolute paths are unreadable in a list
+        function dirOf(p) {
+            var parts = String(p).split('/').filter(Boolean);
+            parts.pop();
+            if (!parts.length) return '';
+            return parts.length > 3 ? '…/' + parts.slice(-3).join('/') : parts.join('/');
+        }
+        function identOf(node) {
+            return '<code class="ident">' + esc(baseName(resolve(node.id))) + '</code>';
+        }
+        function plural(n, word) {
+            return n + ' ' + word + (n === 1 ? '' : 's');
+        }
+        // Human fraction of the project touched by a change in one file.
+        function fractionPhrase(ratio) {
+            if (!(ratio > 0)) return '';
+            if (ratio >= 0.85) return 'almost the whole project';
+            var d = Math.round(1 / ratio);
+            var words = {
+                2: 'half the project', 3: 'a third of the project', 4: 'a quarter of the project',
+                5: 'a fifth of the project', 6: 'a sixth of the project', 7: 'a seventh of the project',
+                8: 'an eighth of the project', 9: 'a ninth of the project', 10: 'a tenth of the project'
+            };
+            if (d <= 1) return 'the whole project';
+            if (words[d]) return 'about ' + words[d];
+            return 'less than a tenth of the project';
+        }
+
+        var byAff = nodesFile.slice().sort(function(a, b) { return b.aff - a.aff || a.id.localeCompare(b.id); });
+        var byEff = nodesFile.slice().sort(function(a, b) { return b.eff - a.eff || a.id.localeCompare(b.id); });
+        var maxAff = byAff.length ? byAff[0].aff : 0;
+        var maxEff = byEff.length ? byEff[0].eff : 0;
+
+        // A file is a hotspot when it is depended on by a meaningful share of
+        // the graph, and is close to the most depended-on file (handles ties).
+        var hotspotFloor = Math.max(4, Math.ceil(totalFilesKPI * 0.10));
+        var hotspots = byAff.filter(function(n) {
+            return n.aff >= hotspotFloor && n.aff >= maxAff * 0.5;
+        });
+
+        var titleEl = document.getElementById('dep-verdict-title');
+        var leadEl = document.getElementById('dep-verdict-lead');
+        var titleHtml, leadHtml;
+
+        if (totalEdgesFile === 0) {
+            titleHtml = 'Nothing links these files together.'
+                + '<br><span class="verdict-muted">No dependency to untangle.</span>';
+            leadHtml = totalFilesKPI > 0
+                ? 'AST Metrics found <strong>' + plural(totalFilesKPI, 'file') + '</strong> but no reference from one to another. Imports may be dynamic, or these files simply stand alone.'
+                : 'No dependency could be resolved from imports or class references.';
+        } else if (totalFilesKPI <= 2) {
+            titleHtml = 'Only ' + plural(totalFilesKPI, 'file') + ' take part in the graph.'
+                + '<br><span class="verdict-muted">Too small to say anything about coupling.</span>';
+            leadHtml = 'They share <strong>' + plural(totalEdgesFile, 'link') + '</strong>. Analyze more of the codebase to see the real shape of the dependencies.';
+        } else if (hotspots.length === 0) {
+            titleHtml = 'No single file holds the graph together.'
+                + '<br><span class="verdict-muted">The dependencies are evenly spread.</span>';
+            leadHtml = 'The most depended-on file, ' + identOf(byAff[0]) + ', is used by <strong>'
+                + plural(maxAff, 'file') + '</strong> out of <strong>' + totalFilesKPI
+                + ' linked</strong>: no single change ripples far.';
+        } else if (hotspots.length <= 2) {
+            var names = hotspots.map(identOf).join(' and ');
+            titleHtml = 'The graph is healthy, except around ' + names + '.'
+                + '<br><span class="verdict-muted">Everything else stays loosely coupled.</span>';
+            if (hotspots.length === 1) {
+                var frac = fractionPhrase(hotspots[0].aff / totalFilesKPI);
+                leadHtml = '<strong>' + plural(hotspots[0].aff, 'file') + '</strong> depend on it directly'
+                    + (frac ? ': changing it moves ' + frac + '.' : '.');
+            } else {
+                leadHtml = 'They are used directly by <strong>' + hotspots[0].aff + '</strong> and <strong>'
+                    + plural(hotspots[1].aff, 'file') + '</strong>, out of <strong>' + totalFilesKPI
+                    + ' linked files</strong>. A change in either one travels far.';
+            }
+        } else {
+            titleHtml = plural(hotspots.length, 'file') + ' sit at the centre of the graph.'
+                + '<br><span class="verdict-muted">Most changes ripple through them.</span>';
+            var fracTop = fractionPhrase(byAff[0].aff / totalFilesKPI);
+            leadHtml = 'The most exposed, ' + identOf(byAff[0]) + ', is used by <strong>'
+                + plural(byAff[0].aff, 'file') + '</strong>'
+                + (fracTop ? ': touching it moves ' + fracTop + '.' : '.');
+        }
+
+        titleEl.innerHTML = titleHtml;
+        leadEl.innerHTML = leadHtml;
+
+        // Severity by volume of coupling
+        function sevOf(count) {
+            if (count >= 15) return 'sev-bad';
+            if (count >= 6) return 'sev-warn';
+            return 'sev-none';
+        }
+
+        function renderCouplingList(containerId, ranked, key, maxValue, withDot) {
+            var el = document.getElementById(containerId);
+            if (!el) return;
+            var rows = ranked.filter(function(n) { return n[key] > 0; }).slice(0, 8);
+            if (!rows.length) {
+                el.innerHTML = '<p class="text-sm text-gray-400 py-3">No file in this category.</p>';
+                return;
+            }
+            var html = rows.map(function(n) {
+                var full = resolve(n.id);
+                var value = n[key];
+                var width = maxValue > 0 ? Math.max(4, Math.round(value / maxValue * 100)) : 0;
+                var sev = sevOf(value);
+                var folder = dirOf(full);
+                return '<a href="explorer{{ scopeSuffix }}.html?file=' + encodeURIComponent(n.id) + '" class="data-row" title="' + esc(full) + '">'
+                    + (withDot ? '<span class="dot ' + sev + '"></span>' : '')
+                    + '<div class="min-w-0 flex-1">'
+                    + '<div class="row-name truncate">' + esc(baseName(full)) + '</div>'
+                    + '<div class="row-meta truncate">' + (folder ? esc(folder) : '&nbsp;') + '</div>'
+                    + '</div>'
+                    + '<div class="w-24 shrink-0"><div class="meter" style="margin-top:0"><div class="meter-fill ' + sev + '" style="width:' + width + '%"></div></div></div>'
+                    + '<span class="row-value w-8">' + value + '</span>'
+                    + '</a>';
+            }).join('');
+            el.innerHTML = html;
+        }
+
+        renderCouplingList('dep-afferent-list', byAff, 'aff', maxAff, false);
+        renderCouplingList('dep-efferent-list', byEff, 'eff', maxEff, true);
+        // ------------------------------------------------------------------
 
         // State machine
         var state = { mode: 'files', expandedFolder: null };
@@ -269,7 +384,7 @@ document.addEventListener('DOMContentLoaded', function() {
             return 0x888888;
         }
 
-        // Color: teal=efferent, purple=afferent, blue=balanced
+        // Color: teal=mostly uses others, purple=mostly used, blue=balanced
         function nodeColor(eff, aff) {
             var total = eff + aff;
             if (total === 0) return '#3b82f6';
@@ -284,15 +399,15 @@ document.addEventListener('DOMContentLoaded', function() {
             var parts = p.split('/');
             var name = parts[parts.length - 1];
             if (!name) name = parts[parts.length - 2] || p;
-            if (name.length > max) name = name.substring(0, max - 1) + '\u2026';
+            if (name.length > max) name = name.substring(0, max - 1) + '…';
             return name;
         }
 
         function shortFolderLabel(p, max) {
             max = max || 25;
             var parts = p.split('/').filter(Boolean);
-            var name = parts.length > 2 ? '\u2026/' + parts.slice(-2).join('/') : p;
-            if (name.length > max) name = name.substring(0, max - 1) + '\u2026';
+            var name = parts.length > 2 ? '…/' + parts.slice(-2).join('/') : p;
+            if (name.length > max) name = name.substring(0, max - 1) + '…';
             return name;
         }
 
@@ -561,7 +676,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 d._color = color;
 
                 nc.on('pointerover', function(ev) {
-                    tooltip.innerHTML = '<strong>' + resolve(d.id) + '</strong><br>Efferent: ' + d.eff + ' &middot; Afferent: ' + d.aff;
+                    tooltip.innerHTML = '<strong>' + resolve(d.id) + '</strong><br>Uses ' + d.eff + ' &middot; Used by ' + d.aff;
                     tooltip.classList.add('visible');
                     var gp = ev.global || ev.data.global;
                     tooltip.style.left = gp.x + 'px';
@@ -599,7 +714,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 });
 
                 nc.on('pointertap', function() {
-                    window.location.href = 'explorer.html?file=' + encodeURIComponent(d.id);
+                    window.location.href = 'explorer{{ scopeSuffix }}.html?file=' + encodeURIComponent(d.id);
                 });
 
                 nodesContainer.addChild(nc);
@@ -702,7 +817,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 d._color = color;
 
                 nc.on('pointerover', function(ev) {
-                    tooltip.innerHTML = '<strong>' + resolve(d.id) + '</strong><br>Files: ' + d.fileCount + '<br>Efferent: ' + d.eff + ' &middot; Afferent: ' + d.aff;
+                    tooltip.innerHTML = '<strong>' + resolve(d.id) + '</strong><br>Files: ' + d.fileCount + '<br>Uses ' + d.eff + ' &middot; Used by ' + d.aff;
                     tooltip.classList.add('visible');
                     var gp = ev.global || ev.data.global;
                     tooltip.style.left = gp.x + 'px';
@@ -796,6 +911,11 @@ document.addEventListener('DOMContentLoaded', function() {
 
         // Radio buttons for view mode
         var hasFolderData = (folderDeps && folderDeps.folders && Object.keys(folderDeps.folders).length > 0);
+        var folderLabel = document.getElementById('dep-view-folder-label');
+        if (!hasFolderData && folderLabel) {
+            folderLabel.style.display = 'none';
+            state.mode = 'files';
+        }
 
         // Check the correct radio based on initial state
         var radios = document.querySelectorAll('input[name="dep-view"]');

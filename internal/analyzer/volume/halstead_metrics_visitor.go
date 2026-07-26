@@ -17,89 +17,57 @@ func (v *HalsteadMetricsVisitor) Visit(stmts *pb.Stmts, parents *pb.Stmts) {
 		return
 	}
 
-	// calculate the number of lines of code in each method
-	var operatorSet map[string]bool
-	var operandSet map[string]bool
-	operatorSet = make(map[string]bool)
-	operandSet = make(map[string]bool)
-	var name string
-
-	var n int32  // program vocabulary (η)
-	var n1 int32 // number of unique operators
-	var n2 int32 // number of unique operands
-	var N int32  // program length (N)
-	var N1 int32
-	var N2 int32
-	var hatN float64 = 0 // estimated program length (𝑁̂)
-	var V float64 = 0    // volume (V)
-	var D float64 = 0    // difficulty (D)
-	var E float64 = 0    // effort (E)
-	var T float64 = 0    // time required to program (T)
-
 	for _, stmt := range parents.StmtFunction {
 		if stmt.Stmts == nil {
 			continue
 		}
 
-		// get unique operators and operands
-
-		if stmts == nil {
-			return
-		}
+		// Everything below is scoped to this method. Sharing the counters (or
+		// the pointers taken on them) across iterations would give every method
+		// of a class the figures of the last one visited.
+		operatorSet := make(map[string]bool)
+		operandSet := make(map[string]bool)
 
 		for _, operator := range stmt.Operators {
-			name = operator.Name
-			if _, ok := operatorSet[name]; !ok {
-				operatorSet[name] = true
-			}
+			operatorSet[operator.Name] = true
 		}
-
 		for _, operand := range stmt.Operands {
-			name = operand.Name
-			if _, ok := operandSet[name]; !ok {
-				operandSet[name] = true
-			}
+			operandSet[operand.Name] = true
 		}
 
-		// Calculate Halstead metrics
-		n1 = int32(len(operatorSet))
-		n2 = int32(len(operandSet))
-		N1 = int32(len(stmt.Operators))
-		N2 = int32(len(stmt.Operands))
+		n1 := int32(len(operatorSet)) // unique operators
+		n2 := int32(len(operandSet))  // unique operands
+		N1 := int32(len(stmt.Operators))
+		N2 := int32(len(stmt.Operands))
 
-		// Calculate program vocabulary (η)
-		n = int32(n1 + n2)
+		n := n1 + n2 // program vocabulary (η)
+		N := N1 + N2 // program length (N)
 
-		// Calculate program length (N)
-		N = int32(N1 + N2)
-
-		// Calculate estimated program length (𝑁̂)
-		hatN = float64(n1)*float64(math.Log2(float64(n1))) + float64(n2)*float64(math.Log2(float64(n2)))
-		if math.IsNaN(float64(hatN)) {
+		// estimated program length (𝑁̂)
+		hatN := float64(n1)*math.Log2(float64(n1)) + float64(n2)*math.Log2(float64(n2))
+		if math.IsNaN(hatN) || math.IsInf(hatN, 0) {
 			hatN = 0
 		}
 
-		// Calculate volume (V)
-		V = float64(N) * float64(math.Log2(float64(n)))
-		if math.IsNaN(float64(V)) {
+		// volume (V)
+		V := float64(N) * math.Log2(float64(n))
+		if math.IsNaN(V) || math.IsInf(V, 0) {
 			V = 0
 		}
 
-		// Calculate difficulty (D)
-		D = float64(n1) / 2 * float64(N2) / float64(n2)
-		if math.IsNaN(float64(D)) {
+		// difficulty (D)
+		D := float64(n1) / 2 * float64(N2) / float64(n2)
+		if math.IsNaN(D) || math.IsInf(D, 0) {
 			D = 0
 		}
 
-		// Calculate effort (E)
-		E = D * V
+		E := D * V  // effort (E)
+		T := E / 18 // time required to program (T)
 
-		// Calculate time required to program (T)
-		T = E / 18
-
-		// Assign to result
 		if stmt.Stmts.Analyze == nil {
 			stmt.Stmts.Analyze = &pb.Analyze{}
+		}
+		if stmt.Stmts.Analyze.Volume == nil {
 			stmt.Stmts.Analyze.Volume = &pb.Volume{}
 		}
 
@@ -143,8 +111,8 @@ func (v *HalsteadMetricsVisitor) Visit(stmts *pb.Stmts, parents *pb.Stmts) {
 		}
 
 		if count > 0 {
-			nn = nn / int32(count)
-			NN = NN / int32(count)
+			nn = int32(math.Round(float64(nn) / float64(count)))
+			NN = int32(math.Round(float64(NN) / float64(count)))
 			hhatN = hhatN / float64(count)
 			VV = VV / float64(count)
 			DD = DD / float64(count)
@@ -213,8 +181,8 @@ func (v *HalsteadMetricsVisitor) aggregateScope(stmts *pb.Stmts) {
 	if cnt == 0 {
 		return
 	}
-	n /= int32(cnt)
-	N /= int32(cnt)
+	n = int32(math.Round(float64(n) / float64(cnt)))
+	N = int32(math.Round(float64(N) / float64(cnt)))
 	hatN /= float64(cnt)
 	V /= float64(cnt)
 	D /= float64(cnt)
@@ -283,15 +251,18 @@ func (v *HalsteadMetricsVisitor) LeaveNode(stmts *pb.Stmts) {
 				}
 			}
 
-			// calculate the average
+			// calculate the average. Vocabulary and length are rounded rather
+			// than truncated: an integer division would report zero for a class
+			// whose methods each hold only a symbol or two.
 			if len(stmt.Stmts.StmtFunction) > 0 {
-				n = n / int32(len(stmt.Stmts.StmtFunction))
-				N = N / int32(len(stmt.Stmts.StmtFunction))
-				hatN = hatN / float64(len(stmt.Stmts.StmtFunction))
-				V = V / float64(len(stmt.Stmts.StmtFunction))
-				D = D / float64(len(stmt.Stmts.StmtFunction))
-				E = E / float64(len(stmt.Stmts.StmtFunction))
-				T = T / float64(len(stmt.Stmts.StmtFunction))
+				count := float64(len(stmt.Stmts.StmtFunction))
+				n = int32(math.Round(float64(n) / count))
+				N = int32(math.Round(float64(N) / count))
+				hatN = hatN / count
+				V = V / count
+				D = D / count
+				E = E / count
+				T = T / count
 			}
 
 			// Assign to result
@@ -352,8 +323,8 @@ func (v *HalsteadMetricsVisitor) LeaveNode(stmts *pb.Stmts) {
 
 		if cnt > 0 {
 			// average
-			n = n / int32(cnt)
-			N = N / int32(cnt)
+			n = int32(math.Round(float64(n) / float64(cnt)))
+			N = int32(math.Round(float64(N) / float64(cnt)))
 			hatN = hatN / float64(cnt)
 			V = V / float64(cnt)
 			D = D / float64(cnt)

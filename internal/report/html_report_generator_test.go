@@ -81,7 +81,7 @@ func TestBuildFilesJSONPruned_ContainsOutsideFunctions(t *testing.T) {
 		},
 	}
 
-	raw := buildFilesJSONPruned([]*pb.File{file}, "All")
+	raw := buildFilesJSONPruned([]*pb.File{file}, nil)
 	var decoded []map[string]interface{}
 	if err := json.Unmarshal([]byte(raw), &decoded); err != nil {
 		t.Fatalf("expected valid json, got error: %v", err)
@@ -191,7 +191,7 @@ func TestBuildFileDepsJSON_EmptySlicesNotNull(t *testing.T) {
 			},
 		},
 	}
-	raw := buildFileDepsJSON([]*pb.File{file}, "All", dict)
+	raw := buildFileDepsJSON([]*pb.File{file}, nil, dict)
 	if raw != "{}" {
 		t.Fatalf("expected empty json for no deps, got %s", raw)
 	}
@@ -220,7 +220,7 @@ func TestBuildFileDepsJSON_HashedKeys(t *testing.T) {
 			},
 		},
 	}
-	raw := buildFileDepsJSON([]*pb.File{fileA, fileB}, "All", dict)
+	raw := buildFileDepsJSON([]*pb.File{fileA, fileB}, nil, dict)
 	if !json.Valid([]byte(raw)) {
 		t.Fatalf("invalid json: %s", raw)
 	}
@@ -261,7 +261,7 @@ func TestBuildFolderDepsJSON_HashedKeys(t *testing.T) {
 			},
 		},
 	}
-	raw := buildFolderDepsJSON([]*pb.File{fileA, fileB}, "All", dict)
+	raw := buildFolderDepsJSON([]*pb.File{fileA, fileB}, nil, dict)
 	if raw == "" {
 		t.Fatalf("expected non-empty json for cross-folder deps")
 	}
@@ -328,7 +328,7 @@ func TestBuildFilesJSONPruned_PathHashStableAndDistinct(t *testing.T) {
 	first := makeFile("/tmp/repo-a/internal/analyzer/community_aggregator.go")
 	second := makeFile("/tmp/repo-b/internal/analyzer/community_aggregator.go")
 
-	raw := buildFilesJSONPruned([]*pb.File{first, second}, "All")
+	raw := buildFilesJSONPruned([]*pb.File{first, second}, nil)
 	var decoded []map[string]interface{}
 	if err := json.Unmarshal([]byte(raw), &decoded); err != nil {
 		t.Fatalf("expected valid json, got error: %v", err)
@@ -346,7 +346,7 @@ func TestBuildFilesJSONPruned_PathHashStableAndDistinct(t *testing.T) {
 		t.Fatalf("expected different pathHash for different absolute paths, got same value %q", hashA)
 	}
 
-	raw2 := buildFilesJSONPruned([]*pb.File{first, second}, "All")
+	raw2 := buildFilesJSONPruned([]*pb.File{first, second}, nil)
 	var decoded2 []map[string]interface{}
 	if err := json.Unmarshal([]byte(raw2), &decoded2); err != nil {
 		t.Fatalf("expected valid json on second call, got error: %v", err)

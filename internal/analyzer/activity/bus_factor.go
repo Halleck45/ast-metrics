@@ -73,6 +73,16 @@ func (busFactor *BusFactor) Calculate(aggregate *analyzer.Aggregated) {
 		}
 	}
 
+	// Addresses collected by the git analyzer, used to resolve avatars
+	emailByAuthor := make(map[string]string)
+	for _, gitAnalysis := range aggregate.ResultOfGitAnalysis {
+		for author, email := range gitAnalysis.AuthorEmails {
+			if _, known := emailByAuthor[author]; !known {
+				emailByAuthor[author] = email
+			}
+		}
+	}
+
 	// keep only top 4 committers
 	aggregate.TopCommitters = make([]analyzer.TopCommitter, 0)
 	for i, kv := range ss {
@@ -85,6 +95,7 @@ func (busFactor *BusFactor) Calculate(aggregate *analyzer.Aggregated) {
 		}
 		commiter := analyzer.TopCommitter{
 			Name:       kv.Key,
+			Email:      emailByAuthor[kv.Key],
 			Count:      kv.Value,
 			Percentage: percentage,
 		}
