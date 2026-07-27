@@ -800,6 +800,10 @@ document.addEventListener('DOMContentLoaded', function() {
         var ringGfx = null;
         var scale = 1, panX = 0, panY = 0;
         var isPanning = false, panMoved = false, panStartX = 0, panStartY = 0, panStartPX = 0, panStartPY = 0;
+        // Raised when a node consumed the click: the background handler below
+        // sees the canvas as the event target either way, and would otherwise
+        // clear the selection the node just made.
+        var tapOnNode = false;
         var currentNodes = null;
         var currentLinks = null;
         var currentKind = 'files';
@@ -921,6 +925,7 @@ document.addEventListener('DOMContentLoaded', function() {
             if (e.target.tagName !== 'CANVAS') return;
             isPanning = true;
             panMoved = false;
+            tapOnNode = false;
             panStartX = e.clientX;
             panStartY = e.clientY;
             panStartPX = panX;
@@ -941,8 +946,11 @@ document.addEventListener('DOMContentLoaded', function() {
             isPanning = false;
             canvasEl.classList.remove('dragging');
             scheduleLabels();
-            // A motionless click on the background clears the selection
-            if (!panMoved && e.target.tagName === 'CANVAS') deselectNode();
+            // A motionless click on the background clears the selection.
+            // PIXI dispatches its taps during the capture phase of this same
+            // pointerup, so tapOnNode is already set when a node was hit.
+            if (!panMoved && !tapOnNode && e.target.tagName === 'CANVAS') deselectNode();
+            tapOnNode = false;
         });
 
         // ---- View animation (zoom buttons, fit, focus on search) --------------
@@ -1513,6 +1521,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     });
 
                     nc.on('pointertap', function() {
+                        tapOnNode = true;
                         if (kind === 'folders') {
                             state.mode = 'files';
                             state.expandedFolder = d.id;
