@@ -104,17 +104,19 @@ class calculatrice {
 	assert.Equal(t, operandsExpectedAsString, operandsAsString)
 	
 	// Ensure operators
-	// [+]
+	// the parameter separator, the "return" and the "+"
 	// Convert to string (for easier comparison)
 	operatorsAsString := fmt.Sprintf("%v", func1.Operators)
-	operatorsExpectedAsString := "[name:\"+\"]"
+	operatorsExpectedAsString := "[name:\",\" name:\"return\" name:\"+\"]"
 	assert.Equal(t, operatorsExpectedAsString, operatorsAsString, "Expected operators to be %s, got %s", operatorsExpectedAsString, operatorsAsString)
 
-	// Ensure operators of function 2
-	// [==, / ]
+	// Ensure operators of function 2: the parameter separator, "if" and its
+	// "==", the "throw new", the two assignments and their "/" and "+=", the
+	// call to $this->add (one "()", one "->" for the call and one for the
+	// $this->a1 it reads, one "," between its arguments), and the "return"
 	// Convert to string (for easier comparison)
 	operatorsAsString = fmt.Sprintf("%v", func2.Operators)
-	operatorsExpectedAsString = "[name:\"==\" name:\"/\" name:\"+=\" name:\"->\" name:\"->\"]"
+	operatorsExpectedAsString = "[name:\",\" name:\"if\" name:\"==\" name:\"throw\" name:\"new\" name:\"=\" name:\"/\" name:\"+=\" name:\"=\" name:\"()\" name:\"->\" name:\"->\" name:\",\" name:\"return\"]"
 	assert.Equal(t, operatorsExpectedAsString, operatorsAsString, "Expected operators to be %s, got %s", operatorsExpectedAsString, operatorsAsString)
 
 	// Ensure LOC
@@ -301,9 +303,11 @@ function test() {
 	// 1 function should be found
 	assert.Equal(t, 1, len(result.Stmts.StmtFunction), "Incorrect number of functions")
 
-	// operators should be found
+	// operators should be found: 37 statements, each holding the "=" of the
+	// assignment plus its own operator (24 binary operators, then 13 compound
+	// assignments) => 37 + 37
 	func1 := result.Stmts.StmtFunction[0]
-	assert.Equal(t, 36, len(func1.Operators), "Incorrect number of operators")
+	assert.Equal(t, 74, len(func1.Operators), "Incorrect number of operators")
 }
 
 func TestPhpIfCases(t *testing.T) {

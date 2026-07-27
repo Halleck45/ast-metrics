@@ -11,14 +11,36 @@ import (
 
 type TreeSitterAdapter struct {
 	src []byte
+	// root caches the tree shared by the runner, to avoid re-parsing
+	root *sitter.Node
 	// ns caches the declared namespace (parsed lazily from src)
 	ns       string
 	nsParsed bool
 }
 
-func NewTreeSitterAdapter(src []byte) *TreeSitterAdapter { return &TreeSitterAdapter{src: src} }
-func (a *TreeSitterAdapter) SetSource(src []byte)        { a.src = src }
-func (a *TreeSitterAdapter) Language() *sitter.Language  { return tsCSharp.GetLanguage() }
+func NewTreeSitterAdapter(src []byte) *TreeSitterAdapter   { return &TreeSitterAdapter{src: src} }
+func (a *TreeSitterAdapter) SetSource(src []byte)          { a.src = src; a.root = nil }
+func (a *TreeSitterAdapter) SetRootNode(root *sitter.Node) { a.root = root }
+func (a *TreeSitterAdapter) Language() *sitter.Language    { return tsCSharp.GetLanguage() }
+
+// ensureRoot returns the tree shared by the runner, parsing the source when
+// the adapter is used on its own (tests).
+func (a *TreeSitterAdapter) ensureRoot(src []byte) (*sitter.Node, []byte) {
+	source := a.src
+	if source == nil {
+		source = src
+	}
+	if a.root != nil {
+		return a.root, source
+	}
+	if source == nil {
+		return nil, nil
+	}
+	parser := sitter.NewParser()
+	parser.SetLanguage(a.Language())
+	a.root = parser.Parse(nil, source).RootNode()
+	return a.root, source
+}
 
 func (a *TreeSitterAdapter) IsModule(n *sitter.Node) bool {
 	// namespace_declaration bodies are reached through the fallback recursion;
@@ -307,76 +329,78 @@ func (a *TreeSitterAdapter) CountComments(lines []string, start, end int) int {
 	return cnt
 }
 
-// ExtractOperatorsOperands extracts Halstead operators and operands from C# source.
+// csharpOperatorTokens lists the anonymous token types counted as Halstead
+// operators: arithmetic, comparison, logical, bitwise, assignments, the member
+// access, the argument separator, the subscript, the ternary and the keywords
+// that drive the control flow. Keywords count as operators: without them, a
+// body made of plain statements ("return this.items;") would hold none at all,
+// and its Halstead volume would collapse to zero.
+//
+// The ternary reports its "?" only: its ":" would count the same operator
+// twice, and a "case" label already reports its keyword.
+var csharpOperatorTokens = map[string]bool{
+	"+": true, "-": true, "*": true, "/": true, "%": true,
+	"==": true, "!=": true, "<": true, ">": true, "<=": true, ">=": true,
+	"&&": true, "||": true, "!": true, "??": true,
+	"&": true, "|": true, "^": true, "~": true,
+	"<<": true, ">>": true, ">>>": true,
+	"=": true, "+=": true, "-=": true, "*=": true, "/=": true, "%=": true,
+	"&=": true, "|=": true, "^=": true, "<<=": true, ">>=": true, ">>>=": true,
+	"??=": true, "++": true, "--": true, "=>": true,
+	".": true, "?.": true, "->": true, "::": true, ",": true, "[": true, "?": true,
+	"return": true, "if": true, "else": true, "for": true, "foreach": true,
+	"in": true, "while": true, "do": true, "switch": true, "case": true,
+	"default": true, "break": true, "continue": true, "goto": true,
+	"new": true, "is": true, "as": true, "sizeof": true, "nameof": true,
+	"throw": true, "try": true, "catch": true, "finally": true,
+	"lock": true, "await": true, "yield": true, "checked": true, "unchecked": true,
+}
+
+// csharpOperandTypes lists the named node types counted as Halstead operands.
+// Literals are left out on purpose: the cohesion metrics read the operands,
+// and two methods sharing the literal 0 are not cohesive.
+var csharpOperandTypes = map[string]bool{"identifier": true}
+
+// csharpCallTypes lists the node types counted as one call operator. Object
+// creation is left out: it already reports its "new" keyword.
+var csharpCallTypes = map[string]bool{"invocation_expression": true}
+
+// csharpPruneTypes lists the node types never walked: a type is not an
+// operand, and two methods returning a "string" are not cohesive. A qualified
+// name only appears in a type or namespace position; member access has a node
+// of its own.
+var csharpPruneTypes = map[string]bool{
+	"predefined_type": true, "implicit_type": true, "generic_name": true,
+	"type_argument_list": true, "type_parameter_list": true,
+	"array_type": true, "array_rank_specifier": true, "nullable_type": true,
+	"pointer_type": true, "ref_type": true, "tuple_type": true,
+	"qualified_name": true, "base_list": true, "attribute_list": true,
+	"modifier": true, "type_parameter_constraints_clause": true,
+}
+
+// csharpChainTypes lists the member access node types. A C# method call has a
+// node of its own ("invocation_expression") and is not a member access.
+var csharpChainTypes = map[string]bool{"member_access_expression": true}
+
+var csharpOperandSpec = Treesitter.OperandSpec{
+	OperatorTokens: csharpOperatorTokens,
+	OperandTypes:   csharpOperandTypes,
+	CallTypes:      csharpCallTypes,
+	PruneTypes:     csharpPruneTypes,
+	ChainTypes:     csharpChainTypes,
+	// no Receiver: the current object is the keyword "this"
+}
+
+// ExtractOperatorsOperands collects Halstead operators and operands from the
+// AST within the given 1-based inclusive line range. A member access is a
+// single operand ("this.items", "System.Console"), and an access through
+// "this" reads the member whatever is done with it afterwards.
 func (a *TreeSitterAdapter) ExtractOperatorsOperands(src []byte, startLine, endLine int) ([]string, []string) {
-	if src == nil || startLine <= 0 || endLine <= 0 || endLine < startLine {
+	root, source := a.ensureRoot(src)
+	if root == nil {
 		return nil, nil
 	}
-	tokens := []string{
-		">>>=", ">>=", "<<=", "??=", ">>>",
-		"+=", "-=", "*=", "/=", "%=", "&=", "|=", "^=",
-		"==", "!=", "<=", ">=", "&&", "||", "??", "?.",
-		"++", "--", "=>",
-		"<<", ">>",
-		"+", "-", "*", "/", "%", "&", "|", "^", "!", "<", ">", "=", "~",
-		".",
-	}
-
-	lines := strings.Split(string(src), "\n")
-	ops := []string{}
-	opr := []string{}
-
-	for i := startLine - 1; i < endLine && i < len(lines); i++ {
-		raw := strings.TrimSpace(lines[i])
-		if raw == "" {
-			continue
-		}
-		line := stripCSharpStrings(raw)
-		if idx := strings.Index(line, "//"); idx >= 0 {
-			line = line[:idx]
-		}
-		if strings.TrimSpace(line) == "" {
-			continue
-		}
-
-		// Scan operators
-		rest := line
-		for {
-			found := false
-			minPos := len(rest)
-			minTok := ""
-			for _, tok := range tokens {
-				if p := strings.Index(rest, tok); p >= 0 && p < minPos {
-					minPos = p
-					minTok = tok
-					found = true
-				}
-			}
-			if !found {
-				break
-			}
-			ops = append(ops, minTok)
-			rest = rest[minPos+len(minTok):]
-		}
-
-		// Operands: identifiers
-		cleaned := line
-		replacers := []string{",", ";", "(", ")", "[", "]", "{", "}", "*", "&", "|", "^", "/", "+", "-", "%", ":", "<", ">", "=", "!", "~", "?", ".", "@"}
-		for _, r := range replacers {
-			cleaned = strings.ReplaceAll(cleaned, r, " ")
-		}
-		fields := strings.Fields(cleaned)
-		for _, f := range fields {
-			if f == "" || isCSharpKeyword(f) {
-				continue
-			}
-			if f[0] >= '0' && f[0] <= '9' {
-				continue
-			}
-			opr = append(opr, f)
-		}
-	}
-	return ops, opr
+	return csharpOperandSpec.Extract(root, source, startLine, endLine)
 }
 
 // ExtractMethodCalls extracts method calls like this.Foo, base.Bar from C# source.
@@ -466,25 +490,4 @@ func stripCSharpStrings(s string) string {
 		out = append(out, rune(c))
 	}
 	return string(out)
-}
-
-func isCSharpKeyword(s string) bool {
-	switch s {
-	case "abstract", "as", "base", "bool", "break", "byte", "case", "catch",
-		"char", "checked", "class", "const", "continue", "decimal", "default",
-		"delegate", "do", "double", "else", "enum", "event", "explicit",
-		"extern", "finally", "fixed", "float", "for", "foreach", "goto",
-		"if", "implicit", "in", "int", "interface", "internal", "is", "lock",
-		"long", "namespace", "new", "object", "operator", "out", "override",
-		"params", "private", "protected", "public", "readonly", "record",
-		"ref", "return", "sbyte", "sealed", "short", "sizeof", "stackalloc",
-		"static", "string", "struct", "switch", "this", "throw", "try",
-		"typeof", "uint", "ulong", "unchecked", "unsafe", "ushort", "using",
-		"var", "virtual", "void", "volatile", "while", "yield",
-		"async", "await", "get", "set", "init", "value", "global", "partial",
-		"when", "where", "with", "or", "and", "not",
-		"true", "false", "null":
-		return true
-	}
-	return false
 }

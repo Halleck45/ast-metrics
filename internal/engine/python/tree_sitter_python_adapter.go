@@ -401,7 +401,10 @@ func (a *TreeSitterAdapter) CommentMarkers() engine.CommentMarkers {
 
 // pythonOperatorTokens lists the anonymous token types counted as Halstead
 // operators: arithmetic, comparison, assignment, bitwise, walrus, attribute
-// access and the keyword operators (and/or/not/in/is).
+// access, the argument separator, the subscript and the keywords that drive
+// the control flow. Keywords count as operators: without them, a body made of
+// plain statements ("return list(self.items)") would hold none at all, and its
+// Halstead volume would collapse to zero.
 var pythonOperatorTokens = map[string]bool{
 	"+": true, "-": true, "*": true, "/": true, "//": true, "%": true, "**": true, "@": true,
 	"==": true, "!=": true, "<": true, ">": true, "<=": true, ">=": true, "<>": true,
@@ -409,6 +412,12 @@ var pythonOperatorTokens = map[string]bool{
 	"**=": true, "@=": true, "&=": true, "|=": true, "^=": true, "<<=": true, ">>=": true,
 	"&": true, "|": true, "^": true, "<<": true, ">>": true, "~": true, ":=": true,
 	".": true, "and": true, "or": true, "not": true, "in": true, "is": true,
+	",": true, "[": true,
+	"return": true, "if": true, "elif": true, "else": true, "for": true, "while": true,
+	"break": true, "continue": true, "pass": true, "try": true, "except": true,
+	"finally": true, "raise": true, "assert": true, "del": true, "with": true,
+	"as": true, "lambda": true, "yield": true, "await": true, "global": true,
+	"nonlocal": true,
 }
 
 // pythonOperandTypes lists the named node types counted as Halstead operands:
@@ -417,6 +426,19 @@ var pythonOperatorTokens = map[string]bool{
 var pythonOperandTypes = map[string]bool{
 	"identifier": true, "integer": true, "float": true, "string_content": true,
 	"true": true, "false": true, "none": true,
+}
+
+// pythonCallTypes lists the node types counted as one call operator.
+var pythonCallTypes = map[string]bool{"call": true}
+
+// pythonOperandSpec reads attributes as two operands joined by the "."
+// operator ("self.items" gives "self" and "items"): the cohesion metrics rely
+// on the bare attribute name, since Python names the current object with a
+// plain parameter.
+var pythonOperandSpec = Treesitter.OperandSpec{
+	OperatorTokens: pythonOperatorTokens,
+	OperandTypes:   pythonOperandTypes,
+	CallTypes:      pythonCallTypes,
 }
 
 // ExtractOperatorsOperands collects Halstead operators and operands from the
@@ -436,5 +458,5 @@ func (a *TreeSitterAdapter) ExtractOperatorsOperands(src []byte, startLine, endL
 		tree := parser.Parse(nil, source)
 		root = tree.RootNode()
 	}
-	return Treesitter.ExtractOperatorsOperandsFromAST(root, source, startLine, endLine, pythonOperatorTokens, pythonOperandTypes)
+	return pythonOperandSpec.Extract(root, source, startLine, endLine)
 }

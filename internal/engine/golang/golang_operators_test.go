@@ -52,9 +52,10 @@ func calc(a, b int) int {
 		t.Fatalf("expected some operands, got 0")
 	}
 
-	// "foo.bar" is a single operand: its "." is not an operator
-	if len(fn.Operators) != 49 {
-		t.Fatalf("expected 49 operators, got %d", len(fn.Operators))
+	// 49 symbolic operators, plus the "," of the parameter list, the "return"
+	// and the "." of "foo.bar" ("foo.bar" is still a single operand)
+	if len(fn.Operators) != 52 {
+		t.Fatalf("expected 52 operators, got %d", len(fn.Operators))
 	}
 	// the declaration line contributes "calc", "a" and "b": the types of the
 	// parameters and of the result are not operands

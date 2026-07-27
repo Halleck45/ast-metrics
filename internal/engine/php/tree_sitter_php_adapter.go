@@ -31,10 +31,34 @@ type TreeSitterAdapter struct {
 }
 
 func NewTreeSitterAdapter(src []byte) *TreeSitterAdapter { return &TreeSitterAdapter{src: src} }
-func (a *TreeSitterAdapter) SetSource(src []byte)        { a.src = src; a.root = nil; a.computed = false; a.ns = "" }
+func (a *TreeSitterAdapter) SetSource(src []byte) {
+	a.src = src
+	a.root = nil
+	a.computed = false
+	a.ns = ""
+}
 func (a *TreeSitterAdapter) SetRootNode(root *sitter.Node) { a.root = root }
 
 func (a *TreeSitterAdapter) Language() *sitter.Language { return tsPhp.GetLanguage() }
+
+// ensureRoot returns the tree shared by the runner, parsing the source when
+// the adapter is used on its own (tests).
+func (a *TreeSitterAdapter) ensureRoot(src []byte) (*sitter.Node, []byte) {
+	source := a.src
+	if source == nil {
+		source = src
+	}
+	if a.root != nil {
+		return a.root, source
+	}
+	if source == nil {
+		return nil, nil
+	}
+	parser := sitter.NewParser()
+	parser.SetLanguage(a.Language())
+	a.root = parser.Parse(nil, source).RootNode()
+	return a.root, source
+}
 
 // ---- Structure detection ----
 func (a *TreeSitterAdapter) IsModule(n *sitter.Node) bool { return n.Type() == "program" }
@@ -550,82 +574,180 @@ func firstChildOfType(n *sitter.Node, t string) *sitter.Node {
 	return nil
 }
 
-// Provide simplistic operators/operands extraction for tests
+// phpOperatorTokens lists the anonymous token types counted as Halstead
+// operators: arithmetic, string concatenation, comparison, logical, bitwise,
+// assignments, the accesses, the argument separator, the subscript, the
+// ternary and the keywords that drive the control flow.
+//
+// Keywords count as operators. Without them, a body made of plain statements
+// ("return array_keys($this->items);") holds no operator at all: the Halstead
+// volume collapses to zero, and since the maintainability index decreases with
+// the logarithm of the volume, it turns every such method into a perfect
+// score.
+//
+// Declaration keywords are left out on purpose ("function", "class",
+// "private", "use"): they describe the shape of the code, they do not operate
+// on anything. Type keywords never reach this map either, since the type
+// positions are pruned.
+//
+// The ":" covers the named arguments ("f(userId: 1)") and the alternative
+// syntax ("if (...):"). It also lands on the ":" of a return type and on the
+// second half of a ternary, which each add one occurrence of an operator the
+// method already has: the effect on the volume is marginal, and worth the
+// named arguments.
+var phpOperatorTokens = map[string]bool{
+	"+": true, "-": true, "*": true, "/": true, "%": true, "**": true, ".": true,
+	"==": true, "===": true, "!=": true, "!==": true, "<>": true, "<=>": true,
+	"<": true, ">": true, "<=": true, ">=": true,
+	"&&": true, "||": true, "!": true, "??": true, "?": true,
+	"and": true, "or": true, "xor": true,
+	"&": true, "|": true, "^": true, "~": true, "<<": true, ">>": true,
+	"=": true, "+=": true, "-=": true, "*=": true, "/=": true, "%=": true,
+	".=": true, "**=": true, "??=": true, "&=": true, "|=": true, "^=": true,
+	"<<=": true, ">>=": true,
+	"++": true, "--": true, "@": true,
+	"->": true, "?->": true, "::": true, "=>": true, "...": true,
+	",": true, "[": true, ":": true, "|>": true,
+	"return": true, "if": true, "else": true, "elseif": true, "endif": true,
+	"while": true, "do": true, "for": true, "foreach": true, "as": true,
+	"switch": true, "case": true, "default": true, "match": true,
+	"break": true, "continue": true, "goto": true,
+	"new": true, "clone": true, "instanceof": true,
+	"throw": true, "try": true, "catch": true, "finally": true,
+	"echo": true, "print": true, "yield": true,
+	"isset": true, "unset": true, "empty": true, "list": true,
+	"require": true, "require_once": true, "include": true, "include_once": true,
+	"exit": true, "die": true, "global": true,
+}
+
+// phpOperandTypes lists the named node types counted as Halstead operands.
+// Only variables are counted: PHP names them with a leading "$", which tells
+// them apart from the function, class and constant names the grammar also
+// reports as "name" nodes. Literals are left out like in the other languages:
+// the cohesion metrics read the operands, and two methods sharing the literal
+// 0 are not cohesive.
+var phpOperandTypes = map[string]bool{"variable_name": true}
+
+// phpCallTypes lists the node types counted as one call operator. Object
+// creation is left out: it already reports its "new" keyword.
+var phpCallTypes = map[string]bool{
+	"function_call_expression": true, "member_call_expression": true,
+	"nullsafe_member_call_expression": true, "scoped_call_expression": true,
+}
+
+// phpPruneTypes lists the node types never walked: a type is not an operand,
+// and two methods typed "string" are not cohesive. Modifiers and attributes
+// describe the declaration, not what it computes.
+var phpPruneTypes = map[string]bool{
+	"primitive_type": true, "named_type": true, "optional_type": true,
+	"union_type": true, "intersection_type": true, "type_list": true,
+	"visibility_modifier": true, "static_modifier": true,
+	"abstract_modifier": true, "final_modifier": true, "readonly_modifier": true,
+	"var_modifier": true, "attribute_list": true, "base_clause": true,
+	"class_interface_clause": true,
+}
+
+// phpChainTypes lists the attribute access node types. A PHP method call has
+// a node of its own ("member_call_expression") and is not an attribute access.
+var phpChainTypes = map[string]bool{
+	"member_access_expression": true, "nullsafe_member_access_expression": true,
+}
+
+// phpLeafTypes declares "variable_name" as a single name inside an access
+// chain: the grammar splits it into a "$" token and a name.
+var phpLeafTypes = map[string]bool{"variable_name": true}
+
+var phpOperandSpec = Treesitter.OperandSpec{
+	OperatorTokens: phpOperatorTokens,
+	OperandTypes:   phpOperandTypes,
+	CallTypes:      phpCallTypes,
+	PruneTypes:     phpPruneTypes,
+	ChainTypes:     phpChainTypes,
+	LeafTypes:      phpLeafTypes,
+	Normalize:      normalizePhpOperand,
+	// "$this" is the PHP equivalent of the Go receiver: normalizing it is what
+	// lets the cohesion metrics tell an attribute access from a local variable
+	Receiver: "$this",
+}
+
+// ExtractOperatorsOperands collects Halstead operators and operands from the
+// AST within the given 1-based inclusive line range. An attribute access is a
+// single operand ("this.items", "obj.name"), and an access through "$this"
+// reads the attribute whatever is done with it afterwards: "$this->items" and
+// "$this->items[$k]" both read "this.items".
 func (a *TreeSitterAdapter) ExtractOperatorsOperands(src []byte, startLine, endLine int) ([]string, []string) {
-	if src == nil || startLine <= 0 || endLine <= 0 || endLine < startLine {
+	root, source := a.ensureRoot(src)
+	if root == nil {
 		return nil, nil
 	}
-	lines := strings.Split(string(src), "\n")
-	ops := []string{}
-	oprnds := []string{}
-	addOp := func(op string) { ops = append(ops, op) }
-	// tokens ordered longest-first to avoid partial matches
-	tokens := []string{"<<=", ">>=", "**=", "===", "!==", "<=>", "??=", "<=", ">=", "::", "=>", "->", ":", "<<", ">>", "&&", "||", "??", "&=", "|=", "^=", "+=", "-=", "*=", "/=", "%=", ".=", "==", "**", "|>", "+", "-", "*", "/", "%", ".", "&", "|", "^", "<", ">"}
-	addOperand := func(name string) { oprnds = append(oprnds, normalizePhpOperand(name)) }
-	// very naive scan in order
-	for i := startLine - 1; i < endLine && i < len(lines); i++ {
-		lineOrig := strings.TrimSpace(lines[i])
-		if lineOrig == "" || strings.HasPrefix(lineOrig, "//") || strings.HasPrefix(lineOrig, "/*") || strings.HasPrefix(lineOrig, "*") || strings.HasPrefix(lineOrig, "*/") {
+	ops, operands := phpOperandSpec.Extract(root, source, startLine, endLine)
+	return foldPhpPipes(root, source, ops, startLine, endLine), operands
+}
+
+// foldPhpPipes repairs the PHP 8.5 pipe operator. The bundled grammar predates
+// it and reads `'x' |> trim(...)` as a binary expression whose operator is ">"
+// and whose left side ends with an ERROR node holding a lone "|". Reporting two
+// operators where the source writes one would inflate both the vocabulary and
+// the length, so each such pair is folded back into a single "|>".
+func foldPhpPipes(root *sitter.Node, src []byte, ops []string, startLine, endLine int) []string {
+	pipes := countPhpPipes(root, src, startLine, endLine)
+	if pipes == 0 {
+		return ops
+	}
+	// the Halstead metrics read the operators as a multiset, so dropping the
+	// halves wherever they sit is enough
+	folded := make([]string, 0, len(ops))
+	remainingBars, remainingGreater := pipes, pipes
+	for _, op := range ops {
+		if op == "|" && remainingBars > 0 {
+			remainingBars--
 			continue
 		}
-		// operators: operate on a cleaned copy
-		lineOp := stripStrings(lineOrig)
-		rest := lineOp
-		for {
-			found := false
-			minPos := len(rest)
-			minTok := ""
-			for _, tok := range tokens {
-				if p := strings.Index(rest, tok); p >= 0 {
-					if p < minPos {
-						minPos = p
-						minTok = tok
-						found = true
-					}
-				}
-			}
-			if !found {
-				break
-			}
-			addOp(minTok)
-			// debug prints removed
-			rest = rest[minPos+len(minTok):]
+		if op == ">" && remainingGreater > 0 {
+			remainingGreater--
+			continue
 		}
-		// operands: variables like $var and $this->attr
-		for idx := 0; idx < len(lineOrig); idx++ {
-			if lineOrig[idx] == '$' {
-				// capture until delimiter
-				j := idx + 1
-				for j < len(lineOrig) && (lineOrig[j] == '_' || (lineOrig[j] >= 'a' && lineOrig[j] <= 'z') || (lineOrig[j] >= 'A' && lineOrig[j] <= 'Z') || (lineOrig[j] >= '0' && lineOrig[j] <= '9')) {
-					j++
-				}
-				n := lineOrig[idx:j]
-				include := true
-				// handle $this->something
-				if j+1 < len(lineOrig) && lineOrig[j] == '-' && lineOrig[j+1] == '>' {
-					k := j + 2
-					for k < len(lineOrig) && (lineOrig[k] == '_' || (lineOrig[k] >= 'a' && lineOrig[k] <= 'z') || (lineOrig[k] >= 'A' && lineOrig[k] <= 'Z') || (lineOrig[k] >= '0' && lineOrig[k] <= '9')) {
-						k++
-					}
-					// only take attribute-like and skip method call names like add(
-					attr := lineOrig[j+2 : k]
-					if k < len(lineOrig) && lineOrig[k] == '(' {
-						include = false // skip adding bare $this
-						idx = k         // continue from '('
-					} else {
-						n = n + "->" + attr
-						idx = k - 1
-					}
-				} else {
-					idx = j - 1
-				}
-				if include {
-					addOperand(n)
-				}
-			}
+		folded = append(folded, op)
+	}
+	for i := 0; i < pipes; i++ {
+		folded = append(folded, "|>")
+	}
+	return folded
+}
+
+// countPhpPipes counts the "|>" written between startLine and endLine.
+func countPhpPipes(root *sitter.Node, src []byte, startLine, endLine int) int {
+	count := 0
+	var walk func(n *sitter.Node)
+	walk = func(n *sitter.Node) {
+		if int(n.EndPoint().Row)+1 < startLine || int(n.StartPoint().Row)+1 > endLine {
+			return
+		}
+		if n.Type() == "binary_expression" && isPhpPipe(n, src) {
+			count++
+		}
+		for i := 0; i < int(n.ChildCount()); i++ {
+			walk(n.Child(i))
 		}
 	}
-	return ops, oprnds
+	walk(root)
+	return count
+}
+
+// isPhpPipe reports whether a binary expression is a mis-parsed "|>".
+func isPhpPipe(n *sitter.Node, src []byte) bool {
+	operator := n.ChildByFieldName("operator")
+	if operator == nil || operator.Type() != ">" {
+		return false
+	}
+	for i := 0; i < int(n.ChildCount()); i++ {
+		child := n.Child(i)
+		if child.Type() == "ERROR" && int(child.EndByte()) <= len(src) &&
+			strings.TrimSpace(string(src[child.StartByte():child.EndByte()])) == "|" {
+			return true
+		}
+	}
+	return false
 }
 
 // ExtractMethodCalls scans the function body range and returns normalized method calls

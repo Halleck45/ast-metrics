@@ -95,9 +95,10 @@ func TestTreeSitterAdapter_ExtractOperatorsOperands(t *testing.T) {
 	adapter := NewTreeSitterAdapter(src)
 	ops, operands := adapter.ExtractOperatorsOperands(src, 1, 3)
 
-	// =, // and + ("//" is an operator here, not a comment)
-	if len(ops) != 3 {
-		t.Fatalf("expected 3 operators, got %d: %v", len(ops), ops)
+	// the "," of the parameter list, =, // and + ("//" is an operator here, not
+	// a comment), and the "return"
+	if len(ops) != 5 {
+		t.Fatalf("expected 5 operators, got %d: %v", len(ops), ops)
 	}
 	// divide, a, b (signature), q, a, b, q, 1
 	if len(operands) != 8 {
@@ -111,7 +112,7 @@ func TestTreeSitterAdapter_ExtractOperatorsOperands(t *testing.T) {
 `)
 	adapter2 := NewTreeSitterAdapter(src2)
 	ops2, _ := adapter2.ExtractOperatorsOperands(src2, 1, 3)
-	if len(ops2) != 1 { // only the assignment
-		t.Fatalf("expected 1 operator, got %d: %v", len(ops2), ops2)
+	if len(ops2) != 2 { // only the assignment and the "return"
+		t.Fatalf("expected 2 operators, got %d: %v", len(ops2), ops2)
 	}
 }

@@ -361,8 +361,12 @@ func (a *TreeSitterAdapter) CountComments(lines []string, start, end int) int {
 }
 
 // tsOperatorTokens lists the anonymous token types counted as Halstead
-// operators: arithmetic, comparison, logical, bitwise, assignments, arrows
-// and spreads. The "<" and ">" of generics never reach this map: the AST
+// operators: arithmetic, comparison, logical, bitwise, assignments, arrows,
+// spreads, the member access, the argument separator, the subscript, the
+// ternary and the keywords that drive the control flow. Keywords count as
+// operators: without them, a body made of plain statements
+// ("return this.items") would hold none at all, and its Halstead volume would
+// collapse to zero. The "<" and ">" of generics never reach this map: the AST
 // parses them as type arguments, which are pruned.
 var tsOperatorTokens = map[string]bool{
 	"+": true, "-": true, "*": true, "/": true, "%": true, "**": true,
@@ -375,6 +379,13 @@ var tsOperatorTokens = map[string]bool{
 	"&&=": true, "||=": true, "??=": true, "&=": true, "|=": true, "^=": true,
 	"<<=": true, ">>=": true, ">>>=": true,
 	"++": true, "--": true, "=>": true, "...": true,
+	".": true, "?.": true, ",": true, "[": true, "?": true,
+	"return": true, "if": true, "else": true, "for": true, "of": true,
+	"in": true, "while": true, "do": true, "switch": true, "case": true,
+	"default": true, "break": true, "continue": true,
+	"throw": true, "try": true, "catch": true, "finally": true,
+	"new": true, "typeof": true, "instanceof": true, "delete": true,
+	"void": true, "await": true, "yield": true, "as": true, "satisfies": true,
 }
 
 // tsOperandTypes lists the named node types counted as Halstead operands.
@@ -408,9 +419,14 @@ var tsPruneTypes = map[string]bool{
 
 var tsChainTypes = map[string]bool{"member_expression": true}
 
+// tsCallTypes lists the node types counted as one call operator. A "new"
+// expression is left out: it already reports its "new" keyword.
+var tsCallTypes = map[string]bool{"call_expression": true}
+
 var tsOperandSpec = Treesitter.OperandSpec{
 	OperatorTokens: tsOperatorTokens,
 	OperandTypes:   tsOperandTypes,
+	CallTypes:      tsCallTypes,
 	PruneTypes:     tsPruneTypes,
 	ChainTypes:     tsChainTypes,
 	// no Receiver: the current object is the keyword "this"

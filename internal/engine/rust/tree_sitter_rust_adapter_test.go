@@ -100,9 +100,9 @@ func TestTreeSitterAdapter_ExtractOperatorsOperands(t *testing.T) {
 	adapter := NewTreeSitterAdapter(src)
 	ops, operands := adapter.ExtractOperatorsOperands(src, 1, 4)
 
-	// ->, =, +, *
-	if len(ops) != 4 {
-		t.Fatalf("expected 4 operators, got %d: %v", len(ops), ops)
+	// the "," of the parameter list, ->, =, + and *
+	if len(ops) != 5 {
+		t.Fatalf("expected 5 operators, got %d: %v", len(ops), ops)
 	}
 	// add, a, b (signature), x, a, b, x, 2
 	if len(operands) != 8 {
