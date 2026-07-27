@@ -591,7 +591,7 @@ func (c *DeployGithubOrganizationCommand) createPullRequest(repo GitHubRepo, hea
 architecture, complexity and hotspots on each push.
 
 No configuration needed.
-Documentation: https://halleck45.github.io/ast-metrics/`
+Documentation: https://ast-metrics.dev/`
 
 	payload := map[string]interface{}{
 		"title": title,
