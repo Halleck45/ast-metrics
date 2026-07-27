@@ -111,7 +111,7 @@ func (c *LintCommand) Execute() error {
 
 	// If SARIF path provided, write SARIF report from violations
 	if c.Configuration.Reports.Sarif != "" {
-		_, err := report.GenerateSarifFromOutcomes(c.Configuration.Reports.Sarif, evaluation.Errors)
+		_, err := report.GenerateSarifFromOutcomes(c.Configuration.Reports.Sarif, evaluation.Errors, c.Configuration.Reports.SarifMaxLevel)
 		if err != nil {
 			return err
 		}

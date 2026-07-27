@@ -24,7 +24,7 @@ func (v *ReportersFactory) Factory(configuration *configuration.Configuration) [
 			reporters = append(reporters, NewOpenMetricsReportGenerator(v.Configuration.Reports.OpenMetrics))
 		}
 		if v.Configuration.Reports.Sarif != "" {
-			reporters = append(reporters, NewSarifReportGenerator(v.Configuration.Reports.Sarif))
+			reporters = append(reporters, NewSarifReportGenerator(v.Configuration.Reports.Sarif, v.Configuration.Reports.SarifMaxLevel))
 		}
 	}
 
