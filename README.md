@@ -169,10 +169,10 @@ jobs:
   ast-metrics:
     runs-on: ubuntu-latest
     steps:
-        - uses: halleck45/action-ast-metrics@v2
+        - uses: ast-metrics/action-ast-metrics@v2
 ```
 
-On each pull request, the action runs `ast-metrics review` and publishes the result in the check summary and, when permissions allow it, as a single updated comment. On `push` events it runs a full analysis instead. See [action-ast-metrics](https://github.com/Halleck45/action-ast-metrics) for all options (`fail-on`, `sarif`, `html-artifact`...).
+On each pull request, the action runs `ast-metrics review` and publishes the result in the check summary and, when permissions allow it, as a single updated comment. On `push` events it runs a full analysis instead. See [action-ast-metrics](https://github.com/ast-metrics/action-ast-metrics) for all options (`fail-on`, `sarif`, `html-artifact`...).
 
 
 ## MCP Server for AI agents
