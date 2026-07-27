@@ -3,15 +3,15 @@ package treesitter_test
 import (
 	"testing"
 
-	enginePkg "github.com/halleck45/ast-metrics/internal/engine"
-	"github.com/halleck45/ast-metrics/internal/engine/csharp"
-	"github.com/halleck45/ast-metrics/internal/engine/golang"
-	"github.com/halleck45/ast-metrics/internal/engine/java"
-	"github.com/halleck45/ast-metrics/internal/engine/php"
-	"github.com/halleck45/ast-metrics/internal/engine/python"
-	"github.com/halleck45/ast-metrics/internal/engine/rust"
-	"github.com/halleck45/ast-metrics/internal/engine/typescript"
-	pb "github.com/halleck45/ast-metrics/pb"
+	enginePkg "github.com/ast-metrics/ast-metrics/internal/engine"
+	"github.com/ast-metrics/ast-metrics/internal/engine/csharp"
+	"github.com/ast-metrics/ast-metrics/internal/engine/golang"
+	"github.com/ast-metrics/ast-metrics/internal/engine/java"
+	"github.com/ast-metrics/ast-metrics/internal/engine/php"
+	"github.com/ast-metrics/ast-metrics/internal/engine/python"
+	"github.com/ast-metrics/ast-metrics/internal/engine/rust"
+	"github.com/ast-metrics/ast-metrics/internal/engine/typescript"
+	pb "github.com/ast-metrics/ast-metrics/pb"
 )
 
 // Locations anchor SARIF findings (and review annotations) to real lines.

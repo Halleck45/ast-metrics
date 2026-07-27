@@ -5,8 +5,8 @@ import (
 	"encoding/json"
 	"testing"
 
-	"github.com/halleck45/ast-metrics/internal/analyzer"
-	pb "github.com/halleck45/ast-metrics/pb"
+	"github.com/ast-metrics/ast-metrics/internal/analyzer"
+	pb "github.com/ast-metrics/ast-metrics/pb"
 	"github.com/mark3labs/mcp-go/mcp"
 	"github.com/stretchr/testify/assert"
 	"google.golang.org/protobuf/proto"

@@ -1,7 +1,7 @@
 package ruleset
 
 import (
-	"github.com/halleck45/ast-metrics/internal/analyzer/issue"
+	"github.com/ast-metrics/ast-metrics/internal/analyzer/issue"
 )
 
 // ProjectContext carries aggregated project-level data for project rules.

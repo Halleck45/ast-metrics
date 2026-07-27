@@ -3,7 +3,7 @@ package watcher
 import (
 	"testing"
 
-	"github.com/halleck45/ast-metrics/internal/configuration"
+	"github.com/ast-metrics/ast-metrics/internal/configuration"
 )
 
 func TestNewCommandWatcher(t *testing.T) {

@@ -3,9 +3,9 @@ package php
 import (
 	"testing"
 
-	"github.com/halleck45/ast-metrics/internal/analyzer"
-	enginePkg "github.com/halleck45/ast-metrics/internal/engine"
-	pb "github.com/halleck45/ast-metrics/pb"
+	"github.com/ast-metrics/ast-metrics/internal/analyzer"
+	enginePkg "github.com/ast-metrics/ast-metrics/internal/engine"
+	pb "github.com/ast-metrics/ast-metrics/pb"
 )
 
 // Simple PHP source mixing a class and some procedural code to exercise both paths

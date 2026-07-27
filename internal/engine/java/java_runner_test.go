@@ -5,10 +5,10 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/halleck45/ast-metrics/internal/analyzer"
-	"github.com/halleck45/ast-metrics/internal/configuration"
-	"github.com/halleck45/ast-metrics/internal/engine"
-	pb "github.com/halleck45/ast-metrics/pb"
+	"github.com/ast-metrics/ast-metrics/internal/analyzer"
+	"github.com/ast-metrics/ast-metrics/internal/configuration"
+	"github.com/ast-metrics/ast-metrics/internal/engine"
+	pb "github.com/ast-metrics/ast-metrics/pb"
 	"github.com/stretchr/testify/assert"
 )
 

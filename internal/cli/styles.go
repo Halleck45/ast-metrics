@@ -8,7 +8,7 @@ import (
 	"strconv"
 
 	"github.com/charmbracelet/lipgloss"
-	pb "github.com/halleck45/ast-metrics/pb"
+	pb "github.com/ast-metrics/ast-metrics/pb"
 	osterm "golang.org/x/term"
 )
 

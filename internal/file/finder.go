@@ -6,7 +6,7 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/halleck45/ast-metrics/internal/configuration"
+	"github.com/ast-metrics/ast-metrics/internal/configuration"
 	"github.com/yargevad/filepathx"
 )
 

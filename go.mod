@@ -1,4 +1,4 @@
-module github.com/halleck45/ast-metrics
+module github.com/ast-metrics/ast-metrics
 
 go 1.25.0
 

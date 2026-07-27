@@ -13,7 +13,7 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/halleck45/ast-metrics/internal/cli"
+	"github.com/ast-metrics/ast-metrics/internal/cli"
 	"github.com/pterm/pterm"
 )
 
@@ -516,7 +516,7 @@ jobs:
   analyse:
     runs-on: ubuntu-latest
     steps:
-      - uses: halleck45/action-ast-metrics@v2
+      - uses: ast-metrics/action-ast-metrics@v2
 `
 
 	// Encode content to base64

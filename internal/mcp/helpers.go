@@ -3,7 +3,7 @@ package mcp
 import (
 	"math"
 
-	pb "github.com/halleck45/ast-metrics/pb"
+	pb "github.com/ast-metrics/ast-metrics/pb"
 	mcplib "github.com/mark3labs/mcp-go/mcp"
 )
 

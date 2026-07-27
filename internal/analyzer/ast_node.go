@@ -1,7 +1,7 @@
 package analyzer
 
 import (
-	pb "github.com/halleck45/ast-metrics/pb"
+	pb "github.com/ast-metrics/ast-metrics/pb"
 )
 
 // Represents the AST as it is visited

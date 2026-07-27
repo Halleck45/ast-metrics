@@ -1,8 +1,8 @@
 package analyzer
 
 import (
-	"github.com/halleck45/ast-metrics/internal/engine"
-	pb "github.com/halleck45/ast-metrics/pb"
+	"github.com/ast-metrics/ast-metrics/internal/engine"
+	pb "github.com/ast-metrics/ast-metrics/pb"
 	"sort"
 )
 

@@ -3,9 +3,9 @@ package analyzer
 import (
 	"testing"
 
-	"github.com/halleck45/ast-metrics/internal/engine"
-	"github.com/halleck45/ast-metrics/internal/engine/golang"
-	"github.com/halleck45/ast-metrics/internal/engine/php"
+	"github.com/ast-metrics/ast-metrics/internal/engine"
+	"github.com/ast-metrics/ast-metrics/internal/engine/golang"
+	"github.com/ast-metrics/ast-metrics/internal/engine/php"
 	"github.com/stretchr/testify/assert"
 )
 

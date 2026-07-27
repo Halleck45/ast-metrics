@@ -7,8 +7,8 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 	"github.com/fsnotify/fsnotify"
-	"github.com/halleck45/ast-metrics/internal/analyzer"
-	pb "github.com/halleck45/ast-metrics/pb"
+	"github.com/ast-metrics/ast-metrics/internal/analyzer"
+	pb "github.com/ast-metrics/ast-metrics/pb"
 	"github.com/muesli/termenv"
 )
 

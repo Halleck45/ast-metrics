@@ -4,8 +4,8 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/halleck45/ast-metrics/internal/engine"
-	Treesitter "github.com/halleck45/ast-metrics/internal/engine/treesitter"
+	"github.com/ast-metrics/ast-metrics/internal/engine"
+	Treesitter "github.com/ast-metrics/ast-metrics/internal/engine/treesitter"
 	sitter "github.com/smacker/go-tree-sitter"
 	tsGo "github.com/smacker/go-tree-sitter/golang"
 )

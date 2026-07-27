@@ -3,8 +3,8 @@ package ruleset
 import (
 	"testing"
 
-	"github.com/halleck45/ast-metrics/internal/analyzer/issue"
-	pb "github.com/halleck45/ast-metrics/pb"
+	"github.com/ast-metrics/ast-metrics/internal/analyzer/issue"
+	pb "github.com/ast-metrics/ast-metrics/pb"
 )
 
 func TestMaintainabilityRule_ViolationAndSuccess(t *testing.T) {

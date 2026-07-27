@@ -3,7 +3,7 @@ package golang
 import (
 	"testing"
 
-	enginePkg "github.com/halleck45/ast-metrics/internal/engine"
+	enginePkg "github.com/ast-metrics/ast-metrics/internal/engine"
 )
 
 func TestGoOperatorsAndOperandsExtraction(t *testing.T) {

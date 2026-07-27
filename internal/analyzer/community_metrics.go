@@ -1,7 +1,7 @@
 package analyzer
 
 import (
-	"github.com/halleck45/ast-metrics/internal/engine"
+	"github.com/ast-metrics/ast-metrics/internal/engine"
 )
 
 type CommunitySubMetricsCalculator struct {

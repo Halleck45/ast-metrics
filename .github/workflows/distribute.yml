@@ -1,0 +1,192 @@
+# Post-release distribution: Homebrew tap, Docker image (ghcr.io), .deb/.rpm packages.
+# Runs automatically when the "release" workflow succeeds, or manually
+# (workflow_dispatch) to replay an existing release.
+name: distribute
+
+on:
+  workflow_run:
+    workflows: ["release"]
+    types: [completed]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Release tag (e.g. v0.39.0). Empty = latest release."
+        required: false
+
+permissions:
+  contents: write
+  packages: write
+
+jobs:
+  resolve:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success'
+    outputs:
+      tag: ${{ steps.tag.outputs.tag }}
+      version: ${{ steps.tag.outputs.version }}
+    steps:
+      - id: tag
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          TAG="${{ inputs.tag }}"
+          if [ -z "$TAG" ]; then
+            TAG=$(gh release view --repo "${{ github.repository }}" --json tagName -q .tagName)
+          fi
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+          echo "version=${TAG#v}" >> "$GITHUB_OUTPUT"
+
+  linux-packages:
+    needs: resolve
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/setup-go@v5
+        with: { go-version: stable }
+
+      - name: Install nfpm
+        run: go install github.com/goreleaser/nfpm/v2/cmd/nfpm@latest
+
+      - name: Download Linux binaries
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p dist
+          gh release download "${{ needs.resolve.outputs.tag }}" --repo "${{ github.repository }}" \
+            --pattern 'ast-metrics_Linux_*' --dir dist
+
+      - name: Build .deb and .rpm
+        env:
+          VERSION: ${{ needs.resolve.outputs.version }}
+        run: |
+          for arch in amd64 arm64; do
+            case "$arch" in
+              amd64) asset="x86_64" ;;
+              arm64) asset="arm64" ;;
+            esac
+            install -m 0755 "dist/ast-metrics_Linux_${asset}" ast-metrics
+            cat > nfpm.yaml <<EOF
+          name: ast-metrics
+          arch: ${arch}
+          platform: linux
+          version: ${VERSION}
+          section: devel
+          maintainer: Jean-François Lépine <lepinejeanfrancois@gmail.com>
+          description: |
+            Multi-language static code analyzer.
+            Complexity, volume, coupling and maintainability metrics for Go, PHP, Python, Rust and more.
+          vendor: AST Metrics
+          homepage: https://ast-metrics.dev
+          license: MIT
+          contents:
+            - src: ./ast-metrics
+              dst: /usr/bin/ast-metrics
+          EOF
+            nfpm package -p deb -f nfpm.yaml -t dist/
+            nfpm package -p rpm -f nfpm.yaml -t dist/
+          done
+
+      - name: Upload packages to the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release upload "${{ needs.resolve.outputs.tag }}" --repo "${{ github.repository }}" \
+            dist/*.deb dist/*.rpm --clobber
+
+  docker:
+    needs: resolve
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: docker/setup-qemu-action@v3
+      - uses: docker/setup-buildx-action@v3
+
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: Dockerfile.release
+          platforms: linux/amd64,linux/arm64
+          push: true
+          build-args: |
+            VERSION=${{ needs.resolve.outputs.tag }}
+          tags: |
+            ghcr.io/ast-metrics/ast-metrics:${{ needs.resolve.outputs.version }}
+            ghcr.io/ast-metrics/ast-metrics:latest
+
+  homebrew:
+    needs: resolve
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download binaries and compute checksums
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p dist
+          gh release download "${{ needs.resolve.outputs.tag }}" --repo "${{ github.repository }}" \
+            --pattern 'ast-metrics_Darwin_*' --pattern 'ast-metrics_Linux_*' --dir dist
+          {
+            echo "SHA_DARWIN_ARM64=$(sha256sum dist/ast-metrics_Darwin_arm64 | cut -d' ' -f1)"
+            echo "SHA_DARWIN_AMD64=$(sha256sum dist/ast-metrics_Darwin_x86_64 | cut -d' ' -f1)"
+            echo "SHA_LINUX_ARM64=$(sha256sum dist/ast-metrics_Linux_arm64 | cut -d' ' -f1)"
+            echo "SHA_LINUX_AMD64=$(sha256sum dist/ast-metrics_Linux_x86_64 | cut -d' ' -f1)"
+          } >> "$GITHUB_ENV"
+
+      - name: Update formula in ast-metrics/homebrew-tap
+        env:
+          TAP_TOKEN: ${{ secrets.PUSH_TOKEN }}
+          TAG: ${{ needs.resolve.outputs.tag }}
+          VERSION: ${{ needs.resolve.outputs.version }}
+        run: |
+          git clone "https://x-access-token:${TAP_TOKEN}@github.com/ast-metrics/homebrew-tap.git" tap
+          mkdir -p tap/Formula
+          BASE="https://github.com/ast-metrics/ast-metrics/releases/download/${TAG}"
+          cat > tap/Formula/ast-metrics.rb <<EOF
+          class AstMetrics < Formula
+            desc "Multi-language code analyzer: complexity, coupling, maintainability"
+            homepage "https://ast-metrics.dev"
+            version "${VERSION}"
+            license "MIT"
+
+            on_macos do
+              on_arm do
+                url "${BASE}/ast-metrics_Darwin_arm64"
+                sha256 "${SHA_DARWIN_ARM64}"
+              end
+              on_intel do
+                url "${BASE}/ast-metrics_Darwin_x86_64"
+                sha256 "${SHA_DARWIN_AMD64}"
+              end
+            end
+
+            on_linux do
+              on_arm do
+                url "${BASE}/ast-metrics_Linux_arm64"
+                sha256 "${SHA_LINUX_ARM64}"
+              end
+              on_intel do
+                url "${BASE}/ast-metrics_Linux_x86_64"
+                sha256 "${SHA_LINUX_AMD64}"
+              end
+            end
+
+            def install
+              bin.install Dir["ast-metrics*"].first => "ast-metrics"
+            end
+
+            test do
+              system "#{bin}/ast-metrics", "--version"
+            end
+          end
+          EOF
+          cd tap
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add Formula/ast-metrics.rb
+          git diff --cached --quiet || git commit -m "ast-metrics ${VERSION}"
+          git push

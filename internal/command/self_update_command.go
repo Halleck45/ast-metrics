@@ -27,7 +27,7 @@ type GithubRelease struct {
 func NewSelfUpdateCommand(currentVersion string) *SelfUpdateCommand {
 
 	return &SelfUpdateCommand{
-		releaseUrl:     "https://api.github.com/repos/Halleck45/ast-metrics/releases/latest",
+		releaseUrl:     "https://api.github.com/repos/ast-metrics/ast-metrics/releases/latest",
 		currentVersion: currentVersion,
 	}
 }
@@ -79,7 +79,7 @@ func (v *SelfUpdateCommand) Execute() error {
 	}
 
 	fmt.Printf("No update found for your platform (%s_%s)\n", os, arch)
-	fmt.Println("Please download it manually from: https://github.com/Halleck45/ast-metrics/releases/latest")
+	fmt.Println("Please download it manually from: https://github.com/ast-metrics/ast-metrics/releases/latest")
 	return nil
 }
 

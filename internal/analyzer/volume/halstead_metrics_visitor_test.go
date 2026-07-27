@@ -3,7 +3,7 @@ package analyzer
 import (
 	"testing"
 
-	pb "github.com/halleck45/ast-metrics/pb"
+	pb "github.com/ast-metrics/ast-metrics/pb"
 	"google.golang.org/protobuf/encoding/protojson"
 	"google.golang.org/protobuf/proto"
 )

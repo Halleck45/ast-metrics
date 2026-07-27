@@ -3,8 +3,8 @@ package python
 import (
 	"testing"
 
-	"github.com/halleck45/ast-metrics/internal/analyzer"
-	"github.com/halleck45/ast-metrics/internal/engine"
+	"github.com/ast-metrics/ast-metrics/internal/analyzer"
+	"github.com/ast-metrics/ast-metrics/internal/engine"
 	"github.com/stretchr/testify/assert"
 )
 

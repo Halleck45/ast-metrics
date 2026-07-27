@@ -6,7 +6,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/halleck45/ast-metrics/internal/configuration"
+	"github.com/ast-metrics/ast-metrics/internal/configuration"
 )
 
 func TestFinder_Search(t *testing.T) {
@@ -141,7 +141,7 @@ func TestFinder_ExcludeRelativeToRoot(t *testing.T) {
 }
 
 func TestFinder_ExcludeRelativeToProjectRoot(t *testing.T) {
-	// https://github.com/Halleck45/ast-metrics/issues/147
+	// https://github.com/ast-metrics/ast-metrics/issues/147
 	// With several sources, patterns are matched relative to the project
 	// root (not to each analyzed root), so a pattern can target a file in
 	// one source without touching its sibling in another source.

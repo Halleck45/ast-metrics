@@ -4,10 +4,10 @@ import (
 	"fmt"
 	"regexp"
 
-	"github.com/halleck45/ast-metrics/internal/analyzer/issue"
-	"github.com/halleck45/ast-metrics/internal/configuration"
-	"github.com/halleck45/ast-metrics/internal/engine"
-	pb "github.com/halleck45/ast-metrics/pb"
+	"github.com/ast-metrics/ast-metrics/internal/analyzer/issue"
+	"github.com/ast-metrics/ast-metrics/internal/configuration"
+	"github.com/ast-metrics/ast-metrics/internal/engine"
+	pb "github.com/ast-metrics/ast-metrics/pb"
 )
 
 type couplingRule struct {

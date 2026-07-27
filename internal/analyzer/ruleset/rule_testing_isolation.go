@@ -3,7 +3,7 @@ package ruleset
 import (
 	"fmt"
 
-	"github.com/halleck45/ast-metrics/internal/analyzer/issue"
+	"github.com/ast-metrics/ast-metrics/internal/analyzer/issue"
 )
 
 type isolationRule struct {

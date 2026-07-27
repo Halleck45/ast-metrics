@@ -1,6 +1,6 @@
 package ruleset
 
-import "github.com/halleck45/ast-metrics/internal/configuration"
+import "github.com/ast-metrics/ast-metrics/internal/configuration"
 
 // golangRuleset defines Golang-specific best-practice rules
 // This ruleset is opt-in and disabled by default; enable via requirements.rules.golang.enabled: true

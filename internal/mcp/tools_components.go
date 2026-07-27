@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"sort"
 
-	"github.com/halleck45/ast-metrics/internal/engine"
+	"github.com/ast-metrics/ast-metrics/internal/engine"
 	"github.com/mark3labs/mcp-go/mcp"
 )
 

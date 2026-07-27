@@ -228,7 +228,7 @@ Then release new tag on github. This will trigger a new release on github.
 
 ## 🌐 How to improve the website?
 
-The [website](https://halleck45.github.io/ast-metrics/) is hosted on Github, using the `documentation` branch.
+The [website](https://ast-metrics.dev/) is hosted on Github, using the `documentation` branch.
 
 When the `documentation` branch is updated, the website is automatically updated. You just need to create a pull request on the `documentation` branch.
 

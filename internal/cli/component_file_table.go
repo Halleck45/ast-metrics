@@ -7,7 +7,7 @@ import (
 	"github.com/charmbracelet/bubbles/table"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
-	pb "github.com/halleck45/ast-metrics/pb"
+	pb "github.com/ast-metrics/ast-metrics/pb"
 )
 
 type ComponentFileTable struct {

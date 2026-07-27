@@ -3,7 +3,7 @@ package engine
 import (
 	"testing"
 
-	pb "github.com/halleck45/ast-metrics/pb"
+	pb "github.com/ast-metrics/ast-metrics/pb"
 )
 
 func int32Ptr(v int32) *int32 { return &v }

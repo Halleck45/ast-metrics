@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/halleck45/ast-metrics/internal/command"
+	"github.com/ast-metrics/ast-metrics/internal/command"
 	"github.com/pterm/pterm"
 	cliV2 "github.com/urfave/cli/v2"
 )

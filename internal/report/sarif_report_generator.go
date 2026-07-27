@@ -9,9 +9,9 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/halleck45/ast-metrics/internal/analyzer"
-	requirement "github.com/halleck45/ast-metrics/internal/analyzer/requirement"
-	pb "github.com/halleck45/ast-metrics/pb"
+	"github.com/ast-metrics/ast-metrics/internal/analyzer"
+	requirement "github.com/ast-metrics/ast-metrics/internal/analyzer/requirement"
+	pb "github.com/ast-metrics/ast-metrics/pb"
 )
 
 // Minimal SARIF 2.1.0 structures we need
@@ -142,7 +142,7 @@ func writeSarifFile(reportPath string, outcomes []requirement.RuleOutcome, maxLe
 		Version: "2.1.0",
 		Runs: []sarifRun{
 			{
-				Tool: sarifTool{Driver: sarifDriver{Name: "ast-metrics", InformationURI: "https://github.com/halleck45/ast-metrics"}},
+				Tool: sarifTool{Driver: sarifDriver{Name: "ast-metrics", InformationURI: "https://github.com/ast-metrics/ast-metrics"}},
 				Results: make([]sarifResult, 0, len(outcomes)),
 			},
 		},

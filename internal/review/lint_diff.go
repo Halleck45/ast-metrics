@@ -4,7 +4,7 @@ import (
 	"regexp"
 	"strings"
 
-	requirement "github.com/halleck45/ast-metrics/internal/analyzer/requirement"
+	requirement "github.com/ast-metrics/ast-metrics/internal/analyzer/requirement"
 )
 
 var digitsPattern = regexp.MustCompile(`\d+(\.\d+)?`)

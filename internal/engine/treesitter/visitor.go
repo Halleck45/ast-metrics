@@ -4,8 +4,8 @@ import (
 	"path/filepath"
 	"strings"
 
-	engine "github.com/halleck45/ast-metrics/internal/engine"
-	pb "github.com/halleck45/ast-metrics/pb"
+	engine "github.com/ast-metrics/ast-metrics/internal/engine"
+	pb "github.com/ast-metrics/ast-metrics/pb"
 	sitter "github.com/smacker/go-tree-sitter"
 )
 

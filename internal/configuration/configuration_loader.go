@@ -94,7 +94,7 @@ func (c *ConfigurationLoader) CreateDefaultFile() error {
 
 	_, err = f.WriteString(`# AST Metrics configuration file
 # This file is used to configure AST Metrics
-# You can find more information at https://github.com/Halleck45/ast-metrics/
+# You can find more information at https://github.com/ast-metrics/ast-metrics/
 
 # Sources to analyze. You can add multiple sources
 sources:

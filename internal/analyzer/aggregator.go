@@ -8,11 +8,11 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/halleck45/ast-metrics/internal/analyzer/classifier"
-	requirement "github.com/halleck45/ast-metrics/internal/analyzer/requirement"
-	engine "github.com/halleck45/ast-metrics/internal/engine"
-	Scm "github.com/halleck45/ast-metrics/internal/scm"
-	pb "github.com/halleck45/ast-metrics/pb"
+	"github.com/ast-metrics/ast-metrics/internal/analyzer/classifier"
+	requirement "github.com/ast-metrics/ast-metrics/internal/analyzer/requirement"
+	engine "github.com/ast-metrics/ast-metrics/internal/engine"
+	Scm "github.com/ast-metrics/ast-metrics/internal/scm"
+	pb "github.com/ast-metrics/ast-metrics/pb"
 )
 
 type ProjectAggregated struct {

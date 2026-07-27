@@ -1,8 +1,8 @@
 package engine
 
 import (
-	"github.com/halleck45/ast-metrics/internal/configuration"
-	pb "github.com/halleck45/ast-metrics/pb"
+	"github.com/ast-metrics/ast-metrics/internal/configuration"
+	pb "github.com/ast-metrics/ast-metrics/pb"
 	"github.com/pterm/pterm"
 )
 

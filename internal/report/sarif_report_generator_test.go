@@ -7,8 +7,8 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	"github.com/halleck45/ast-metrics/internal/analyzer"
-	requirement "github.com/halleck45/ast-metrics/internal/analyzer/requirement"
+	"github.com/ast-metrics/ast-metrics/internal/analyzer"
+	requirement "github.com/ast-metrics/ast-metrics/internal/analyzer/requirement"
 )
 
 func TestSarifGenerator_EmptyPath(t *testing.T) {

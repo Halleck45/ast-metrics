@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"runtime"
 
-	"github.com/halleck45/ast-metrics/internal/cli"
+	"github.com/ast-metrics/ast-metrics/internal/cli"
 )
 
 type VersionCommand struct {

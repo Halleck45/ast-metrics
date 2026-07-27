@@ -4,11 +4,11 @@ import (
 	"sync"
 	"time"
 
-	"github.com/halleck45/ast-metrics/internal/analyzer"
-	Activity "github.com/halleck45/ast-metrics/internal/analyzer/activity"
-	"github.com/halleck45/ast-metrics/internal/configuration"
-	"github.com/halleck45/ast-metrics/internal/engine"
-	pb "github.com/halleck45/ast-metrics/pb"
+	"github.com/ast-metrics/ast-metrics/internal/analyzer"
+	Activity "github.com/ast-metrics/ast-metrics/internal/analyzer/activity"
+	"github.com/ast-metrics/ast-metrics/internal/configuration"
+	"github.com/ast-metrics/ast-metrics/internal/engine"
+	pb "github.com/ast-metrics/ast-metrics/pb"
 )
 
 // AnalysisService wraps the ast-metrics analysis pipeline for reuse by MCP tools.

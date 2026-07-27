@@ -3,7 +3,7 @@ package analyzer
 import (
 	"testing"
 
-	pb "github.com/halleck45/ast-metrics/pb"
+	pb "github.com/ast-metrics/ast-metrics/pb"
 )
 
 func TestLackOfCohesionOfMethodsVisitor_Visit_NilStmts(t *testing.T) {

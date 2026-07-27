@@ -3,9 +3,9 @@ package ruleset
 import (
 	"testing"
 
-	enginePkg "github.com/halleck45/ast-metrics/internal/engine"
-	golangrunner "github.com/halleck45/ast-metrics/internal/engine/golang"
-	pb "github.com/halleck45/ast-metrics/pb"
+	enginePkg "github.com/ast-metrics/ast-metrics/internal/engine"
+	golangrunner "github.com/ast-metrics/ast-metrics/internal/engine/golang"
+	pb "github.com/ast-metrics/ast-metrics/pb"
 )
 
 const nestedGo = `package main

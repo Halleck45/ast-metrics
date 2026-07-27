@@ -3,9 +3,9 @@ package engine
 import (
 	"strings"
 
-	"github.com/halleck45/ast-metrics/internal/configuration"
-	filefinder "github.com/halleck45/ast-metrics/internal/file"
-	pb "github.com/halleck45/ast-metrics/pb"
+	"github.com/ast-metrics/ast-metrics/internal/configuration"
+	filefinder "github.com/ast-metrics/ast-metrics/internal/file"
+	pb "github.com/ast-metrics/ast-metrics/pb"
 	log "github.com/sirupsen/logrus"
 )
 

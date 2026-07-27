@@ -5,8 +5,8 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/halleck45/ast-metrics/internal/analyzer/classifier"
-	pb "github.com/halleck45/ast-metrics/pb"
+	"github.com/ast-metrics/ast-metrics/internal/analyzer/classifier"
+	pb "github.com/ast-metrics/ast-metrics/pb"
 )
 
 // ArchitectureViolation représente une violation de règle d'architecture
