@@ -51,7 +51,10 @@ type ConfigurationReport struct {
 	Json        string `yaml:"json,omitempty"`
 	OpenMetrics string `yaml:"openmetrics,omitempty"`
 	Sarif       string `yaml:"sarif,omitempty"`
-	OpenHtml    bool   `yaml:"open_html,omitempty"`
+	// SarifMaxLevel caps the level of the SARIF results (error, warning or note).
+	// Empty keeps the level derived from the severity of the finding.
+	SarifMaxLevel string `yaml:"sarif_max_level,omitempty"`
+	OpenHtml      bool   `yaml:"open_html,omitempty"`
 }
 
 // function HasReports() bool {

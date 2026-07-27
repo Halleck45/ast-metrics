@@ -39,6 +39,9 @@ type ReviewCommand struct {
 	ReportMarkdown string
 	ReportJson     string
 	ReportSarif    string
+	// ReportSarifMaxLevel caps the level of the SARIF results: error, warning or
+	// note. Empty keeps the level derived from the severity of the regression.
+	ReportSarifMaxLevel string
 }
 
 func NewReviewCommand(configuration *configuration.Configuration, out io.Writer, runners []engine.Engine) *ReviewCommand {
@@ -228,7 +231,7 @@ func (c *ReviewCommand) render(result *review.Result) error {
 		}
 	}
 	if c.ReportSarif != "" {
-		if _, err := report.GenerateSarifFromOutcomes(c.ReportSarif, result.ToRuleOutcomes()); err != nil {
+		if _, err := report.GenerateSarifFromOutcomes(c.ReportSarif, result.ToRuleOutcomes(), c.ReportSarifMaxLevel); err != nil {
 			return err
 		}
 	}

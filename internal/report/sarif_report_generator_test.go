@@ -84,9 +84,54 @@ func TestGenerateSarifFromOutcomes_Helper(t *testing.T) {
 	dir := t.TempDir()
 	path := filepath.Join(dir, "lint.sarif.json")
 	out := []requirement.RuleOutcome{{Rule: "foo", Severity: requirement.SeverityLow, Message: "Something", File: "a.go"}}
-	report, err := GenerateSarifFromOutcomes(path, out)
+	report, err := GenerateSarifFromOutcomes(path, out, "")
 	assert.NoError(t, err)
 	assert.Equal(t, path, report.Path)
 	_, statErr := os.Stat(path)
 	assert.NoError(t, statErr)
+}
+
+func TestSarifGenerator_MaxLevelCapsTheLevel(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, "report.sarif.json")
+	gen := &SarifReportGenerator{ReportPath: path, MaxLevel: "warning"}
+
+	pa := analyzer.ProjectAggregated{
+		Evaluation: &requirement.EvaluationResult{
+			Errors: []requirement.RuleOutcome{
+				{Rule: "max_cyclomatic", Severity: requirement.SeverityHigh, Message: "Cyclomatic complexity too high", File: "/tmp/file.go", Line: 42},
+				{Rule: "max_loc", Severity: requirement.SeverityLow, Message: "Too many Lines of code", File: "/tmp/file.go", Line: 1},
+			},
+		},
+	}
+
+	_, err := gen.Generate(nil, pa)
+	assert.NoError(t, err)
+	b, readErr := os.ReadFile(path)
+	assert.NoError(t, readErr)
+	content := string(b)
+	// The high severity finding is lowered to the ceiling, so GitHub code
+	// scanning stops failing its own pull request check.
+	assert.NotContains(t, content, "\"level\": \"error\"")
+	assert.Contains(t, content, "\"level\": \"warning\"")
+	// A level already below the ceiling is left untouched.
+	assert.Contains(t, content, "\"level\": \"note\"")
+}
+
+func TestSarifGenerator_MaxLevelRejectsUnknownValue(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, "report.sarif.json")
+	out := []requirement.RuleOutcome{{Rule: "foo", Severity: requirement.SeverityHigh, Message: "Something", File: "a.go"}}
+
+	_, err := GenerateSarifFromOutcomes(path, out, "critical")
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "invalid SARIF level")
+}
+
+func TestCapSarifLevel(t *testing.T) {
+	assert.Equal(t, "error", capSarifLevel("error", ""))
+	assert.Equal(t, "warning", capSarifLevel("error", "warning"))
+	assert.Equal(t, "note", capSarifLevel("error", "note"))
+	assert.Equal(t, "note", capSarifLevel("note", "warning"))
+	assert.Equal(t, "error", capSarifLevel("error", "unknown"))
 }

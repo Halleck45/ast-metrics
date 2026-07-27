@@ -178,6 +178,11 @@ func main() {
 						Usage:    "Generate a report in SARIF format (2.1.0)",
 						Category: "Report",
 					},
+					&cliV2.StringFlag{
+						Name:     "sarif-max-level",
+						Usage:    "Cap the level of the SARIF results: error, warning or note. GitHub code scanning fails its own pull request check on new error level alerts, whatever the quality gate decided",
+						Category: "Report",
+					},
 					// Watch mode
 					&cliV2.BoolFlag{
 						Name:     "watch",
@@ -363,6 +368,9 @@ func main() {
 					if cCtx.String("report-sarif") != "" {
 						config.Reports.Sarif = cCtx.String("report-sarif")
 					}
+					if cCtx.String("sarif-max-level") != "" {
+						config.Reports.SarifMaxLevel = cCtx.String("sarif-max-level")
+					}
 					if cCtx.Bool("open-html") {
 						config.Reports.OpenHtml = true
 					}
@@ -509,6 +517,7 @@ func main() {
 					&cliV2.StringSliceFlag{Name: "exclude", Usage: "Regular expression to exclude files from analysis", Category: "File selection"},
 					&cliV2.StringFlag{Name: "config", Usage: "Load configuration from file", Category: "Configuration"},
 					&cliV2.StringFlag{Name: "report-sarif", Usage: "Write lint violations as SARIF 2.1.0 to the given file", Category: "Report"},
+					&cliV2.StringFlag{Name: "sarif-max-level", Usage: "Cap the level of the SARIF results: error, warning or note", Category: "Report"},
 					&cliV2.StringFlag{Name: "php-extensions", Usage: "Extra file extensions for PHP (comma-separated, e.g. .inc,.module)", Category: "File selection"},
 					&cliV2.StringFlag{Name: "go-extensions", Usage: "Extra file extensions for Go (comma-separated)", Category: "File selection"},
 					&cliV2.StringFlag{Name: "python-extensions", Usage: "Extra file extensions for Python (comma-separated)", Category: "File selection"},
@@ -534,6 +543,9 @@ func main() {
 					// report sarif flag
 					if cCtx.String("report-sarif") != "" {
 						cfg.Reports.Sarif = cCtx.String("report-sarif")
+					}
+					if cCtx.String("sarif-max-level") != "" {
+						cfg.Reports.SarifMaxLevel = cCtx.String("sarif-max-level")
 					}
 
 					// paths from args
@@ -690,6 +702,7 @@ func main() {
 					&cliV2.StringFlag{Name: "report-markdown", Usage: "Write the Markdown report to the given file", Category: "Report"},
 					&cliV2.StringFlag{Name: "report-json", Usage: "Write the full JSON report to the given file", Category: "Report"},
 					&cliV2.StringFlag{Name: "report-sarif", Usage: "Write regressions as SARIF 2.1.0 to the given file", Category: "Report"},
+					&cliV2.StringFlag{Name: "sarif-max-level", Usage: "Cap the level of the SARIF results: error, warning or note. GitHub code scanning fails its own pull request check on new error level alerts, whatever --fail-on decided", Category: "Report"},
 					&cliV2.StringSliceFlag{Name: "exclude", Usage: "Regular expression to exclude files from analysis", Category: "File selection"},
 					&cliV2.StringFlag{Name: "config", Usage: "Load configuration from file", Category: "Configuration"},
 					&cliV2.StringFlag{Name: "php-extensions", Usage: "Extra file extensions for PHP (comma-separated, e.g. .inc,.module)", Category: "File selection"},
@@ -745,6 +758,7 @@ func main() {
 					cmd.ReportMarkdown = cCtx.String("report-markdown")
 					cmd.ReportJson = cCtx.String("report-json")
 					cmd.ReportSarif = cCtx.String("report-sarif")
+					cmd.ReportSarifMaxLevel = cCtx.String("sarif-max-level")
 					return cmd.Execute()
 				},
 			},

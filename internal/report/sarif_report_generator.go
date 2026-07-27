@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"os"
 	"strconv"
+	"strings"
 
 	"github.com/halleck45/ast-metrics/internal/analyzer"
 	requirement "github.com/halleck45/ast-metrics/internal/analyzer/requirement"
@@ -86,10 +87,12 @@ type sarifRegion struct {
 
 type SarifReportGenerator struct {
 	ReportPath string
+	// MaxLevel caps the SARIF level of every result and rule. Empty means no cap.
+	MaxLevel string
 }
 
-func NewSarifReportGenerator(reportPath string) Reporter {
-	return &SarifReportGenerator{ReportPath: reportPath}
+func NewSarifReportGenerator(reportPath string, maxLevel string) Reporter {
+	return &SarifReportGenerator{ReportPath: reportPath, MaxLevel: maxLevel}
 }
 
 func (g *SarifReportGenerator) Generate(files []*pb.File, projectAggregated analyzer.ProjectAggregated) ([]GeneratedReport, error) {
@@ -103,7 +106,7 @@ func (g *SarifReportGenerator) Generate(files []*pb.File, projectAggregated anal
 		outcomes = projectAggregated.Evaluation.Errors
 	}
 
-	if err := writeSarifFile(g.ReportPath, outcomes); err != nil {
+	if err := writeSarifFile(g.ReportPath, outcomes, g.MaxLevel); err != nil {
 		return nil, err
 	}
 
@@ -119,17 +122,21 @@ func (g *SarifReportGenerator) Generate(files []*pb.File, projectAggregated anal
 }
 
 // Export function to build SARIF directly from outcomes (to be used by lint command)
-func GenerateSarifFromOutcomes(reportPath string, outcomes []requirement.RuleOutcome) (GeneratedReport, error) {
+func GenerateSarifFromOutcomes(reportPath string, outcomes []requirement.RuleOutcome, maxLevel string) (GeneratedReport, error) {
 	if reportPath == "" {
 		return GeneratedReport{}, fmt.Errorf("report path is empty")
 	}
-	if err := writeSarifFile(reportPath, outcomes); err != nil {
+	if err := writeSarifFile(reportPath, outcomes, maxLevel); err != nil {
 		return GeneratedReport{}, err
 	}
 	return GeneratedReport{Path: reportPath, Type: "file", Description: "SARIF report of requirement violations", Icon: "📄"}, nil
 }
 
-func writeSarifFile(reportPath string, outcomes []requirement.RuleOutcome) error {
+func writeSarifFile(reportPath string, outcomes []requirement.RuleOutcome, maxLevel string) error {
+	if err := validateSarifLevel(maxLevel); err != nil {
+		return err
+	}
+
 	log := sarifLog{
 		Schema:  "https://schemastore.azurewebsites.net/schemas/json/sarif-2.1.0.json",
 		Version: "2.1.0",
@@ -158,19 +165,19 @@ func writeSarifFile(reportPath string, outcomes []requirement.RuleOutcome) error
 			ID:                   out.Rule,
 			Name:                 out.Rule,
 			ShortDescription:     &sarifMessage{Text: out.Rule},
-			DefaultConfiguration: &sarifRuleConfig{Level: mapSeverity(out.Severity)},
+			DefaultConfiguration: &sarifRuleConfig{Level: capSarifLevel(mapSeverity(out.Severity), maxLevel)},
 			// Quality tags (and no security-severity): GitHub code scanning
 			// then renders the alert with a plain error/warning/note severity
 			// instead of a security severity.
 			Properties: map[string]interface{}{
 				"tags":             []string{"quality", "maintainability"},
-				"problem.severity": mapSeverity(out.Severity),
+				"problem.severity": capSarifLevel(mapSeverity(out.Severity), maxLevel),
 			},
 		})
 	}
 
 	for _, out := range outcomes {
-		level := mapSeverity(out.Severity)
+		level := capSarifLevel(mapSeverity(out.Severity), maxLevel)
 		res := sarifResult{
 			RuleID:  out.Rule,
 			Level:   level,
@@ -226,6 +233,42 @@ func writeSarifFile(reportPath string, outcomes []requirement.RuleOutcome) error
 func fingerprint(rule, file string, line int) string {
 	h := sha256.Sum256([]byte(rule + "\x00" + file + "\x00" + strconv.Itoa(line)))
 	return hex.EncodeToString(h[:])
+}
+
+// sarifLevelRank orders the SARIF levels ast-metrics emits, from the quietest
+// to the loudest.
+var sarifLevelRank = map[string]int{"note": 1, "warning": 2, "error": 3}
+
+// SarifLevels lists the accepted values for the SARIF level ceiling.
+var SarifLevels = []string{"error", "warning", "note"}
+
+func validateSarifLevel(maxLevel string) error {
+	if maxLevel == "" {
+		return nil
+	}
+	if _, ok := sarifLevelRank[maxLevel]; !ok {
+		return fmt.Errorf("invalid SARIF level %q: expected one of %s", maxLevel, strings.Join(SarifLevels, ", "))
+	}
+	return nil
+}
+
+// capSarifLevel lowers a level to the given ceiling, leaving it untouched when
+// no ceiling is set. GitHub code scanning fails its own pull request check as
+// soon as a new error level alert appears in the diff, whatever the quality gate
+// decided; capping the level keeps code scanning purely informative without
+// downgrading the severity of the finding itself.
+func capSarifLevel(level string, maxLevel string) string {
+	if maxLevel == "" {
+		return level
+	}
+	ceiling, ok := sarifLevelRank[maxLevel]
+	if !ok {
+		return level
+	}
+	if sarifLevelRank[level] > ceiling {
+		return maxLevel
+	}
+	return level
 }
 
 func mapSeverity(sev requirement.Severity) string {
