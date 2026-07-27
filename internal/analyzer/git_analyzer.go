@@ -4,8 +4,8 @@ import (
 	"path/filepath"
 	"strings"
 
-	pb "github.com/halleck45/ast-metrics/pb"
 	"github.com/halleck45/ast-metrics/internal/scm"
+	pb "github.com/halleck45/ast-metrics/pb"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -79,6 +79,7 @@ func (gitAnalyzer *GitAnalyzer) CalculateCount(files []*pb.File) []ResultOfGitAn
 			CountCommiters:          0,
 			CountCommitsForLanguage: 0,
 			CountCommitsIgnored:     0,
+			AuthorEmails:            make(map[string]string),
 		}
 
 		// Map of committers
@@ -148,6 +149,11 @@ func (gitAnalyzer *GitAnalyzer) CalculateCount(files []*pb.File) []ResultOfGitAn
 			if doesCommitConcernsObservedProgrammingLanguage {
 				// add committer to the map
 				committersOnRepository[commit.Author] = true
+				if commit.Email != "" {
+					if _, known := summary.AuthorEmails[commit.Author]; !known {
+						summary.AuthorEmails[commit.Author] = commit.Email
+					}
+				}
 
 				summary.CountCommitsForLanguage++
 			}

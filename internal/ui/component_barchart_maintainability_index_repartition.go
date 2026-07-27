@@ -44,6 +44,10 @@ func (c *ComponentBarchartMaintainabilityIndexRepartition) GetData() *orderedmap
 
 	// repartition of files by LOC
 	for _, file := range c.Files {
+		// test files are not production code: exclude them from the repartition
+		if file.GetIsTest() {
+			continue
+		}
 		classes := engine.GetClassesInFile(file)
 
 		if classes == nil || len(classes) == 0 {

@@ -10,297 +10,365 @@
 
 {% block content %}
 
-<style>
-    .dashboard-card {
-        background: white;
-        border: 1px solid #e2e8f0;
-        border-radius: 16px;
-        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-        position: relative;
-        overflow: hidden;
-    }
+{% if not projectAggregated.Evaluation %}
+    <div class="page-hero animate-fade-in-up">
+        <h1 class="verdict-title">
+            No rule was evaluated.<br>
+            <span class="verdict-muted">Nothing was checked on this code base.</span>
+        </h1>
+        <p class="verdict-lead mt-4">
+            Declare requirements in your <code class="ident">.ast-metrics.yaml</code> file, then run the
+            analysis again: every rule you enable will be checked here, file by file.
+        </p>
+    </div>
+{% else %}
 
-    .dashboard-card:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
-        border-color: #cbd5e1;
-    }
+<div x-data="linters()" x-init="init()">
 
-    .dashboard-card::before {
-        content: '';
-        position: absolute;
-        top: 0;
-        left: 0;
-        right: 0;
-        height: 4px;
-        background: linear-gradient(90deg, #3b82f6, #8b5cf6);
-        opacity: 0;
-        transition: opacity 0.3s ease;
-    }
+    <!-- Verdict: what the rules found -->
+    <div class="page-hero animate-fade-in-up">
+        <div class="flex flex-wrap items-start justify-between gap-8">
+            <div class="min-w-0">
+                <template x-if="!loading">
+                    <div>
+                        <span class="level-pill mb-5"
+                              :class="total === 0 ? 'level-pill--good' : (count('high') > 0 ? 'level-pill--bad' : 'level-pill--warn')">
+                            <span class="dot" :class="total === 0 ? 'sev-good' : (count('high') > 0 ? 'sev-bad' : 'sev-warn')"></span>
+                            <span x-text="total === 0 ? 'Every check passes' : (count('high') > 0 ? 'High severity findings' : 'Medium and low severity only')"></span>
+                        </span>
+                    </div>
+                </template>
+                <p class="page-kicker mb-3" x-text="kicker">&nbsp;</p>
+                <h1 class="verdict-title">
+                    <span x-text="headline">&nbsp;</span><br>
+                    <span class="verdict-muted" x-text="headlineMuted"></span>
+                </h1>
+                <p class="verdict-lead mt-4" x-html="lead"></p>
+            </div>
+            <div class="kpi-strip kpi-strip--divided shrink-0">
+                <div>
+                    <div class="kpi-value" x-text="fmt(count('high'))">0</div>
+                    <div class="kpi-label">high severity</div>
+                </div>
+                <div>
+                    <div class="kpi-value" x-text="fmt(count('medium') + count('low'))">0</div>
+                    <div class="kpi-label">medium or low</div>
+                </div>
+                <div>
+                    <div class="kpi-value" x-text="fmt(rulesBroken)">0</div>
+                    <div class="kpi-label">rules broken</div>
+                </div>
+            </div>
+        </div>
+    </div>
 
-    .dashboard-card:hover::before {
-        opacity: 1;
-    }
+    <div class="mt-6">
+        {% include "partials/language_tabs.html" with pageBase="linters" %}
+    </div>
 
-    @keyframes fadeIn {
-        from { opacity: 0; transform: translateY(10px); }
-        to { opacity: 1; transform: translateY(0); }
-    }
-
-    .animate-fade-in-up {
-        animation: fadeIn 0.5s ease-out backwards;
-    }
-
-    .stagger-1 { animation-delay: 0.1s; }
-    .stagger-2 { animation-delay: 0.2s; }
-    .stagger-3 { animation-delay: 0.3s; }
-    .stagger-4 { animation-delay: 0.4s; }
-</style>
-
-    <!-- start: language tabs-->
-    <div class="flex overflow-x-auto overflow-y-hidden border-b border-gray-200 whitespace-nowrap ">
-
-        <a 
-            tabindex="-1"
-            href="linters.html"
-            class="inline-flex items-center h-10 px-2 py-2 -mb-px text-center {% if currentLanguage == 'All' %}text-blue-600 border-blue-500{% endif %} bg-transparent border-b-2 sm:px-4 -px-1 focus:outline-none">
-            <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 mx-1 sm:w-6 sm:h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z" />
+    <div class="text-center mt-8 mb-8" x-show="loading">
+        <div role="status">
+            <svg aria-hidden="true" class="inline w-8 h-8 text-gray-200 animate-spin fill-blue-600" viewBox="0 0 100 101" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M100 50.5908C100 78.2051 77.6142 100.591 50 100.591C22.3858 100.591 0 78.2051 0 50.5908C0 22.9766 22.3858 0.59082 50 0.59082C77.6142 0.59082 100 22.9766 100 50.5908ZM9.08144 50.5908C9.08144 73.1895 27.4013 91.5094 50 91.5094C72.5987 91.5094 90.9186 73.1895 90.9186 50.5908C90.9186 27.9921 72.5987 9.67226 50 9.67226C27.4013 9.67226 9.08144 27.9921 9.08144 50.5908Z" fill="currentColor"/>
+                <path d="M93.9676 39.0409C96.393 38.4038 97.8624 35.9116 97.0079 33.5539C95.2932 28.8227 92.871 24.3692 89.8167 20.348C85.8452 15.1192 80.8826 10.7238 75.2124 7.41289C69.5422 4.10194 63.2754 1.94025 56.7698 1.05124C51.7666 0.367541 46.6976 0.446843 41.7345 1.27873C39.2613 1.69328 37.813 4.19778 38.4501 6.62326C39.0873 9.04874 41.5694 10.4717 44.0505 10.1071C47.8511 9.54855 51.7191 9.52689 55.5402 10.0491C60.8642 10.7766 65.9928 12.5457 70.6331 15.2552C75.2735 17.9648 79.3347 21.5619 82.5849 25.841C84.9175 28.9121 86.7997 32.2913 88.1811 35.8758C89.083 38.2158 91.5421 39.6781 93.9676 39.0409Z" fill="currentFill"/>
             </svg>
-
-            <span class="mx-1 text-sm sm:text-base">
-                All languages <span class="text-xs sm:text-sm">({{ projectAggregated.Combined.ConcernedFiles|length }} files)</span>
-            </span>
-        </a>
-
-        <!-- start: language tab -->
-            {% for languageName, lang in projectAggregated.ByProgrammingLanguage %}
-            <a 
-                tabindex="0"
-                href="linters_{{ languageName|langSlug }}.html"
-                class="inline-flex items-center h-10 px-2 py-2 -mb-px text-center bg-transparent border-b-2 {% if currentLanguage == languageName %}text-blue-600 border-blue-500{% else %}text-gray-700   border-transparent{% endif %} sm:px-4 -px-1 hover:border-gray-400">
-                <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 mx-1 sm:w-6 sm:h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z" />
-                </svg>
-    
-                <span class="mx-1 text-sm sm:text-base">
-                    {{ languageName }} <span class="text-xs sm:text-sm">({{ lang.ConcernedFiles|length }} files)</span>
-                </span>
-            </a>
-            {% endfor %}
-        <!-- end: language tab -->
-
+            <span class="sr-only">Loading...</span>
+        </div>
     </div>
-    <!-- end: language tabs-->
 
-    {% if not projectAggregated.Evaluation %}
-        <div class="mt-6 p-4 bg-yellow-50 border border-yellow-200 text-yellow-800 rounded-lg">No requirements were evaluated. Configure requirements to see linters results.</div>
-    {% else %}
+    <div class="mt-6 space-y-6" x-cloak x-show="!loading" x-transition.opacity.duration.200ms>
 
-    <div x-data="linters()" x-init="init()">
-        <!-- start: line of cards -->
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mt-6">
-
-            <!-- High -->
-            <div class="dashboard-card p-5 animate-fade-in-up stagger-1">
+        <!-- Which rules are broken -->
+        <div class="soft-card animate-fade-in-up">
+            <div class="flex items-start justify-between gap-4 mb-4">
                 <div>
-                    <h5 class="text-2xl font-bold text-gray-900 mb-1" style="letter-spacing: -0.3px;">
-                        <span class="text-red-600 bg-red-50 rounded-full px-3 py-1 text-sm font-medium">
-                            {{ projectAggregated.Evaluation.CountErrorsBySeverityString('high') }}
-                        </span>
-                    </h5>
-                    <p class="text-xs font-medium text-gray-500 mt-2 mb-3">High severity</p>
-                    <p class="border-t border-gray-100 pt-3 text-xs text-gray-500">
-                        Should probably be fixed.
-                    </p>
+                    <h2 class="card-title">Which rules are broken</h2>
+                    <p class="card-sub">How the violations spread over the rules you enabled. Click a rule to see only its violations.</p>
                 </div>
+                <button type="button" x-show="rule !== ''" @click="rule = ''"
+                        class="text-sm text-blue-600 hover:underline shrink-0">Clear rule filter</button>
             </div>
 
-            <!-- Medium -->
-            <div class="dashboard-card p-5 animate-fade-in-up stagger-2">
-                <div>
-                    <h5 class="text-2xl font-bold text-gray-900 mb-1" style="letter-spacing: -0.3px;">
-                        <span class="text-orange-600 bg-orange-50 rounded-full px-3 py-1 text-sm font-medium">
-                            {{ projectAggregated.Evaluation.CountErrorsBySeverityString('medium') }}
-                        </span>
-                    </h5>
-                    <p class="text-xs font-medium text-gray-500 mt-2 mb-3">Medium severity</p>
-                    <p class="border-t border-gray-100 pt-3 text-xs text-gray-500">
-                        May cause some issues.
-                    </p>
-                </div>
-            </div>
+            <template x-if="ruleGroups.length === 0">
+                <p class="text-sm text-gray-500 py-4">No violation matches the current filters.</p>
+            </template>
 
-            <!-- Low -->
-            <div class="dashboard-card p-5 animate-fade-in-up stagger-3">
-                <div>
-                    <h5 class="text-2xl font-bold text-gray-900 mb-1" style="letter-spacing: -0.3px;">
-                        <span class="text-yellow-600 bg-yellow-50 rounded-full px-3 py-1 text-sm font-medium">
-                            {{ projectAggregated.Evaluation.CountErrorsBySeverityString('low') }}
+            <template x-for="g in ruleGroups" :key="g.rule">
+                <button type="button" class="data-row w-full text-left px-2 -mx-2 rounded-lg hover:bg-slate-50"
+                        :class="rule === g.rule ? 'bg-slate-50' : ''"
+                        @click="rule = (rule === g.rule ? '' : g.rule)">
+                    <span class="dot" :class="dotClass(g.worst)"></span>
+                    <span class="min-w-0 flex-1">
+                        <span class="row-name truncate block" x-text="label(g.rule)"></span>
+                        <span class="row-meta block font-mono" x-text="g.rule"></span>
+                    </span>
+                    <span class="w-28 shrink-0 hidden sm:block">
+                        <span class="meter block" style="margin-top:0">
+                            <span class="meter-fill block" :class="dotClass(g.worst)" :style="'width:' + g.share + '%'"></span>
                         </span>
-                    </h5>
-                    <p class="text-xs font-medium text-gray-500 mt-2 mb-3">Low severity</p>
-                    <p class="border-t border-gray-100 pt-3 text-xs text-gray-500">
-                        Minor issues, mostly stylistic.
-                    </p>
-                </div>
-            </div>
-
-            <!-- Successes -->
-            <div class="dashboard-card p-5 animate-fade-in-up stagger-4">
-                <div>
-                    <h5 class="text-2xl font-bold text-gray-900 mb-1" style="letter-spacing: -0.3px;">
-                        <span class="text-green-600 bg-green-50 rounded-full px-3 py-1 text-sm font-medium">
-                            {{projectAggregated.Evaluation.Successes|length| floatformat:0}}
-                        </span>
-                    </h5>
-                    <p class="text-xs font-medium text-gray-500 mt-2 mb-3">Successes</p>
-                    <p class="border-t border-gray-100 pt-3 text-xs text-gray-500">
-                        Successful linter checks.
-                    </p>
-                </div>
-            </div>
-        </div>
-        <!-- end: line of cards -->
-
-        <div class="text-center mt-8 mb-8" x-show="loading">
-            <div role="status">
-                <svg aria-hidden="true" class="inline w-8 h-8 text-gray-200 animate-spin dark:text-gray-600 fill-blue-600" viewBox="0 0 100 101" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M100 50.5908C100 78.2051 77.6142 100.591 50 100.591C22.3858 100.591 0 78.2051 0 50.5908C0 22.9766 22.3858 0.59082 50 0.59082C77.6142 0.59082 100 22.9766 100 50.5908ZM9.08144 50.5908C9.08144 73.1895 27.4013 91.5094 50 91.5094C72.5987 91.5094 90.9186 73.1895 90.9186 50.5908C90.9186 27.9921 72.5987 9.67226 50 9.67226C27.4013 9.67226 9.08144 27.9921 9.08144 50.5908Z" fill="currentColor"/>
-                    <path d="M93.9676 39.0409C96.393 38.4038 97.8624 35.9116 97.0079 33.5539C95.2932 28.8227 92.871 24.3692 89.8167 20.348C85.8452 15.1192 80.8826 10.7238 75.2124 7.41289C69.5422 4.10194 63.2754 1.94025 56.7698 1.05124C51.7666 0.367541 46.6976 0.446843 41.7345 1.27873C39.2613 1.69328 37.813 4.19778 38.4501 6.62326C39.0873 9.04874 41.5694 10.4717 44.0505 10.1071C47.8511 9.54855 51.7191 9.52689 55.5402 10.0491C60.8642 10.7766 65.9928 12.5457 70.6331 15.2552C75.2735 17.9648 79.3347 21.5619 82.5849 25.841C84.9175 28.9121 86.7997 32.2913 88.1811 35.8758C89.083 38.2158 91.5421 39.6781 93.9676 39.0409Z" fill="currentFill"/>
-                </svg>
-                <span class="sr-only">Loading...</span>
-            </div>
+                    </span>
+                    <span class="row-value w-16" x-text="fmt(g.count)"></span>
+                </button>
+            </template>
         </div>
 
-
-        <!-- Filters -->
-        <div class="mt-6 flex flex-col md:flex-row md:items-end gap-4" x-cloak x-show="!loading" x-transition.opacity.duration.200ms>
-            <div>
-                <label class="block text-sm font-medium text-gray-700">Filter by severity</label>
-                <select x-model="severity" class="mt-1 block w-52 pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md">
-                    <option value="">All</option>
-                    <option value="high">High</option>
-                    <option value="medium">Medium</option>
-                    <option value="low">Low</option>
-                    <option value="unknown">Unknown</option>
-                </select>
+        <!-- The violations themselves -->
+        <div class="soft-card animate-fade-in-up">
+            <div class="flex items-start justify-between gap-4 mb-4">
+                <div>
+                    <h2 class="card-title">Every violation, one per line</h2>
+                    <p class="card-sub" x-text="tableSub"></p>
+                </div>
             </div>
-            <div class="flex-1">
-                <label class="block text-sm font-medium text-gray-700">Search</label>
-                <input x-model.debounce.200ms="query" type="text" placeholder="Search by message, rule, or file..." class="mt-1 block w-full pl-3 pr-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm" />
-            </div>
-        </div>
 
-        <!-- Table -->
-        <div class="mt-6 overflow-x-auto dashboard-card p-6"  x-cloak x-show="!loading" x-transition.opacity.duration.200ms>
-            <table class="min-w-full divide-y divide-gray-200 sortable">
-                <thead class="bg-gray-50">
-                    <tr>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">File</th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Severity</th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Rule</th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Message</th>
-                    </tr>
-                </thead>
-                <tbody class="bg-white divide-y divide-gray-200">
-                    <template x-for="e in filtered" >
-                        <tr>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900" x-text="e.file"></td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full"
-                                      :class="badgeClass(e.severity)">
-                                    <span x-text="(e.severity||'unknown').toLowerCase()"></span>
-                                </span>
-                            </td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900" x-text="e.rule"></td>
-                            <td class="px-6 py-4 whitespace-normal text-sm text-gray-900" x-text="e.message"></td>
+            <!-- Filters -->
+            <div class="flex flex-col md:flex-row md:items-end gap-4 mb-5">
+                <div>
+                    <label class="block text-xs font-medium text-gray-500 mb-1" for="linter-severity">Severity</label>
+                    <select id="linter-severity" x-model="severity"
+                            class="block w-48 pl-3 pr-10 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+                        <option value="">All severities</option>
+                        <option value="high">High</option>
+                        <option value="medium">Medium</option>
+                        <option value="low">Low</option>
+                        <option value="unknown">Unknown</option>
+                    </select>
+                </div>
+                <div class="flex-1">
+                    <label class="block text-xs font-medium text-gray-500 mb-1" for="linter-search">Search</label>
+                    <input id="linter-search" x-model.debounce.200ms="query" type="text"
+                           placeholder="Search by message, rule, or file..."
+                           class="block w-full pl-3 pr-3 py-2 text-sm border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500" />
+                </div>
+            </div>
+
+            <div class="overflow-x-auto">
+                <table class="sortable w-full min-w-full">
+                    <thead>
+                        <tr class="border-b border-gray-200">
+                            <th scope="col" title="How serious the rule declares its own violations to be. It comes from your ruleset, not from a judgement on the code."
+                                class="py-3 px-4 text-xs font-semibold text-gray-600 uppercase tracking-wide text-left">Severity</th>
+                            <th scope="col" class="py-3 px-4 text-xs font-semibold text-gray-600 uppercase tracking-wide text-left">Rule</th>
+                            <th scope="col" class="py-3 px-4 text-xs font-semibold text-gray-600 uppercase tracking-wide text-left">File</th>
+                            <th scope="col" class="py-3 px-4 text-xs font-semibold text-gray-600 uppercase tracking-wide text-left">What was measured</th>
                         </tr>
-                    </template>
-                </tbody>
-            </table>
+                    </thead>
+                    <tbody class="divide-y divide-gray-100">
+                        <tr x-show="filtered.length === 0">
+                            <td colspan="4" class="px-4 py-12 text-center text-sm text-gray-500">
+                                No violation matches these filters.
+                            </td>
+                        </tr>
+                        <template x-for="e in filtered">
+                            <tr class="hover:bg-slate-50 transition-colors">
+                                <td class="px-4 py-3 whitespace-nowrap">
+                                    <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full"
+                                          :class="badgeClass(e.severity)">
+                                        <span x-text="(e.severity||'unknown').toLowerCase()"></span>
+                                    </span>
+                                </td>
+                                <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-900" x-text="label(e.rule)" :title="e.rule"></td>
+                                <td class="px-4 py-3 text-sm font-mono text-xs text-gray-600" x-text="shortPath(e.file)" :title="e.file"></td>
+                                <td class="px-4 py-3 whitespace-normal text-sm text-gray-900" x-text="e.message"></td>
+                            </tr>
+                        </template>
+                    </tbody>
+                </table>
+            </div>
         </div>
-    </div>
 
-    <script>
-        function linters() {
-            return {
-                errors: [],
-                successes: [],
-                allowed: new Set(),
-                severity: '',
-                loading: true,
-                query: '',
-                init() {
-                    // Decode dictionary-encoded linter data from data/linters.js
-                    const L = window.__AST_LINTERS__ || {};
-                    const dict = L.d || {};
-                    const decode = (arr) => (arr || []).map(t => ({
-                        rule: dict[t[0]] || t[0],
-                        severity: dict[t[1]] || t[1],
-                        file: dict[t[2]] || t[2],
-                        message: t[3]
-                    }));
-                    this.errors = decode(L.e);
-                    this.successes = decode(L.s);
-                    // Derive allowed files from the per-language files list (Level 2)
-                    const d = window.__AST_DATA__ || {};
-                    this.allowed = new Set((d.files || []).map(f => f.path));
-                    this.loading = false;
-                },
-                inScope(item) {
-                    if (this.allowed.size === 0) return true;
-                    if (!item.file) return false;
-                    return this.allowed.has(item.file);
-                },
-                count(sev) {
-                    const s = (sev || 'unknown').toLowerCase();
-                    return this.errors.filter(e => this.inScope(e) && (e.severity || 'unknown').toLowerCase() === s).length;
-                },
-                get countSuccess() {
-                    const explicit = this.successes.filter(e => this.inScope(e)).length;
-                    if (explicit > 0) return explicit;
-                    const filesWithErrors = new Set(this.errors.filter(e => this.inScope(e)).map(e => e.file));
-                    let total = 0;
-                    for (const f of this.allowed) {
-                        if (!filesWithErrors.has(f)) total++;
-                    }
-                    return total;
-                },
-                badgeClass(sev) {
-                    const s = (sev || 'unknown').toLowerCase();
-                    if (s === 'high') return 'bg-red-100 text-red-800';
-                    if (s === 'medium') return 'bg-orange-100 text-orange-800';
-                    if (s === 'low') return 'bg-green-100 text-green-800';
-                    return 'bg-gray-200 text-gray-800';
-                },
-                get filtered() {
-                    let rows = this.errors.filter(e => this.inScope(e));
-                    if (this.severity) {
-                        const sev = this.severity.toLowerCase();
-                        rows = rows.filter(e => (e.severity || 'unknown').toLowerCase() === sev);
-                    }
-                    if (this.query) {
-                        const q = this.query.toLowerCase();
-                        rows = rows.filter(e => (e.message || '').toLowerCase().includes(q)
-                            || (e.rule || '').toLowerCase().includes(q)
-                            || (e.file || '').toLowerCase().includes(q));
-                    }
-                    const order = {high:0, medium:1, low:2, unknown:3};
-                    rows.sort((a, b) => {
-                        if (a.file !== b.file) return a.file < b.file ? -1 : 1;
-                        const as = (a.severity || 'unknown').toLowerCase();
-                        const bs = (b.severity || 'unknown').toLowerCase();
-                        if (order[as] !== order[bs]) return order[as] - order[bs];
-                        const ar = (a.rule || ''), br = (b.rule || '');
-                        return ar < br ? -1 : (ar > br ? 1 : 0);
-                    });
-                    return rows;
+    </div>
+</div>
+
+<script>
+    function linters() {
+        return {
+            errors: [],
+            successes: [],
+            allowed: new Set(),
+            prefix: '',
+            severity: '',
+            rule: '',
+            loading: true,
+            query: '',
+            init() {
+                // Decode dictionary-encoded linter data from data/linters.js
+                const L = window.__AST_LINTERS__ || {};
+                const dict = L.d || {};
+                const decode = (arr) => (arr || []).map(t => ({
+                    rule: dict[t[0]] || t[0],
+                    severity: dict[t[1]] || t[1],
+                    file: dict[t[2]] || t[2],
+                    message: t[3]
+                }));
+                this.errors = decode(L.e);
+                this.successes = decode(L.s);
+                // Derive allowed files from the per-language files list (Level 2)
+                const d = window.__AST_DATA__ || {};
+                this.allowed = new Set((d.files || []).map(f => f.path));
+                this.prefix = this.commonPrefix(this.errors.filter(e => this.inScope(e)).map(e => e.file));
+                this.loading = false;
+            },
+            // Longest directory prefix shared by every reported file: shown paths stay readable,
+            // the full path remains available in the title attribute.
+            commonPrefix(paths) {
+                if (paths.length < 2) return '';
+                let prefix = paths[0] || '';
+                for (const p of paths) {
+                    let i = 0;
+                    while (i < prefix.length && i < p.length && prefix[i] === p[i]) i++;
+                    prefix = prefix.slice(0, i);
+                    if (!prefix) break;
                 }
+                const cut = prefix.lastIndexOf('/');
+                return cut > 0 ? prefix.slice(0, cut + 1) : '';
+            },
+            shortPath(path) {
+                const p = path || '';
+                return this.prefix && p.startsWith(this.prefix) ? p.slice(this.prefix.length) : p;
+            },
+            inScope(item) {
+                if (this.allowed.size === 0) return true;
+                if (!item.file) return false;
+                return this.allowed.has(item.file);
+            },
+            fmt(n) {
+                return (n || 0).toLocaleString('en-US');
+            },
+            // "max_loc_by_method" reads as "Max LOC by method"
+            label(rule) {
+                const acronyms = { loc: 'LOC', lloc: 'LLOC', lcom: 'LCOM', lcom4: 'LCOM4', api: 'API', ci: 'CI' };
+                const words = (rule || '').replace(/[_-]+/g, ' ').trim().split(' ').filter(Boolean);
+                if (!words.length) return 'Unknown rule';
+                const out = words.map(w => acronyms[w.toLowerCase()] || w);
+                if (!acronyms[words[0].toLowerCase()]) {
+                    out[0] = out[0].charAt(0).toUpperCase() + out[0].slice(1);
+                }
+                return out.join(' ');
+            },
+            count(sev) {
+                const s = (sev || 'unknown').toLowerCase();
+                return this.errors.filter(e => this.inScope(e) && (e.severity || 'unknown').toLowerCase() === s).length;
+            },
+            get total() {
+                return this.errors.filter(e => this.inScope(e)).length;
+            },
+            get rulesBroken() {
+                return new Set(this.errors.filter(e => this.inScope(e)).map(e => e.rule)).size;
+            },
+            get countSuccess() {
+                const explicit = this.successes.filter(e => this.inScope(e)).length;
+                if (explicit > 0) return explicit;
+                const filesWithErrors = new Set(this.errors.filter(e => this.inScope(e)).map(e => e.file));
+                let total = 0;
+                for (const f of this.allowed) {
+                    if (!filesWithErrors.has(f)) total++;
+                }
+                return total;
+            },
+            get kicker() {
+                const files = this.allowed.size || new Set(this.errors.map(e => e.file)).size;
+                const rules = new Set(this.errors.concat(this.successes).map(e => e.rule)).size;
+                return this.fmt(files) + ' files checked · ' + this.fmt(rules) + ' rules evaluated';
+            },
+            get headline() {
+                if (this.total === 0) return 'No rule is broken.';
+                const rules = this.rulesBroken;
+                return this.fmt(this.total) + (this.total > 1 ? ' violations' : ' violation')
+                    + ', spread over ' + this.fmt(rules) + (rules > 1 ? ' rules.' : ' rule.');
+            },
+            get headlineMuted() {
+                return this.fmt(this.countSuccess) + (this.countSuccess === 1 ? ' check passes.' : ' checks pass.');
+            },
+            get lead() {
+                const high = this.count('high');
+                if (this.total === 0) {
+                    return 'Every rule you enabled was checked against every file, and none of them was broken.';
+                }
+                const rest = this.total - high;
+                if (high === 0) {
+                    return 'All <strong>' + this.fmt(rest) + '</strong> of them are medium or low severity. '
+                        + 'Severity is the one declared by each rule in your configuration, not a judgement on the code.';
+                }
+                return '<strong>' + this.fmt(high) + '</strong> of them are high severity, '
+                    + '<strong>' + this.fmt(rest) + '</strong> medium or low. '
+                    + 'Severity is the one declared by each rule in your configuration, not a judgement on the code.';
+            },
+            get tableSub() {
+                const shown = this.filtered.length;
+                if (shown === this.total) {
+                    return 'All ' + this.fmt(this.total) + ' violations, with the measurement that triggered them.';
+                }
+                return this.fmt(shown) + ' of ' + this.fmt(this.total) + ' violations shown.';
+            },
+            badgeClass(sev) {
+                const s = (sev || 'unknown').toLowerCase();
+                if (s === 'high') return 'bg-red-100 text-red-800';
+                if (s === 'medium') return 'bg-amber-100 text-amber-700';
+                if (s === 'low') return 'bg-slate-100 text-slate-700';
+                return 'bg-gray-200 text-gray-800';
+            },
+            dotClass(sev) {
+                const s = (sev || 'unknown').toLowerCase();
+                if (s === 'high') return 'sev-bad';
+                if (s === 'medium') return 'sev-warn';
+                return 'sev-none';
+            },
+            // Rows matching the severity filter and the search, before the rule filter:
+            // the rule list stays browsable while a rule is selected.
+            get matching() {
+                let rows = this.errors.filter(e => this.inScope(e));
+                if (this.severity) {
+                    const sev = this.severity.toLowerCase();
+                    rows = rows.filter(e => (e.severity || 'unknown').toLowerCase() === sev);
+                }
+                if (this.query) {
+                    const q = this.query.toLowerCase();
+                    rows = rows.filter(e => (e.message || '').toLowerCase().includes(q)
+                        || (e.rule || '').toLowerCase().includes(q)
+                        || (e.file || '').toLowerCase().includes(q));
+                }
+                return rows;
+            },
+            get ruleGroups() {
+                const order = { high: 0, medium: 1, low: 2, unknown: 3 };
+                const groups = new Map();
+                for (const e of this.matching) {
+                    const key = e.rule || 'unknown';
+                    let g = groups.get(key);
+                    if (!g) {
+                        g = { rule: key, count: 0, worst: 'unknown', share: 0 };
+                        groups.set(key, g);
+                    }
+                    g.count++;
+                    const sev = (e.severity || 'unknown').toLowerCase();
+                    if (order[sev] < order[g.worst]) g.worst = sev;
+                }
+                const list = Array.from(groups.values()).sort((a, b) => b.count - a.count || (a.rule < b.rule ? -1 : 1));
+                const max = list.length ? list[0].count : 1;
+                list.forEach(g => { g.share = Math.round((g.count / max) * 100); });
+                return list;
+            },
+            get filtered() {
+                let rows = this.matching;
+                if (this.rule) {
+                    rows = rows.filter(e => e.rule === this.rule);
+                }
+                const order = { high: 0, medium: 1, low: 2, unknown: 3 };
+                rows = rows.slice().sort((a, b) => {
+                    const as = (a.severity || 'unknown').toLowerCase();
+                    const bs = (b.severity || 'unknown').toLowerCase();
+                    if (order[as] !== order[bs]) return order[as] - order[bs];
+                    if (a.file !== b.file) return a.file < b.file ? -1 : 1;
+                    const ar = (a.rule || ''), br = (b.rule || '');
+                    return ar < br ? -1 : (ar > br ? 1 : 0);
+                });
+                return rows;
             }
         }
-    </script>
+    }
+</script>
 
-    {% endif %}
+{% endif %}
 
 {% endblock %}

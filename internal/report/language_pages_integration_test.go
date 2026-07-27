@@ -24,6 +24,83 @@ func TestLanguageURLSlug(t *testing.T) {
 	assert.Equal(t, "PHP", languageURLSlug("PHP"))
 }
 
+// TestDirectoryURLSlug guards the naming of the per-folder report pages:
+// analyzed paths become file-name-safe tokens (index_dir_<slug>.html).
+func TestDirectoryURLSlug(t *testing.T) {
+	assert.Equal(t, "internal-analyzer", directoryURLSlug("internal/analyzer"))
+	assert.Equal(t, "internal-analyzer", directoryURLSlug("./internal/analyzer/"))
+	assert.Equal(t, "src", directoryURLSlug("src"))
+	assert.Equal(t, "my_app-v1-2", directoryURLSlug("my_app/v1.2"))
+	assert.Equal(t, "a-b", directoryURLSlug("a###b"))
+	assert.Equal(t, "some-folder", directoryURLSlug("some folder"))
+	assert.Equal(t, "a-b", directoryURLSlug("a\\b"))
+	assert.Equal(t, "root", directoryURLSlug("/"))
+	assert.Equal(t, "tmp-foo-bar", directoryURLSlug("/tmp/foo/bar"))
+
+	// no slug may leak a character that breaks a URL or a file name
+	for _, dir := range []string{"a b/c#d", "../sibling", "./x/../y"} {
+		slug := directoryURLSlug(dir)
+		assert.NotContains(t, slug, "/")
+		assert.NotContains(t, slug, "#")
+		assert.NotContains(t, slug, " ")
+		assert.NotContains(t, slug, ".")
+		assert.NotContains(t, slug, "--")
+		assert.False(t, strings.HasPrefix(slug, "-"), "slug %q must not start with a dash", slug)
+		assert.False(t, strings.HasSuffix(slug, "-"), "slug %q must not end with a dash", slug)
+	}
+}
+
+// TestUniqueSlug checks that two analyzed paths collapsing to the same slug
+// still produce two distinct pages.
+func TestUniqueSlug(t *testing.T) {
+	used := map[string]bool{}
+	assert.Equal(t, "src", uniqueSlug("src", used))
+	assert.Equal(t, "src-2", uniqueSlug("src", used))
+	assert.Equal(t, "src-3", uniqueSlug("src", used))
+}
+
+// TestBuildScopes checks the three navigation dimensions offered by the report:
+// the whole project, each language, each analyzed folder.
+func TestBuildScopes(t *testing.T) {
+	files := []*pb.File{
+		{Path: "/project/src/a.go", ProgrammingLanguage: "Golang"},
+		{Path: "/project/lib/b.php", ProgrammingLanguage: "PHP"},
+	}
+	pa := analyzer.ProjectAggregated{
+		ByProgrammingLanguage: map[string]analyzer.Aggregated{
+			"Golang": {ConcernedFiles: []*pb.File{files[0]}},
+			"PHP":    {ConcernedFiles: []*pb.File{files[1]}},
+		},
+		ByDirectory: map[string]analyzer.Aggregated{
+			"/project/src": {ConcernedFiles: []*pb.File{files[0]}},
+			"/project/lib": {ConcernedFiles: []*pb.File{files[1]}},
+		},
+	}
+
+	scopes := buildScopes(files, pa)
+	assert.Len(t, scopes, 5)
+
+	assert.Equal(t, "all", scopes[0].Kind)
+	assert.Equal(t, "", scopes[0].Suffix)
+	assert.Equal(t, 2, scopes[0].FileCount)
+
+	// languages come first, sorted, then folders, sorted
+	assert.Equal(t, []string{"_Golang", "_PHP", "_dir_project-lib", "_dir_project-src"},
+		[]string{scopes[1].Suffix, scopes[2].Suffix, scopes[3].Suffix, scopes[4].Suffix})
+	assert.Equal(t, "directory", scopes[3].Kind)
+	assert.Equal(t, "/project/lib", scopes[3].Label)
+	assert.Equal(t, 1, scopes[3].FileCount)
+
+	// each scope only keeps its own files
+	assert.True(t, scopes[4].keeps(files[0]))
+	assert.False(t, scopes[4].keeps(files[1]))
+	assert.True(t, scopes[0].keeps(files[1]))
+
+	// a single analyzed path produces no folder scope (ByDirectory stays empty)
+	pa.ByDirectory = map[string]analyzer.Aggregated{}
+	assert.Len(t, buildScopes(files, pa), 3)
+}
+
 // TestHtmlReportFullPipelineJavaCSharp runs the whole pipeline (parse with the
 // Java and C# engines, analyze, aggregate, generate the HTML report) and
 // verifies the report files for both languages.

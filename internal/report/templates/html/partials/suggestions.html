@@ -1,17 +1,11 @@
-
-<div class="dashboard-card p-6" id="suggestions-card">
-  <div class="mb-6">
-    <h2 class="text-xl font-bold text-gray-900 mb-3" style="letter-spacing: -0.02em;">Suggestions</h2>
-    <div class="text-sm text-gray-600 flex items-start gap-2 leading-relaxed">
-      <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 mt-0.5 text-gray-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true">
-        <path stroke-linecap="round" stroke-linejoin="round" d="M13 16h-1v-4h-1m1-4h.01M12 2a10 10 0 100 20 10 10 0 000-20z" />
-      </svg>
-      <span>
-        {% if subtitle %}{{ subtitle }}{% else %}
-          Automatically inferred from metrics (coupling, purity, boundary nodes, etc.). These highlight concrete actions to improve the architecture.
-        {% endif %}
-      </span>
-    </div>
+<div class="soft-card animate-fade-in-up" id="suggestions-card">
+  <div class="mb-4">
+    <h2 class="card-title">{% if title %}{{ title }}{% else %}What the measurements singled out{% endif %}</h2>
+    <p class="card-sub">
+      {% if subtitle %}{{ subtitle }}{% else %}
+        Places where a measured threshold was crossed, with the figure behind it.
+      {% endif %}
+    </p>
   </div>
 
   {% if not suggestions or suggestions|length == 0 %}
@@ -19,49 +13,40 @@
       <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-12 h-12 text-green-300 mx-auto mb-3">
         <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75 11.25 15 15 9.75m-3-7.036A11.959 11.959 0 0 1 3.598 6 11.99 11.99 0 0 0 3 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-4.902Z" />
       </svg>
-      <p class="text-sm font-medium text-gray-500">{{ emptyText|default:"No suggestions at the moment." }}</p>
+      <p class="text-sm font-medium text-gray-500">{{ emptyText|default:"No measured threshold was crossed." }}</p>
     </div>
   {% else %}
     <div id="suggestions-empty" class="text-center py-8 hidden">
       <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-12 h-12 text-green-300 mx-auto mb-3">
         <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75 11.25 15 15 9.75m-3-7.036A11.959 11.959 0 0 1 3.598 6 11.99 11.99 0 0 0 3 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-4.902Z" />
       </svg>
-      <p class="text-sm font-medium text-gray-500">{{ emptyText|default:"No suggestions at the moment." }}</p>
+      <p class="text-sm font-medium text-gray-500">{{ emptyText|default:"No measured threshold was crossed." }}</p>
     </div>
-    <div id="suggestions-list" class="space-y-6">
+    <div id="suggestions-list" class="space-y-7">
 
       {# ── Coupling ── #}
       {% with suggestions|countCategory:"coupling" as couplingCount %}
       {% if couplingCount > 0 %}
       <div>
-        <div class="flex items-center gap-2 mb-2">
-          <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 text-amber-500" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M13.19 8.688a4.5 4.5 0 0 1 1.242 7.244l-4.5 4.5a4.5 4.5 0 0 1-6.364-6.364l1.757-1.757m9.86-2.54 1.757-1.757a4.5 4.5 0 0 0-6.364-6.364l-4.5 4.5a4.5 4.5 0 0 0 1.242 7.244"/></svg>
-          <span class="font-semibold text-gray-900">Coupling</span>
-          <span class="px-2 py-0.5 text-xs font-medium rounded-full bg-amber-100 text-amber-700">{{ couplingCount }}</span>
+        <div class="flex items-center gap-2">
+          <span class="dot sev-warn"></span>
+          <span class="text-sm font-semibold text-gray-900">Coupling</span>
+          <span tabindex="0" data-tip="Efferent coupling ratio: the share of a group's dependencies that point outside the group." class="text-gray-300 text-xs">ⓘ</span>
+          <span class="px-2 py-0.5 text-xs font-medium rounded-full bg-slate-100 text-slate-600">{{ couplingCount }}</span>
         </div>
-        <p class="text-sm text-gray-600 mb-3">This community depends on many others. Introduce a facade or API boundary to reduce direct dependencies and stabilize interactions.</p>
-        {% if couplingCount <= 3 %}
-        <ul class="space-y-2">
+        <p class="text-sm text-gray-500 mt-1">Most of what these groups depend on lives outside them, so a change elsewhere reaches them.</p>
+        {% if couplingCount > 3 %}<details class="mt-2"><summary class="cursor-pointer text-sm text-blue-600 hover:underline">Show all {{ couplingCount }}</summary>{% endif %}
+        <div class="mt-1">
           {% for s in suggestions %}{% if s.Category == "coupling" %}
-          <li class="flex items-start gap-2 text-sm">
-            <span class="shrink-0 px-2 py-0.5 text-xs font-medium rounded-md bg-amber-50 border border-amber-200 text-amber-700">{{ s.Location }}</span>
-            <span class="text-gray-500">{{ s.Why }}</span>
-          </li>
+          <div class="data-row">
+            <div class="min-w-0 flex-1">
+              <div class="row-name truncate"><code class="ident">{{ s.Location }}</code></div>
+              <div class="row-meta">{{ s.Why }}</div>
+            </div>
+          </div>
           {% endif %}{% endfor %}
-        </ul>
-        {% else %}
-        <details class="group">
-          <summary class="cursor-pointer text-sm text-amber-700 hover:text-amber-900 font-medium">Show all {{ couplingCount }} items</summary>
-          <ul class="space-y-2 mt-2">
-            {% for s in suggestions %}{% if s.Category == "coupling" %}
-            <li class="flex items-start gap-2 text-sm">
-              <span class="shrink-0 px-2 py-0.5 text-xs font-medium rounded-md bg-amber-50 border border-amber-200 text-amber-700">{{ s.Location }}</span>
-              <span class="text-gray-500">{{ s.Why }}</span>
-            </li>
-            {% endif %}{% endfor %}
-          </ul>
-        </details>
-        {% endif %}
+        </div>
+        {% if couplingCount > 3 %}</details>{% endif %}
       </div>
       {% endif %}
       {% endwith %}
@@ -70,34 +55,25 @@
       {% with suggestions|countCategory:"purity" as purityCount %}
       {% if purityCount > 0 %}
       <div>
-        <div class="flex items-center gap-2 mb-2">
-          <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 text-blue-500" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6A2.25 2.25 0 0 1 6 3.75h2.25A2.25 2.25 0 0 1 10.5 6v2.25a2.25 2.25 0 0 1-2.25 2.25H6a2.25 2.25 0 0 1-2.25-2.25V6ZM3.75 15.75A2.25 2.25 0 0 1 6 13.5h2.25a2.25 2.25 0 0 1 2.25 2.25V18a2.25 2.25 0 0 1-2.25 2.25H6A2.25 2.25 0 0 1 3.75 18v-2.25ZM13.5 6a2.25 2.25 0 0 1 2.25-2.25H18A2.25 2.25 0 0 1 20.25 6v2.25A2.25 2.25 0 0 1 18 10.5h-2.25a2.25 2.25 0 0 1-2.25-2.25V6ZM13.5 15.75a2.25 2.25 0 0 1 2.25-2.25H18a2.25 2.25 0 0 1 2.25 2.25V18A2.25 2.25 0 0 1 18 20.25h-2.25a2.25 2.25 0 0 1-2.25-2.25v-2.25Z"/></svg>
-          <span class="font-semibold text-gray-900">Purity</span>
-          <span class="px-2 py-0.5 text-xs font-medium rounded-full bg-blue-100 text-blue-700">{{ purityCount }}</span>
+        <div class="flex items-center gap-2">
+          <span class="dot sev-warn"></span>
+          <span class="text-sm font-semibold text-gray-900">Mixed concerns</span>
+          <span tabindex="0" data-tip="Purity: the share of files in a group that come from the same namespace." class="text-gray-300 text-xs">ⓘ</span>
+          <span class="px-2 py-0.5 text-xs font-medium rounded-full bg-slate-100 text-slate-600">{{ purityCount }}</span>
         </div>
-        <p class="text-sm text-gray-600 mb-3">This community aggregates several concerns. Consider splitting it into smaller, cohesive modules aligned by domain or namespace to improve purity and maintainability.</p>
-        {% if purityCount <= 3 %}
-        <ul class="space-y-2">
+        <p class="text-sm text-gray-500 mt-1">These groups gather files from several unrelated namespaces, so their content is not aligned with one concern.</p>
+        {% if purityCount > 3 %}<details class="mt-2"><summary class="cursor-pointer text-sm text-blue-600 hover:underline">Show all {{ purityCount }}</summary>{% endif %}
+        <div class="mt-1">
           {% for s in suggestions %}{% if s.Category == "purity" %}
-          <li class="flex items-start gap-2 text-sm">
-            <span class="shrink-0 px-2 py-0.5 text-xs font-medium rounded-md bg-blue-50 border border-blue-200 text-blue-700">{{ s.Location }}</span>
-            <span class="text-gray-500">{{ s.Why }}</span>
-          </li>
+          <div class="data-row">
+            <div class="min-w-0 flex-1">
+              <div class="row-name truncate"><code class="ident">{{ s.Location }}</code></div>
+              <div class="row-meta">{{ s.Why }}</div>
+            </div>
+          </div>
           {% endif %}{% endfor %}
-        </ul>
-        {% else %}
-        <details class="group">
-          <summary class="cursor-pointer text-sm text-blue-700 hover:text-blue-900 font-medium">Show all {{ purityCount }} items</summary>
-          <ul class="space-y-2 mt-2">
-            {% for s in suggestions %}{% if s.Category == "purity" %}
-            <li class="flex items-start gap-2 text-sm">
-              <span class="shrink-0 px-2 py-0.5 text-xs font-medium rounded-md bg-blue-50 border border-blue-200 text-blue-700">{{ s.Location }}</span>
-              <span class="text-gray-500">{{ s.Why }}</span>
-            </li>
-            {% endif %}{% endfor %}
-          </ul>
-        </details>
-        {% endif %}
+        </div>
+        {% if purityCount > 3 %}</details>{% endif %}
       </div>
       {% endif %}
       {% endwith %}
@@ -106,69 +82,51 @@
       {% with suggestions|countCategory:"boundary" as boundaryCount %}
       {% if boundaryCount > 0 %}
       <div>
-        <div class="flex items-center gap-2 mb-2">
-          <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 text-purple-500" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M7.5 21 3 16.5m0 0L7.5 12M3 16.5h13.5m0-13.5L21 7.5m0 0L16.5 12M21 7.5H7.5"/></svg>
-          <span class="font-semibold text-gray-900">Boundary</span>
-          <span class="px-2 py-0.5 text-xs font-medium rounded-full bg-purple-100 text-purple-700">{{ boundaryCount }}</span>
+        <div class="flex items-center gap-2">
+          <span class="dot sev-none"></span>
+          <span class="text-sm font-semibold text-gray-900">Boundary nodes</span>
+          <span tabindex="0" data-tip="A node is on a boundary when it takes part in dependencies that cross the frontier between two groups." class="text-gray-300 text-xs">ⓘ</span>
+          <span class="px-2 py-0.5 text-xs font-medium rounded-full bg-slate-100 text-slate-600">{{ boundaryCount }}</span>
         </div>
-        <p class="text-sm text-gray-600 mb-3">These nodes connect multiple communities and can create tight coupling. Consider introducing anti-corruption layers, moving responsibilities, or clarifying ownership to reduce boundary crossings.</p>
-        {% if boundaryCount <= 3 %}
-        <ul class="space-y-2">
+        <p class="text-sm text-gray-500 mt-1">These nodes sit on dependencies that cross group frontiers, so they carry traffic between otherwise separate parts of the code.</p>
+        {% if boundaryCount > 3 %}<details class="mt-2"><summary class="cursor-pointer text-sm text-blue-600 hover:underline">Show all {{ boundaryCount }}</summary>{% endif %}
+        <div class="mt-1">
           {% for s in suggestions %}{% if s.Category == "boundary" %}
-          <li class="flex items-start gap-2 text-sm">
-            <span class="shrink-0 px-2 py-0.5 text-xs font-medium rounded-md bg-purple-50 border border-purple-200 text-purple-700">{{ s.Location }}</span>
-            <span class="text-gray-500">{{ s.Why }}</span>
-          </li>
+          <div class="data-row">
+            <div class="min-w-0 flex-1">
+              <div class="row-name truncate"><code class="ident">{{ s.Location }}</code></div>
+              <div class="row-meta">{{ s.Why }}</div>
+            </div>
+          </div>
           {% endif %}{% endfor %}
-        </ul>
-        {% else %}
-        <details class="group">
-          <summary class="cursor-pointer text-sm text-purple-700 hover:text-purple-900 font-medium">Show all {{ boundaryCount }} items</summary>
-          <ul class="space-y-2 mt-2">
-            {% for s in suggestions %}{% if s.Category == "boundary" %}
-            <li class="flex items-start gap-2 text-sm">
-              <span class="shrink-0 px-2 py-0.5 text-xs font-medium rounded-md bg-purple-50 border border-purple-200 text-purple-700">{{ s.Location }}</span>
-              <span class="text-gray-500">{{ s.Why }}</span>
-            </li>
-            {% endif %}{% endfor %}
-          </ul>
-        </details>
-        {% endif %}
+        </div>
+        {% if boundaryCount > 3 %}</details>{% endif %}
       </div>
       {% endif %}
       {% endwith %}
 
-      {# ── Other (fallback for suggestions without category) ── #}
+      {# ── Anything without a category: per-file measurements ── #}
       {% with suggestions|countCategory:"other" as otherCount %}
       {% if otherCount > 0 %}
       <div>
-        <div class="flex items-center gap-2 mb-2">
-          <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 text-gray-500" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 18v-5.25m0 0a6.01 6.01 0 0 0 1.5-.189m-1.5.189a6.01 6.01 0 0 1-1.5-.189m3.75 7.478a12.06 12.06 0 0 1-4.5 0m3.75 2.383a14.406 14.406 0 0 1-3 0M14.25 18v-.192c0-.983.658-1.823 1.508-2.316a7.5 7.5 0 1 0-7.517 0c.85.493 1.509 1.333 1.509 2.316V18"/></svg>
-          <span class="font-semibold text-gray-900">Other</span>
-          <span class="px-2 py-0.5 text-xs font-medium rounded-full bg-gray-100 text-gray-700">{{ otherCount }}</span>
+        <div class="flex items-center gap-2">
+          <span class="dot sev-warn"></span>
+          <span class="text-sm font-semibold text-gray-900">Single files</span>
+          <span class="px-2 py-0.5 text-xs font-medium rounded-full bg-slate-100 text-slate-600">{{ otherCount }}</span>
         </div>
-        {% if otherCount <= 3 %}
-        <ul class="space-y-2">
+        <p class="text-sm text-gray-500 mt-1">These come from measurements taken file by file, not from the dependency graph.</p>
+        {% if otherCount > 3 %}<details class="mt-2"><summary class="cursor-pointer text-sm text-blue-600 hover:underline">Show all {{ otherCount }}</summary>{% endif %}
+        <div class="mt-1">
           {% for s in suggestions %}{% if s.Category != "coupling" and s.Category != "purity" and s.Category != "boundary" %}
-          <li class="flex items-start gap-2 text-sm">
-            <span class="shrink-0 px-2 py-0.5 text-xs font-medium rounded-md bg-gray-50 border border-gray-200 text-gray-700">{{ s.Location }}</span>
-            <span class="text-gray-500">{% if s.Why %}{{ s.Why }}{% else %}{{ s.Summary }}{% endif %}</span>
-          </li>
+          <div class="data-row">
+            <div class="min-w-0 flex-1">
+              <div class="row-name truncate"><code class="ident">{{ s.Location }}</code></div>
+              <div class="row-meta">{% if s.Why %}{{ s.Why }}{% else %}{{ s.Summary }}{% endif %}</div>
+            </div>
+          </div>
           {% endif %}{% endfor %}
-        </ul>
-        {% else %}
-        <details class="group">
-          <summary class="cursor-pointer text-sm text-gray-700 hover:text-gray-900 font-medium">Show all {{ otherCount }} items</summary>
-          <ul class="space-y-2 mt-2">
-            {% for s in suggestions %}{% if s.Category != "coupling" and s.Category != "purity" and s.Category != "boundary" %}
-            <li class="flex items-start gap-2 text-sm">
-              <span class="shrink-0 px-2 py-0.5 text-xs font-medium rounded-md bg-gray-50 border border-gray-200 text-gray-700">{{ s.Location }}</span>
-              <span class="text-gray-500">{% if s.Why %}{{ s.Why }}{% else %}{{ s.Summary }}{% endif %}</span>
-            </li>
-            {% endif %}{% endfor %}
-          </ul>
-        </details>
-        {% endif %}
+        </div>
+        {% if otherCount > 3 %}</details>{% endif %}
       </div>
       {% endif %}
       {% endwith %}

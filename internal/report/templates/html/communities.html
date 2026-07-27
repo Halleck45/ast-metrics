@@ -1,5 +1,5 @@
 {% extends "layout.html" %}
-{% block pageTitle %}Communities - {{ currentLanguage }}{% endblock %}
+{% block pageTitle %}Communities - {{ scopeLabel }}{% endblock %}
 {% block content %}
 
 <style>
@@ -50,39 +50,7 @@
 {% else %}
 
 
-<!-- start: language tabs-->
-<div class="flex overflow-x-auto overflow-y-hidden border-b border-gray-200 whitespace-nowrap ">
-
-    <a
-            href="communities.html"
-            class="inline-flex items-center h-10 px-2 py-2 -mb-px text-center {% if currentLanguage == "All" %}text-blue-600 border-blue-500{% endif %} bg-transparent border-b-2 sm:px-4 -px-1 focus:outline-none">
-    <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 mx-1 sm:w-6 sm:h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z" />
-    </svg>
-
-    <span class="mx-1 text-sm sm:text-base">
-                All languages <span class="text-xs sm:text-sm">({{ projectAggregated.Combined.ConcernedFiles|length }} files)</span>
-            </span>
-    </a>
-
-    <!-- start: language tab -->
-    {% for languageName, lang in projectAggregated.ByProgrammingLanguage %}
-    <a
-            href="communities_{{ languageName|langSlug }}.html"
-            class="inline-flex items-center h-10 px-2 py-2 -mb-px text-center bg-transparent border-b-2 {% if currentLanguage == languageName %}text-blue-600 border-blue-500{% else %}text-gray-700   border-transparent{% endif %} sm:px-4 -px-1 hover:border-gray-400">
-        <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 mx-1 sm:w-6 sm:h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z" />
-        </svg>
-
-        <span class="mx-1 text-sm sm:text-base">
-                    {{ languageName }} <span class="text-xs sm:text-sm">({{ lang.ConcernedFiles|length }} files)</span>
-                </span>
-    </a>
-    {% endfor %}
-    <!-- end: language tab -->
-
-</div>
-<!-- end: language tabs-->
+{% include "partials/language_tabs.html" with pageBase="communities" %}
 
 
 <div class="dashboard-card p-6 mb-8 mt-8 animate-fade-in-up">
@@ -145,11 +113,50 @@
     /* Architecture tabs */
     .arch-tab { border-bottom: 2px solid transparent; transition: all 0.15s ease; }
     .arch-tab:hover { color: #1f2937; border-color: #d1d5db; }
-    .arch-tab.active { color: #2563eb; border-color: #2563eb; font-weight: 500; }
+    /* The view switcher is a segmented control; the JS toggles `active`. */
+    .arch-tab.active {
+        background: white;
+        color: #0f172a;
+        font-weight: 600;
+        box-shadow: 0 1px 2px rgba(15, 23, 42, 0.08);
+    }
     .arch-panel { display: none; }
     .arch-panel.active { display: block; }
 </style>
 
+
+<!-- Verdict -->
+<div class="page-hero animate-fade-in-up mb-6">
+    <p class="page-kicker mb-3">Communities &middot; detected from the dependency graph</p>
+    <h1 class="verdict-title max-w-4xl">
+        <span id="metric-verdict-main">{% if cm.MaxSize <= 1 %}Your code shows no natural grouping.{% else %}Your code splits into {{ cm.CommunitiesCount }} natural group{{ cm.CommunitiesCount|pluralize }}.{% endif %}</span>
+        <span class="verdict-muted block" id="metric-verdict-note">{% if cm.MaxSize <= 1 %}Every namespace stands on its own: the dependency graph is too sparse to reveal modules.{% else %}The largest one holds {{ cm.MaxSize }} node{{ cm.MaxSize|pluralize }}.{% endif %}</span>
+    </h1>
+    <p class="verdict-lead mt-4">
+        A community is a set of namespaces that depend on each other more than on the rest of the code.
+        They are computed from the graph, not from folder names, so they show the architecture as it
+        actually is. <strong id="metric-boundary-count">{{ cm.BoundaryNodes|length }}</strong> nodes sit on
+        a boundary between two groups.
+    </p>
+    <div class="kpi-strip kpi-strip--divided mt-8">
+        <div>
+            <div class="kpi-value" id="metric-avg-size">{{ cm.AvgSize|floatformat:1 }}</div>
+            <div class="kpi-label">nodes per group<br>on average</div>
+        </div>
+        <div>
+            <div class="kpi-value" id="metric-density">{{ cm.GraphDensity|floatformat:3 }}</div>
+            <div class="kpi-label">graph density
+                <span tabindex="0" data-tip="Share of the possible dependencies that actually exist. Low means a sparse, loosely connected graph." class="text-slate-300">&#9432;</span>
+            </div>
+        </div>
+        <div>
+            <div class="kpi-value" id="metric-modularity">{{ cm.ModularityQ|floatformat:2 }}</div>
+            <div class="kpi-label">separation quality
+                <span tabindex="0" data-tip="Modularity Q, from 0 to 1. Higher means the groups are cleanly separated from each other." class="text-slate-300">&#9432;</span>
+            </div>
+        </div>
+    </div>
+</div>
 
 <!-- Community detection settings -->
 <div class="flex flex-wrap items-center gap-8 mb-4 px-1">
@@ -220,19 +227,15 @@
         </div>
     </div>
     <style>@keyframes spin { to { transform: rotate(360deg); } }</style>
-    <div class="flex items-center justify-between mb-4">
-        <h2 class="leading-none text-3xl font-bold text-gray-900 pb-2">Architecture</h2>
-        <div id="arch-export" class="text-sm text-gray-600">
-            <button id="export-clustered" class="px-2 py-1 border rounded mr-1">Export PNG</button>
+    <div class="flex flex-wrap items-center justify-between gap-3 mb-5">
+        <div class="seg" role="tablist" aria-label="Community view">
+            <button role="tab" class="arch-tab seg-item active" data-arch-tab="clustered">Clusters</button>
+            <button role="tab" class="arch-tab seg-item" data-arch-tab="graph">Graph</button>
+            <button role="tab" class="arch-tab seg-item" data-arch-tab="layered">Layers</button>
+            <button role="tab" class="arch-tab seg-item" data-arch-tab="sankey">Flows</button>
+            <button role="tab" class="arch-tab seg-item" data-arch-tab="purity">Purity</button>
         </div>
-    </div>
-    <!-- Tab bar -->
-    <div class="flex border-b border-gray-200 mb-4 gap-1">
-        <button class="arch-tab active px-4 py-2 text-sm text-gray-600" data-arch-tab="clustered">Clustered Dependencies</button>
-        <button class="arch-tab px-4 py-2 text-sm text-gray-600" data-arch-tab="graph">Graph</button>
-        <button class="arch-tab px-4 py-2 text-sm text-gray-600" data-arch-tab="layered">Layered Map</button>
-        <button class="arch-tab px-4 py-2 text-sm text-gray-600" data-arch-tab="sankey">Sankey</button>
-        <button class="arch-tab px-4 py-2 text-sm text-gray-600" data-arch-tab="purity">Purity</button>
+        <button id="export-clustered" class="text-sm text-gray-500 hover:text-gray-900 px-3 py-1.5 rounded-full hover:bg-slate-100 transition-colors">Export PNG</button>
     </div>
     <!-- Tab panels -->
     <div id="arch-panel-graph" class="arch-panel">
@@ -393,35 +396,6 @@
 
 
 {% include "partials/suggestions.html" with suggestions=currentView.Suggestions subtitle="Automatically inferred from coupling, purity and boundary nodes" emptyText="No suggestions — the architecture looks healthy based on current heuristics." %}
-
-<!-- Metrics (summary cards) -->
-<div class="grid grid-cols-5 gap-4 mb-8 mt-8">
-    <div class="dashboard-card p-5">
-        <div class="leading-none text-3xl font-bold text-gray-900 pb-2" id="metric-comm-count">{{ cm.CommunitiesCount }}</div>
-        <div class="text-base font-normal text-gray-500 ">Number of detected communities (modules)</div>
-        <div class="mt-2 text-xs text-gray-500">communities_count</div>
-    </div>
-    <div class="dashboard-card p-5">
-        <div class="leading-none text-3xl font-bold text-gray-900 pb-2" id="metric-modularity">{{ cm.ModularityQ|floatformat:2 }}</div>
-        <div class="text-base font-normal text-gray-500">Community separation quality (0–1)</div>
-        <div class="mt-2 text-xs text-gray-500">modularity_q</div>
-    </div>
-    <div class="dashboard-card p-5">
-        <div class="leading-none text-3xl font-bold text-gray-900 pb-2" id="metric-avg-size">{{ cm.AvgSize|floatformat:1 }}</div>
-        <div class="text-base font-normal text-gray-500">Average number of nodes per community</div>
-        <div class="mt-2 text-xs text-gray-500">avg_size</div>
-    </div>
-    <div class="dashboard-card p-5">
-        <div class="leading-none text-3xl font-bold text-gray-900 pb-2" id="metric-max-size">{{ cm.MaxSize }}</div>
-        <div class="text-base font-normal text-gray-500">Largest community size (nodes)</div>
-        <div class="mt-2 text-xs text-gray-500">max_size</div>
-    </div>
-    <div class="dashboard-card p-5">
-        <div class="leading-none text-3xl font-bold text-gray-900 pb-2" id="metric-density">{{ cm.GraphDensity|floatformat:3 }}</div>
-        <div class="text-base font-normal text-gray-500">Edge density of the dependency graph</div>
-        <div class="mt-2 text-xs text-gray-500">graph_density</div>
-    </div>
-</div>
 
 <!-- ============================================================ -->
 <!-- JS Community Engine: computes communities client-side for     -->
@@ -976,10 +950,24 @@
 
     function updateMetricCards(cm) {
         var el;
-        el = document.getElementById('metric-comm-count'); if (el) el.textContent = cm.communitiesCount;
         el = document.getElementById('metric-modularity'); if (el) el.textContent = cm.modularityQ.toFixed(2);
         el = document.getElementById('metric-avg-size'); if (el) el.textContent = cm.avgSize.toFixed(1);
-        el = document.getElementById('metric-max-size'); if (el) el.textContent = cm.maxSize;
+
+        // Recompose the verdict sentence: a graph where no group grows past one
+        // node has not revealed any module, and should say so.
+        var plural = function(n) { return n === 1 ? '' : 's'; };
+        el = document.getElementById('metric-verdict-main');
+        if (el) {
+            el.textContent = cm.maxSize <= 1
+                ? 'Your code shows no natural grouping.'
+                : 'Your code splits into ' + cm.communitiesCount + ' natural group' + plural(cm.communitiesCount) + '.';
+        }
+        el = document.getElementById('metric-verdict-note');
+        if (el) {
+            el.textContent = cm.maxSize <= 1
+                ? 'Every namespace stands on its own: the dependency graph is too sparse to reveal modules.'
+                : 'The largest one holds ' + cm.maxSize + ' node' + plural(cm.maxSize) + '.';
+        }
         el = document.getElementById('metric-density'); if (el) el.textContent = cm.graphDensity.toFixed(3);
     }
 
@@ -1477,12 +1465,12 @@
                 }
 
                 var cats = [
-                    { key: 'coupling', label: 'Coupling', color: 'amber', icon: '<path stroke-linecap="round" stroke-linejoin="round" d="M13.19 8.688a4.5 4.5 0 0 1 1.242 7.244l-4.5 4.5a4.5 4.5 0 0 1-6.364-6.364l1.757-1.757m9.86-2.54 1.757-1.757a4.5 4.5 0 0 0-6.364-6.364l-4.5 4.5a4.5 4.5 0 0 0 1.242 7.244"/>',
-                      explanation: 'This community depends on many others. Introduce a facade or API boundary to reduce direct dependencies and stabilize interactions.' },
-                    { key: 'purity', label: 'Purity', color: 'blue', icon: '<path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6A2.25 2.25 0 0 1 6 3.75h2.25A2.25 2.25 0 0 1 10.5 6v2.25a2.25 2.25 0 0 1-2.25 2.25H6a2.25 2.25 0 0 1-2.25-2.25V6ZM3.75 15.75A2.25 2.25 0 0 1 6 13.5h2.25a2.25 2.25 0 0 1 2.25 2.25V18a2.25 2.25 0 0 1-2.25 2.25H6A2.25 2.25 0 0 1 3.75 18v-2.25ZM13.5 6a2.25 2.25 0 0 1 2.25-2.25H18A2.25 2.25 0 0 1 20.25 6v2.25A2.25 2.25 0 0 1 18 10.5h-2.25a2.25 2.25 0 0 1-2.25-2.25V6ZM13.5 15.75a2.25 2.25 0 0 1 2.25-2.25H18a2.25 2.25 0 0 1 2.25 2.25V18A2.25 2.25 0 0 1 18 20.25h-2.25a2.25 2.25 0 0 1-2.25-2.25v-2.25Z"/>',
-                      explanation: 'This community aggregates several concerns. Consider splitting it into smaller, cohesive modules aligned by domain or namespace.' },
-                    { key: 'boundary', label: 'Boundary', color: 'purple', icon: '<path stroke-linecap="round" stroke-linejoin="round" d="M7.5 21 3 16.5m0 0L7.5 12M3 16.5h13.5m0-13.5L21 7.5m0 0L16.5 12M21 7.5H7.5"/>',
-                      explanation: 'These nodes connect multiple communities. Consider introducing anti-corruption layers or clarifying ownership to reduce boundary crossings.' }
+                    { key: 'coupling', label: 'Reaching outward', color: 'amber', icon: '<path stroke-linecap="round" stroke-linejoin="round" d="M13.19 8.688a4.5 4.5 0 0 1 1.242 7.244l-4.5 4.5a4.5 4.5 0 0 1-6.364-6.364l1.757-1.757m9.86-2.54 1.757-1.757a4.5 4.5 0 0 0-6.364-6.364l-4.5 4.5a4.5 4.5 0 0 0 1.242 7.244"/>',
+                      explanation: 'Most of what these groups depend on lives outside them, so a change elsewhere reaches them.' },
+                    { key: 'purity', label: 'Mixed concerns', color: 'blue', icon: '<path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6A2.25 2.25 0 0 1 6 3.75h2.25A2.25 2.25 0 0 1 10.5 6v2.25a2.25 2.25 0 0 1-2.25 2.25H6a2.25 2.25 0 0 1-2.25-2.25V6ZM3.75 15.75A2.25 2.25 0 0 1 6 13.5h2.25a2.25 2.25 0 0 1 2.25 2.25V18a2.25 2.25 0 0 1-2.25 2.25H6A2.25 2.25 0 0 1 3.75 18v-2.25ZM13.5 6a2.25 2.25 0 0 1 2.25-2.25H18A2.25 2.25 0 0 1 20.25 6v2.25A2.25 2.25 0 0 1 18 10.5h-2.25a2.25 2.25 0 0 1-2.25-2.25V6ZM13.5 15.75a2.25 2.25 0 0 1 2.25-2.25H18a2.25 2.25 0 0 1 2.25 2.25V18A2.25 2.25 0 0 1 18 20.25h-2.25a2.25 2.25 0 0 1-2.25-2.25v-2.25Z"/>',
+                      explanation: 'These groups are large and hold namespaces that have little to do with each other.' },
+                    { key: 'boundary', label: 'On the boundary', color: 'purple', icon: '<path stroke-linecap="round" stroke-linejoin="round" d="M7.5 21 3 16.5m0 0L7.5 12M3 16.5h13.5m0-13.5L21 7.5m0 0L16.5 12M21 7.5H7.5"/>',
+                      explanation: 'These nodes sit between several groups, and traffic between groups goes through them.' }
                 ];
 
                 cats.forEach(function(cat) {

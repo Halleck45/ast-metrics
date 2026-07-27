@@ -81,7 +81,7 @@ func getAbsolutePath(repoRoot string) (string, error) {
 }
 
 func (git *GitRepository) ListAllCommitsSince(since string) ([]Commit, error) {
-	cmd := exec.Command("git", "--no-pager", "log", "--pretty=format:# %h|%an|%ct", "--name-only", "--since="+since)
+	cmd := exec.Command("git", "--no-pager", "log", "--pretty=format:# %h|%an|%ct|%ae", "--name-only", "--since="+since)
 	cmd.Dir = git.Path
 
 	stdout, err := cmd.StdoutPipe()
@@ -117,9 +117,16 @@ func (git *GitRepository) ListAllCommitsSince(since string) ([]Commit, error) {
 				commits = append(commits, currentCommit)
 			}
 
+			// The email is appended last, so a log without it still parses
+			email := ""
+			if len(commitInfos) > 3 {
+				email = commitInfos[3]
+			}
+
 			currentCommit = Commit{
 				Hash:      commitInfos[0],
 				Author:    commitInfos[1],
+				Email:     email,
 				Timestamp: timestamp,
 			}
 			continue

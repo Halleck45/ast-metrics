@@ -2,7 +2,10 @@ package analyzer
 
 import (
 	"math"
+	"path/filepath"
 	"runtime"
+	"sort"
+	"strings"
 	"sync"
 
 	"github.com/halleck45/ast-metrics/internal/analyzer/classifier"
@@ -17,10 +20,14 @@ type ProjectAggregated struct {
 	ByClass               Aggregated
 	Combined              Aggregated
 	ByProgrammingLanguage map[string]Aggregated
-	ErroredFiles          []*pb.File
-	Evaluation            *requirement.EvaluationResult
-	Comparaison           *ProjectComparaison
-	Predictions           []classifier.ClassPrediction
+	// ByDirectory holds one aggregate per analyzed path (the arguments given to
+	// the CLI, e.g. `ast-metrics analyze ./src ./lib`). It stays empty when a
+	// single path is analyzed, since that would duplicate the global view.
+	ByDirectory  map[string]Aggregated
+	ErroredFiles []*pb.File
+	Evaluation   *requirement.EvaluationResult
+	Comparaison  *ProjectComparaison
+	Predictions  []classifier.ClassPrediction
 }
 
 type AggregateResult struct {
@@ -47,8 +54,11 @@ type Aggregated struct {
 	ErroredFiles         []*pb.File
 	Comparaison          *Comparaison
 	// hashmap of classes, just with the qualified name, used for afferent coupling calculation
-	ClassesAfferentCoupling                 map[string]int
-	NbFiles                                 int
+	ClassesAfferentCoupling map[string]int
+	NbFiles                 int
+	// Number of test files. Test files are counted in NbFiles, but their metrics
+	// are excluded from all the aggregates below (they are not production code).
+	NbTestFiles                             int
 	NbFunctions                             int
 	NbClasses                               int
 	NbClassesWithCode                       int
@@ -107,10 +117,16 @@ type Aggregator struct {
 	gitSummaries      []ResultOfGitAnalysis
 	ComparedFiles     []*pb.File
 	ComparedBranch    string
+	// AnalyzedPaths are the paths given by the user on the command line. They
+	// drive the per-directory aggregation (ProjectAggregated.ByDirectory).
+	AnalyzedPaths []string
 }
 
 type TopCommitter struct {
-	Name       string
+	Name string
+	// Email is only used to resolve an avatar. It stays empty when the git log
+	// does not expose it.
+	Email      string
 	Count      int
 	Percentage float64
 }
@@ -122,7 +138,10 @@ type ResultOfGitAnalysis struct {
 	CountCommiters          int
 	CountCommitsForLanguage int
 	CountCommitsIgnored     int
-	GitRepository           Scm.GitRepository
+	// AuthorEmails maps an author display name to one of its commit addresses,
+	// so the report can resolve an avatar for the top contributors.
+	AuthorEmails  map[string]string
+	GitRepository Scm.GitRepository
 }
 
 func NewAggregator(files []*pb.File, gitSummaries []ResultOfGitAnalysis) *Aggregator {
@@ -149,6 +168,7 @@ func newAggregated() Aggregated {
 		ConcernedFiles:                          make([]*pb.File, 0),
 		ClassesAfferentCoupling:                 make(map[string]int),
 		ErroredFiles:                            make([]*pb.File, 0),
+		NbTestFiles:                             0,
 		NbClasses:                               0,
 		NbClassesWithCode:                       0,
 		NbMethods:                               0,
@@ -235,6 +255,19 @@ func (r *Aggregator) Aggregates() ProjectAggregated {
 			entry.Comparaison = &c
 			r.projectAggregated.ByProgrammingLanguage[lng] = entry
 		}
+
+		// By analyzed directory, so that the per-folder pages of the report also
+		// show the comparaison instead of an empty one
+		for dir, byDirectory := range r.projectAggregated.ByDirectory {
+			if _, ok := comparaidAggregated.ByDirectory[dir]; !ok {
+				continue
+			}
+			c := comparator.Compare(byDirectory, comparaidAggregated.ByDirectory[dir])
+			entry := r.projectAggregated.ByDirectory[dir]
+			entry.Comparaison = &c
+			r.projectAggregated.ByDirectory[dir] = entry
+		}
+
 		r.projectAggregated.Comparaison = &comparaison
 	}
 
@@ -248,6 +281,7 @@ func (r *Aggregator) executeAggregationOnFiles(files []*pb.File) ProjectAggregat
 		ByClass:               newAggregated(),
 		Combined:              newAggregated(),
 		ByProgrammingLanguage: make(map[string]Aggregated),
+		ByDirectory:           make(map[string]Aggregated),
 		ErroredFiles:          make([]*pb.File, 0),
 		Evaluation:            nil,
 		Comparaison:           nil,
@@ -280,10 +314,32 @@ func (r *Aggregator) executeAggregationOnFiles(files []*pb.File) ProjectAggregat
 		}
 	}
 
+	// for each analyzed path (CLI argument), we create a separated result. Only
+	// when several paths are analyzed: with a single one, the directory view
+	// would be a duplicate of the global view.
+	aggregateByDirectoryChunk := make(map[string]Aggregated)
+	directoryOfFile := make(map[*pb.File]string)
+	if len(r.AnalyzedPaths) > 1 {
+		scopes := buildAnalyzedPathScopes(r.AnalyzedPaths)
+		if len(scopes) > 1 {
+			for _, file := range files {
+				key, ok := scopeOfFile(scopes, file.Path)
+				if !ok {
+					continue
+				}
+				directoryOfFile[file] = key
+				if _, exists := aggregateByDirectoryChunk[key]; !exists {
+					aggregateByDirectoryChunk[key] = newAggregated()
+				}
+			}
+		}
+	}
+
 	// Create channels for the results
 	resultsByClass := make(chan *Aggregated, numberOfProcessors)
 	resultsByFile := make(chan *Aggregated, numberOfProcessors)
 	resultsByProgrammingLanguage := make(chan *map[string]Aggregated, numberOfProcessors)
+	resultsByDirectory := make(chan *map[string]Aggregated, numberOfProcessors)
 
 	// Deadlock prevention
 	mu := sync.Mutex{}
@@ -321,11 +377,17 @@ func (r *Aggregator) executeAggregationOnFiles(files []*pb.File) ProjectAggregat
 				result.ConcernedFiles = append(result.ConcernedFiles, localFile)
 				aggregateByClassChunk = result
 
-				// by language
+				// by language, and by analyzed directory
 				mu.Lock()
 				byLanguage := r.mapSums(localFile, aggregateByLanguageChunk[localFile.ProgrammingLanguage])
 				byLanguage.ConcernedFiles = append(byLanguage.ConcernedFiles, localFile)
 				aggregateByLanguageChunk[localFile.ProgrammingLanguage] = byLanguage
+
+				if directory, ok := directoryOfFile[localFile]; ok {
+					byDirectory := r.mapSums(localFile, aggregateByDirectoryChunk[directory])
+					byDirectory.ConcernedFiles = append(byDirectory.ConcernedFiles, localFile)
+					aggregateByDirectoryChunk[directory] = byDirectory
+				}
 				mu.Unlock()
 			}
 
@@ -333,6 +395,7 @@ func (r *Aggregator) executeAggregationOnFiles(files []*pb.File) ProjectAggregat
 			resultsByClass <- &aggregateByClassChunk
 			resultsByFile <- &aggregateByFileChunk
 			resultsByProgrammingLanguage <- &aggregateByLanguageChunk
+			resultsByDirectory <- &aggregateByDirectoryChunk
 
 		}(chunks[chunkIndex])
 		chunkIndex++
@@ -342,6 +405,7 @@ func (r *Aggregator) executeAggregationOnFiles(files []*pb.File) ProjectAggregat
 	close(resultsByClass)
 	close(resultsByFile)
 	close(resultsByProgrammingLanguage)
+	close(resultsByDirectory)
 
 	// Now we have chunk of sums. We want to reduce its into a single object
 	wg.Add(1)
@@ -373,6 +437,12 @@ func (r *Aggregator) executeAggregationOnFiles(files []*pb.File) ProjectAggregat
 				projectAggregated.ByProgrammingLanguage[k] = v
 			}
 		}
+
+		for chunk := range resultsByDirectory {
+			for k, v := range *chunk {
+				projectAggregated.ByDirectory[k] = v
+			}
+		}
 	}()
 
 	wg.Wait()
@@ -384,6 +454,11 @@ func (r *Aggregator) executeAggregationOnFiles(files []*pb.File) ProjectAggregat
 		v = r.reduceMetrics(v)
 		f := r.mapCoupling(&v)
 		projectAggregated.ByProgrammingLanguage[k] = f
+	}
+	for k, v := range projectAggregated.ByDirectory {
+		v = r.reduceMetrics(v)
+		f := r.mapCoupling(&v)
+		projectAggregated.ByDirectory[k] = f
 	}
 
 	// Coupling (should be done separately, to avoid race condition)
@@ -407,6 +482,86 @@ func (r *Aggregator) WithAggregateAnalyzer(analyzer AggregateAnalyzer) {
 	r.analyzers = append(r.analyzers, analyzer)
 }
 
+// WithAnalyzedPaths declares the paths given by the user on the command line.
+// They are used to build ProjectAggregated.ByDirectory: one aggregate per
+// analyzed path. When fewer than two paths are given, no per-directory
+// aggregate is produced (it would be a copy of the global view).
+func (r *Aggregator) WithAnalyzedPaths(paths []string) {
+	r.AnalyzedPaths = paths
+}
+
+// analyzedPathScope links an analyzed path, as typed by the user, to the
+// absolute prefix used to decide whether a file belongs to it.
+type analyzedPathScope struct {
+	// Key is the path as given by the user: it is the ByDirectory map key.
+	Key string
+	// Abs is the cleaned, absolute form of Key.
+	Abs string
+}
+
+// buildAnalyzedPathScopes resolves the analyzed paths to absolute prefixes,
+// sorted from the longest to the shortest one so that nested paths are matched
+// by their most specific scope. Duplicates are dropped.
+func buildAnalyzedPathScopes(paths []string) []analyzedPathScope {
+	scopes := make([]analyzedPathScope, 0, len(paths))
+	seen := make(map[string]bool, len(paths))
+	for _, p := range paths {
+		if p == "" {
+			continue
+		}
+		abs := p
+		if !filepath.IsAbs(abs) {
+			resolved, err := filepath.Abs(abs)
+			if err != nil {
+				continue
+			}
+			abs = resolved
+		}
+		abs = filepath.Clean(abs)
+		if seen[abs] {
+			continue
+		}
+		seen[abs] = true
+		scopes = append(scopes, analyzedPathScope{Key: p, Abs: abs})
+	}
+
+	// Longest prefix first: a file under ./src/vendor belongs to ./src/vendor,
+	// not to ./src, when both are analyzed.
+	sort.SliceStable(scopes, func(i, j int) bool {
+		return len(scopes[i].Abs) > len(scopes[j].Abs)
+	})
+
+	return scopes
+}
+
+// scopeOfFile returns the key of the analyzed path a file belongs to. A file
+// belongs to exactly one scope (the most specific one).
+func scopeOfFile(scopes []analyzedPathScope, filePath string) (string, bool) {
+	if filePath == "" {
+		return "", false
+	}
+	abs := filePath
+	if !filepath.IsAbs(abs) {
+		resolved, err := filepath.Abs(abs)
+		if err != nil {
+			return "", false
+		}
+		abs = resolved
+	}
+	abs = filepath.Clean(abs)
+
+	for _, scope := range scopes {
+		if abs == scope.Abs {
+			return scope.Key, true
+		}
+		if strings.HasPrefix(abs, scope.Abs+string(filepath.Separator)) {
+			return scope.Key, true
+		}
+	}
+
+	return "", false
+}
+
 // Set the files and branch to compare with
 func (r *Aggregator) WithComparaison(allResultsCloned []*pb.File, comparedBranch string) {
 	r.ComparedFiles = allResultsCloned
@@ -418,10 +573,20 @@ func (r *Aggregator) mapSums(file *pb.File, specificAggregation Aggregated) Aggr
 	// copy the specific aggregation to new object to avoid side effects
 	result := specificAggregation
 	result.NbFiles++
+	if file.GetIsTest() {
+		result.NbTestFiles++
+	}
 
 	// deal with errors
 	if len(file.Errors) > 0 {
 		result.ErroredFiles = append(result.ErroredFiles, file)
+		return result
+	}
+
+	// Test files are not production code: they are kept in ConcernedFiles (the
+	// TestQuality and Graph analyzers need them), but their metrics must not
+	// pollute the averages of the project.
+	if file.GetIsTest() {
 		return result
 	}
 
@@ -734,6 +899,7 @@ func (r *Aggregator) mergeChunks(aggregated Aggregated, chunk *Aggregated) Aggre
 	result := aggregated
 	result.ConcernedFiles = append(result.ConcernedFiles, chunk.ConcernedFiles...)
 	result.NbFiles += chunk.NbFiles
+	result.NbTestFiles += chunk.NbTestFiles
 	result.NbClasses += chunk.NbClasses
 	result.NbClassesWithCode += chunk.NbClassesWithCode
 	result.NbMethods += chunk.NbMethods
@@ -794,6 +960,12 @@ func (r *Aggregator) mergeChunks(aggregated Aggregated, chunk *Aggregated) Aggre
 
 	result.MaintainabilityIndex.Sum += chunk.MaintainabilityIndex.Sum
 	result.MaintainabilityIndex.Counter += chunk.MaintainabilityIndex.Counter
+	if result.MaintainabilityIndex.Min == 0 || (chunk.MaintainabilityIndex.Min > 0 && chunk.MaintainabilityIndex.Min < result.MaintainabilityIndex.Min) {
+		result.MaintainabilityIndex.Min = chunk.MaintainabilityIndex.Min
+	}
+	if chunk.MaintainabilityIndex.Max > result.MaintainabilityIndex.Max {
+		result.MaintainabilityIndex.Max = chunk.MaintainabilityIndex.Max
+	}
 	result.MaintainabilityIndexWithoutComments.Sum += chunk.MaintainabilityIndexWithoutComments.Sum
 	result.MaintainabilityIndexWithoutComments.Counter += chunk.MaintainabilityIndexWithoutComments.Counter
 	result.MaintainabilityCommentWeight.Sum += chunk.MaintainabilityCommentWeight.Sum
@@ -931,15 +1103,20 @@ func (r *Aggregator) mapCoupling(aggregated *Aggregated) Aggregated {
 	// Create the hashmaps of files, by Path then by class name.
 	files := make(map[string]*pb.File)
 	classesMap := make(map[string]*pb.StmtClass)
-	// Populate the 'files' map with namespace keys
+	// Populate the 'files' map with namespace keys.
+	// Test files are skipped: they are not production code, so they must neither
+	// contribute to the coupling sums nor be reachable as a coupling source.
 	for _, fileItem := range aggregated.ConcernedFiles {
+		if fileItem == nil || fileItem.GetIsTest() {
+			continue
+		}
 		namespace := engine.ReduceDepthOfNamespace(fileItem.Path, 2)
 		files[namespace] = fileItem
 	}
 
 	// populate the classmap
 	for _, file := range aggregated.ConcernedFiles {
-		if file == nil || file.Stmts == nil {
+		if file == nil || file.Stmts == nil || file.GetIsTest() {
 			continue
 		}
 		for _, class := range engine.GetClassesInFile(file) {
@@ -953,6 +1130,14 @@ func (r *Aggregator) mapCoupling(aggregated *Aggregated) Aggregated {
 	for _, file := range aggregated.ConcernedFiles {
 
 		if file == nil || file.Stmts == nil || file.Stmts.StmtExternalDependencies == nil {
+			continue
+		}
+
+		// Test files are ignored as a source of dependencies: a class used only by
+		// tests must not see its afferent coupling inflated, and test classes must
+		// not be counted in the efferent/afferent coupling sums nor in the package
+		// relations graph.
+		if file.GetIsTest() {
 			continue
 		}
 
@@ -1103,8 +1288,12 @@ func (r *Aggregator) mapCoupling(aggregated *Aggregated) Aggregated {
 		result.Instability.Avg = result.EfferentCoupling.Sum / (result.AfferentCoupling.Sum + result.EfferentCoupling.Sum)
 	}
 
-	result.EfferentCoupling.Avg = result.EfferentCoupling.Sum / float64(result.EfferentCoupling.Counter)
-	result.AfferentCoupling.Avg = result.AfferentCoupling.Sum / float64(result.AfferentCoupling.Counter)
+	if result.EfferentCoupling.Counter > 0 {
+		result.EfferentCoupling.Avg = result.EfferentCoupling.Sum / float64(result.EfferentCoupling.Counter)
+	}
+	if result.AfferentCoupling.Counter > 0 {
+		result.AfferentCoupling.Avg = result.AfferentCoupling.Sum / float64(result.AfferentCoupling.Counter)
+	}
 
 	return result
 }

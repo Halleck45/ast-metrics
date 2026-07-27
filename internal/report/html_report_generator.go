@@ -1,12 +1,14 @@
 package report
 
 import (
+	"crypto/md5"
 	"embed"
 	"encoding/json"
 	"fmt"
 	"hash/fnv"
 	"os"
 	"path"
+	"path/filepath"
 	"sort"
 	"strings"
 	"time"
@@ -30,7 +32,8 @@ var (
 	htmlContent embed.FS
 )
 
-// cachedLangData holds pre-computed JSON strings for a given language view.
+// cachedLangData holds pre-computed JSON strings for a given scope (the whole
+// project, one language, or one analyzed directory).
 type cachedLangData struct {
 	filesJSON           string
 	risksJSON           string
@@ -46,7 +49,7 @@ type cachedLangData struct {
 type HtmlReportGenerator struct {
 	// The path where the report will be generated
 	ReportPath string
-	// langCache holds pre-computed JSON per language key (built once in Generate)
+	// langCache holds pre-computed JSON per scope data key (built once in Generate)
 	langCache map[string]*cachedLangData
 }
 
@@ -87,6 +90,8 @@ func (v *HtmlReportGenerator) Generate(files []*pb.File, projectAggregated analy
 		"risks.html",
 		"compare.html",
 		"explorer.html",
+		"classes.html",
+		"metrics.html",
 		"linters.html",
 		"classification.html",
 		"componentChartRadiusBar.html",
@@ -108,6 +113,7 @@ func (v *HtmlReportGenerator) Generate(files []*pb.File, projectAggregated analy
 		"testquality.html",
 		"partials/suggestions.html",
 		"partials/file_explorer_sidebar.html",
+		"partials/language_tabs.html",
 	} {
 		// read the file
 		bytes, err := htmlContent.ReadFile(fmt.Sprintf("templates/html/%s", file))
@@ -136,23 +142,23 @@ func (v *HtmlReportGenerator) Generate(files []*pb.File, projectAggregated analy
 	// Custom filters
 	v.RegisterFilters()
 
-	// Pre-compute JSON data once per language to avoid redundant work across pages
+	// Build the list of available scopes: the whole project, then one per
+	// programming language, then one per analyzed directory (CLI argument).
+	scopeDefs := buildScopes(files, projectAggregated)
+
+	// Pre-compute JSON data once per scope to avoid redundant work across pages
 	v.langCache = make(map[string]*cachedLangData)
-	langKeys := []string{"All"}
-	for lang := range projectAggregated.ByProgrammingLanguage {
-		langKeys = append(langKeys, lang)
-	}
-	for _, lang := range langKeys {
+	for _, scope := range scopeDefs {
 		cd := &cachedLangData{}
 		dict := NewStringDictionary()
 
-		cd.filesJSON = buildFilesJSONPruned(files, lang)
+		cd.filesJSON = buildFilesJSONPruned(files, scope.Keep)
 
 		// Build risks
 		cd.risksByPath = map[string][]riskItemForTpl{}
 		ra := analyzer.NewRiskAnalyzer()
 		for _, f := range files {
-			if lang != "All" && f.ProgrammingLanguage != lang {
+			if !scope.keeps(f) {
 				continue
 			}
 			items := ra.DetectFileRisks(f)
@@ -167,12 +173,7 @@ func (v *HtmlReportGenerator) Generate(files []*pb.File, projectAggregated analy
 		cd.risksJSON = buildRisksJSON(cd.risksByPath, dict)
 
 		// Community
-		var currentView analyzer.Aggregated
-		if lang == "All" {
-			currentView = projectAggregated.Combined
-		} else {
-			currentView = projectAggregated.ByProgrammingLanguage[lang]
-		}
+		currentView := scope.View
 		cd.nodeToCommunityJSON = "{}"
 		if currentView.Community != nil && len(currentView.Community.NodeToCommunity) > 0 {
 			cd.nodeToCommunityJSON = buildNodeToCommunityJSON(currentView.Community.NodeToCommunity)
@@ -183,12 +184,12 @@ func (v *HtmlReportGenerator) Generate(files []*pb.File, projectAggregated analy
 			cd.testQualityJSON = analyzer.BuildTestQualityJSON(currentView.TestQuality)
 		}
 
-		cd.fileDepsJSON = buildFileDepsJSON(files, lang, dict)
+		cd.fileDepsJSON = buildFileDepsJSON(files, scope.Keep, dict)
 
-		// Count files for this language
+		// Count files for this scope
 		fileCount := 0
 		for _, f := range files {
-			if lang != "All" && f.GetProgrammingLanguage() != lang {
+			if !scope.keeps(f) {
 				continue
 			}
 			fileCount++
@@ -196,20 +197,20 @@ func (v *HtmlReportGenerator) Generate(files []*pb.File, projectAggregated analy
 		cd.depFileCount = fileCount
 
 		// Build folder-level deps for dependency graph folder view
-		cd.folderDepsJSON = buildFolderDepsJSON(files, lang, dict)
+		cd.folderDepsJSON = buildFolderDepsJSON(files, scope.Keep, dict)
 
 		cd.dictionaryJSON = dict.ToJSON()
 
-		v.langCache[lang] = cd
+		v.langCache[scope.DataKey] = cd
 	}
 
-	// Write shared data JS files (one per language) to avoid duplicating JSON in every HTML page
+	// Write shared data JS files (one per scope) to avoid duplicating JSON in every HTML page
 	dataDir := fmt.Sprintf("%s/data", v.ReportPath)
 	err = v.EnsureFolder(dataDir)
 	if err != nil {
 		return nil, err
 	}
-	for lang, cd := range v.langCache {
+	for dataKey, cd := range v.langCache {
 		var jsBuilder strings.Builder
 		jsBuilder.WriteString("window.__AST_DATA__={")
 		jsBuilder.WriteString("files:")
@@ -237,7 +238,7 @@ func (v *HtmlReportGenerator) Generate(files []*pb.File, projectAggregated analy
 		jsBuilder.WriteString(",testQuality:")
 		jsBuilder.WriteString(cd.testQualityJSON)
 		jsBuilder.WriteString("};")
-		dataFile := fmt.Sprintf("%s/data_%s.js", dataDir, languageURLSlug(lang))
+		dataFile := fmt.Sprintf("%s/data_%s.js", dataDir, dataKey)
 		if err := os.WriteFile(dataFile, []byte(jsBuilder.String()), 0644); err != nil {
 			return nil, err
 		}
@@ -249,65 +250,26 @@ func (v *HtmlReportGenerator) Generate(files []*pb.File, projectAggregated analy
 		return nil, err
 	}
 
-	// Overview
-	v.GenerateLanguagePage("index.html", "All", projectAggregated.Combined, files, projectAggregated)
-	// by language overview
-	for language, currentView := range projectAggregated.ByProgrammingLanguage {
-		v.GenerateLanguagePage("index.html", language, currentView, files, projectAggregated)
-	}
-
-	// Risks
-	v.GenerateLanguagePage("risks.html", "All", projectAggregated.Combined, files, projectAggregated)
-	for language, currentView := range projectAggregated.ByProgrammingLanguage {
-		v.GenerateLanguagePage("risks.html", language, currentView, files, projectAggregated)
-	}
-
-	// Explorer
-	v.GenerateLanguagePage("explorer.html", "All", projectAggregated.Combined, files, projectAggregated)
-	for language, currentView := range projectAggregated.ByProgrammingLanguage {
-		v.GenerateLanguagePage("explorer.html", language, currentView, files, projectAggregated)
-	}
-
-	// Comparaison with another branch
-	v.GenerateLanguagePage("compare.html", "All", projectAggregated.Combined, files, projectAggregated)
-	for language, currentView := range projectAggregated.ByProgrammingLanguage {
-		v.GenerateLanguagePage("compare.html", language, currentView, files, projectAggregated)
-	}
-
-	// Communities page
-	v.GenerateLanguagePage("communities.html", "All", projectAggregated.Combined, files, projectAggregated)
-	for language, currentView := range projectAggregated.ByProgrammingLanguage {
-		v.GenerateLanguagePage("communities.html", language, currentView, files, projectAggregated)
-	}
-
-	// Dependencies page
-	v.GenerateLanguagePage("dependencies.html", "All", projectAggregated.Combined, files, projectAggregated)
-	for language, currentView := range projectAggregated.ByProgrammingLanguage {
-		v.GenerateLanguagePage("dependencies.html", language, currentView, files, projectAggregated)
-	}
-
-	// Linters page
-	v.GenerateLanguagePage("linters.html", "All", projectAggregated.Combined, files, projectAggregated)
-	for language, currentView := range projectAggregated.ByProgrammingLanguage {
-		v.GenerateLanguagePage("linters.html", language, currentView, files, projectAggregated)
-	}
-
-	// Bus Factor page
-	v.GenerateLanguagePage("busfactor.html", "All", projectAggregated.Combined, files, projectAggregated)
-	for language, currentView := range projectAggregated.ByProgrammingLanguage {
-		v.GenerateLanguagePage("busfactor.html", language, currentView, files, projectAggregated)
-	}
-
-	// Test Quality page
-	v.GenerateLanguagePage("testquality.html", "All", projectAggregated.Combined, files, projectAggregated)
-	for language, currentView := range projectAggregated.ByProgrammingLanguage {
-		v.GenerateLanguagePage("testquality.html", language, currentView, files, projectAggregated)
-	}
-
-	// Architecture (AI Classification) page
-	v.GenerateLanguagePage("classification.html", "All", projectAggregated.Combined, files, projectAggregated)
-	for language, currentView := range projectAggregated.ByProgrammingLanguage {
-		v.GenerateLanguagePage("classification.html", language, currentView, files, projectAggregated)
+	// One page per template, for every scope (all / language / directory)
+	for _, template := range []string{
+		"index.html",
+		"risks.html",
+		"explorer.html",
+		"classes.html",
+		"metrics.html",
+		"compare.html",
+		"communities.html",
+		"dependencies.html",
+		"linters.html",
+		"busfactor.html",
+		"testquality.html",
+		"classification.html",
+	} {
+		for _, scope := range scopeDefs {
+			// errors are logged by GenerateScopePage: a single broken page must
+			// not discard the whole report
+			v.GenerateScopePage(template, scope, scopeDefs, files, projectAggregated)
+		}
 	}
 
 	// copy images
@@ -362,14 +324,22 @@ type riskItemForTpl struct {
 	Details  string  `json:"details"`
 }
 
+// fileFilter selects the files belonging to a scope. A nil filter keeps every file.
+type fileFilter func(*pb.File) bool
+
+// keepFile applies a filter, treating a nil filter as "keep everything".
+func keepFile(keep fileFilter, f *pb.File) bool {
+	return keep == nil || keep(f)
+}
+
 // buildFilesJSONPruned builds a pruned JSON array of files with pathHash injected.
-func buildFilesJSONPruned(files []*pb.File, language string) string {
+func buildFilesJSONPruned(files []*pb.File, keep fileFilter) string {
 	mo := protojson.MarshalOptions{EmitUnpopulated: false, UseEnumNumbers: false, Indent: ""}
 	var b strings.Builder
 	b.WriteString("[")
 	first := true
 	for _, f := range files {
-		if language != "All" && f.GetProgrammingLanguage() != language {
+		if !keepFile(keep, f) {
 			continue
 		}
 		cf := proto.Clone(f).(*pb.File)
@@ -569,11 +539,11 @@ func buildLinterDataJS(eval *requirement.EvaluationResult) string {
 }
 
 // buildFileDepsJSON builds a JSON map of file dependency relationships keyed by path hash.
-func buildFileDepsJSON(files []*pb.File, language string, dict *StringDictionary) string {
+func buildFileDepsJSON(files []*pb.File, keep fileFilter, dict *StringDictionary) string {
 	// Step 1: Build class qualified name -> file path lookup
 	classToFile := map[string]string{}
 	for _, f := range files {
-		if language != "All" && f.GetProgrammingLanguage() != language {
+		if !keepFile(keep, f) {
 			continue
 		}
 		if f.Stmts == nil {
@@ -603,7 +573,7 @@ func buildFileDepsJSON(files []*pb.File, language string, dict *StringDictionary
 	efferent := map[string]map[string]depInfo{}
 
 	for _, f := range files {
-		if language != "All" && f.GetProgrammingLanguage() != language {
+		if !keepFile(keep, f) {
 			continue
 		}
 		if f.Stmts == nil {
@@ -711,10 +681,10 @@ func buildFileDepsJSON(files []*pb.File, language string, dict *StringDictionary
 
 // buildFolderDepsJSON aggregates file-level dependencies to folder-level.
 // Keys are hashed via the dictionary.
-func buildFolderDepsJSON(files []*pb.File, language string, dict *StringDictionary) string {
+func buildFolderDepsJSON(files []*pb.File, keep fileFilter, dict *StringDictionary) string {
 	classToFile := map[string]string{}
 	for _, f := range files {
-		if language != "All" && f.GetProgrammingLanguage() != language {
+		if !keepFile(keep, f) {
 			continue
 		}
 		if f.Stmts == nil {
@@ -744,7 +714,7 @@ func buildFolderDepsJSON(files []*pb.File, language string, dict *StringDictiona
 	filesByFolder := map[string]map[string]struct{}{}
 
 	for _, f := range files {
-		if language != "All" && f.GetProgrammingLanguage() != language {
+		if !keepFile(keep, f) {
 			continue
 		}
 		if f.Stmts == nil {
@@ -886,7 +856,141 @@ func buildFolderDepsJSON(files []*pb.File, language string, dict *StringDictiona
 	return string(data)
 }
 
-func (v *HtmlReportGenerator) GenerateLanguagePage(template string, language string, currentView analyzer.Aggregated, files []*pb.File, projectAggregated analyzer.ProjectAggregated) error {
+// scopeKind values used both in Go and in the templates (context "scopeKind").
+const (
+	scopeKindAll       = "all"
+	scopeKindLanguage  = "language"
+	scopeKindDirectory = "directory"
+)
+
+// scopeDef describes one navigable view of the report: the whole project, a
+// single programming language, or a single analyzed directory.
+type scopeDef struct {
+	// Kind is one of scopeKindAll, scopeKindLanguage, scopeKindDirectory.
+	Kind string
+	// Label is what the user reads ("All languages", "Golang", "internal/analyzer").
+	Label string
+	// Suffix is appended to a page base name ("", "_Golang", "_dir_internal-analyzer").
+	Suffix string
+	// DataKey identifies the data file: data/data_<DataKey>.js
+	DataKey string
+	// FileCount is the number of files inside the scope.
+	FileCount int
+	// View is the aggregate matching the scope.
+	View analyzer.Aggregated
+	// Keep filters the files belonging to the scope. A nil filter keeps everything.
+	Keep fileFilter
+	// LanguageName is the language of a language scope, "All" otherwise. It feeds
+	// the legacy "currentLanguage" template variable.
+	LanguageName string
+}
+
+// keeps tells whether a file belongs to the scope.
+func (s scopeDef) keeps(f *pb.File) bool {
+	if s.Keep == nil {
+		return true
+	}
+	return s.Keep(f)
+}
+
+// scopeForTemplate is the template-facing projection of a scopeDef.
+type scopeForTemplate struct {
+	Kind      string
+	Label     string
+	Suffix    string
+	FileCount int
+	IsActive  bool
+}
+
+// buildScopes returns the ordered list of scopes offered by the report: the
+// whole project first, then each programming language, then each analyzed
+// directory. Languages and directories are sorted by label so that the
+// generated pages are stable across runs.
+func buildScopes(files []*pb.File, projectAggregated analyzer.ProjectAggregated) []scopeDef {
+	scopes := make([]scopeDef, 0, 1+len(projectAggregated.ByProgrammingLanguage)+len(projectAggregated.ByDirectory))
+
+	scopes = append(scopes, scopeDef{
+		Kind:         scopeKindAll,
+		Label:        "All languages",
+		Suffix:       "",
+		DataKey:      "All",
+		FileCount:    len(files),
+		View:         projectAggregated.Combined,
+		Keep:         nil,
+		LanguageName: "All",
+	})
+
+	languages := make([]string, 0, len(projectAggregated.ByProgrammingLanguage))
+	for language := range projectAggregated.ByProgrammingLanguage {
+		languages = append(languages, language)
+	}
+	sort.Strings(languages)
+	for _, language := range languages {
+		lang := language
+		scopes = append(scopes, scopeDef{
+			Kind:         scopeKindLanguage,
+			Label:        lang,
+			Suffix:       fmt.Sprintf("_%s", languageURLSlug(lang)),
+			DataKey:      languageURLSlug(lang),
+			FileCount:    countFiles(files, func(f *pb.File) bool { return f.GetProgrammingLanguage() == lang }),
+			View:         projectAggregated.ByProgrammingLanguage[lang],
+			Keep:         func(f *pb.File) bool { return f.GetProgrammingLanguage() == lang },
+			LanguageName: lang,
+		})
+	}
+
+	directories := make([]string, 0, len(projectAggregated.ByDirectory))
+	for dir := range projectAggregated.ByDirectory {
+		directories = append(directories, dir)
+	}
+	sort.Slice(directories, func(i, j int) bool {
+		return directoryScopeLabel(directories[i]) < directoryScopeLabel(directories[j])
+	})
+	usedSlugs := map[string]bool{}
+	for _, language := range languages {
+		usedSlugs[languageURLSlug(language)] = true
+	}
+	for _, directory := range directories {
+		dir := directory
+		slug := uniqueSlug(directoryURLSlug(dir), usedSlugs)
+		view := projectAggregated.ByDirectory[dir]
+		// the aggregator already decided which files belong to this analyzed path
+		// (the most specific one wins when paths are nested): reuse its verdict so
+		// that the JSON data and the aggregates always describe the same files
+		inScope := make(map[string]bool, len(view.ConcernedFiles))
+		for _, f := range view.ConcernedFiles {
+			inScope[f.GetPath()] = true
+		}
+		scopes = append(scopes, scopeDef{
+			Kind:      scopeKindDirectory,
+			Label:     directoryScopeLabel(dir),
+			Suffix:    fmt.Sprintf("_dir_%s", slug),
+			DataKey:   fmt.Sprintf("dir_%s", slug),
+			FileCount: len(view.ConcernedFiles),
+			View:      view,
+			Keep:      func(f *pb.File) bool { return inScope[f.GetPath()] },
+			// a directory scope mixes languages: it behaves like the global view
+			// for every language-specific condition of the templates
+			LanguageName: "All",
+		})
+	}
+
+	return scopes
+}
+
+// countFiles counts the files matching a filter.
+func countFiles(files []*pb.File, keep fileFilter) int {
+	count := 0
+	for _, f := range files {
+		if keep != nil && !keep(f) {
+			continue
+		}
+		count++
+	}
+	return count
+}
+
+func (v *HtmlReportGenerator) GenerateScopePage(template string, scope scopeDef, scopes []scopeDef, files []*pb.File, projectAggregated analyzer.ProjectAggregated) error {
 
 	// Compile the index.html template
 	tpl, err := pongo2.DefaultSet.FromFile(template)
@@ -897,26 +1001,59 @@ func (v *HtmlReportGenerator) GenerateLanguagePage(template string, language str
 	// Render it, passing projectAggregated and files as context
 	datetime := time.Now().Format("2006-01-02 15:04")
 
-	// Use pre-computed cached data for this language
-	cd := v.langCache[language]
-	dataScriptPath := fmt.Sprintf("data/data_%s.js", languageURLSlug(language))
+	// Use pre-computed cached data for this scope
+	cd := v.langCache[scope.DataKey]
+	if cd == nil {
+		cd = &cachedLangData{}
+	}
+	dataScriptPath := fmt.Sprintf("data/data_%s.js", scope.DataKey)
 	linterScriptPath := "data/linters.js"
-	out, err := tpl.Execute(pongo2.Context{"datetime": datetime, "page": template, "currentLanguage": language, "currentView": currentView, "projectAggregated": projectAggregated, "files": files, "risksByPath": cd.risksByPath, "dataScriptPath": dataScriptPath, "linterScriptPath": linterScriptPath, "classificationFamilies": classifier.ClassificationFamilies})
+
+	// The scope switcher needs every scope, with the current one flagged
+	scopesForTemplate := make([]scopeForTemplate, 0, len(scopes))
+	hasDirectoryScopes := false
+	for _, s := range scopes {
+		if s.Kind == scopeKindDirectory {
+			hasDirectoryScopes = true
+		}
+		scopesForTemplate = append(scopesForTemplate, scopeForTemplate{
+			Kind:      s.Kind,
+			Label:     s.Label,
+			Suffix:    s.Suffix,
+			FileCount: s.FileCount,
+			IsActive:  s.Suffix == scope.Suffix,
+		})
+	}
+
+	out, err := tpl.Execute(pongo2.Context{
+		"datetime":               datetime,
+		"page":                   template,
+		"currentLanguage":        scope.LanguageName,
+		"currentView":            scope.View,
+		"projectAggregated":      projectAggregated,
+		"files":                  files,
+		"risksByPath":            cd.risksByPath,
+		"dataScriptPath":         dataScriptPath,
+		"linterScriptPath":       linterScriptPath,
+		"classificationFamilies": classifier.ClassificationFamilies,
+		"scopeSuffix":            scope.Suffix,
+		"scopeLabel":             scope.Label,
+		"scopeKind":              scope.Kind,
+		"scopes":                 scopesForTemplate,
+		"hasDirectoryScopes":     hasDirectoryScopes,
+	})
 	if err != nil {
 		log.Error(err)
 		return err
 	}
 
 	// Write the result to the file
-	pageSuffix := ""
-	if language != "All" {
-		pageSuffix = fmt.Sprintf("_%s", languageURLSlug(language))
-	}
 	// prefix is template without the .html part
 	pagePrefix := template[:len(template)-5]
-	file, err := os.Create(fmt.Sprintf("%s/%s%s.html", v.ReportPath, pagePrefix, pageSuffix))
+	file, err := os.Create(fmt.Sprintf("%s/%s%s.html", v.ReportPath, pagePrefix, scope.Suffix))
 	if err != nil {
 		log.Error(err)
+		return err
 	}
 	defer file.Close()
 	file.WriteString(out)
@@ -943,6 +1080,61 @@ func languageURLSlug(language string) string {
 	s := strings.ReplaceAll(language, "#", "Sharp")
 	s = strings.ReplaceAll(s, " ", "")
 	return s
+}
+
+// directoryURLSlug turns an analyzed path into a token safe for file names and
+// URLs: "./internal/analyzer" becomes "internal-analyzer". Every character that
+// is neither a letter, a digit nor an underscore becomes a dash; dashes are
+// then compacted and trimmed.
+func directoryURLSlug(directory string) string {
+	label := directoryScopeLabel(directory)
+
+	var b strings.Builder
+	lastWasDash := false
+	for _, r := range label {
+		isSafe := r == '_' || (r >= 'a' && r <= 'z') || (r >= 'A' && r <= 'Z') || (r >= '0' && r <= '9')
+		if isSafe {
+			b.WriteRune(r)
+			lastWasDash = false
+			continue
+		}
+		if !lastWasDash {
+			b.WriteRune('-')
+			lastWasDash = true
+		}
+	}
+
+	slug := strings.Trim(b.String(), "-")
+	if slug == "" {
+		slug = "root"
+	}
+	return slug
+}
+
+// uniqueSlug guarantees that a slug is not already taken, appending a counter
+// when needed. It records the returned slug as taken.
+func uniqueSlug(slug string, used map[string]bool) string {
+	candidate := slug
+	for i := 2; used[candidate]; i++ {
+		candidate = fmt.Sprintf("%s-%d", slug, i)
+	}
+	used[candidate] = true
+	return candidate
+}
+
+// directoryScopeLabel shortens an analyzed path for display: relative to the
+// current working directory when it lives under it, unchanged otherwise.
+func directoryScopeLabel(directory string) string {
+	cleaned := filepath.Clean(directory)
+	if cwd, err := os.Getwd(); err == nil {
+		if rel, err := filepath.Rel(cwd, cleaned); err == nil && rel != ".." && !strings.HasPrefix(rel, ".."+string(filepath.Separator)) {
+			if rel == "." {
+				return filepath.Base(cleaned)
+			}
+			cleaned = rel
+		}
+	}
+	return filepath.ToSlash(cleaned)
 }
 
 func (v *HtmlReportGenerator) RegisterFilters() {
@@ -992,6 +1184,10 @@ func (v *HtmlReportGenerator) RegisterFilters() {
 
 		// append to the list when file contians at lease one class
 		for _, file := range in.Interface().([]*pb.File) {
+			// test files are not production code: never suggest them for refactoring
+			if file == nil || file.GetIsTest() || file.Stmts == nil {
+				continue
+			}
 			if len(file.Stmts.StmtClass) == 0 {
 				continue
 			}
@@ -1148,6 +1344,11 @@ func (v *HtmlReportGenerator) RegisterFilters() {
 
 		for _, file := range files {
 			if file == nil || file.Stmts == nil {
+				continue
+			}
+			// test files are not production code: they must not show up as
+			// high-risk components / refactoring candidates
+			if file.GetIsTest() {
 				continue
 			}
 			// if no classes, treat file as a single row
@@ -1962,6 +2163,24 @@ func (v *HtmlReportGenerator) RegisterFilters() {
 		return pongo2.AsValue(result), nil
 	})
 
+	// gravatarUrl builds the avatar URL of an email address. Returns an empty
+	// string when there is no address, so the template falls back to initials.
+	// Usage: {{ committer.Email|gravatarUrl:80 }}
+	pongo2.RegisterFilter("gravatarUrl", func(in *pongo2.Value, param *pongo2.Value) (out *pongo2.Value, err *pongo2.Error) {
+		email := strings.ToLower(strings.TrimSpace(in.String()))
+		if email == "" || !strings.Contains(email, "@") {
+			return pongo2.AsValue(""), nil
+		}
+		size := 80
+		if param != nil && param.Integer() > 0 {
+			size = param.Integer()
+		}
+		sum := md5.Sum([]byte(email))
+		// d=404 so a missing avatar fails instead of returning a placeholder:
+		// the template then keeps its initials.
+		return pongo2.AsValue(fmt.Sprintf("https://www.gravatar.com/avatar/%x?s=%d&d=404", sum, size)), nil
+	})
+
 	// filter contributorColor: generates a consistent color based on name hash
 	pongo2.RegisterFilter("contributorColor", func(in *pongo2.Value, param *pongo2.Value) (out *pongo2.Value, err *pongo2.Error) {
 		name := in.String()
@@ -1974,20 +2193,21 @@ func (v *HtmlReportGenerator) RegisterFilters() {
 		h.Write([]byte(name))
 		hash := h.Sum32()
 
-		// Use a palette of pleasant colors
+		// Identity palette: cool hues only. Green, amber and red carry severity
+		// everywhere else in the report, so a contributor must never wear them.
 		colors := []string{
 			"#3b82f6", // blue
 			"#8b5cf6", // purple
 			"#ec4899", // pink
-			"#f59e0b", // amber
-			"#10b981", // emerald
 			"#06b6d4", // cyan
-			"#ef4444", // red
-			"#14b8a6", // teal
-			"#f97316", // orange
 			"#6366f1", // indigo
-			"#84cc16", // lime
+			"#14b8a6", // teal
 			"#a855f7", // violet
+			"#0ea5e9", // sky
+			"#d946ef", // fuchsia
+			"#64748b", // slate
+			"#7c3aed", // deep violet
+			"#0891b2", // deep cyan
 		}
 
 		colorIndex := int(hash) % len(colors)

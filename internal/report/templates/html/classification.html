@@ -22,39 +22,6 @@
         font-family: var(--font-family);
     }
 
-    .dashboard-card {
-        background: var(--card-bg);
-        border: 1px solid var(--border-color);
-        border-radius: 24px;
-        padding: 2rem;
-        margin-bottom: 2rem;
-        transition: box-shadow 0.2s cubic-bezier(0.2, 0, 0, 1);
-    }
-
-    .dashboard-card:hover {
-        box-shadow: var(--card-shadow);
-        border-color: transparent;
-    }
-
-    .hero-title {
-        font-family: 'Google Sans Display', sans-serif;
-        font-size: 2.25rem;
-        font-weight: 400;
-        color: var(--text-primary);
-        margin-bottom: 1rem;
-        letter-spacing: -0.5px;
-    }
-
-    .hero-subtitle {
-        font-size: 1.125rem;
-        color: var(--text-secondary);
-        max-width: 800px;
-        line-height: 1.6;
-        margin-bottom: 3rem;
-    }
-    /* Modal removed */
-
-
     .steps-container {
         display: grid;
         grid-template-columns: repeat(3, 1fr);
@@ -513,35 +480,19 @@
         to { opacity: 1; transform: translateY(0); }
     }
 
-    /* Tab Navigation */
-    .architecture-tabs {
-        display: flex;
-        gap: 0;
-        margin-bottom: 1.5rem;
-        border-bottom: 2px solid #e2e8f0;
-    }
-
+    /* View switcher: a segmented control whose active state the JS toggles */
     .architecture-tab {
-        padding: 0.75rem 1.5rem;
-        font-size: 0.875rem;
-        font-weight: 500;
-        color: #64748b;
         background: none;
         border: none;
-        border-bottom: 2px solid transparent;
-        margin-bottom: -2px;
         cursor: pointer;
-        transition: all 0.2s;
-        font-family: var(--font-family);
-    }
-
-    .architecture-tab:hover {
-        color: #1e293b;
+        font-family: inherit;
     }
 
     .architecture-tab.active {
-        color: #3b82f6;
-        border-bottom-color: #3b82f6;
+        background: white;
+        color: #0f172a;
+        font-weight: 600;
+        box-shadow: 0 1px 2px rgba(15, 23, 42, 0.08);
     }
 
     /* Overview Diagram */
@@ -555,10 +506,13 @@
     {% set filteredPredictions = projectAggregated.Predictions|filterTestFiles:files %}
     
     {% if filteredPredictions|length == 0 %}
-    <div class="empty-state">
-        <p class="empty-state-title">No predictions found</p>
-        <p class="empty-state-text">
-            The language is probably not yet supported. Feel free to contribute to the project by adding a new classifier model.
+    <div class="page-hero animate-fade-in-up">
+        <p class="page-kicker mb-3">Architecture &middot; roles inferred from the code</p>
+        <h1 class="verdict-title">No role could be inferred here.</h1>
+        <p class="verdict-lead mt-4">
+            This view needs a classifier model for the language being analyzed, and none is available yet.
+            Contributions are welcome: adding a model is enough to light this page up.
+            <a href="https://github.com/Halleck45/ast-metrics/" class="text-blue-600 hover:underline font-medium">See the project on GitHub</a>.
         </p>
     </div>
     {% else %}
@@ -572,21 +526,40 @@
 
 
 
-    <!-- Hero Section -->
-<div class="mb-8 animate-fade-in-up">
-    <h1 class="text-4xl font-bold text-gray-900 mb-3" style="letter-spacing: -0.02em;">Architecture Map</h1>
-    <p class="text-base text-gray-600 font-light">
-        Visualize your codebase through its architectural roles. This map highlights structure, dependencies, and imbalances across layers.
-    </p>
-    <p class="mt-2 text-base text-gray-600 font-bold">
-        Categories are statistically determined and may not always be accurate. Only the trends are important.
-    </p>
+    <!-- Verdict -->
+<div class="page-hero animate-fade-in-up mb-6">
+    <div class="flex flex-wrap items-start justify-between gap-8">
+        <div class="min-w-0">
+            <p class="page-kicker mb-3">Architecture &middot; roles inferred from the code</p>
+            <h1 class="verdict-title max-w-3xl">
+                {{ totalComponents }} components, sorted by the role they play.
+                <span class="verdict-muted block">Read the shape, not the labels.</span>
+            </h1>
+            <p class="verdict-lead mt-4">
+                Each class is assigned a role from how it is written and what it depends on. The roles are
+                inferred statistically, so an individual label can be wrong: what matters is the balance
+                between layers, and the dependencies that cross them the wrong way.
+            </p>
+        </div>
+        <div class="kpi-strip kpi-strip--divided shrink-0">
+            <div>
+                <div class="kpi-value">{{ totalComponents }}</div>
+                <div class="kpi-label">components<br>classified</div>
+            </div>
+            <div>
+                <div class="kpi-value">{{ groupedByFamily|length }}</div>
+                <div class="kpi-label">architectural<br>families</div>
+            </div>
+        </div>
+    </div>
 </div>
 
-<!-- Tab Navigation -->
-<div class="architecture-tabs">
-    <button class="architecture-tab active" data-tab="overview" onclick="switchTab('overview')">Overview</button>
-    <button class="architecture-tab" data-tab="details" onclick="switchTab('details')">Details by class</button>
+<!-- View switcher -->
+<div class="flex justify-center mb-6">
+    <div class="seg" role="tablist" aria-label="Architecture view">
+        <button role="tab" class="architecture-tab seg-item active" data-tab="overview" onclick="switchTab('overview')">Overview</button>
+        <button role="tab" class="architecture-tab seg-item" data-tab="details" onclick="switchTab('details')">Details by class</button>
+    </div>
 </div>
 
 <!-- Overview Tab -->

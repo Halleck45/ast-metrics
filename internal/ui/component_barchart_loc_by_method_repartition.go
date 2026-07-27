@@ -44,6 +44,10 @@ func (c *ComponentBarchartLocByMethodRepartition) GetData() *orderedmap.OrderedM
 
 	// repartition of files by LOC
 	for _, file := range c.Files {
+		// test files are not production code: exclude them from the repartition
+		if file.GetIsTest() {
+			continue
+		}
 		functions := engine.GetFunctionsInFile(file)
 		for _, funct := range functions {
 			if funct.Stmts.Analyze == nil {
