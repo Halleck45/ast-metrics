@@ -46,7 +46,8 @@
         cursor: pointer;
         font-size: 12px;
         font-weight: 500;
-        color: #64748b;
+        /* Slate 600, not 500: on the tinted track 500 falls under 4.5:1 */
+        color: #475569;
         padding: 0.3rem 0.7rem;
         border-radius: 8px;
         white-space: nowrap;
@@ -112,7 +113,7 @@
                 <span class="flex items-center gap-2"><span class="dot" style="background:#0d9488"></span> Mostly uses others</span>
                 <span class="flex items-center gap-2"><span class="dot" style="background:#7c3aed"></span> Mostly used</span>
                 <span class="flex items-center gap-2"><span class="dot" style="background:#3b82f6"></span> Balanced</span>
-                <span class="text-gray-400">size = number of links</span>
+                <span class="text-gray-500">size = number of links</span>
             </div>
             <div id="dep-view-toggle" class="dep-seg">
                 <label><input type="radio" name="dep-view" value="files"><span>By file</span></label>
@@ -123,7 +124,7 @@
         <!-- Breadcrumb for drill-down -->
         <div id="dep-breadcrumb" class="hidden mb-3 flex items-center gap-2 text-sm text-gray-600">
             <a href="#" id="dep-breadcrumb-root" class="text-blue-600 hover:underline font-medium">All folders</a>
-            <span class="text-gray-400">&rsaquo;</span>
+            <span class="text-gray-500">&rsaquo;</span>
             <span id="dep-breadcrumb-current" class="font-medium text-gray-800"></span>
         </div>
 
@@ -140,7 +141,7 @@
                         <line x1="30" y1="30" x2="70" y2="25" stroke="#cbd5e1" stroke-width="1.5"/><line x1="30" y1="30" x2="50" y2="65" stroke="#cbd5e1" stroke-width="1.5"/><line x1="70" y1="25" x2="50" y2="65" stroke="#cbd5e1" stroke-width="1.5"/><line x1="50" y1="65" x2="80" y2="60" stroke="#cbd5e1" stroke-width="1.5"/><line x1="20" y1="70" x2="50" y2="65" stroke="#cbd5e1" stroke-width="1.5"/>
                     </svg>
                 </div>
-                <p class="mt-4 text-sm text-gray-400 font-medium">Building dependency graph...</p>
+                <p class="mt-4 text-sm text-gray-500 font-medium">Building dependency graph...</p>
             </div>
         </div>
     </div>
@@ -324,7 +325,7 @@ document.addEventListener('DOMContentLoaded', function() {
             if (!el) return;
             var rows = ranked.filter(function(n) { return n[key] > 0; }).slice(0, 8);
             if (!rows.length) {
-                el.innerHTML = '<p class="text-sm text-gray-400 py-3">No file in this category.</p>';
+                el.innerHTML = '<p class="text-sm text-gray-500 py-3">No file in this category.</p>';
                 return;
             }
             var html = rows.map(function(n) {

@@ -38,9 +38,9 @@ AST Metrics - Explorer
         <div class="animate-fade-in-up">
           <div class="flex items-start justify-between gap-6">
             <div class="min-w-0">
-              <p class="text-xs text-gray-400 mb-2 truncate" x-text="breadcrumb" x-show="breadcrumb"></p>
+              <p class="text-xs text-gray-500 mb-2 truncate" x-text="breadcrumb" x-show="breadcrumb"></p>
               <h1 class="verdict-title break-words" style="font-size: 1.75rem;" x-text="fileName"></h1>
-              <p class="text-xs text-gray-400 mt-2" x-text="fileMeta"></p>
+              <p class="text-xs text-gray-500 mt-2" x-text="fileMeta"></p>
             </div>
             <button @click="openGlossary = true"
               class="shrink-0 inline-flex items-center gap-2 px-3.5 py-2 rounded-xl border border-gray-200 hover:bg-gray-50 hover:border-gray-300 transition-colors text-sm font-medium text-gray-600">
@@ -138,7 +138,7 @@ AST Metrics - Explorer
             </div>
             <div x-show="hasDeps">
               <div id="file-deps-diagram" class="w-full" style="min-height: 320px;"></div>
-              <div class="flex flex-wrap items-center gap-x-4 gap-y-1 mt-3 text-[11px] text-gray-400">
+              <div class="flex flex-wrap items-center gap-x-4 gap-y-1 mt-3 text-[11px] text-gray-500">
                 <span class="flex items-center gap-1.5"><span class="dot" style="background:#3b82f6;"></span> This
                   file</span>
                 <span class="flex items-center gap-1.5"><span class="dot" style="background:#0d9488;"></span> Files it
@@ -147,7 +147,7 @@ AST Metrics - Explorer
                   use it</span>
               </div>
             </div>
-            <div x-show="!hasDeps" class="text-sm text-gray-400 text-center py-16">
+            <div x-show="!hasDeps" class="text-sm text-gray-500 text-center py-16">
               No other analyzed file is linked to this one.
             </div>
           </div>
@@ -159,11 +159,11 @@ AST Metrics - Explorer
                 <h2 class="card-title">Contents</h2>
                 <p class="card-sub">What is declared in this file, class by class.</p>
               </div>
-              <span class="text-xs text-gray-400 shrink-0 mt-1" x-text="contentsSummary"></span>
+              <span class="text-xs text-gray-500 shrink-0 mt-1" x-text="contentsSummary"></span>
             </div>
 
             <div x-show="!contentGroups.length && !looseFunctions.length"
-              class="text-sm text-gray-400 text-center py-16">
+              class="text-sm text-gray-500 text-center py-16">
               No class and no function declared here.
             </div>
 
@@ -185,7 +185,7 @@ AST Metrics - Explorer
                     <span class="w-8 shrink-0 text-right font-mono text-sm font-semibold" :class="'text-' + m.level" x-text="m.cyclo"></span>
                   </div>
                 </template>
-                <div x-show="!c.methods.length" class="py-2 text-xs text-gray-400" style="padding-left: 1rem;">No
+                <div x-show="!c.methods.length" class="py-2 text-xs text-gray-500" style="padding-left: 1rem;">No
                   method.</div>
               </div>
             </template>
@@ -204,7 +204,7 @@ AST Metrics - Explorer
               </div>
             </template>
 
-            <p class="text-[11px] text-gray-400 mt-4" x-show="contentGroups.length || looseFunctions.length">
+            <p class="text-[11px] text-gray-500 mt-4" x-show="contentGroups.length || looseFunctions.length">
               The number on the right is the count of decision paths.
             </p>
           </div>
@@ -214,7 +214,7 @@ AST Metrics - Explorer
         <div class="soft-card animate-fade-in-up stagger-4">
           <div class="flex items-start justify-between gap-4 mb-2">
             <div>
-              <h2 class="card-title">Detected risks <span class="font-normal text-gray-400"
+              <h2 class="card-title">Detected risks <span class="font-normal text-gray-500"
                   x-text="'(' + risks.length + ')'"></span></h2>
               <p class="card-sub">Rules broken in this file, worst first.</p>
             </div>
@@ -230,7 +230,7 @@ AST Metrics - Explorer
           </div>
 
           <div x-show="risks.length > 0 && visibleRisks().length === 0"
-            class="text-sm text-gray-400 py-8 text-center">
+            class="text-sm text-gray-500 py-8 text-center">
             Nothing above the high threshold. Untick <strong>High only</strong> to see the rest.
           </div>
 
@@ -244,7 +244,7 @@ AST Metrics - Explorer
                     x-text="severityLevel(r.severity)"></span>
                 </div>
                 <p class="text-sm text-gray-600 mt-1" x-text="r.details"></p>
-                <p class="text-xs text-gray-400 mt-1" x-show="r.hint">
+                <p class="text-xs text-gray-500 mt-1" x-show="r.hint">
                   <span class="font-medium text-gray-500">Fix</span> <span x-text="r.hint"></span>
                 </p>
               </div>
@@ -262,7 +262,7 @@ AST Metrics - Explorer
     <div class="relative soft-card w-full max-w-3xl p-8 max-h-[90vh] overflow-y-auto">
       <div class="flex items-center justify-between mb-6 pb-4 border-b border-gray-200">
         <h2 class="card-title" style="font-size: 1.25rem;">Reading guide</h2>
-        <button class="text-gray-400 hover:text-gray-600 transition-colors p-1 rounded-lg hover:bg-gray-100"
+        <button class="text-gray-500 hover:text-gray-600 transition-colors p-1 rounded-lg hover:bg-gray-100"
           @click="openGlossary=false" aria-label="Close reading guide">
           <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"
             class="w-5 h-5">

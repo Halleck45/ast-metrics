@@ -9,7 +9,7 @@
         {% for scope in scopes %}{% if scope.Kind != "directory" %}<a role="tab" href="{{ pageBase }}{{ scope.Suffix }}.html"
            class="seg-item {% if scope.IsActive %}seg-item--active{% endif %}"
            aria-selected="{% if scope.IsActive %}true{% else %}false{% endif %}"{% if scope.IsActive %} aria-current="page"{% endif %}>{{ scope.Label }}
-            <span class="text-slate-400 font-normal">{{ scope.FileCount }}</span></a>{% endif %}{% endfor %}
+            <span class="text-slate-600 font-normal">{{ scope.FileCount }}</span></a>{% endif %}{% endfor %}
     </div>
     {% if hasDirectoryScopes %}
     <div class="flex items-center gap-2">
@@ -18,7 +18,7 @@
             {% for scope in scopes %}{% if scope.Kind == "directory" %}<a role="tab" href="{{ pageBase }}{{ scope.Suffix }}.html"
                class="seg-item {% if scope.IsActive %}seg-item--active{% endif %}"
                aria-selected="{% if scope.IsActive %}true{% else %}false{% endif %}"{% if scope.IsActive %} aria-current="page"{% endif %}>{{ scope.Label }}
-                <span class="text-slate-400 font-normal">{{ scope.FileCount }}</span></a>{% endif %}{% endfor %}
+                <span class="text-slate-600 font-normal">{{ scope.FileCount }}</span></a>{% endif %}{% endfor %}
         </div>
     </div>
     {% endif %}

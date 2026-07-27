@@ -20,6 +20,11 @@
             --font-mono: 'JetBrains Mono', monospace;
         }
 
+        /* Quiet text is slate 500 (#64748b) on the white cards and on the
+           slate 50 page wash, and slate 600 (#475569) on tinted pills and
+           segmented tracks. Those are the lightest greys that still clear
+           the 4.5:1 contrast ratio the report is asserted against. */
+
         body {
             font-family: var(--font-sans);
             background-color: #f8fafc;
@@ -238,7 +243,7 @@
             font-weight: 600;
             letter-spacing: 0.14em;
             text-transform: uppercase;
-            color: #94a3b8;
+            color: #64748b;
         }
 
         .verdict-title {
@@ -254,7 +259,7 @@
         }
 
         /* Second half of the verdict, deliberately quieter than the first */
-        .verdict-muted { color: #94a3b8; }
+        .verdict-muted { color: #64748b; }
 
         .verdict-lead {
             font-size: 0.9375rem;
@@ -286,7 +291,7 @@
 
         .kpi-label {
             font-size: 11px;
-            color: #94a3b8;
+            color: #64748b;
             margin-top: 0.25rem;
             line-height: 1.4;
         }
@@ -314,7 +319,7 @@
         /* Every card says what it shows, in plain words */
         .card-sub {
             font-size: 0.8125rem;
-            color: #94a3b8;
+            color: #64748b;
             margin-top: 0.125rem;
         }
 
@@ -347,7 +352,7 @@
 
         .stat-tile-target {
             font-size: 11px;
-            color: #94a3b8;
+            color: #64748b;
             margin-top: 0.5rem;
         }
 
@@ -375,7 +380,7 @@
         .text-good { color: #15803d; }
         .text-warn { color: #b45309; }
         .text-bad { color: #b91c1c; }
-        .text-none { color: #94a3b8; }
+        .text-none { color: #64748b; }
 
         /* Level pill: "High risk", "Isolated", ... */
         .level-pill {
@@ -435,7 +440,7 @@
 
         .row-meta {
             font-size: 0.75rem;
-            color: #94a3b8;
+            color: #64748b;
             margin-top: 0.125rem;
         }
 
@@ -487,7 +492,7 @@
             width: 0.875rem;
             height: 0.875rem;
             flex-shrink: 0;
-            color: #94a3b8;
+            color: #64748b;
             opacity: 0;
             transform: translateX(-3px);
             transition: opacity 0.15s ease, transform 0.15s ease;
@@ -528,7 +533,7 @@
         }
 
         .nav-link--active:hover { background: #eff6ff; color: #1d4ed8; }
-        .nav-link--quiet { color: #94a3b8; }
+        .nav-link--quiet { color: #64748b; }
 
         .nav-icon { width: 1.125rem; height: 1.125rem; flex-shrink: 0; }
 
@@ -638,7 +643,7 @@
             font-weight: 600;
             letter-spacing: 0.12em;
             text-transform: uppercase;
-            color: #94a3b8;
+            color: #64748b;
         }
 
         /* Shared accessible CSS tooltips: any element with data-tip="..." shows a

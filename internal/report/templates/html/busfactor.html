@@ -60,7 +60,8 @@ AST Metrics - Bus Factor
 
     .tag-soft {
         font-size: 11px;
-        color: #64748b;
+        /* Slate 600, not 500: on the tinted pill 500 falls under 4.5:1 */
+        color: #475569;
         background: #f1f5f9;
         border-radius: 999px;
         padding: 0.15rem 0.55rem;
@@ -142,7 +143,7 @@ AST Metrics - Bus Factor
         <div class="shrink-0 text-right">
             <div class="bf-figure">{{ busFactor }}</div>
             <div class="page-kicker mt-2">key {% if busFactor == 1 %}person{% else %}people{% endif %}</div>
-            <p class="text-xs text-slate-400 mt-3 max-w-[190px] ml-auto">
+            <p class="text-xs text-slate-500 mt-3 max-w-[190px] ml-auto">
                 Number of developers who carry half of the commits.
             </p>
         </div>
@@ -192,7 +193,7 @@ AST Metrics - Bus Factor
     <div class="mt-6 pt-5 border-t border-slate-100">
         <div class="flex flex-wrap items-baseline justify-between gap-2">
             <h3 class="section-title">Commit rhythm</h3>
-            <p class="text-xs text-slate-400">
+            <p class="text-xs text-slate-500">
                 {{ currentView.CommitCountForPeriod|stringifyNumber }} commits in the last 12 months
             </p>
         </div>

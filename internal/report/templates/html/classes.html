@@ -89,7 +89,7 @@ AST Metrics - Classes
   <div class="flex flex-wrap items-center gap-x-4 gap-y-3 mb-5">
     <div class="relative min-w-[220px] flex-1 max-w-sm">
       <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"
-        class="w-4 h-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2">
+        class="w-4 h-4 text-gray-500 absolute left-3 top-1/2 -translate-y-1/2">
         <path stroke-linecap="round" stroke-linejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z" />
       </svg>
       <input type="search" x-model.debounce.200ms="query" placeholder="Search a class or a file..."
@@ -109,7 +109,7 @@ AST Metrics - Classes
       <input type="checkbox" x-model="includeTests" class="rounded border-gray-300 text-blue-600 focus:ring-blue-500">
       Include test classes
     </label>
-    <span class="text-xs text-gray-400 ml-auto" x-text="filtered.length + ' shown'"></span>
+    <span class="text-xs text-gray-500 ml-auto" x-text="filtered.length + ' shown'"></span>
   </div>
 
   <!-- Table -->
@@ -152,7 +152,7 @@ AST Metrics - Classes
                   <span x-text="r.shortName"></span>
                   <span x-show="r.isTest" class="px-1.5 py-0.5 rounded bg-violet-50 text-violet-600 text-[10px] font-medium uppercase">test</span>
                 </div>
-                <div class="text-xs text-gray-400 truncate max-w-[320px]" x-text="r.file" :title="r.filePath"></div>
+                <div class="text-xs text-gray-500 truncate max-w-[320px]" x-text="r.file" :title="r.filePath"></div>
               </td>
               <td class="px-3 py-3 text-right"><span :class="badgeClass(miLevel(r.mi))" class="px-2 py-1 rounded-md text-xs font-medium inline-flex items-center gap-1"
                 :data-tip="miJudgment(r.mi)" tabindex="0"><span x-text="fmt(r.mi, 0)"></span></span></td>
@@ -208,7 +208,7 @@ AST Metrics - Classes
                 </p>
               </div>
               <button @click="detail = null" aria-label="Close details"
-                class="shrink-0 text-gray-400 hover:text-gray-600 p-1 rounded-lg hover:bg-gray-100 transition-colors">
+                class="shrink-0 text-gray-500 hover:text-gray-600 p-1 rounded-lg hover:bg-gray-100 transition-colors">
                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-5 h-5">
                   <path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" />
                 </svg>
