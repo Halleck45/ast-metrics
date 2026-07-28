@@ -74,7 +74,7 @@ jobs:
               env: ["CGO_ENABLED=1"]
               goos: [${{ matrix.goos }}]
               goarch: [${{ matrix.goarch }}]
-              ldflags: ["-s", "-w"]
+              ldflags: ["-s", "-w", "-X main.version={{ .Version }}", "-X main.commit={{ .Commit }}", "-X main.date={{ .Date }}"]
               mod_timestamp: "{{ .CommitTimestamp }}"
           archives:
             - id: bin
