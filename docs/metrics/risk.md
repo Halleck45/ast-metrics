@@ -10,7 +10,7 @@ The Risk score is calculated based on two main factors:
 1.  **Complexity**: How hard is the code to understand? (Cyclomatic Complexity)
 2.  **Activity**: How often is this code changed? (Git Churn)
 
-$$ Risk = Complexity \times Churn $$
+`Risk = Complexity × Churn`
 
 ## Why it matters?
 - **Complex code that never changes** is not a high risk. It works, leave it alone.

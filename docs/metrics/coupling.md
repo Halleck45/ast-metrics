@@ -19,7 +19,7 @@ Coupling measures how dependent classes are on each other. High coupling makes c
 ## Instability (I)
 Instability is a ratio between 0 and 1 derived from coupling.
 
-$$ I = \frac{Ce}{Ca + Ce} $$
+`I = Ce / (Ca + Ce)`
 
 ### 0: Stable
 **I am used by many, but I use no one.**
@@ -38,4 +38,4 @@ $$ I = \frac{Ce}{Ca + Ce} $$
     Dependencies should point in the direction of stability.
     A component should only depend on components that are more stable than itself.
     
-    **Unstable (Variable)** $\rightarrow$ **Stable (Abstract)**
+    **Unstable (Variable)** → **Stable (Abstract)**
