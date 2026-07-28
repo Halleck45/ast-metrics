@@ -5,7 +5,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	pb "github.com/halleck45/ast-metrics/pb"
+	pb "github.com/ast-metrics/ast-metrics/pb"
 	"github.com/stretchr/testify/assert"
 )
 

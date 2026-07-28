@@ -3,8 +3,8 @@ package command
 import (
 	"bufio"
 
-	"github.com/halleck45/ast-metrics/internal/configuration"
-	"github.com/halleck45/ast-metrics/internal/engine"
+	"github.com/ast-metrics/ast-metrics/internal/configuration"
+	"github.com/ast-metrics/ast-metrics/internal/engine"
 	"github.com/pterm/pterm"
 )
 

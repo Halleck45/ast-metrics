@@ -3,7 +3,7 @@ package analyzer
 import (
 	"sort"
 
-	"github.com/halleck45/ast-metrics/internal/analyzer"
+	"github.com/ast-metrics/ast-metrics/internal/analyzer"
 )
 
 type BusFactor struct {

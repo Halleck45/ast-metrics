@@ -9,7 +9,7 @@ import (
 	"sort"
 	"strings"
 
-	pb "github.com/halleck45/ast-metrics/pb"
+	pb "github.com/ast-metrics/ast-metrics/pb"
 )
 
 // MethodologyVersion identifies the formulas and thresholds used to compute

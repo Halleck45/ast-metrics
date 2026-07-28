@@ -3,9 +3,9 @@ package analyzer
 import (
 	"math"
 
-	"github.com/halleck45/ast-metrics/internal/analyzer/risk"
-	"github.com/halleck45/ast-metrics/internal/engine"
-	pb "github.com/halleck45/ast-metrics/pb"
+	"github.com/ast-metrics/ast-metrics/internal/analyzer/risk"
+	"github.com/ast-metrics/ast-metrics/internal/engine"
+	pb "github.com/ast-metrics/ast-metrics/pb"
 )
 
 type RiskAnalyzer struct {

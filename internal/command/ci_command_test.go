@@ -7,8 +7,8 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/halleck45/ast-metrics/internal/configuration"
-	"github.com/halleck45/ast-metrics/internal/engine"
+	"github.com/ast-metrics/ast-metrics/internal/configuration"
+	"github.com/ast-metrics/ast-metrics/internal/engine"
 )
 
 // helper to create a temp file path that doesn't exist yet

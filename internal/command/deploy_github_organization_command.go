@@ -13,7 +13,7 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/halleck45/ast-metrics/internal/cli"
+	"github.com/ast-metrics/ast-metrics/internal/cli"
 	"github.com/pterm/pterm"
 )
 
@@ -505,18 +505,17 @@ func (c *DeployGithubOrganizationCommand) createBranch(repo GitHubRepo, branchNa
 func (c *DeployGithubOrganizationCommand) createWorkflowFile(repo GitHubRepo, branch string) error {
 	workflowContent := `name: AST Metrics
 on:
-  push:
   pull_request:
 
 permissions:
   contents: read
-  pull-requests: write # optional: allows the action to comment on pull requests
+  pull-requests: write   # optional: allows the action to comment on the pull request
 
 jobs:
-  analyse:
+  ast-metrics:
     runs-on: ubuntu-latest
     steps:
-      - uses: halleck45/action-ast-metrics@v2
+      - uses: ast-metrics/action-ast-metrics@v2
 `
 
 	// Encode content to base64

@@ -5,8 +5,8 @@ import (
 	"strings"
 	"testing"
 
-	requirement "github.com/halleck45/ast-metrics/internal/analyzer/requirement"
-	pb "github.com/halleck45/ast-metrics/pb"
+	requirement "github.com/ast-metrics/ast-metrics/internal/analyzer/requirement"
+	pb "github.com/ast-metrics/ast-metrics/pb"
 	"github.com/stretchr/testify/assert"
 )
 

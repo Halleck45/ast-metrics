@@ -5,9 +5,9 @@ import (
 
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
-	"github.com/halleck45/ast-metrics/internal/analyzer"
-	pb "github.com/halleck45/ast-metrics/pb"
-	"github.com/halleck45/ast-metrics/internal/ui"
+	"github.com/ast-metrics/ast-metrics/internal/analyzer"
+	pb "github.com/ast-metrics/ast-metrics/pb"
+	"github.com/ast-metrics/ast-metrics/internal/ui"
 )
 
 type ComponentStatisticsOverview struct {

@@ -6,11 +6,11 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/halleck45/ast-metrics/internal/analyzer"
-	"github.com/halleck45/ast-metrics/internal/engine"
-	"github.com/halleck45/ast-metrics/internal/engine/csharp"
-	"github.com/halleck45/ast-metrics/internal/engine/java"
-	pb "github.com/halleck45/ast-metrics/pb"
+	"github.com/ast-metrics/ast-metrics/internal/analyzer"
+	"github.com/ast-metrics/ast-metrics/internal/engine"
+	"github.com/ast-metrics/ast-metrics/internal/engine/csharp"
+	"github.com/ast-metrics/ast-metrics/internal/engine/java"
+	pb "github.com/ast-metrics/ast-metrics/pb"
 	"github.com/stretchr/testify/assert"
 )
 

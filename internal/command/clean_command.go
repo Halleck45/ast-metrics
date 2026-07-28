@@ -3,8 +3,8 @@ package command
 import (
 	"fmt"
 
-	"github.com/halleck45/ast-metrics/internal/cli"
-	"github.com/halleck45/ast-metrics/internal/storage"
+	"github.com/ast-metrics/ast-metrics/internal/cli"
+	"github.com/ast-metrics/ast-metrics/internal/storage"
 )
 
 type CleanCommand struct {

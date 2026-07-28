@@ -1,7 +1,7 @@
 package golang
 
 import (
-	pb "github.com/halleck45/ast-metrics/pb"
+	pb "github.com/ast-metrics/ast-metrics/pb"
 	sitter "github.com/smacker/go-tree-sitter"
 )
 

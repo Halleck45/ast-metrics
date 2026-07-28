@@ -5,8 +5,8 @@ import (
 	"os"
 	"regexp"
 
-	"github.com/halleck45/ast-metrics/internal/analyzer/issue"
-	pb "github.com/halleck45/ast-metrics/pb"
+	"github.com/ast-metrics/ast-metrics/internal/analyzer/issue"
+	pb "github.com/ast-metrics/ast-metrics/pb"
 )
 
 // Rule: Slice preallocation heuristic

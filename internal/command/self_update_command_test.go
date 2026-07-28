@@ -20,38 +20,38 @@ func TestSelfUpdateExecute(t *testing.T) {
 	defer httpmock.DeactivateAndReset()
 	json := `
 	{
-		"url": "https://api.github.com/repos/Halleck45/ast-metrics/releases/148429686",
+		"url": "https://api.github.com/repos/ast-metrics/ast-metrics/releases/148429686",
 		"name": "v0.0.10-alpha",
 		"draft": false,
 		"assets": [
 		  {
 			"name": "ast-metrics_0.0.10-alpha_checksums.txt",
-			"browser_download_url": "https://github.com/Halleck45/ast-metrics/releases/download/v0.0.10-alpha/ast-metrics_0.0.10-alpha_checksums.txt"
+			"browser_download_url": "https://github.com/ast-metrics/ast-metrics/releases/download/v0.0.10-alpha/ast-metrics_0.0.10-alpha_checksums.txt"
 		  },
 		  {
 			"name": "ast-metrics_Darwin_arm64",
-			"browser_download_url": "https://github.com/Halleck45/ast-metrics/releases/download/v0.0.10-alpha/ast-metrics_Darwin_arm64"
+			"browser_download_url": "https://github.com/ast-metrics/ast-metrics/releases/download/v0.0.10-alpha/ast-metrics_Darwin_arm64"
 		  },
 		  {
 			"name": "ast-metrics_Darwin_x86_64",
-			"browser_download_url": "https://github.com/Halleck45/ast-metrics/releases/download/v0.0.10-alpha/ast-metrics_Darwin_x86_64"
+			"browser_download_url": "https://github.com/ast-metrics/ast-metrics/releases/download/v0.0.10-alpha/ast-metrics_Darwin_x86_64"
 		  },
 		  {
 			"name": "ast-metrics_Linux_arm64",
-			"browser_download_url": "https://github.com/Halleck45/ast-metrics/releases/download/v0.0.10-alpha/ast-metrics_Linux_arm64"
+			"browser_download_url": "https://github.com/ast-metrics/ast-metrics/releases/download/v0.0.10-alpha/ast-metrics_Linux_arm64"
 		  },
 		  {
 			"name": "ast-metrics_Linux_x86_64",
-			"browser_download_url": "https://github.com/Halleck45/ast-metrics/releases/download/v0.0.10-alpha/ast-metrics_Linux_x86_64"
+			"browser_download_url": "https://github.com/ast-metrics/ast-metrics/releases/download/v0.0.10-alpha/ast-metrics_Linux_x86_64"
 		  }
 		]
 	  }
 	  `
-	httpmock.RegisterResponder("GET", "https://api.github.com/repos/Halleck45/ast-metrics/releases/latest", httpmock.NewStringResponder(200, json))
-	httpmock.RegisterResponder("GET", "https://github.com/Halleck45/ast-metrics/releases/download/v0.0.10-alpha/ast-metrics_Linux_x86_64", httpmock.NewStringResponder(200, "binary"))
-	httpmock.RegisterResponder("GET", "https://github.com/Halleck45/ast-metrics/releases/download/v0.0.10-alpha/ast-metrics_Darwin_arm64", httpmock.NewStringResponder(200, "binary"))
-	httpmock.RegisterResponder("GET", "https://github.com/Halleck45/ast-metrics/releases/download/v0.0.10-alpha/ast-metrics_Darwin_x86_64", httpmock.NewStringResponder(200, "binary"))
-	httpmock.RegisterResponder("GET", "https://github.com/Halleck45/ast-metrics/releases/download/v0.0.10-alpha/ast-metrics_Linux_arm64", httpmock.NewStringResponder(200, "binary"))
+	httpmock.RegisterResponder("GET", "https://api.github.com/repos/ast-metrics/ast-metrics/releases/latest", httpmock.NewStringResponder(200, json))
+	httpmock.RegisterResponder("GET", "https://github.com/ast-metrics/ast-metrics/releases/download/v0.0.10-alpha/ast-metrics_Linux_x86_64", httpmock.NewStringResponder(200, "binary"))
+	httpmock.RegisterResponder("GET", "https://github.com/ast-metrics/ast-metrics/releases/download/v0.0.10-alpha/ast-metrics_Darwin_arm64", httpmock.NewStringResponder(200, "binary"))
+	httpmock.RegisterResponder("GET", "https://github.com/ast-metrics/ast-metrics/releases/download/v0.0.10-alpha/ast-metrics_Darwin_x86_64", httpmock.NewStringResponder(200, "binary"))
+	httpmock.RegisterResponder("GET", "https://github.com/ast-metrics/ast-metrics/releases/download/v0.0.10-alpha/ast-metrics_Linux_arm64", httpmock.NewStringResponder(200, "binary"))
 
 	// use custom writer to capture output
 	storeStdout := os.Stdout
@@ -80,7 +80,7 @@ func TestSelfUpdateExecuteWhenNoCompatibleReleaseIsFound(t *testing.T) {
 	defer httpmock.DeactivateAndReset()
 	json := `
 	{
-		"url": "https://api.github.com/repos/Halleck45/ast-metrics/releases/148429686",
+		"url": "https://api.github.com/repos/ast-metrics/ast-metrics/releases/148429686",
 		"name": "v0.0.10-alpha",
 		"draft": false,
 		"assets": [
@@ -88,7 +88,7 @@ func TestSelfUpdateExecuteWhenNoCompatibleReleaseIsFound(t *testing.T) {
 		]
 	  }
 	  `
-	httpmock.RegisterResponder("GET", "https://api.github.com/repos/Halleck45/ast-metrics/releases/latest", httpmock.NewStringResponder(200, json))
+	httpmock.RegisterResponder("GET", "https://api.github.com/repos/ast-metrics/ast-metrics/releases/latest", httpmock.NewStringResponder(200, json))
 
 	// use custom writer to capture output
 	storeStdout := os.Stdout

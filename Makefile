@@ -19,7 +19,7 @@ build-protobuff: bin/protoc
 	rm -rf pb || true
 	mkdir -p pb
 	GOPATH=$(shell go env GOPATH) PATH=$$PATH:$(shell go env GOPATH)/bin ./bin/protoc --go_out=pb proto/NodeType.proto
-	mv pb/github.com/halleck45/ast-metrics/pb/NodeType.pb.go pb/ || true
+	mv pb/github.com/ast-metrics/ast-metrics/pb/NodeType.pb.go pb/ || true
 	echo 'THIS DIRECTORY IS BUILT BY MAKEFILE (make build-protobuff)' > pb/README.md
 	rm -rf pb/github.com || true
 	@echo "\e[34m\033[1mDONE \033[0m\e[39m\n"

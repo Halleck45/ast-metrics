@@ -5,7 +5,7 @@ import (
 	"runtime"
 	"sync"
 
-	pb "github.com/halleck45/ast-metrics/pb"
+	pb "github.com/ast-metrics/ast-metrics/pb"
 	"github.com/pterm/pterm"
 )
 

@@ -1,5 +1,5 @@
 <p align="center" style="text-align:center">
-<img alt="AST Metrics" src="https://raw.githubusercontent.com/Halleck45/ast-metrics/main/docs/logo-ast-metrics-condensed.png" height="200px"/>
+<img alt="AST Metrics" src="https://raw.githubusercontent.com/ast-metrics/ast-metrics/main/docs/logo-ast-metrics-condensed.png" height="200px"/>
 </p>
 
 <p align="center" style="text-align:center">
@@ -12,14 +12,14 @@ Drop it in any CI. Works offline. Nothing to install, no SaaS, no data leaves yo
 <br />
 
 <p align="center" style="text-align:center">
-<a href="https://github.com/Halleck45/ast-metrics/actions/workflows/test.yml"><img src="https://github.com/Halleck45/ast-metrics/actions/workflows/test.yml/badge.svg" alt="CI"></a>
-<img src="https://img.shields.io/github/v/release/Halleck45/ast-metrics" alt="GitHub Release">
+<a href="https://github.com/ast-metrics/ast-metrics/actions/workflows/test.yml"><img src="https://github.com/ast-metrics/ast-metrics/actions/workflows/test.yml/badge.svg" alt="CI"></a>
+<img src="https://img.shields.io/github/v/release/ast-metrics/ast-metrics" alt="GitHub Release">
 <a href="https://opensource.org/licenses/MIT"><img src="https://img.shields.io/badge/License-MIT-yellow.svg" alt="License: MIT"></a>
 <a href="https://github.com/sponsors/Halleck45"><img src="https://img.shields.io/static/v1?label=Sponsor&amp;message=%E2%9D%A4&amp;logo=GitHub&amp;color=%23fe8e86" alt=""></a>
-<img src="https://img.shields.io/github/downloads/Halleck45/ast-metrics/total" alt="GitHub all releases">
-<a href="https://goreportcard.com/report/github.com/Halleck45/ast-metrics"><img src="https://goreportcard.com/badge/github.com/Halleck45/ast-metrics" alt="Go Report Card"></a>
-<a href="https://codecov.io/gh/Halleck45/ast-metrics"><img src="https://codecov.io/gh/Halleck45/ast-metrics/branch/main/graph/badge.svg" alt="codecov"></a>
-<a href="https://analyze.ast-metrics.dev/halleck45/ast-metrics"><img src="https://img.shields.io/badge/AST--Metrics-report-181717?logo=github" alt="AST-Metrics report"></a>
+<img src="https://img.shields.io/github/downloads/ast-metrics/ast-metrics/total" alt="GitHub all releases">
+<a href="https://goreportcard.com/report/github.com/ast-metrics/ast-metrics"><img src="https://goreportcard.com/badge/github.com/ast-metrics/ast-metrics" alt="Go Report Card"></a>
+<a href="https://codecov.io/gh/ast-metrics/ast-metrics"><img src="https://codecov.io/gh/ast-metrics/ast-metrics/branch/main/graph/badge.svg" alt="codecov"></a>
+<a href="https://analyze.ast-metrics.dev/ast-metrics/ast-metrics"><img src="https://img.shields.io/badge/AST--Metrics-report-181717?logo=github" alt="AST-Metrics report"></a>
 </p>
 
 <p align="center" style="text-align:center">
@@ -62,7 +62,7 @@ Drop it in any CI. Works offline. Nothing to install, no SaaS, no data leaves yo
 Open your terminal and run the following command:
 
 ```console
-curl -s https://raw.githubusercontent.com/Halleck45/ast-metrics/main/scripts/download.sh|bash
+curl -s https://raw.githubusercontent.com/ast-metrics/ast-metrics/main/scripts/download.sh|bash
 ./ast-metrics analyze --report-html=<directory> /path/to/your/code
 ```
 

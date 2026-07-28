@@ -3,7 +3,7 @@ package analyzer
 import (
 	"testing"
 
-	pb "github.com/halleck45/ast-metrics/pb"
+	pb "github.com/ast-metrics/ast-metrics/pb"
 )
 
 // method builds a method using the given attributes, in a way that is close to what

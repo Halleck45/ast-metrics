@@ -3,11 +3,11 @@ package report
 import (
 	"testing"
 
-	pb "github.com/halleck45/ast-metrics/pb"
+	pb "github.com/ast-metrics/ast-metrics/pb"
 	"github.com/stretchr/testify/assert"
 	"google.golang.org/protobuf/proto"
 
-	"github.com/halleck45/ast-metrics/internal/analyzer"
+	"github.com/ast-metrics/ast-metrics/internal/analyzer"
 )
 
 func TestGenerateOpenMetricsReports(t *testing.T) {

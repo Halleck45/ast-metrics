@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"strings"
 
-	requirement "github.com/halleck45/ast-metrics/internal/analyzer/requirement"
+	requirement "github.com/ast-metrics/ast-metrics/internal/analyzer/requirement"
 )
 
 // GateLabel returns "passed" or "failed" depending on the fail-on level.

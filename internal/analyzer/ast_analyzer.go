@@ -6,11 +6,11 @@ import (
 	"sync"
 	"sync/atomic"
 
-	Complexity "github.com/halleck45/ast-metrics/internal/analyzer/complexity"
-	Component "github.com/halleck45/ast-metrics/internal/analyzer/component"
-	Volume "github.com/halleck45/ast-metrics/internal/analyzer/volume"
-	engine "github.com/halleck45/ast-metrics/internal/engine"
-	pb "github.com/halleck45/ast-metrics/pb"
+	Complexity "github.com/ast-metrics/ast-metrics/internal/analyzer/complexity"
+	Component "github.com/ast-metrics/ast-metrics/internal/analyzer/component"
+	Volume "github.com/ast-metrics/ast-metrics/internal/analyzer/volume"
+	engine "github.com/ast-metrics/ast-metrics/internal/engine"
+	pb "github.com/ast-metrics/ast-metrics/pb"
 	"github.com/pterm/pterm"
 )
 

@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"testing"
 
-	pb "github.com/halleck45/ast-metrics/pb"
+	pb "github.com/ast-metrics/ast-metrics/pb"
 )
 
 func TestPruneFile_KeepsClassesAndOutsideFunctions(t *testing.T) {

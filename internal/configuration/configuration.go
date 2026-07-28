@@ -5,7 +5,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	storage "github.com/halleck45/ast-metrics/internal/storage"
+	storage "github.com/ast-metrics/ast-metrics/internal/storage"
 )
 
 // FileDiscoveryCache is an opaque type to avoid import cycles.

@@ -5,7 +5,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/halleck45/ast-metrics/internal/configuration"
+	"github.com/ast-metrics/ast-metrics/internal/configuration"
 )
 
 func TestRulesetAddCommand_Execute_AddsVolumeToConfig(t *testing.T) {

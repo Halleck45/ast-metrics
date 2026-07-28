@@ -3,7 +3,7 @@
 # Function to get the version of the latest release
 get_latest_release() {
   # Get latest release from GitHub API
-  curl --silent "https://api.github.com/repos/Halleck45/ast-metrics/releases/latest" | \
+  curl --silent "https://api.github.com/repos/ast-metrics/ast-metrics/releases/latest" | \
   # Get tag line
   grep '"tag_name":' | \
   # Pluck JSON value
@@ -67,9 +67,9 @@ version=$(get_latest_release)
 download_url=""
 destination="ast-metrics"
 if echo "$os_arch" | grep -q "Linux\|Darwin"; then
-  download_url="https://github.com/Halleck45/ast-metrics/releases/download/$version/ast-metrics_$os_arch"
+  download_url="https://github.com/ast-metrics/ast-metrics/releases/download/$version/ast-metrics_$os_arch"
 elif echo "$os_arch" | grep -q "Windows"; then
-  download_url="https://github.com/Halleck45/ast-metrics/releases/download/$version/$os_arch"
+  download_url="https://github.com/ast-metrics/ast-metrics/releases/download/$version/$os_arch"
   destination="ast-metrics.exe"
 fi
 
@@ -103,5 +103,5 @@ if echo "$os_arch" | grep -q "Linux\|Darwin"; then
 fi
 echo
 echo
-echo "🌟 If you like AST Metrics, please consider starring the project on GitHub: https://github.com/Halleck45/ast-metrics/"
+echo "🌟 If you like AST Metrics, please consider starring the project on GitHub: https://github.com/ast-metrics/ast-metrics/"
 echo

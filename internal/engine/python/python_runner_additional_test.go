@@ -4,7 +4,7 @@ import (
 	"os"
 	"testing"
 
-	"github.com/halleck45/ast-metrics/internal/configuration"
+	"github.com/ast-metrics/ast-metrics/internal/configuration"
 	"github.com/pterm/pterm"
 )
 

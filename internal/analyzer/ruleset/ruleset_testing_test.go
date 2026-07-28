@@ -3,7 +3,7 @@ package ruleset
 import (
 	"testing"
 
-	"github.com/halleck45/ast-metrics/internal/configuration"
+	"github.com/ast-metrics/ast-metrics/internal/configuration"
 )
 
 func TestTestingRuleset_IsEnabled_NoConfig(t *testing.T) {

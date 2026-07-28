@@ -3,9 +3,9 @@ package analyzer
 import (
 	"fmt"
 
-	graph "github.com/halleck45/ast-metrics/internal/analyzer/graph"
-	"github.com/halleck45/ast-metrics/internal/analyzer/namer"
-	pb "github.com/halleck45/ast-metrics/pb"
+	graph "github.com/ast-metrics/ast-metrics/internal/analyzer/graph"
+	"github.com/ast-metrics/ast-metrics/internal/analyzer/namer"
+	pb "github.com/ast-metrics/ast-metrics/pb"
 )
 
 // CommunityMetrics holds computed community-related KPIs for the aggregate

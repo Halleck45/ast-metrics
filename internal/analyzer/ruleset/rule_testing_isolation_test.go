@@ -3,7 +3,7 @@ package ruleset
 import (
 	"testing"
 
-	"github.com/halleck45/ast-metrics/internal/analyzer/issue"
+	"github.com/ast-metrics/ast-metrics/internal/analyzer/issue"
 )
 
 func TestIsolationRule_NilThreshold(t *testing.T) {

@@ -5,7 +5,7 @@ import (
 	"encoding/hex"
 	"os"
 
-	pb "github.com/halleck45/ast-metrics/pb"
+	pb "github.com/ast-metrics/ast-metrics/pb"
 )
 
 // FillChecksums computes a content checksum for every parsed file that does

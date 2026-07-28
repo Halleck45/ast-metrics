@@ -7,14 +7,14 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/halleck45/ast-metrics/internal/analyzer"
-	requirement "github.com/halleck45/ast-metrics/internal/analyzer/requirement"
-	"github.com/halleck45/ast-metrics/internal/configuration"
-	"github.com/halleck45/ast-metrics/internal/engine"
-	"github.com/halleck45/ast-metrics/internal/report"
-	"github.com/halleck45/ast-metrics/internal/review"
-	"github.com/halleck45/ast-metrics/internal/scm"
-	pb "github.com/halleck45/ast-metrics/pb"
+	"github.com/ast-metrics/ast-metrics/internal/analyzer"
+	requirement "github.com/ast-metrics/ast-metrics/internal/analyzer/requirement"
+	"github.com/ast-metrics/ast-metrics/internal/configuration"
+	"github.com/ast-metrics/ast-metrics/internal/engine"
+	"github.com/ast-metrics/ast-metrics/internal/report"
+	"github.com/ast-metrics/ast-metrics/internal/review"
+	"github.com/ast-metrics/ast-metrics/internal/scm"
+	pb "github.com/ast-metrics/ast-metrics/pb"
 	log "github.com/sirupsen/logrus"
 )
 

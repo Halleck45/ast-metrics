@@ -10,8 +10,8 @@ import (
 
 	"github.com/flosch/pongo2/v5"
 
-	"github.com/halleck45/ast-metrics/internal/analyzer"
-	pb "github.com/halleck45/ast-metrics/pb"
+	"github.com/ast-metrics/ast-metrics/internal/analyzer"
+	pb "github.com/ast-metrics/ast-metrics/pb"
 )
 
 var (

@@ -6,8 +6,8 @@ import (
 	"path/filepath"
 
 	"github.com/fsnotify/fsnotify"
-	"github.com/halleck45/ast-metrics/internal/command"
-	"github.com/halleck45/ast-metrics/internal/configuration"
+	"github.com/ast-metrics/ast-metrics/internal/command"
+	"github.com/ast-metrics/ast-metrics/internal/configuration"
 	log "github.com/sirupsen/logrus"
 )
 

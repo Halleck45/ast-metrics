@@ -3,7 +3,7 @@ package php
 import (
 	"testing"
 
-	"github.com/halleck45/ast-metrics/internal/engine"
+	"github.com/ast-metrics/ast-metrics/internal/engine"
 	"github.com/stretchr/testify/assert"
 )
 

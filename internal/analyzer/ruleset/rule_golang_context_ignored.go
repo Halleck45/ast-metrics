@@ -6,8 +6,8 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/halleck45/ast-metrics/internal/analyzer/issue"
-	pb "github.com/halleck45/ast-metrics/pb"
+	"github.com/ast-metrics/ast-metrics/internal/analyzer/issue"
+	pb "github.com/ast-metrics/ast-metrics/pb"
 )
 
 // Rule: Context ignored (use of context.Background/TODO when a context is available)

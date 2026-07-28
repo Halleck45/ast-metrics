@@ -3,9 +3,9 @@ package ruleset
 import (
 	"testing"
 
-	"github.com/halleck45/ast-metrics/internal/analyzer/issue"
-	"github.com/halleck45/ast-metrics/internal/configuration"
-	pb "github.com/halleck45/ast-metrics/pb"
+	"github.com/ast-metrics/ast-metrics/internal/analyzer/issue"
+	"github.com/ast-metrics/ast-metrics/internal/configuration"
+	pb "github.com/ast-metrics/ast-metrics/pb"
 )
 
 func TestCouplingRule_Name(t *testing.T) {

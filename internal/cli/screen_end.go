@@ -6,10 +6,10 @@ import (
 
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
-	"github.com/halleck45/ast-metrics/internal/analyzer"
-	"github.com/halleck45/ast-metrics/internal/configuration"
-	pb "github.com/halleck45/ast-metrics/pb"
-	reportpkg "github.com/halleck45/ast-metrics/internal/report"
+	"github.com/ast-metrics/ast-metrics/internal/analyzer"
+	"github.com/ast-metrics/ast-metrics/internal/configuration"
+	pb "github.com/ast-metrics/ast-metrics/pb"
+	reportpkg "github.com/ast-metrics/ast-metrics/internal/report"
 )
 
 type ScreenEnd struct {
@@ -111,7 +111,7 @@ func (r *ScreenEnd) Render() {
 		}
 	}
 
-	fmt.Println("\n🌟 If you like AST Metrics, please consider starring the project on GitHub: https://github.com/Halleck45/ast-metrics/. Thanks!")
+	fmt.Println("\n🌟 If you like AST Metrics, please consider starring the project on GitHub: https://github.com/ast-metrics/ast-metrics/. Thanks!")
 	fmt.Println("")
 
 }

@@ -3,8 +3,8 @@ package risk
 import (
 	"fmt"
 
-	"github.com/halleck45/ast-metrics/internal/engine"
-	pb "github.com/halleck45/ast-metrics/pb"
+	"github.com/ast-metrics/ast-metrics/internal/engine"
+	pb "github.com/ast-metrics/ast-metrics/pb"
 )
 
 // TooManyResponsibilityDetector flags classes with too many methods or poor cohesion (LCOM4 > 1)

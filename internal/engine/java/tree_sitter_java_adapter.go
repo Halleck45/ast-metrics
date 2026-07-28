@@ -3,8 +3,8 @@ package java
 import (
 	"strings"
 
-	"github.com/halleck45/ast-metrics/internal/engine"
-	Treesitter "github.com/halleck45/ast-metrics/internal/engine/treesitter"
+	"github.com/ast-metrics/ast-metrics/internal/engine"
+	Treesitter "github.com/ast-metrics/ast-metrics/internal/engine/treesitter"
 	sitter "github.com/smacker/go-tree-sitter"
 	tsJava "github.com/smacker/go-tree-sitter/java"
 )

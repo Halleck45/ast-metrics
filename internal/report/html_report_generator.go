@@ -17,12 +17,12 @@ import (
 	log "github.com/sirupsen/logrus"
 
 	"github.com/flosch/pongo2/v5"
-	"github.com/halleck45/ast-metrics/internal/analyzer"
-	"github.com/halleck45/ast-metrics/internal/analyzer/classifier"
-	"github.com/halleck45/ast-metrics/internal/analyzer/requirement"
-	"github.com/halleck45/ast-metrics/internal/engine"
-	"github.com/halleck45/ast-metrics/internal/ui"
-	pb "github.com/halleck45/ast-metrics/pb"
+	"github.com/ast-metrics/ast-metrics/internal/analyzer"
+	"github.com/ast-metrics/ast-metrics/internal/analyzer/classifier"
+	"github.com/ast-metrics/ast-metrics/internal/analyzer/requirement"
+	"github.com/ast-metrics/ast-metrics/internal/engine"
+	"github.com/ast-metrics/ast-metrics/internal/ui"
+	pb "github.com/ast-metrics/ast-metrics/pb"
 	"google.golang.org/protobuf/encoding/protojson"
 	"google.golang.org/protobuf/proto"
 )

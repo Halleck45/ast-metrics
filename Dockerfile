@@ -1,7 +1,7 @@
 #
-# docker build . -t Halleck45/ast-metrics:latest
-# docker run -it --rm Halleck45/ast-metrics:latest sh
-# docker run -it -v .:/src  --rm Halleck45/ast-metrics:latest ast-metrics analyze --report-html=/src/report /src
+# docker build . -t ast-metrics/ast-metrics:latest
+# docker run -it --rm ast-metrics/ast-metrics:latest sh
+# docker run -it -v .:/src  --rm ast-metrics/ast-metrics:latest ast-metrics analyze --report-html=/src/report /src
 #
 FROM golang:1.25-alpine AS builder
 

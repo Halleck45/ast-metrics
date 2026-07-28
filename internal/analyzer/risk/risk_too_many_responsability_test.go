@@ -3,7 +3,7 @@ package risk
 import (
 	"testing"
 
-	pb "github.com/halleck45/ast-metrics/pb"
+	pb "github.com/ast-metrics/ast-metrics/pb"
 )
 
 func TestTooManyResponsibilityDetector_Name(t *testing.T) {

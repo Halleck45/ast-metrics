@@ -1,7 +1,7 @@
 package risk
 
 import (
-	pb "github.com/halleck45/ast-metrics/pb"
+	pb "github.com/ast-metrics/ast-metrics/pb"
 )
 
 // RiskItem represents a detected risk with a simple readable structure for reporting

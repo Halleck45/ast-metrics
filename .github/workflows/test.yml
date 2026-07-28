@@ -44,7 +44,7 @@ jobs:
         uses: codecov/codecov-action@v4.0.1
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
-          slug: Halleck45/ast-metrics
+          slug: ast-metrics/ast-metrics
 
   lighthouse:
     runs-on: ubuntu-latest

@@ -11,6 +11,9 @@ bindata.go
 include
 coverage.txt
 
+# Local build at the repository root (make build outputs to bin/)
+/ast-metrics
+
 # Profiling
 ast-metrics.cpu
 ast-metrics.mem

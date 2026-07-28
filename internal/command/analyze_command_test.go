@@ -5,8 +5,8 @@ import (
 	"os"
 	"testing"
 
-	"github.com/halleck45/ast-metrics/internal/configuration"
-	"github.com/halleck45/ast-metrics/internal/storage"
+	"github.com/ast-metrics/ast-metrics/internal/configuration"
+	"github.com/ast-metrics/ast-metrics/internal/storage"
 )
 
 func TestAnalyzeCommand_Execute(t *testing.T) {

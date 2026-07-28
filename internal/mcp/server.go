@@ -1,8 +1,8 @@
 package mcp
 
 import (
-	"github.com/halleck45/ast-metrics/internal/configuration"
-	"github.com/halleck45/ast-metrics/internal/engine"
+	"github.com/ast-metrics/ast-metrics/internal/configuration"
+	"github.com/ast-metrics/ast-metrics/internal/engine"
 	"github.com/mark3labs/mcp-go/server"
 )
 
