@@ -6,7 +6,15 @@ AST Metrics is built in Golang and distributed as a single binary. It has no dep
 
 Choose your preferred method below.
 
-???+ info ":magic_wand: Automatic Install (Linux/MacOS/Windows)"
+???+ info ":simple-homebrew: Homebrew (Linux/MacOS)"
+
+    ```bash
+    brew install ast-metrics/tap/ast-metrics
+    ```
+
+    Homebrew keeps the binary up to date: `brew upgrade` installs new releases.
+
+??? info ":magic_wand: Automatic Install (Linux/MacOS/Windows)"
 
     Run the following command to download the latest version:
 
@@ -18,13 +26,24 @@ Choose your preferred method below.
 
     > Be careful when running scripts from the internet. Always check the content of the script before running it.
 
+??? info ":simple-debian: Debian / Ubuntu (.deb) and Fedora / RHEL (.rpm)"
+
+    Each release ships `.deb` and `.rpm` packages for `amd64` and `arm64`. Download the one for your platform from the [latest release](https://github.com/ast-metrics/ast-metrics/releases/latest), then:
+
+    ```bash
+    # Debian / Ubuntu
+    sudo dpkg -i ast-metrics_*_amd64.deb
+
+    # Fedora / RHEL
+    sudo rpm -i ast-metrics-*.x86_64.rpm
+    ```
+
 ??? info ":simple-linux: Linux (Manual)"
 
     Download the binary for your platform (run `uname -m` in your terminal to get your architecture):
 
     - [amd64](https://github.com/ast-metrics/ast-metrics/releases/latest/download/ast-metrics_Linux_x86_64) (most common)
     - [arm64](https://github.com/ast-metrics/ast-metrics/releases/latest/download/ast-metrics_Linux_arm64) (for Raspberry Pi)
-    - [i386](https://github.com/ast-metrics/ast-metrics/releases/latest/download/ast-metrics_Linux_i386) (for old 32-bit systems)
 
 ??? info ":simple-apple: MacOS (Manual)"
 
@@ -35,13 +54,19 @@ Choose your preferred method below.
 
 ??? info ":fontawesome-brands-windows: Windows (Manual)"
 
-    Download the executable for your platform:
+    Download the executable:
 
-    - [amd64](https://github.com/ast-metrics/ast-metrics/releases/latest/download/ast-metrics_Windows_x86_64.exe) (most common)
-    - [arm64](https://github.com/ast-metrics/ast-metrics/releases/latest/download/ast-metrics_Windows_arm64.exe) (for ARM)
-    - [i386](https://github.com/ast-metrics/ast-metrics/releases/latest/download/ast-metrics_Windows_i386.exe) (for old 32-bit systems)
+    - [amd64](https://github.com/ast-metrics/ast-metrics/releases/latest/download/ast-metrics_Windows_x86_64.exe)
 
+??? info ":simple-docker: Docker"
 
+    No installation at all. Mount your project and run:
+
+    ```bash
+    docker run --rm -v $(pwd):/src ghcr.io/ast-metrics/ast-metrics:latest analyze --report-html=/src/report /src
+    ```
+
+    The image is published on each release for `amd64` and `arm64`: [ghcr.io/ast-metrics/ast-metrics](https://github.com/ast-metrics/ast-metrics/pkgs/container/ast-metrics).
 
 ??? info ":elephant: PHP Project (Composer)"
 
@@ -60,10 +85,10 @@ Choose your preferred method below.
 
 ??? info ":simple-go: Go Install"
 
-    If you have Go installed:
+    If you have Go and a C compiler installed (CGO is required by the tree-sitter parsers):
 
     ```bash
-    go install github.com/ast-metrics/ast-metrics@latest
+    go install github.com/ast-metrics/ast-metrics/cmd/ast-metrics@latest
     ```
 
 ## Verify Installation
@@ -87,3 +112,5 @@ Update is really easy. Just run:
 ```bash
 ast-metrics self-update
 ```
+
+If you installed AST Metrics with Homebrew, a package manager or Docker, update it the usual way instead (`brew upgrade ast-metrics`, `docker pull`, or the package of the new release).
