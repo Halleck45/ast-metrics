@@ -4,7 +4,7 @@ site_author: Jean-François Lépine
 site_description: >-
   Understand your code, any language
 edit_uri: edit/documentation/docs/
-site_url: https://halleck45.github.io/ast-metrics/
+site_url: https://ast-metrics.dev/
   
 theme:
   name: material
@@ -42,7 +42,6 @@ extra_css:
   - assets/stylesheets/extra.css
 
 extra_javascript:
-  - javascripts/extra.js
   - assets/javascripts/landing.js
 
 nav:
@@ -68,8 +67,8 @@ nav:
     - Architecture Map: metrics/architecture-map.md
     - Bus Factor: metrics/bus-factor.md
   - CI/CD:
-    - Rulesets & Linting: ci/linting-architecture.md
     - GitHub Actions: ci/github-actions.md
+    - Rulesets & Linting: ci/linting-architecture.md
     - GitLab CI: ci/gitlab-ci.md
     - Tips: ci/tips.md
   - AI Integration:
@@ -77,8 +76,8 @@ nav:
 
 
 # Repository
-repo_name: Halleck45/ast-metrics
-repo_url: https://github.com/Halleck45/ast-metrics
+repo_name: ast-metrics/ast-metrics
+repo_url: https://github.com/ast-metrics/ast-metrics
 
 
  

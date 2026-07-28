@@ -11,7 +11,7 @@ ast-metrics analyze /var/www/my-project
 
 This will display the CLI application, which will analyze the source code in the specified directory.
 
-![CLI application](https://raw.githubusercontent.com/Halleck45/ast-metrics/main/docs/preview.gif)
+![CLI application](https://raw.githubusercontent.com/ast-metrics/ast-metrics/main/docs/preview.gif)
 
 Navigate through the different sections using the arrow keys. You can press `Enter` to expand a section and see more details.
 
@@ -29,4 +29,4 @@ ast-metrics analyze /path/to/project --report-html=./report
 
 This will create a `report` directory containing the full analysis.
 
-![HTML Report](https://raw.githubusercontent.com/Halleck45/ast-metrics/main/docs/preview-html-report.png)
+![HTML Report](https://raw.githubusercontent.com/ast-metrics/ast-metrics/main/docs/preview-html-report.png)

@@ -12,7 +12,7 @@ test:
     stage: test
     image: ubuntu:latest
     script:
-        - curl -s https://raw.githubusercontent.com/Halleck45/ast-metrics/main/scripts/download.sh|sh
+        - curl -fsSL https://install.ast-metrics.dev|sh
         - ./ast-metrics -f --report-openmetrics=metrics.txt .
 ```
 

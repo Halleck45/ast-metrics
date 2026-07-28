@@ -11,7 +11,7 @@ Choose your preferred method below.
     Run the following command to download the latest version:
 
     ```bash
-    curl -s https://raw.githubusercontent.com/Halleck45/ast-metrics/main/scripts/download.sh|sh
+    curl -fsSL https://install.ast-metrics.dev|sh
     ```
 
     Then move the `./ast-metrics` binary to a directory in your `PATH` (e.g. `/usr/local/bin` for Linux/MacOS).
@@ -22,24 +22,24 @@ Choose your preferred method below.
 
     Download the binary for your platform (run `uname -m` in your terminal to get your architecture):
 
-    - [amd64](https://github.com/Halleck45/ast-metrics/releases/download/v0.0.11-alpha/ast-metrics_Linux_x86_64) (most common)
-    - [arm64](https://github.com/Halleck45/ast-metrics/releases/download/v0.0.11-alpha/ast-metrics_Linux_arm64) (for Raspberry Pi)
-    - [i386](https://github.com/Halleck45/ast-metrics/releases/download/v0.0.11-alpha/ast-metrics_Linux_i386) (for old 32-bit systems)
+    - [amd64](https://github.com/ast-metrics/ast-metrics/releases/latest/download/ast-metrics_Linux_x86_64) (most common)
+    - [arm64](https://github.com/ast-metrics/ast-metrics/releases/latest/download/ast-metrics_Linux_arm64) (for Raspberry Pi)
+    - [i386](https://github.com/ast-metrics/ast-metrics/releases/latest/download/ast-metrics_Linux_i386) (for old 32-bit systems)
 
 ??? info ":simple-apple: MacOS (Manual)"
 
     Download the binary for your platform (run `uname -m` in your terminal to get your architecture):
     
-    - [arm64](https://github.com/Halleck45/ast-metrics/releases/download/--latest_version--/ast-metrics_Darwin_arm64) (for Apple Silicon / M1 / M2)
-    - [amd64](https://github.com/Halleck45/ast-metrics/releases/download/--latest_version--/ast-metrics_Darwin_x86_64) (for Intel Macs)
+    - [arm64](https://github.com/ast-metrics/ast-metrics/releases/latest/download/ast-metrics_Darwin_arm64) (for Apple Silicon / M1 / M2)
+    - [amd64](https://github.com/ast-metrics/ast-metrics/releases/latest/download/ast-metrics_Darwin_x86_64) (for Intel Macs)
 
 ??? info ":fontawesome-brands-windows: Windows (Manual)"
 
     Download the executable for your platform:
 
-    - [amd64](https://github.com/Halleck45/ast-metrics/releases/download/--latest_version--/ast-metrics_Windows_x86_64.exe) (most common)
-    - [arm64](https://github.com/Halleck45/ast-metrics/releases/download/--latest_version--/ast-metrics_Windows_arm64.exe) (for ARM)
-    - [i386](https://github.com/Halleck45/ast-metrics/releases/download/--latest_version--/ast-metrics_Windows_i386.exe) (for old 32-bit systems)
+    - [amd64](https://github.com/ast-metrics/ast-metrics/releases/latest/download/ast-metrics_Windows_x86_64.exe) (most common)
+    - [arm64](https://github.com/ast-metrics/ast-metrics/releases/latest/download/ast-metrics_Windows_arm64.exe) (for ARM)
+    - [i386](https://github.com/ast-metrics/ast-metrics/releases/latest/download/ast-metrics_Windows_i386.exe) (for old 32-bit systems)
 
 
 
@@ -63,7 +63,7 @@ Choose your preferred method below.
     If you have Go installed:
 
     ```bash
-    go install github.com/halleck45/ast-metrics@latest
+    go install github.com/ast-metrics/ast-metrics@latest
     ```
 
 ## Verify Installation
