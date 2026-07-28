@@ -10,7 +10,7 @@ AST Metrics uses the [**Louvain Algorithm**](https://en.wikipedia.org/wiki/Louva
 - **Leak Detection**: Are "Domain" classes talking to "Infrastructure" classes when they shouldn't?
 - **Modularity**: Helps identify natural boundaries for microservices or modules.
 
-![Communities Explanation](../../images/communities-help.png)
+![Communities Explanation](../images/communities-help.png)
 
 ## Interpreting the Results
 

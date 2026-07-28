@@ -17,7 +17,7 @@ ast-metrics deploy:github --token=<github-token> <organization-name>
 ```
 
 
-![Deploy to GitHub Organization](../../images/capture-deploy-github.png)
+![Deploy to GitHub Organization](../images/capture-deploy-github.png)
 
 ## Comparing with another branch
 

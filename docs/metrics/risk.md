@@ -20,7 +20,7 @@ The Risk score is calculated based on two main factors:
 ## How to use it?
 In the CLI application, look at the `Top candidates for refactoring` section. These are the files with the highest Risk score.
 
-![](../../images/capture-risks.png)
+![Risk Score report](../images/capture-risks.png)
 
 !!! tip "Prioritize Refactoring"
 
