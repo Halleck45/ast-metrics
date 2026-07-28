@@ -2,11 +2,19 @@
 
 ## Generate all reports easily
 
-AST Metrics provides a simple way to integrate code quality metrics into your CI/CD pipeline, using the ` --ci` flag. This flag generates all available reports (HTML, JSON, Markdown and OpenMetrics).
+The `ci` command is the one to call from a pipeline. It runs the linter first, then
+generates every report (HTML, Markdown, JSON, OpenMetrics and SARIF):
 
 ```bash
-ast-metrics --ci .
+ast-metrics ci .
 ```
+
+If the linter finds violations, the command exits with a non-zero status but still
+writes the reports, so you keep the artifacts of a failing build.
+
+!!! warning "Renamed in v0.28.0"
+    The former `analyze --ci` is deprecated and prints a warning. Use
+    `ast-metrics ci` instead.
 
 ## Deploy to multiple repositories at once
 
@@ -24,5 +32,9 @@ ast-metrics deploy:github --token=<github-token> <organization-name>
 You can compare the metrics of the current branch with another branch using the [`--compare-with`](../advanced-usage/compare-versions.md) flag.
 
 ```bash
-ast-metrics --ci --compare-with=main .
+ast-metrics ci --compare-with=main .
 ```
+
+To gate a pull request on what the branch actually changed, prefer
+[`ast-metrics review`](../getting-started/review-changes.md): it reports only new or
+worsened findings, and ignores existing debt.

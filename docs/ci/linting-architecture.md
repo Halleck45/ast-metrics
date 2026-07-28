@@ -2,6 +2,17 @@
 
 AST Metrics allows you to enforce rules on your codebase (Linting). You can check complexity, coupling, volume, and more.
 
+## Creating the configuration file
+
+Rules live in an `.ast-metrics.yaml` file at the root of your project. Create it with:
+
+```bash
+ast-metrics init
+```
+
+You now have a documented starting point to edit, either by hand or by importing
+rulesets.
+
 ## Managing Rulesets (CLI)
 
 The easiest way to add rules is to use the `ruleset` command. It allows you to import pre-defined sets of rules.
@@ -122,8 +133,17 @@ requirements:
       context_ignored: true
 ```
 
-Run the analysis with:
+Check your rules with:
 
 ```bash
-ast-metrics analyze
+ast-metrics lint
 ```
+
+The command exits with a non-zero status as soon as a requirement is violated, which
+makes it usable as-is in a pipeline. Add `--report-sarif=lint.sarif` to publish the
+violations to a platform that reads SARIF.
+
+!!! tip "Only report what a branch breaks"
+    `ast-metrics lint` reports every violation in the project, including the ones that
+    were already there. To gate a pull request on new violations only, use
+    [`ast-metrics review`](../getting-started/review-changes.md).

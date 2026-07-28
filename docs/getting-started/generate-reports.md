@@ -1,23 +1,36 @@
 # Generate reports
 
+All report options belong to the `analyze` command, and several can be combined in
+a single run:
+
+```bash
+ast-metrics analyze --report-html=./report --report-json=./report.json .
+```
+
+!!! tip "Generating everything at once"
+    In a pipeline, use [`ast-metrics ci`](../ci/tips.md) instead: it runs the
+    linter, then produces every report in one go.
+
 ## 🌐 HTML report
 
-AST Metrics can generate HTML reports. The reports provide an overview of the codebase, including:
+The HTML report is the one to share with your team. Every page opens on a sentence
+that states what the analysis found, backed by the few figures that support it:
 
-- The number of files and directories
-- The number of lines of code
-- Maintainability, complexity, and risk scores
+- a dashboard, with the distribution of your metrics
+- one page per concern (complexity, coupling, class cohesion, risk, bus factor)
+- a **class explorer**, sortable and filterable, exposing every computed metric
+- a **dependency graph** you can search and zoom, which highlights circular
+  dependencies
+- one view per analyzed folder, next to the global and per-language views
 
 To generate a report, run the following command in your terminal:
 
 ```bash
-ast-metrics --report-html=<report-directory> /path/to/your/project
+ast-metrics analyze --report-html=<report-directory> /path/to/your/project
 ```
 
-Where `<report-directory>` is the directory where the report will be saved.
-
-!!! info "v0.35.0"
-    Dashboard labels have been simplified for clarity (e.g., "LCOM" is now displayed as "Class cohesion").
+Where `<report-directory>` is the directory where the report will be saved. Add
+`--open-html` to open it in your browser as soon as it is ready.
 
 ## 📄 Markdown report
 
@@ -26,7 +39,7 @@ AST Metrics can also generate Markdown reports. The reports provide an overview 
 To generate a report, run the following command in your terminal:
 
 ```bash
-ast-metrics --report-markdown=<report-file.md> /path/to/your/project
+ast-metrics analyze --report-markdown=<report-file.md> /path/to/your/project
 ```
 
 Where `<report-file.md>` is the file where the report will be saved.
@@ -38,7 +51,7 @@ AST Metrics can also generate JSON reports. The reports provide an overview of t
 To generate a report, run the following command in your terminal:
 
 ```bash
-ast-metrics --report-json=<report-file.json> /path/to/your/project
+ast-metrics analyze --report-json=<report-file.json> /path/to/your/project
 ```
 
 Where `<report-file.json>` is the file where the report will be saved.
@@ -50,10 +63,15 @@ AST Metrics can generate [SARIF](https://sarifweb.azurewebsites.net/) (Static An
 To generate a SARIF report, run the following command in your terminal:
 
 ```bash
-ast-metrics --report-sarif=<report-file.sarif> /path/to/your/project
+ast-metrics analyze --report-sarif=<report-file.sarif> /path/to/your/project
 ```
 
 Where `<report-file.sarif>` is the file where the report will be saved.
+
+Use `--sarif-max-level` to cap the severity of the results (`error`, `warning` or
+`note`). GitHub code scanning fails its own check as soon as a new `error` alert
+appears, so keeping the ceiling at `warning` makes the upload informative rather
+than blocking.
 
 ### Use Cases
 
@@ -71,7 +89,7 @@ SARIF reports are particularly useful for:
 To generate an OpenMetrics report, run the following command in your terminal:
 
 ```bash
-ast-metrics --report-openmetrics=<report-file.openmetrics> /path/to/your/project
+ast-metrics analyze --report-openmetrics=<report-file.openmetrics> /path/to/your/project
 ```
 
 Where `<report-file.openmetrics>` is the file where the report will be saved.

@@ -30,6 +30,25 @@ It helps you answer critical questions:
 
 ## Key Benefits
 
-- **Language-agnostic**: Works with PHP, Python, Go, Java, TypeScript, and more.
+- **Language-agnostic**: seven languages, analyzed the same way (see below).
 - **Standalone**: No complex setup, databases, or servers required. Just a single binary.
 - **Fast**: Written in Go for high performance on large codebases.
+
+## Supported languages
+
+Every metric is computed identically across languages, so a polyglot repository gives
+you a single, comparable picture.
+
+| Language | Versions |
+|---|---|
+| Golang | any version |
+| PHP | up to PHP 8.5 |
+| Python | Python 2 and 3 |
+| TypeScript | any version |
+| Rust | any version |
+| Java | any version |
+| C# | any version |
+
+Files are picked up by extension. If your project uses unusual ones, declare them
+with the matching flag (`--php-extensions=.inc,.module`, `--go-extensions`, and so
+on).
