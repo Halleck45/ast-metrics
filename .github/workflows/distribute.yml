@@ -30,6 +30,12 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           TAG="${{ inputs.tag }}"
+          # When triggered by the release workflow, head_branch holds the tag that
+          # was pushed: more reliable than the "latest" flag, which GitHub updates
+          # with a delay after a release is published.
+          if [ -z "$TAG" ] && [ "${{ github.event_name }}" = "workflow_run" ]; then
+            TAG="${{ github.event.workflow_run.head_branch }}"
+          fi
           if [ -z "$TAG" ]; then
             TAG=$(gh release view --repo "${{ github.repository }}" --json tagName -q .tagName)
           fi
@@ -190,3 +196,23 @@ jobs:
           git add Formula/ast-metrics.rb
           git diff --cached --quiet || git commit -m "ast-metrics ${VERSION}"
           git push
+
+  # Releases are created as prereleases so that nobody installs them before
+  # their assets exist. Once every channel is published, promote the release:
+  # drop the prerelease flag and mark it as latest, so that self-update and
+  # the releases/latest API serve it. Genuine preversions (v1.2.3-rc1, -beta...)
+  # are left untouched.
+  finalize:
+    needs: [resolve, linux-packages, docker, homebrew]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Promote the release to latest
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ needs.resolve.outputs.tag }}
+        run: |
+          if echo "$TAG" | grep -Eq '^v?[0-9]+\.[0-9]+\.[0-9]+$'; then
+            gh release edit "$TAG" --repo "${{ github.repository }}" --prerelease=false --latest
+          else
+            echo "Tag $TAG looks like a preversion, leaving it as prerelease."
+          fi
