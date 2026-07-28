@@ -7,6 +7,10 @@ FROM debian:stable-slim
 ARG TARGETARCH
 ARG VERSION
 
+LABEL org.opencontainers.image.source="https://github.com/ast-metrics/ast-metrics" \
+      org.opencontainers.image.description="Multi-language static code analyzer: complexity, coupling and maintainability metrics" \
+      org.opencontainers.image.licenses="MIT"
+
 RUN apt-get update \
     && apt-get install -y --no-install-recommends ca-certificates curl git \
     && rm -rf /var/lib/apt/lists/*
