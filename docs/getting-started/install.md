@@ -6,7 +6,7 @@ AST Metrics is built in Golang and distributed as a single binary. It has no dep
 
 Choose your preferred method below.
 
-??? info ":magic_wand: Automatic Install (Linux/MacOS/Windows)"
+???+ info ":magic_wand: Automatic Install (Linux/MacOS/Windows)"
 
     Run the following command to download the latest version:
 
