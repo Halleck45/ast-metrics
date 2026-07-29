@@ -35,6 +35,37 @@ var (
 	date    = "unknown"
 )
 
+// isInteractiveSession reports whether the full-screen interface should be used.
+//
+// It requires a terminal on stdin: a CI job, a pipe, or a tool driving the CLI
+// must never get a full-screen interface, whether or not it knows about the
+// --non-interactive flag.
+//
+// The flag is looked up along the whole context lineage, because it is declared
+// as a global option: "ast-metrics --non-interactive analyze ." has to be
+// honoured just like "ast-metrics analyze --non-interactive .".
+func isInteractiveSession(cCtx *cliV2.Context) bool {
+	if !osterm.IsTerminal(int(os.Stdin.Fd())) {
+		return false
+	}
+
+	for _, ctx := range cCtx.Lineage() {
+		if ctx.Bool("non-interactive") || ctx.Bool("ci") {
+			return false
+		}
+	}
+
+	return true
+}
+
+// isTerminalOutput reports whether stdout is a terminal, which is the only thing
+// that decides whether colour is meaningful. It is deliberately independent from
+// the interactive interface: a non-interactive run in a terminal still deserves
+// colours, and an interactive-looking run whose output is redirected does not.
+func isTerminalOutput() bool {
+	return osterm.IsTerminal(int(os.Stdout.Fd()))
+}
+
 func main() {
 
 	logrus.SetLevel(logrus.TraceLevel)
@@ -65,11 +96,18 @@ func main() {
 				Usage: "Disable interactive mode",
 			},
 		},
-		Action: func(cCtx *cliV2.Context) error {
-			// Determine if we're in an interactive terminal
-			isInteractive := osterm.IsTerminal(int(os.Stdin.Fd())) && !cCtx.Bool("non-interactive")
+		Before: func(cCtx *cliV2.Context) error {
+			// Colour follows the output stream, not the interface: a redirected
+			// or piped stream gets plain text, and a terminal keeps its colours
+			// even when the interactive interface is disabled.
+			if !isTerminalOutput() {
+				pterm.DisableColor()
+			}
 
-			if !isInteractive {
+			return nil
+		},
+		Action: func(cCtx *cliV2.Context) error {
+			if !isInteractiveSession(cCtx) {
 				// Non-interactive: print banner + help
 				fmt.Println(cli.RenderBanner(version))
 				return cliV2.ShowAppHelp(cCtx)
@@ -283,12 +321,10 @@ func main() {
 						}
 					}
 
-					// get option --non-interactive
-					isInteractive := true
-					if cCtx.Bool("non-interactive") || cCtx.Bool("ci") {
-						pterm.DisableColor()
-						isInteractive = false
-					}
+					// The interactive interface needs a terminal to drive it, so it
+					// is not enough to look at --non-interactive: an analysis run
+					// from a CI job or a script gets the plain output too.
+					isInteractive := isInteractiveSession(cCtx)
 
 					// Stdout
 					outWriter := bufio.NewWriter(os.Stdout)
@@ -395,8 +431,8 @@ func main() {
 						if config.Reports.Sarif == "" {
 							config.Reports.Sarif = "ast-metrics-report.sarif"
 						}
-						isInteractive = false
-						pterm.DisableColor()
+						// isInteractive is already false here: isInteractiveSession
+						// takes --ci into account.
 					}
 
 					// Compare with

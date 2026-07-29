@@ -197,13 +197,65 @@ jobs:
           git diff --cached --quiet || git commit -m "ast-metrics ${VERSION}"
           git push
 
+  # The PHP bridge (Composer package halleck45/ast-metrics) pins the analyzer
+  # version it downloads, so that a locked composer.lock gives a reproducible
+  # analysis. That pin has to be moved on every release, and the bridge needs a
+  # tag of its own for Packagist to serve it: both are done here, so the two
+  # repositories never drift apart.
+  php-bridge:
+    needs: resolve
+    runs-on: ubuntu-latest
+    steps:
+      - name: Pin the new version and tag the bridge
+        env:
+          BRIDGE_TOKEN: ${{ secrets.PUSH_TOKEN }}
+          TAG: ${{ needs.resolve.outputs.tag }}
+          VERSION: ${{ needs.resolve.outputs.version }}
+        run: |
+          set -euo pipefail
+
+          git clone --quiet \
+            "https://x-access-token:${BRIDGE_TOKEN}@github.com/ast-metrics/ast-metrics-bridge-php.git" bridge
+          cd bridge
+
+          PINNED="src/Binary/BinaryProvider.php"
+          if [ ! -f "$PINNED" ]; then
+            echo "::error::$PINNED not found. The bridge layout changed: update this job." >&2
+            exit 1
+          fi
+
+          # Rewrite the pinned tag, then check the result rather than trusting
+          # sed: a silent no-match would publish a bridge that still downloads
+          # the previous analyzer.
+          sed -i -E "s|(const DEFAULT_VERSION = ')[^']*(';)|\1${TAG}\2|" "$PINNED"
+          if ! grep -q "const DEFAULT_VERSION = '${TAG}';" "$PINNED"; then
+            echo "::error::Could not pin ${TAG} in $PINNED. The constant was renamed or reformatted." >&2
+            exit 1
+          fi
+
+          if git ls-remote --exit-code --tags origin "refs/tags/${TAG}" >/dev/null 2>&1; then
+            echo "Tag ${TAG} already exists on the bridge, nothing to do."
+            exit 0
+          fi
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add "$PINNED"
+          git diff --cached --quiet || git commit -m "Pin AST Metrics ${VERSION}"
+
+          # The tag carries the commit that pins the matching analyzer, so
+          # installing halleck45/ast-metrics:VERSION gives ast-metrics VERSION.
+          git tag -a "${TAG}" -m "AST Metrics ${VERSION}"
+          git push origin HEAD:main
+          git push origin "refs/tags/${TAG}"
+
   # Releases are created as prereleases so that nobody installs them before
   # their assets exist. Once every channel is published, promote the release:
   # drop the prerelease flag and mark it as latest, so that self-update and
   # the releases/latest API serve it. Genuine preversions (v1.2.3-rc1, -beta...)
   # are left untouched.
   finalize:
-    needs: [resolve, linux-packages, docker, homebrew]
+    needs: [resolve, linux-packages, docker, homebrew, php-bridge]
     runs-on: ubuntu-latest
     steps:
       - name: Promote the release to latest
