@@ -8,6 +8,11 @@
 AST Metrics analyzes your codebase (complexity, architecture, coupling, bus factor...) and runs anywhere.
 <br />
 Drop it in any CI. Works offline. Nothing to install, no SaaS, no data leaves your machine.
+<br />
+Fast: 20,000+ lines of code analyzed per second, on a laptop.
+<br />
+<br />
+<code>Go</code> · <code>PHP</code> · <code>Python</code> · <code>Rust</code> · <code>Java</code> · <code>C#</code> · <code>TypeScript</code>
 </p>
 <br />
 
@@ -23,50 +28,38 @@ Drop it in any CI. Works offline. Nothing to install, no SaaS, no data leaves yo
 </p>
 
 <p align="center" style="text-align:center">
-<a href="https://ast-metrics.dev/">Documentation</a> | <a href=".github/CONTRIBUTING.md">Contributing</a> | <a href="https://twitter.com/Halleck45">Twitter</a>
+<a href="https://ast-metrics.dev/">Documentation</a> | <a href=".github/CONTRIBUTING.md">Contributing</a>
 </p>
 
-<img width="1280" height="640" alt="banner" src="https://github.com/user-attachments/assets/4a7d518d-82fe-4c18-880f-479fe1738878" />
-
+<p align="center" style="text-align:center">
+<a href="https://analyze.ast-metrics.dev/ast-metrics/ast-metrics"><img alt="The AST Metrics report: a plain-language verdict, with scores for complexity, maintainability, test isolation and bus factor" src="https://raw.githubusercontent.com/ast-metrics/ast-metrics/main/docs/report-overview-embed.png" /></a>
 <br />
-
-<table align="center">
-<tr>
-<td align="center">
-<br />
-
-<a href="https://analyze.ast-metrics.dev"><img src="https://img.shields.io/badge/Analyze_your_project-4f46e5?style=for-the-badge&logo=data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0id2hpdGUiPjxwYXRoIGQ9Ik0xMiAyQzYuNDggMiAyIDYuNDggMiAxMnM0LjQ4IDEwIDEwIDEwIDEwLTQuNDggMTAtMTBTMTcuNTIgMiAxMiAyem0tMiAxNWwtNS01IDEuNDEtMS40MUwxMCAxNC4xN2w3LjU5LTcuNTlMMTkgOGwtOSA5eiIvPjwvc3ZnPg==&logoColor=white" alt="Analyze your project" height="45"></a>
-
-<p>Paste a GitHub URL. Get a full report. No install.</p>
-
-<p><b>Or explore live examples:</b></p>
-
-<p>
-<a href="https://analyze.ast-metrics.dev/spf13/cobra"><img src="https://img.shields.io/badge/spf13%2Fcobra-Go-00ADD8?style=flat-square&logo=go&logoColor=white" alt="spf13/cobra"></a>
-<a href="https://analyze.ast-metrics.dev/fatih/color"><img src="https://img.shields.io/badge/fatih%2Fcolor-Go-00ADD8?style=flat-square&logo=go&logoColor=white" alt="fatih/color"></a>
-<a href="https://analyze.ast-metrics.dev/gorilla/mux"><img src="https://img.shields.io/badge/gorilla%2Fmux-Go-00ADD8?style=flat-square&logo=go&logoColor=white" alt="gorilla/mux"></a>
-<a href="https://analyze.ast-metrics.dev/guzzle/psr7"><img src="https://img.shields.io/badge/guzzle%2Fpsr7-PHP-777BB4?style=flat-square&logo=php&logoColor=white" alt="guzzle/psr7"></a>
-<a href="https://analyze.ast-metrics.dev/thephpleague/flysystem"><img src="https://img.shields.io/badge/thephpleague%2Fflysystem-PHP-777BB4?style=flat-square&logo=php&logoColor=white" alt="thephpleague/flysystem"></a>
+<i>AST Metrics analyzing itself. <a href="https://analyze.ast-metrics.dev/ast-metrics/ast-metrics">Explore this report live</a>, or <a href="https://analyze.ast-metrics.dev">try it on any public repository</a>, without installing anything.</i>
 </p>
-
-<br />
-
-</td>
-</tr>
-</table>
 
 <br />
 
 ## Getting Started
 
-Open your terminal and run the following command:
+Install with Homebrew (macOS, Linux):
 
 ```console
-curl -s https://raw.githubusercontent.com/ast-metrics/ast-metrics/main/scripts/download.sh|bash
-./ast-metrics analyze --report-html=<directory> /path/to/your/code
+brew install ast-metrics/tap/ast-metrics
 ```
 
-> To install it manually follow the detailed [installation instructions](https://ast-metrics.dev/getting-started/install/).
+or with the install script (any platform, downloads an `./ast-metrics` binary in the current directory):
+
+```console
+curl -fsSL https://install.ast-metrics.dev | sh
+```
+
+Then analyze your project:
+
+```console
+ast-metrics analyze --report-html=<directory> /path/to/your/code
+```
+
+> Docker image, `.deb`/`.rpm` packages and manual downloads: see the detailed [installation instructions](https://ast-metrics.dev/getting-started/install/).
 
 ## What you get
 
@@ -79,6 +72,12 @@ curl -s https://raw.githubusercontent.com/ast-metrics/ast-metrics/main/scripts/d
 | **CI/CD ready** | GitHub Actions, GitLab CI, any pipeline — exits non-zero on violations |
 | **Multiple report formats** | HTML dashboard, JSON, Markdown, SARIF, OpenMetrics |
 | **MCP server** | Give AI coding agents architectural awareness via Model Context Protocol |
+
+<p align="center" style="text-align:center">
+<a href="https://analyze.ast-metrics.dev/ast-metrics/ast-metrics"><img alt="The interactive dependency graph: hubs, natural communities and circular dependencies at a glance" src="https://raw.githubusercontent.com/ast-metrics/ast-metrics/main/docs/report-dependencies.png" /></a>
+<br />
+<i>The dependency graph: hubs, natural communities and circular dependencies at a glance.</i>
+</p>
 
 [Read more in the documentation](https://ast-metrics.dev/)
 
