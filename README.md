@@ -24,6 +24,7 @@ Fast: 20,000+ lines of code analyzed per second, on a laptop.
 <img src="https://img.shields.io/github/downloads/ast-metrics/ast-metrics/total" alt="GitHub all releases">
 <a href="https://goreportcard.com/report/github.com/ast-metrics/ast-metrics"><img src="https://goreportcard.com/badge/github.com/ast-metrics/ast-metrics" alt="Go Report Card"></a>
 <a href="https://codecov.io/gh/ast-metrics/ast-metrics"><img src="https://codecov.io/gh/ast-metrics/ast-metrics/branch/main/graph/badge.svg" alt="codecov"></a>
+<a href="https://pkg.go.dev/github.com/ast-metrics/ast-metrics"><img src="https://pkg.go.dev/badge/github.com/ast-metrics/ast-metrics.svg" alt="Go Reference"></a>
 <a href="https://analyze.ast-metrics.dev/ast-metrics/ast-metrics"><img src="https://img.shields.io/badge/AST--Metrics-report-181717?logo=github" alt="AST-Metrics report"></a>
 </p>
 
