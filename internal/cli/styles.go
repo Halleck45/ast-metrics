@@ -45,7 +45,10 @@ func StyleTitle(text string) lipgloss.Style {
 }
 
 // ScreenHeader renders a compact header for sub-screens:
-// a breadcrumb-style line with the page title, plus a separator and esc hint.
+// a breadcrumb-style line with the page title, plus a separator, and an esc hint
+// when there is a keyboard to press it on. Commands such as lint and ci print
+// this header while running non-interactively, where "(esc to go back)" would be
+// an instruction the reader cannot follow, in a CI log nobody can type into.
 func ScreenHeader(pageTitle string) string {
 	logoStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("#73F59F")).Bold(true)
 	sepStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("#555555"))
@@ -60,7 +63,11 @@ func ScreenHeader(pageTitle string) string {
 	w := windowWidth()
 	line := lineStyle.Render(fmt.Sprintf("%*s", 0, "") + fmt.Sprintf("%s", repeatRune('─', w)))
 
-	return header + "  " + hintStyle.Render("(esc to go back)") + "\n" + line + "\n"
+	if osterm.IsTerminal(int(os.Stdin.Fd())) {
+		header += "  " + hintStyle.Render("(esc to go back)")
+	}
+
+	return header + "\n" + line + "\n"
 }
 
 func repeatRune(r rune, count int) string {
